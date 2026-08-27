@@ -1,0 +1,183 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "多大模型横向盲测与裁判打分 (Model Arena & Judge)",
+    "description": "并发向多个不同厂商的大模型下发相同测试用例，并由中立 Judge 裁判模型进行多维度对比评估与打分。",
+    "author": "AI Orchestrator Team",
+    "tags": ["Evaluation", "Arena", "Benchmarking", "LLM-as-a-Judge"],
+    "createdAt": "2026-08-28T00:00:00Z",
+    "updatedAt": "2026-08-28T00:00:00Z"
+  },
+  "viewport": {
+    "x": 80,
+    "y": 100,
+    "zoom": 0.9
+  },
+  "nodes": [
+    {
+      "id": "input_benchmark_prompt",
+      "type": "input",
+      "position": { "x": 50, "y": 300 },
+      "data": {
+        "label": "评测问题输入",
+        "inputs": {
+          "user_prompt": "请用一段幽默且通俗的语言解释什么是量子纠缠，并举一个日常生活中的有趣比喻。",
+          "eval_criteria": "幽默度、科学严谨性、比喻贴切度"
+        }
+      }
+    },
+    {
+      "id": "llm_model_a",
+      "type": "llm",
+      "position": { "x": 420, "y": 120 },
+      "data": {
+        "label": "模型 A (GPT-4o)",
+        "config": {
+          "model": "gpt-4o",
+          "temperature": 0.7
+        },
+        "inputs": {
+          "prompt": "{{input_benchmark_prompt.user_prompt}}"
+        }
+      }
+    },
+    {
+      "id": "llm_model_b",
+      "type": "llm",
+      "position": { "x": 420, "y": 300 },
+      "data": {
+        "label": "模型 B (Claude-3.5-Sonnet)",
+        "config": {
+          "model": "claude-3-5-sonnet",
+          "temperature": 0.7
+        },
+        "inputs": {
+          "prompt": "{{input_benchmark_prompt.user_prompt}}"
+        }
+      }
+    },
+    {
+      "id": "llm_model_c",
+      "type": "llm",
+      "position": { "x": 420, "y": 480 },
+      "data": {
+        "label": "模型 C (Gemini-1.5-Pro)",
+        "config": {
+          "model": "gemini-1.5-pro",
+          "temperature": 0.7
+        },
+        "inputs": {
+          "prompt": "{{input_benchmark_prompt.user_prompt}}"
+        }
+      }
+    },
+    {
+      "id": "prompt_judge",
+      "type": "prompt",
+      "position": { "x": 800, "y": 300 },
+      "data": {
+        "label": "裁判评审 Prompt",
+        "inputs": {
+          "template": "你是一名公正中立的 LLM 评测裁判。针对原始问题：\n\"{{input_benchmark_prompt.user_prompt}}\"\n\n请依据评测标准【{{input_benchmark_prompt.eval_criteria}}】，对以下 3 位选手的回答进行打分 (满分 10 分) 与优缺点点评，并宣布 Winner：\n\n【模型 A】：\n{{llm_model_a.response}}\n\n【模型 B】：\n{{llm_model_b.response}}\n\n【模型 C】：\n{{llm_model_c.response}}"
+        }
+      }
+    },
+    {
+      "id": "llm_judge",
+      "type": "llm",
+      "position": { "x": 1150, "y": 300 },
+      "data": {
+        "label": "裁判裁决 LLM (Judge)",
+        "config": {
+          "model": "gpt-4o",
+          "temperature": 0.1
+        },
+        "inputs": {
+          "prompt": "{{prompt_judge.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "output_arena_result",
+      "type": "output",
+      "position": { "x": 1500, "y": 300 },
+      "data": {
+        "label": "评测结果榜单",
+        "inputs": {
+          "judge_verdict": "{{llm_judge.response}}",
+          "responses": {
+            "model_a": "{{llm_model_a.response}}",
+            "model_b": "{{llm_model_b.response}}",
+            "model_c": "{{llm_model_c.response}}"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-a",
+      "source": "input_benchmark_prompt",
+      "target": "llm_model_a",
+      "sourceHandle": "user_prompt",
+      "targetHandle": "prompt"
+    },
+    {
+      "id": "edge-b",
+      "source": "input_benchmark_prompt",
+      "target": "llm_model_b",
+      "sourceHandle": "user_prompt",
+      "targetHandle": "prompt"
+    },
+    {
+      "id": "edge-c",
+      "source": "input_benchmark_prompt",
+      "target": "llm_model_c",
+      "sourceHandle": "user_prompt",
+      "targetHandle": "prompt"
+    },
+    {
+      "id": "edge-j1",
+      "source": "input_benchmark_prompt",
+      "target": "prompt_judge",
+      "sourceHandle": "output",
+      "targetHandle": "inputs"
+    },
+    {
+      "id": "edge-j2",
+      "source": "llm_model_a",
+      "target": "prompt_judge",
+      "sourceHandle": "response",
+      "targetHandle": "inputs"
+    },
+    {
+      "id": "edge-j3",
+      "source": "llm_model_b",
+      "target": "prompt_judge",
+      "sourceHandle": "response",
+      "targetHandle": "inputs"
+    },
+    {
+      "id": "edge-j4",
+      "source": "llm_model_c",
+      "target": "prompt_judge",
+      "sourceHandle": "response",
+      "targetHandle": "inputs"
+    },
+    {
+      "id": "edge-j5",
+      "source": "prompt_judge",
+      "target": "llm_judge",
+      "sourceHandle": "promptText",
+      "targetHandle": "prompt"
+    },
+    {
+      "id": "edge-j6",
+      "source": "llm_judge",
+      "target": "output_arena_result",
+      "sourceHandle": "response",
+      "targetHandle": "inputs"
+    }
+  ]
+}

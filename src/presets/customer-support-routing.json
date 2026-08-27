@@ -1,0 +1,117 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "id": "e4b1c782-95f3-42e1-a0f5-5d9c7e2b1001",
+    "name": "智能客服意图识别与工单路由 (Customer Support Routing)",
+    "description": "对用户进线咨询进行意图分析、情绪打分与紧急度判定，并自动路由至对应业务处置链路。",
+    "author": "AI Orchestrator Team",
+    "tags": ["Support", "Routing", "Classification", "NLP"],
+    "createdAt": "2026-08-28T00:00:00Z",
+    "updatedAt": "2026-08-28T00:00:00Z"
+  },
+  "viewport": {
+    "x": 100,
+    "y": 150,
+    "zoom": 1.0
+  },
+  "nodes": [
+    {
+      "id": "input_user_query",
+      "type": "input",
+      "position": { "x": 50, "y": 200 },
+      "data": {
+        "label": "用户工单入参",
+        "description": "接收用户咨询文本与元数据",
+        "inputs": {
+          "user_message": "我昨天购买的订单一直显示待发货，请问什么时候能送达？如果不快点我就要退款了！",
+          "user_tier": "VIP"
+        }
+      }
+    },
+    {
+      "id": "prompt_intent_classification",
+      "type": "prompt",
+      "position": { "x": 350, "y": 200 },
+      "data": {
+        "label": "意图分类提示词",
+        "description": "组装分类器 Prompt",
+        "inputs": {
+          "template": "你是一名资深工单分流专家。请分析以下用户问题：\n内容: {{input_user_query.user_message}}\n用户等级: {{input_user_query.user_tier}}\n\n请提取：1. 主意图 (物流催单/退换货/售前咨询) 2. 情绪等级 (1-5) 3. 是否需要人工介入 (true/false)。以 JSON 格式输出。"
+        }
+      }
+    },
+    {
+      "id": "llm_classifier",
+      "type": "llm",
+      "position": { "x": 680, "y": 200 },
+      "data": {
+        "label": "意图识别大模型",
+        "description": "执行结构化分类推理",
+        "config": {
+          "model": "gpt-4o-mini",
+          "temperature": 0.2
+        },
+        "inputs": {
+          "prompt": "{{prompt_intent_classification.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "code_router_logic",
+      "type": "code",
+      "position": { "x": 1000, "y": 200 },
+      "data": {
+        "label": "路由决策脚本",
+        "description": "解析 JSON 并分配优先级队列",
+        "config": {
+          "runtime": "javascript"
+        },
+        "inputs": {
+          "raw_response": "{{llm_classifier.response}}"
+        }
+      }
+    },
+    {
+      "id": "output_dispatch",
+      "type": "output",
+      "position": { "x": 1320, "y": 200 },
+      "data": {
+        "label": "最终工单路由分派",
+        "description": "输出派单结果与 SLA 标记",
+        "inputs": {
+          "dispatch_result": "{{code_router_logic.result}}"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "source": "input_user_query",
+      "target": "prompt_intent_classification",
+      "sourceHandle": "output",
+      "targetHandle": "inputs"
+    },
+    {
+      "id": "edge-2",
+      "source": "prompt_intent_classification",
+      "target": "llm_classifier",
+      "sourceHandle": "promptText",
+      "targetHandle": "prompt"
+    },
+    {
+      "id": "edge-3",
+      "source": "llm_classifier",
+      "target": "code_router_logic",
+      "sourceHandle": "response",
+      "targetHandle": "raw_response"
+    },
+    {
+      "id": "edge-4",
+      "source": "code_router_logic",
+      "target": "output_dispatch",
+      "sourceHandle": "result",
+      "targetHandle": "dispatch_result"
+    }
+  ]
+}

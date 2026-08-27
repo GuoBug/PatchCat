@@ -1,0 +1,221 @@
+openapi: 3.1.0
+info:
+  title: AI Prompt Flow Orchestrator Local Engine API
+  description: High-performance Local FastAPI RESTful & SSE API contract for AI Prompt Flow Orchestrator
+  version: 1.0.0
+  contact:
+    name: AI Orchestrator Architecture Team
+servers:
+  - url: http://localhost:8000
+    description: Local Development FastAPI Server
+
+paths:
+  /api/v1/health:
+    get:
+      summary: Health check and engine capabilities discovery
+      operationId: checkHealth
+      responses:
+        '200':
+          description: Server is online and ready
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, version, capabilities]
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  capabilities:
+                    type: array
+                    items:
+                      type: string
+                    example: ["python_sandbox", "sse_streaming", "ollama_bridge", "local_vector_db"]
+
+  /api/v1/workflow/validate:
+    post:
+      summary: Validate workflow graph topology and variable references
+      operationId: validateWorkflow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowGraph'
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [valid, errors, executionLayers]
+                properties:
+                  valid:
+                    type: boolean
+                  errors:
+                    type: array
+                    items:
+                      type: string
+                  executionLayers:
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        type: string
+
+  /api/v1/workflow/run:
+    post:
+      summary: Execute workflow with Server-Sent Events (SSE) streaming output
+      operationId: runWorkflowStream
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [graph]
+              properties:
+                graph:
+                  $ref: '#/components/schemas/WorkflowGraph'
+                inputs:
+                  type: object
+                  additionalProperties: true
+                options:
+                  type: object
+                  properties:
+                    maxConcurrency:
+                      type: integer
+                      default: 5
+                    timeoutSeconds:
+                      type: integer
+                      default: 120
+      responses:
+        '200':
+          description: SSE stream of execution events
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: Realtime stream of ExecutionEvent JSON objects
+
+  /api/v1/nodes/execute:
+    post:
+      summary: Execute a single node in isolation (for debugging)
+      operationId: executeSingleNode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [node, context]
+              properties:
+                node:
+                  $ref: '#/components/schemas/WorkflowNode'
+                context:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Node execution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeExecutionResult'
+
+  /api/v1/models:
+    get:
+      summary: List available local and remote models
+      operationId: listModels
+      responses:
+        '200':
+          description: Supported models
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id, name, provider, isLocal]
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    provider:
+                      type: string
+                    isLocal:
+                      type: boolean
+
+components:
+  schemas:
+    WorkflowGraph:
+      type: object
+      required: [nodes, edges]
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowEdge'
+
+    WorkflowNode:
+      type: object
+      required: [id, type, data]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [input, prompt, llm, code, router, output]
+        data:
+          type: object
+          required: [label]
+          properties:
+            label:
+              type: string
+            config:
+              type: object
+              additionalProperties: true
+            inputs:
+              type: object
+              additionalProperties: true
+
+    WorkflowEdge:
+      type: object
+      required: [id, source, target, sourceHandle, targetHandle]
+      properties:
+        id:
+          type: string
+        source:
+          type: string
+        target:
+          type: string
+        sourceHandle:
+          type: string
+        targetHandle:
+          type: string
+
+    NodeExecutionResult:
+      type: object
+      required: [nodeId, status, durationMs]
+      properties:
+        nodeId:
+          type: string
+        status:
+          type: string
+          enum: [success, error, skipped]
+        output:
+          type: object
+          additionalProperties: true
+        error:
+          type: string
+        durationMs:
+          type: number
