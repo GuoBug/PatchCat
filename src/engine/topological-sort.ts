@@ -3,7 +3,13 @@
  * @description DAG Topological Sorting & Cycle Detection using Kahn's Algorithm
  */
 
-import { WorkflowGraph, GraphValidationResult } from './types';
+import type { WorkflowNode, WorkflowEdge, GraphValidationResult } from './types';
+
+/** Minimal graph shape accepted by the sorting / validation functions. */
+interface GraphInput {
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+}
 
 export interface TopologicalSortResult {
   hasCycle: boolean;
@@ -15,13 +21,13 @@ export interface TopologicalSortResult {
 /**
  * Performs Kahn's algorithm on the workflow graph to produce execution layers and detect cycles.
  */
-export function topologicalSort(graph: WorkflowGraph): TopologicalSortResult {
+export function topologicalSort(graph: GraphInput): TopologicalSortResult {
   const nodeMap = new Map<string, typeof graph.nodes[0]>();
   const inDegree = new Map<string, number>();
   const adjacencyList = new Map<string, string[]>();
 
-  // Filter active nodes (not disabled)
-  const activeNodes = graph.nodes.filter(n => !n.data.disabled);
+  // All nodes participate in the topological sort
+  const activeNodes = graph.nodes;
   const activeNodeIds = new Set(activeNodes.map(n => n.id));
 
   for (const node of activeNodes) {
@@ -93,7 +99,7 @@ export function topologicalSort(graph: WorkflowGraph): TopologicalSortResult {
 /**
  * Validates the topological integrity of a given graph.
  */
-export function validateGraphTopology(graph: WorkflowGraph): GraphValidationResult {
+export function validateGraphTopology(graph: GraphInput): GraphValidationResult {
   const errors: string[] = [];
   const { hasCycle, cycleNodeIds, executionLayers } = topologicalSort(graph);
 

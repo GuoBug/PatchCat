@@ -48,11 +48,15 @@ export function extractVariableReferences(template: string): VariableReference[]
   const regex = new RegExp(VARIABLE_REGEX);
 
   while ((match = regex.exec(template)) !== null) {
+    const raw = match[0] ?? '';
+    const nodeId = match[1] ?? '';
+    const propertyPath = match[2] ?? '';
+    const fallbackRaw = match[3];
     references.push({
-      raw: match[0],
-      nodeId: match[1],
-      propertyPath: match[2],
-      defaultValue: match[3]?.trim().replace(/^['"]|['"]$/g, ''),
+      raw,
+      nodeId,
+      propertyPath,
+      defaultValue: fallbackRaw?.trim().replace(/^['"]|['"]$/g, ''),
     });
   }
 
