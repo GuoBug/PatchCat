@@ -56,3 +56,30 @@
   border: 1px solid #334155 !important;
   border-radius: 8px !important;
 }
+
+/* Reset React Flow default built-in node styling for 'input' and 'output' types */
+.react-flow__node {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  width: auto !important;
+  color: inherit !important;
+  text-align: left !important;
+  font-size: inherit !important;
+}
+
+.react-flow__node-default,
+.react-flow__node-input,
+.react-flow__node-output,
+.react-flow__node-group {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  width: auto !important;
+  color: inherit !important;
+  text-align: left !important;
+}

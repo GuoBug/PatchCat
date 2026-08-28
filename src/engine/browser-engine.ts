@@ -204,7 +204,7 @@ export class BrowserWorkflowEngine {
 
       switch (nodeType) {
         case 'input':
-          output = { output: resolvedInputs };
+          output = { ...resolvedInputs, output: resolvedInputs };
           break;
 
         case 'prompt': {

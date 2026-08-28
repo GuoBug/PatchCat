@@ -422,14 +422,14 @@ describe('Scenario Test: E-Commerce Multi-Agent Refund Arbitrator Pipeline', () 
     const nodes: WorkflowNode[] = [
       makeNode('input_order', 'input', { order_id: 'ORD-9527', amount: 299, reason: '商品破损且客服态度差' }),
       makeNode('prompt_builder', 'prompt', {
-        template: '审核工单 {{input_order.output.order_id}}，金额: ￥{{input_order.output.amount}}，原因: {{input_order.output.reason}}，豁免政策: {{input_order.output.vip_waiver | "无特殊豁免"}}',
+        template: '审核工单 {{input_order.order_id}}，金额: ￥{{input_order.amount}}，原因: {{input_order.reason}}，豁免政策: {{input_order.vip_waiver | "无特殊豁免"}}',
       }),
       makeNode('llm_policy', 'llm', { prompt: '{{prompt_builder.promptText}}' }, { model: 'gpt-4o', delayMs: 100 }),
       makeNode('llm_sentiment', 'llm', { prompt: '{{prompt_builder.promptText}}' }, { model: 'deepseek-r1', delayMs: 100 }),
       makeNode('code_arbitrator', 'code', {
         policy_result: '{{llm_policy.response}}',
         sentiment_result: '{{llm_sentiment.response}}',
-        amount: '{{input_order.output.amount}}',
+        amount: '{{input_order.amount}}',
       }),
       makeNode('output_report', 'output', { decision: '{{code_arbitrator.result}}' }),
     ];
