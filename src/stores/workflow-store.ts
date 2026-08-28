@@ -44,11 +44,11 @@ import type {
   WorkflowNodeData,
   WorkflowGraph,
   NodeExecutionResult,
-} from '../engine/types';
+} from '../engine/types.ts';
 import {
   getDefaultNodeConfig,
   getDefaultNodeLabel,
-} from '../engine/types';
+} from '../engine/types.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Store Interface
