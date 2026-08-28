@@ -409,3 +409,68 @@ describe('Workflow Zustand Store', () => {
     assert.equal(node?.data.executionResult, undefined);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. Real-World End-to-End Scenario: E-Commerce Multi-Agent Arbitration Pipeline
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('Scenario Test: E-Commerce Multi-Agent Refund Arbitrator Pipeline', () => {
+  it('should run the 6-node arbitration workflow with parallel LLM execution', async () => {
+    const engine = new BrowserWorkflowEngine();
+
+    // 1. Build 6 Nodes
+    const nodes: WorkflowNode[] = [
+      makeNode('input_order', 'input', { order_id: 'ORD-9527', amount: 299, reason: '商品破损且客服态度差' }),
+      makeNode('prompt_builder', 'prompt', {
+        template: '审核工单 {{input_order.output.order_id}}，金额: ￥{{input_order.output.amount}}，原因: {{input_order.output.reason}}，豁免政策: {{input_order.output.vip_waiver | "无特殊豁免"}}',
+      }),
+      makeNode('llm_policy', 'llm', { prompt: '{{prompt_builder.promptText}}' }, { model: 'gpt-4o', delayMs: 100 }),
+      makeNode('llm_sentiment', 'llm', { prompt: '{{prompt_builder.promptText}}' }, { model: 'deepseek-r1', delayMs: 100 }),
+      makeNode('code_arbitrator', 'code', {
+        policy_result: '{{llm_policy.response}}',
+        sentiment_result: '{{llm_sentiment.response}}',
+        amount: '{{input_order.output.amount}}',
+      }),
+      makeNode('output_report', 'output', { decision: '{{code_arbitrator.result}}' }),
+    ];
+
+    // 2. Build Directed Edges
+    const edges: WorkflowEdge[] = [
+      makeEdge('input_order', 'prompt_builder', 'output', 'inputs'),
+      makeEdge('prompt_builder', 'llm_policy', 'promptText', 'prompt'),
+      makeEdge('prompt_builder', 'llm_sentiment', 'promptText', 'prompt'),
+      makeEdge('llm_policy', 'code_arbitrator', 'response', 'inputs'),
+      makeEdge('llm_sentiment', 'code_arbitrator', 'response', 'inputs'),
+      makeEdge('code_arbitrator', 'output_report', 'result', 'final'),
+    ];
+
+    // 3. Assert Topological Layering
+    const sortResult = topologicalSort({ nodes, edges });
+    assert.equal(sortResult.hasCycle, false);
+    assert.equal(sortResult.executionLayers.length, 5);
+    assert.deepEqual(sortResult.executionLayers[2]?.sort(), ['llm_policy', 'llm_sentiment']);
+
+    // 4. Execute Full Pipeline
+    const startTime = Date.now();
+    const events = await collectEvents(engine.executeWorkflow({ nodes, edges }));
+    const totalDuration = Date.now() - startTime;
+
+    // 5. Verify Event Lifecycle
+    const finalEvent = events.find((e) => e.type === 'WORKFLOW_COMPLETE');
+    assert.ok(finalEvent, 'Workflow must complete with WORKFLOW_COMPLETE');
+
+    const outputs = (finalEvent.payload as any).outputs;
+    assert.ok(outputs.prompt_builder.promptText.includes('ORD-9527'));
+    assert.ok(outputs.prompt_builder.promptText.includes('无特殊豁免'));
+    assert.ok(outputs.llm_policy);
+    assert.ok(outputs.llm_sentiment);
+    assert.ok(outputs.code_arbitrator);
+    assert.ok(outputs.output_report);
+
+    // 6. Verify Parallel Timing (2x 100ms LLMs executed concurrently within ~100-160ms)
+    assert.ok(
+      totalDuration < 280,
+      `Expected parallel execution duration < 280ms, but took ${totalDuration}ms`,
+    );
+  });
+});
