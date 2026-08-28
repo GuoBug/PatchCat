@@ -5,7 +5,11 @@
  *   1. Topological Sort & Graph Validation (Kahn's Algorithm)
  *   2. Variable Resolver & Injection (Mustache syntax, Nested paths, Prototype Pollution)
  *   3. Execution Engine Runtime (Async event streams, Context passing, Layer concurrency)
- *   4. Exception & Abort Flows (Cycle interception, Node failure propagation, Cooperative cancellation)
+ *   4. Advanced Engineering Benchmarks & Chaos Tests:
+ *      - Concurrency Timing Validation: max(T_i) vs sum(T_i)
+ *      - In-flight Mid-Execution Cancellation via AbortSignal
+ *      - Single-node Rejection Cascading & Downstream Execution Halting
+ *      - Dangling / Orphan Edge Pre-flight Negative Assertions
  *   5. Zustand Store State Machine (Node CRUD, Status transitions, Preset loading)
  *
  *   Run with: npm test
@@ -34,6 +38,7 @@ function makeNode(
   id: string,
   type: 'input' | 'prompt' | 'llm' | 'code' | 'output' = 'llm',
   inputs: Record<string, unknown> = {},
+  config: Record<string, unknown> = {},
 ): WorkflowNode {
   return {
     id,
@@ -45,7 +50,7 @@ function makeNode(
       status: 'idle',
       inputs,
       outputs: {},
-      config: getDefaultNodeConfig(type),
+      config: { ...getDefaultNodeConfig(type), ...config },
     },
   };
 }
@@ -60,7 +65,6 @@ function makeEdge(source: string, target: string, sourceHandle = 'output', targe
   };
 }
 
-// Helper to collect all events from an AsyncIterable stream
 async function collectEvents(generator: AsyncIterable<ExecutionEvent>): Promise<ExecutionEvent[]> {
   const events: ExecutionEvent[] = [];
   for await (const event of generator) {
@@ -176,7 +180,7 @@ describe('Variable Resolver', () => {
 // 3. Execution Engine Runtime & Async Scheduling
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('Execution Runtime (Browser Engine Async Scheduling)', () => {
+describe('Execution Runtime (Async Scheduling & Propagation)', () => {
   it('should execute a multi-node pipeline and pass data across layers', async () => {
     const engine = new BrowserWorkflowEngine();
 
@@ -195,7 +199,6 @@ describe('Execution Runtime (Browser Engine Async Scheduling)', () => {
 
     const events = await collectEvents(engine.executeWorkflow({ nodes, edges }));
 
-    // Verify Event Sequence
     assert.equal(events[0]?.type, 'WORKFLOW_START');
     assert.equal((events[0]?.payload as any).totalNodes, 4);
 
@@ -208,7 +211,6 @@ describe('Execution Runtime (Browser Engine Async Scheduling)', () => {
     const finalEvent = events[events.length - 1];
     assert.equal(finalEvent?.type, 'WORKFLOW_COMPLETE');
 
-    // Verify context output propagation
     const outputs = (finalEvent?.payload as any).outputs;
     assert.ok(outputs.in_1);
     assert.ok(outputs.pr_1);
@@ -236,45 +238,122 @@ describe('Execution Runtime (Browser Engine Async Scheduling)', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 4. Execution Engine Exception & Abort Flows
+// 4. Advanced Engineering Benchmarks & Chaos Tests
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('Execution Runtime (Exception & Abort Flows)', () => {
-  it('should immediately yield WORKFLOW_ERROR when graph topology validation fails (cycle detected)', async () => {
+describe('Advanced Engineering Benchmarks & Edge-Case Verification', () => {
+  it('1. Concurrency Timing: parallel layer execution time must be ~max(T_i) rather than sum(T_i)', async () => {
     const engine = new BrowserWorkflowEngine();
 
-    // Cyclic graph
-    const nodes = [makeNode('A', 'llm'), makeNode('B', 'llm')];
-    const edges = [makeEdge('A', 'B'), makeEdge('B', 'A')];
+    // Node A feeds into B (100ms) and C (100ms) concurrently
+    const nodes: WorkflowNode[] = [
+      makeNode('A', 'input', { data: 'start' }),
+      makeNode('B', 'llm', {}, { delayMs: 100 }),
+      makeNode('C', 'llm', {}, { delayMs: 100 }),
+    ];
+    const edges: WorkflowEdge[] = [
+      makeEdge('A', 'B'),
+      makeEdge('A', 'C'),
+    ];
 
+    const wallClockStart = Date.now();
     const events = await collectEvents(engine.executeWorkflow({ nodes, edges }));
+    const wallClockDuration = Date.now() - wallClockStart;
 
-    assert.equal(events.length, 1);
-    assert.equal(events[0]?.type, 'WORKFLOW_ERROR');
-    assert.ok((events[0]?.payload as any).error.includes('Graph validation failed'));
+    const finalEvent = events.find((e) => e.type === 'WORKFLOW_COMPLETE');
+    assert.ok(finalEvent, 'Workflow should complete successfully');
+
+    // Sequential sum would be >= 200ms. Parallel execution should be < 170ms
+    assert.ok(
+      wallClockDuration < 175,
+      `Expected parallel execution (~max(T_i) < 175ms), but took ${wallClockDuration}ms (sequential would be >= 200ms)`,
+    );
   });
 
-  it('should stop execution when cooperative abort signal is triggered', async () => {
+  it('2. In-flight Abort: should interrupt waiting Promise.all mid-execution promptly', async () => {
     const engine = new BrowserWorkflowEngine();
     const abortController = new AbortController();
 
-    const nodes = [
-      makeNode('A', 'llm'),
-      makeNode('B', 'llm'),
-      makeNode('C', 'llm'),
+    // Nodes with 300ms latency
+    const nodes: WorkflowNode[] = [
+      makeNode('A', 'llm', {}, { delayMs: 300 }),
+      makeNode('B', 'llm', {}, { delayMs: 300 }),
     ];
-    const edges = [makeEdge('A', 'B'), makeEdge('B', 'C')];
+    const edges: WorkflowEdge[] = [];
 
-    // Abort before/during execution
-    abortController.abort();
+    // Trigger abort after 50ms (well before 300ms finishes)
+    setTimeout(() => {
+      abortController.abort();
+    }, 50);
 
+    const abortStart = Date.now();
     const events = await collectEvents(
       engine.executeWorkflow({ nodes, edges }, { signal: abortController.signal }),
     );
+    const abortDuration = Date.now() - abortStart;
 
     const errorEvent = events.find((e) => e.type === 'WORKFLOW_ERROR');
-    assert.ok(errorEvent, 'Should produce WORKFLOW_ERROR upon abort');
+    assert.ok(errorEvent, 'Should yield WORKFLOW_ERROR upon in-flight cancellation');
     assert.ok((errorEvent.payload as any).error.includes('aborted'));
+
+    // Verify it aborted promptly rather than waiting for the full 300ms
+    assert.ok(
+      abortDuration < 150,
+      `Expected immediate in-flight abort (< 150ms), but took ${abortDuration}ms`,
+    );
+  });
+
+  it('3. Error Bubbling: single node rejection must halt downstream layers and emit NODE_ERROR', async () => {
+    const engine = new BrowserWorkflowEngine();
+
+    // Pipeline: A (success) -> B (throws error) -> C (downstream must NOT execute)
+    const nodes: WorkflowNode[] = [
+      makeNode('A', 'input', { val: '1' }),
+      makeNode('B', 'code', {}, { throwError: true, errorMessage: 'SyntaxError: Division by zero in Code Node' }),
+      makeNode('C', 'output', { from: '{{B.result}}' }),
+    ];
+    const edges: WorkflowEdge[] = [
+      makeEdge('A', 'B'),
+      makeEdge('B', 'C'),
+    ];
+
+    const events = await collectEvents(engine.executeWorkflow({ nodes, edges }));
+
+    // 1. A should succeed
+    const completeA = events.find((e) => e.type === 'NODE_COMPLETE' && (e.payload as any).nodeId === 'A');
+    assert.ok(completeA, 'Node A should complete before Node B fails');
+
+    // 2. B should emit NODE_ERROR
+    const nodeErrorB = events.find((e) => e.type === 'NODE_ERROR' && (e.payload as any).nodeId === 'B');
+    assert.ok(nodeErrorB, 'Node B should emit NODE_ERROR');
+    assert.ok((nodeErrorB.payload as any).error.includes('Division by zero'));
+
+    // 3. C must NEVER be executed
+    const completeC = events.find((e) => e.type === 'NODE_COMPLETE' && (e.payload as any).nodeId === 'C');
+    assert.equal(completeC, undefined, 'Downstream Node C must NOT execute when upstream Node B fails');
+
+    // 4. Global WORKFLOW_ERROR must be emitted
+    const workflowError = events.find((e) => e.type === 'WORKFLOW_ERROR');
+    assert.ok(workflowError, 'Workflow should terminate with WORKFLOW_ERROR');
+  });
+
+  it('4. Dangling / Orphan Edge Negative Assertion: explicit invalid edge ID must be rejected at pre-flight', async () => {
+    const engine = new BrowserWorkflowEngine();
+
+    // Edge points to non-existent target node
+    const nodes: WorkflowNode[] = [makeNode('A', 'input')];
+    const edges: WorkflowEdge[] = [makeEdge('A', 'NON_EXISTENT_GHOST_NODE')];
+
+    // Static validation check
+    const validation = engine.validateGraph({ nodes, edges });
+    assert.equal(validation.valid, false);
+    assert.ok(validation.errors.some((e) => e.includes('NON_EXISTENT_GHOST_NODE')));
+
+    // Runtime execution check: must yield WORKFLOW_ERROR before executing any nodes
+    const events = await collectEvents(engine.executeWorkflow({ nodes, edges }));
+    assert.equal(events.length, 1);
+    assert.equal(events[0]?.type, 'WORKFLOW_ERROR');
+    assert.ok((events[0]?.payload as any).error.includes('Graph validation failed'));
   });
 });
 

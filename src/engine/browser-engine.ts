@@ -176,16 +176,29 @@ export class BrowserWorkflowEngine {
   private async executeNodeInternal(
     node: WorkflowNode,
     context: Record<string, Record<string, unknown>>,
-    _signal: AbortSignal,
+    signal: AbortSignal,
   ): Promise<InternalNodeResult> {
     const start = Date.now();
 
     try {
+      if (signal.aborted) {
+        throw new Error('Workflow execution aborted by user.');
+      }
+
+      // Check for explicitly simulated node failure for error bubbling tests
+      if (node.data.config?.['simulateError'] || node.data.config?.['throwError']) {
+        const errorMsg = String(node.data.config?.['errorMessage'] ?? `Node ${node.id} execution failed intentionally.`);
+        throw new Error(errorMsg);
+      }
+
       const resolvedInputs = resolveObjectVariables(
         node.data.inputs as Record<string, string>,
         context,
       );
       const nodeType: NodeType = node.data.type;
+      const customDelay = typeof node.data.config?.['delayMs'] === 'number'
+        ? (node.data.config['delayMs'] as number)
+        : null;
 
       let output: Record<string, unknown> = {};
 
@@ -206,8 +219,20 @@ export class BrowserWorkflowEngine {
         }
 
         case 'llm': {
-          // Mock delay simulating network + inference latency
-          await new Promise((r) => setTimeout(r, 500 + Math.random() * 300));
+          const delayMs = customDelay ?? (100 + Math.random() * 50);
+          // In-flight abortable sleep
+          await new Promise<void>((resolve, reject) => {
+            if (signal.aborted) {
+              return reject(new Error('Workflow execution aborted by user.'));
+            }
+            const timer = setTimeout(() => resolve(), delayMs);
+            const onAbort = () => {
+              clearTimeout(timer);
+              reject(new Error('Workflow execution aborted by user.'));
+            };
+            signal.addEventListener('abort', onAbort, { once: true });
+          });
+
           output = {
             response: `[Mock] Response for "${node.data.label}" — prompt: ${
               JSON.stringify(resolvedInputs).slice(0, 80)
@@ -218,12 +243,20 @@ export class BrowserWorkflowEngine {
           break;
         }
 
-        case 'code':
+        case 'code': {
+          if (customDelay) {
+            await new Promise<void>((resolve, reject) => {
+              if (signal.aborted) return reject(new Error('Workflow execution aborted by user.'));
+              const timer = setTimeout(() => resolve(), customDelay);
+              signal.addEventListener('abort', () => { clearTimeout(timer); reject(new Error('Workflow execution aborted by user.')); }, { once: true });
+            });
+          }
           output = {
             result: `Processed ${Object.keys(resolvedInputs).length} input(s)`,
             stdout: '',
           };
           break;
+        }
 
         case 'output':
           output = {

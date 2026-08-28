@@ -63,7 +63,7 @@ The **AI Prompt Flow Orchestrator** project foundation, core type system, execut
 
 | Command | Purpose | Expected Output |
 | :--- | :--- | :--- |
-| `npm test` | Runs unit test suite for topological sort and variable resolver | `8 passed, 0 failed` |
+| `npm test` | Runs complete 18 unit & engineering benchmark tests | `18 passed, 0 failed` across 5 suites |
 | `npm run demo` | Executes interactive terminal DAG execution simulation | Step-by-step layer logging and workflow completion |
 | `npm run typecheck` | Strict TypeScript compilation check | Zero errors (`tsc --noEmit`) |
 
