@@ -79,6 +79,11 @@ export interface WorkflowStoreState {
   /** Handles a new connection drawn between two handles on the canvas. */
   onConnect: (connection: Connection) => void;
 
+  // ── Node & Edge Setters ──────────────────────────────────────────────────
+  setNodes: (nodes: WorkflowNode[]) => void;
+  setEdges: (edges: WorkflowEdge[]) => void;
+  deleteNode: (nodeId: string) => void;
+
   // ── Node CRUD ────────────────────────────────────────────────────────────
   /**
    * Creates a new node of the given `type` at the specified canvas
@@ -187,6 +192,28 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
           },
           state.edges,
         ) as WorkflowEdge[];
+      });
+    },
+
+    setNodes: (nodes) => {
+      set((state) => {
+        state.nodes = nodes;
+      });
+    },
+
+    setEdges: (edges) => {
+      set((state) => {
+        state.edges = edges;
+      });
+    },
+
+    deleteNode: (nodeId) => {
+      set((state) => {
+        state.nodes = state.nodes.filter((n) => n.id !== nodeId);
+        state.edges = state.edges.filter((e) => e.source !== nodeId && e.target !== nodeId);
+        if (state.selectedNodeId === nodeId) {
+          state.selectedNodeId = null;
+        }
       });
     },
 

@@ -3,9 +3,5 @@
  * @description Workflow Canvas Core Components Barrel Export
  */
 
-export interface CanvasProps {
-  readonly?: boolean;
-  className?: string;
-}
-
+export { WorkflowCanvas } from './WorkflowCanvas';
 export const CANVAS_COMPONENT_VERSION = '1.0.0';

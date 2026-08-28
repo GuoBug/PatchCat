@@ -268,10 +268,12 @@ export interface ExecutionEventPayloadMap {
  * }
  * ```
  */
-export interface ExecutionEvent<T extends ExecutionEventType = ExecutionEventType> {
-  type: T;
-  payload: ExecutionEventPayloadMap[T];
-}
+export type ExecutionEvent = {
+  [K in ExecutionEventType]: {
+    type: K;
+    payload: ExecutionEventPayloadMap[K];
+  };
+}[ExecutionEventType];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 7. Graph Validation
