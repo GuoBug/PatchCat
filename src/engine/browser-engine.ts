@@ -24,8 +24,8 @@ import type {
   EngineMode,
   NodeType,
 } from './types';
-import { topologicalSort, validateGraphTopology } from './topological-sort';
-import { resolveObjectVariables } from './variable-resolver';
+import { topologicalSort, validateGraphTopology } from './topological-sort.ts';
+import { resolveObjectVariables } from './variable-resolver.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Internal result type (engine-private, not exported)
