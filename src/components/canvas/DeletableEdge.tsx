@@ -31,6 +31,16 @@ export const DeletableEdge: React.FC<EdgeProps> = ({
 
   const [isHovered, setIsHovered] = useState(false);
   const deleteEdge = useWorkflowStore((s) => s.deleteEdge);
+  const theme = useWorkflowStore((s) => s.theme);
+
+  const isDark = theme === 'dark';
+  const defaultStroke = isDark ? '#475569' : '#94A3B8';
+
+  const mergedStyle: React.CSSProperties = {
+    stroke: defaultStroke,
+    strokeWidth: 2,
+    ...style,
+  };
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -43,7 +53,7 @@ export const DeletableEdge: React.FC<EdgeProps> = ({
         id={id}
         path={edgePath}
         markerEnd={markerEnd}
-        style={style}
+        style={mergedStyle}
         interactionWidth={20}
       />
       {/* Invisible wider interaction stroke to capture hover easily */}

@@ -116,68 +116,14 @@
     }
   ],
   "edges": [
-    {
-      "id": "edge-a",
-      "source": "input_benchmark_prompt",
-      "target": "llm_model_a",
-      "sourceHandle": "output",
-      "targetHandle": "prompt"
-    },
-    {
-      "id": "edge-b",
-      "source": "input_benchmark_prompt",
-      "target": "llm_model_b",
-      "sourceHandle": "output",
-      "targetHandle": "prompt"
-    },
-    {
-      "id": "edge-c",
-      "source": "input_benchmark_prompt",
-      "target": "llm_model_c",
-      "sourceHandle": "output",
-      "targetHandle": "prompt"
-    },
-    {
-      "id": "edge-j1",
-      "source": "input_benchmark_prompt",
-      "target": "prompt_judge",
-      "sourceHandle": "output",
-      "targetHandle": "inputs"
-    },
-    {
-      "id": "edge-j2",
-      "source": "llm_model_a",
-      "target": "prompt_judge",
-      "sourceHandle": "response",
-      "targetHandle": "inputs"
-    },
-    {
-      "id": "edge-j3",
-      "source": "llm_model_b",
-      "target": "prompt_judge",
-      "sourceHandle": "response",
-      "targetHandle": "inputs"
-    },
-    {
-      "id": "edge-j4",
-      "source": "llm_model_c",
-      "target": "prompt_judge",
-      "sourceHandle": "response",
-      "targetHandle": "inputs"
-    },
-    {
-      "id": "edge-j5",
-      "source": "prompt_judge",
-      "target": "llm_judge",
-      "sourceHandle": "promptText",
-      "targetHandle": "prompt"
-    },
-    {
-      "id": "edge-j6",
-      "source": "llm_judge",
-      "target": "output_arena_result",
-      "sourceHandle": "response",
-      "targetHandle": "final"
-    }
+    { "id": "edge-a", "source": "input_benchmark_prompt", "target": "llm_model_a" },
+    { "id": "edge-b", "source": "input_benchmark_prompt", "target": "llm_model_b" },
+    { "id": "edge-c", "source": "input_benchmark_prompt", "target": "llm_model_c" },
+    { "id": "edge-j1", "source": "input_benchmark_prompt", "target": "prompt_judge" },
+    { "id": "edge-j2", "source": "llm_model_a", "target": "prompt_judge" },
+    { "id": "edge-j3", "source": "llm_model_b", "target": "prompt_judge" },
+    { "id": "edge-j4", "source": "llm_model_c", "target": "prompt_judge" },
+    { "id": "edge-j5", "source": "prompt_judge", "target": "llm_judge" },
+    { "id": "edge-j6", "source": "llm_judge", "target": "output_arena_result" }
   ]
 }

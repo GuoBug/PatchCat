@@ -174,10 +174,10 @@ export type WorkflowNode = Node<WorkflowNodeData, NodeType>;
  * specific output port on the source and an input port on the target.
  */
 export type WorkflowEdge = Edge & {
-  /** ID of the output port on the source node. */
-  sourceHandle: string;
-  /** ID of the input port on the target node. */
-  targetHandle: string;
+  /** ID of the output port on the source node, or undefined/null for default port. */
+  sourceHandle?: string | null;
+  /** ID of the input port on the target node, or undefined/null for default port. */
+  targetHandle?: string | null;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

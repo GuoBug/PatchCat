@@ -338,7 +338,11 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
             config: node.data?.config || getDefaultNodeConfig(node.type),
           },
         }));
-        state.edges = graph.edges || [];
+        state.edges = (graph.edges || []).map((e) => ({
+          ...e,
+          type: 'default',
+          animated: false,
+        }));
         state.selectedNodeId = null;
         state.isExecuting = false;
         state.globalInputs = {};

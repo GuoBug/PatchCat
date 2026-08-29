@@ -88,30 +88,22 @@
     {
       "id": "edge-1",
       "source": "input_user_query",
-      "target": "prompt_intent_classification",
-      "sourceHandle": "output",
-      "targetHandle": "inputs"
+      "target": "prompt_intent_classification"
     },
     {
       "id": "edge-2",
       "source": "prompt_intent_classification",
-      "target": "llm_classifier",
-      "sourceHandle": "promptText",
-      "targetHandle": "prompt"
+      "target": "llm_classifier"
     },
     {
       "id": "edge-3",
       "source": "llm_classifier",
-      "target": "code_router_logic",
-      "sourceHandle": "response",
-      "targetHandle": "inputs"
+      "target": "code_router_logic"
     },
     {
       "id": "edge-4",
       "source": "code_router_logic",
-      "target": "output_dispatch",
-      "sourceHandle": "result",
-      "targetHandle": "final"
+      "target": "output_dispatch"
     }
   ]
 }
