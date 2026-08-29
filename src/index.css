@@ -21,39 +21,74 @@
 }
 
 ::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.05);
+}
+
+.dark ::-webkit-scrollbar-track {
   background: rgba(15, 23, 42, 0.6);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(51, 65, 85, 0.8);
+  background: rgba(148, 163, 184, 0.5);
   border-radius: 3px;
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(51, 65, 85, 0.8);
+}
+
 ::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.8);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
   background: rgba(71, 85, 105, 1);
 }
 
-/* React Flow custom dark theme override */
-.react-flow__background {
+/* React Flow custom light & dark theme adaptive styles */
+.dark .react-flow__background {
   background-color: #0B0F17 !important;
 }
 
-.react-flow__controls button {
+:not(.dark) .react-flow__background {
+  background-color: #F8FAFC !important;
+}
+
+.dark .react-flow__controls button {
   background-color: #1E293B !important;
   color: #94A3B8 !important;
   border-bottom: 1px solid #334155 !important;
   fill: #94A3B8 !important;
 }
 
-.react-flow__controls button:hover {
+.dark .react-flow__controls button:hover {
   background-color: #334155 !important;
   color: #F8FAFC !important;
   fill: #F8FAFC !important;
 }
 
-.react-flow__minimap {
+:not(.dark) .react-flow__controls button {
+  background-color: #FFFFFF !important;
+  color: #64748B !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+  fill: #64748B !important;
+}
+
+:not(.dark) .react-flow__controls button:hover {
+  background-color: #F1F5F9 !important;
+  color: #0F172A !important;
+  fill: #0F172A !important;
+}
+
+.dark .react-flow__minimap {
   background-color: #0F172A !important;
   border: 1px solid #334155 !important;
+  border-radius: 8px !important;
+}
+
+:not(.dark) .react-flow__minimap {
+  background-color: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
   border-radius: 8px !important;
 }
 

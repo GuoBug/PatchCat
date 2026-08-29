@@ -24,6 +24,7 @@ export const WorkflowCanvas: React.FC = () => {
   const onEdgesChange = useWorkflowStore((s) => s.onEdgesChange);
   const onConnect = useWorkflowStore((s) => s.onConnect);
   const setSelectedNodeId = useWorkflowStore((s) => s.setSelectedNodeId);
+  const theme = useWorkflowStore((s) => s.theme);
 
   const edgeTypes = useMemo(
     () => ({
@@ -50,20 +51,22 @@ export const WorkflowCanvas: React.FC = () => {
       case 'input':
         return '#10B981';
       case 'prompt':
-        return '#A855F7';
+        return '#8B5CF6';
       case 'llm':
-        return '#0284C7';
+        return '#3B82F6';
       case 'code':
         return '#F59E0B';
       case 'output':
-        return '#EC4899';
+        return '#F43F5E';
       default:
         return '#64748B';
     }
   }, []);
 
+  const isDark = theme === 'dark';
+
   return (
-    <div className="w-full h-full relative bg-[#0B0F17]">
+    <div className={`w-full h-full relative transition-colors duration-200 ${isDark ? 'bg-[#0B0F17]' : 'bg-slate-50'}`}>
       <ReactFlow<WorkflowNode, WorkflowEdge>
         nodes={nodes}
         edges={edges}
@@ -81,7 +84,7 @@ export const WorkflowCanvas: React.FC = () => {
         defaultEdgeOptions={{
           type: 'default',
           animated: false,
-          style: { stroke: '#475569', strokeWidth: 2 },
+          style: { stroke: isDark ? '#475569' : '#CBD5E1', strokeWidth: 2 },
         }}
         minZoom={0.2}
         maxZoom={2.5}
@@ -89,18 +92,18 @@ export const WorkflowCanvas: React.FC = () => {
       >
         <Background
           variant={BackgroundVariant.Dots}
-          gap={18}
-          size={1.2}
-          color="#334155"
+          gap={isDark ? 18 : 20}
+          size={isDark ? 1.2 : 1.25}
+          color={isDark ? '#334155' : '#CBD5E1'}
         />
-        <Controls className="!bg-slate-900 !border !border-slate-800 !rounded-lg !shadow-xl" />
+        <Controls className={isDark ? '!bg-slate-900 !border-slate-800 !shadow-xl' : '!bg-white !border-slate-200 !shadow-sm'} />
         <MiniMap
           nodeColor={nodeColor}
           nodeStrokeWidth={2}
           zoomable
           pannable
-          className="!bg-slate-950/90 !border !border-slate-800 !rounded-xl !shadow-2xl"
-          maskColor="rgba(11, 15, 23, 0.75)"
+          className={isDark ? '!bg-slate-950/90 !border-slate-800 !rounded-xl !shadow-2xl' : '!bg-white/95 !border-slate-200 !rounded-xl !shadow-md'}
+          maskColor={isDark ? 'rgba(11, 15, 23, 0.75)' : 'rgba(248, 250, 252, 0.75)'}
         />
       </ReactFlow>
     </div>

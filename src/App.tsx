@@ -8,6 +8,16 @@ import type { WorkflowGraph } from './engine/types.ts';
 
 export const App: React.FC = () => {
   const loadPreset = useWorkflowStore((s) => s.loadPreset);
+  const theme = useWorkflowStore((s) => s.theme);
+
+  // Sync theme class to <html> element
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   // Load default preset on initial mount
   useEffect(() => {
@@ -16,7 +26,13 @@ export const App: React.FC = () => {
 
   return (
     <ReactFlowProvider>
-      <div className="w-screen h-screen flex flex-col bg-[#0B0F17] overflow-hidden text-slate-100 font-sans">
+      <div
+        className={`w-screen h-screen flex flex-col overflow-hidden font-sans transition-colors duration-200 ${
+          theme === 'dark'
+            ? 'dark bg-[#0B0F17] text-slate-100'
+            : 'bg-slate-50 text-slate-900'
+        }`}
+      >
         {/* Top Navigation & Controls */}
         <ControlHeader />
 

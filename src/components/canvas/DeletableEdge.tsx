@@ -72,7 +72,7 @@ export const DeletableEdge: React.FC<EdgeProps> = ({
             <button
               onClick={handleDelete}
               title="切断连线 (Delete Connection)"
-              className="w-5 h-5 rounded-full bg-slate-900/95 border border-slate-700 hover:border-rose-500 hover:bg-rose-500/25 text-slate-400 hover:text-rose-300 flex items-center justify-center shadow-xl transition-all transform hover:scale-125 active:scale-95 group animate-in fade-in zoom-in duration-150"
+              className="w-5 h-5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-rose-400 dark:hover:border-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/25 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-300 flex items-center justify-center shadow-md dark:shadow-xl transition-all transform hover:scale-125 active:scale-95 group animate-in fade-in zoom-in duration-150"
             >
               <X className="w-3 h-3 group-hover:stroke-[2.5]" />
             </button>

@@ -62,6 +62,10 @@ export interface WorkflowStoreState {
   edges: WorkflowEdge[];
   /** ID of the node whose property panel is currently open, or `null`. */
   selectedNodeId: string | null;
+  /** UI Theme mode ('light' for Modern Slate/Indigo or 'dark' for Cyberpunk/Dark Slate). */
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
+  toggleTheme: () => void;
 
   // ── Execution State ──────────────────────────────────────────────────────
   /** Current execution engine mode (mock / browser-BYOK / local server). */
@@ -165,6 +169,26 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
     nodes: [],
     edges: [],
     selectedNodeId: null,
+    theme: (typeof window !== 'undefined' && localStorage.getItem('patchcat-theme') === 'dark') ? 'dark' : 'light',
+
+    setTheme: (theme) => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('patchcat-theme', theme);
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+      set((state) => {
+        state.theme = theme;
+      });
+    },
+
+    toggleTheme: () => {
+      const nextTheme = get().theme === 'dark' ? 'light' : 'dark';
+      get().setTheme(nextTheme);
+    },
 
     engineMode: 'mock' as EngineMode,
     isExecuting: false,

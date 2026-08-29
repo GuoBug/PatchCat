@@ -23,13 +23,13 @@ export const PromptNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, s
     >
       <div className="space-y-1.5">
         {/* Extracted Slots Badges (Single Row Only) */}
-        <div className="text-[10px] uppercase font-mono text-slate-400 font-semibold flex items-center justify-between">
+        <div className="text-[10px] uppercase font-mono text-slate-500 dark:text-slate-400 font-semibold flex items-center justify-between">
           <span>Template Slots</span>
-          <span className="text-purple-400 font-normal">{variables.length} slot(s)</span>
+          <span className="text-violet-600 dark:text-purple-400 font-normal">{variables.length} slot(s)</span>
         </div>
 
         {variables.length === 0 ? (
-          <div className="p-2 rounded bg-slate-950/60 border border-slate-800/80 font-mono text-[10px] text-slate-500 text-center italic">
+          <div className="p-2 rounded bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/80 font-mono text-[10px] text-slate-400 dark:text-slate-500 text-center italic">
             No dynamic slots
           </div>
         ) : (
@@ -37,7 +37,7 @@ export const PromptNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, s
             {variables.map((v, i) => (
               <span
                 key={i}
-                className="shrink-0 px-2 py-1 rounded-lg bg-purple-500/15 border border-purple-500/30 text-purple-300 font-mono text-[10px] truncate max-w-[160px] shadow-sm"
+                className="shrink-0 px-2 py-1 rounded-lg bg-violet-50 dark:bg-purple-500/15 border border-violet-200 dark:border-purple-500/30 text-violet-800 dark:text-purple-300 font-mono text-[10px] truncate max-w-[160px] shadow-xs"
                 title={v.raw}
               >
                 {v.nodeId}.{v.propertyPath}
