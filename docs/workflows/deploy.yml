@@ -1,4 +1,4 @@
-name: Deploy AI Prompt Flow Orchestrator to GitHub Pages
+name: Deploy PatchCat to GitHub Pages
 
 on:
   push:
@@ -36,7 +36,7 @@ jobs:
       - name: Build Static Site
         run: npm run build
         env:
-          VITE_BASE_PATH: '/ai-prompt-orchestrator/'
+          VITE_BASE_PATH: '/PatchCat/'
 
       - name: Upload GitHub Pages Artifact
         uses: actions/upload-pages-artifact@v3

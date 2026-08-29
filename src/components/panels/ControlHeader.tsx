@@ -8,12 +8,12 @@ import {
   Plus,
   ChevronDown,
   Activity,
-  FileCode2,
-  Workflow
+  FileCode2
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import { BrowserWorkflowEngine } from '../../engine/browser-engine.ts';
 import type { NodeType, WorkflowGraph } from '../../engine/types.ts';
+import { CatLogo } from '../icons/CatLogo.tsx';
 
 // Import presets JSON
 import customerSupportPreset from '../../presets/customer-support-routing.json';
@@ -173,18 +173,18 @@ export const ControlHeader: React.FC = () => {
       {/* Left: Brand & Graph Stats */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 text-white shadow-md shadow-sky-500/20">
-            <Workflow className="w-4 h-4" />
+          <div className="p-1 rounded-xl bg-white text-black shadow-md shadow-white/10 flex items-center justify-center border border-white/20">
+            <CatLogo size={22} color="#000000" />
           </div>
           <div>
             <h1 className="text-xs font-bold tracking-wider uppercase text-slate-100 flex items-center gap-1.5">
-              <span>AI Prompt Flow</span>
+              <span>PatchCat</span>
               <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-400 border border-sky-500/30">
                 v2.0
               </span>
             </h1>
             <span className="text-[10px] text-slate-400 font-mono">
-              DAG Orchestrator
+              Precision prompts. Seamless workflows.
             </span>
           </div>
         </div>

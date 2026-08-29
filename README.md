@@ -1,9 +1,13 @@
-# 🚀 AI Prompt Flow Orchestrator
+# 🐱 PatchCat
+
+> **Precision prompts. Seamless workflows.**  
+> *The open-source prompt orchestration engine designed for AI builders.*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![React Flow](https://img.shields.io/badge/React_Flow-v12%2B-ff0072?logo=react)](https://reactflow.dev/)
-[![GitHub Actions](https://img.shields.io/badge/CI%2FCD-GitHub_Pages-green?logo=githubactions)](https://github.com/)
+[![GitHub Actions](https://img.shields.io/badge/CI%2FCD-GitHub_Pages-green?logo=githubactions)](https://github.com/gu0bug/PatchCat/actions)
+[![GitHub Repository](https://img.shields.io/badge/GitHub-gu0bug%2FPatchCat-black?logo=github)](https://github.com/gu0bug/PatchCat)
 
 [English](#english) | [中文说明](#中文说明)
 
@@ -12,7 +16,8 @@
 <a name="english"></a>
 ## 📖 English Overview
 
-**AI Prompt Flow Orchestrator** is an industrial-grade, highly extensible visual DAG (Directed Acyclic Graph) workflow orchestration system designed for LLM applications. It features a seamless dual-engine architecture:
+**PatchCat** is the open-source prompt orchestration engine designed for AI builders, delivering **precision prompts and seamless workflows**. It provides an industrial-grade visual DAG (Directed Acyclic Graph) workflow orchestration system for LLM applications with a seamless dual-engine architecture:
+
 1. **Client-Only Mode**: Zero-backend static web application deployable directly on GitHub Pages with BYOK (Bring Your Own Key) and built-in Mock engine.
 2. **Local-Server Mode**: High-performance local FastAPI backend with Python execution sandboxing, Ollama/vLLM local model bridge, and SSE streaming pipeline.
 
@@ -25,6 +30,17 @@
   - Customer Support Routing (Intent Classification & Ticket Dispatch)
   - Self-Reflective Research Report Generator with Critic
   - Multi-LLM Arena & Neutral Judge Benchmark
+
+### ⚡ Quick Start
+```bash
+# Clone the repository
+git clone https://github.com/gu0bug/PatchCat.git
+cd PatchCat
+
+# Install dependencies & run development server
+npm install
+npm run dev
+```
 
 ### 📂 Directory Structure
 ```
@@ -46,7 +62,9 @@
 <a name="中文说明"></a>
 ## 🇨🇳 中文说明
 
-**AI 提示流编排器 (AI Prompt Flow Orchestrator)** 是一款面向大语言模型应用的高标准、可扩展的可视化 DAG 工作流编排系统。系统具备独特的双引擎架构：
+**PatchCat** 是专为 AI 开发者与探索者打造的开源提示词编排引擎（**Precision prompts. Seamless workflows.**），致力于让提示词编排更精准，让智能体工作流更丝滑。
+
+系统具备独特的双引擎架构：
 1. **纯前端模式 (Client-Only)**：零后端依赖，直接静态部署于 GitHub Pages，支持 BYOK (自带 Key) 与内置 Mock 离线体验。
 2. **本地后端模式 (Local-Server)**：基于 FastAPI 的高性能本地引擎，提供 Python 代码沙箱、Ollama 本地大模型桥接与 SSE 流式事件推送。
 

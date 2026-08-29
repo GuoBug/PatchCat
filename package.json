@@ -1,9 +1,17 @@
 {
-  "name": "ai-prompt-orchestrator",
+  "name": "patchcat",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "An industrial-grade visual DAG workflow orchestrator for LLM applications with seamless Client-Only and Local-Server execution.",
+  "description": "PatchCat: The open-source prompt orchestration engine designed for AI builders. Precision prompts. Seamless workflows.",
+  "homepage": "https://gu0bug.github.io/PatchCat/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gu0bug/PatchCat.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gu0bug/PatchCat/issues"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
