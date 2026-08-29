@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   X, 
   Trash2, 
@@ -24,6 +24,80 @@ const LLM_MODELS = [
   { id: 'ollama/llama3', name: 'Ollama Llama 3 (Local)' },
 ];
 
+interface InputParameterItemProps {
+  paramKey: string;
+  paramValue: string;
+  onRenameKey: (newKey: string) => void;
+  onChangeValue: (newValue: string) => void;
+  onDelete: () => void;
+}
+
+const InputParameterItem: React.FC<InputParameterItemProps> = ({
+  paramKey,
+  paramValue,
+  onRenameKey,
+  onChangeValue,
+  onDelete,
+}) => {
+  const [localKey, setLocalKey] = useState(paramKey);
+
+  useEffect(() => {
+    setLocalKey(paramKey);
+  }, [paramKey]);
+
+  const handleBlurKey = () => {
+    const trimmed = localKey.trim();
+    if (trimmed && trimmed !== paramKey) {
+      onRenameKey(trimmed);
+    } else {
+      setLocalKey(paramKey);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur();
+    }
+  };
+
+  return (
+    <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2 focus-within:border-emerald-500/50 transition-colors">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+          <span className="text-[10px] uppercase font-mono text-emerald-500 font-bold shrink-0">KEY:</span>
+          <input
+            type="text"
+            value={localKey}
+            onChange={(e) => setLocalKey(e.target.value)}
+            onBlur={handleBlurKey}
+            onKeyDown={handleKeyDown}
+            className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-800 text-xs font-mono text-emerald-400 font-semibold focus:outline-none focus:border-emerald-500 transition-colors"
+            placeholder="parameter_name"
+          />
+        </div>
+        <button
+          onClick={onDelete}
+          className="text-slate-500 hover:text-rose-400 p-1 rounded hover:bg-slate-900 transition-colors shrink-0"
+          title="Delete key"
+        >
+          <Trash className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      <div className="space-y-1">
+        <span className="text-[10px] uppercase font-mono text-slate-500 font-medium block">VALUE:</span>
+        <textarea
+          rows={2}
+          value={paramValue}
+          onChange={(e) => onChangeValue(e.target.value)}
+          className="w-full px-2.5 py-1.5 rounded bg-slate-900 border border-slate-800 text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500 resize-y"
+          placeholder="Enter parameter value..."
+        />
+      </div>
+    </div>
+  );
+};
+
 export const PropertyPanel: React.FC = () => {
   const selectedNodeId = useWorkflowStore((s) => s.selectedNodeId);
   const setSelectedNodeId = useWorkflowStore((s) => s.setSelectedNodeId);
@@ -31,7 +105,7 @@ export const PropertyPanel: React.FC = () => {
   const updateNodeData = useWorkflowStore((s) => s.updateNodeData);
   const updateNodeConfig = useWorkflowStore((s) => s.updateNodeConfig);
 
-  const [copied, setCopied] = React.useState(false);
+  const [copied, setCopied] = useState(false);
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
@@ -67,6 +141,19 @@ export const PropertyPanel: React.FC = () => {
     updateNodeData(id, {
       inputs: { ...inputs, [key]: value },
     });
+  };
+
+  const handleRenameInputKey = (oldKey: string, newKey: string) => {
+    if (oldKey === newKey || !newKey.trim()) return;
+    const nextInputs: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(inputs)) {
+      if (k === oldKey) {
+        nextInputs[newKey.trim()] = v;
+      } else {
+        nextInputs[k] = v;
+      }
+    }
+    updateNodeData(id, { inputs: nextInputs });
   };
 
   const handleAddInputKey = () => {
@@ -154,27 +241,16 @@ export const PropertyPanel: React.FC = () => {
               </button>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {Object.entries(inputs).map(([key, val]) => (
-                <div key={key} className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-mono text-emerald-400 font-semibold">{key}</span>
-                    <button
-                      onClick={() => handleDeleteInputKey(key)}
-                      className="text-slate-500 hover:text-rose-400 p-0.5 transition-colors"
-                      title="Delete key"
-                    >
-                      <Trash className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <textarea
-                    rows={2}
-                    value={typeof val === 'object' ? JSON.stringify(val) : String(val)}
-                    onChange={(e) => handleInputChange(key, e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded bg-slate-900 border border-slate-800 text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500 resize-y"
-                    placeholder="Enter value..."
-                  />
-                </div>
+                <InputParameterItem
+                  key={key}
+                  paramKey={key}
+                  paramValue={typeof val === 'object' ? JSON.stringify(val) : String(val)}
+                  onRenameKey={(newKey) => handleRenameInputKey(key, newKey)}
+                  onChangeValue={(newVal) => handleInputChange(key, newVal)}
+                  onDelete={() => handleDeleteInputKey(key)}
+                />
               ))}
             </div>
           </div>

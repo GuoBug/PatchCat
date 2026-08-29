@@ -32,12 +32,13 @@ export const InputNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, se
           </div>
         ) : (
           <div className="space-y-1 max-h-28 overflow-y-auto pr-0.5">
-            {inputEntries.map(([key, val]) => (
-              <div key={key} className="p-1.5 rounded bg-slate-950/70 border border-slate-800/60 font-mono text-[11px]">
-                <span className="text-emerald-400 font-semibold">{key}: </span>
-                <span className="text-slate-300 truncate inline-block max-w-[150px] align-bottom">
-                  {typeof val === 'object' ? JSON.stringify(val) : String(val)}
-                </span>
+            {inputEntries.map(([key]) => (
+              <div
+                key={key}
+                className="px-2.5 py-1.5 rounded-lg bg-slate-950/80 border border-emerald-500/20 font-mono text-[11px] text-emerald-400 flex items-center justify-between shadow-sm"
+              >
+                <span className="font-semibold truncate">{key}</span>
+                <span className="text-[9px] text-emerald-500/60 font-mono uppercase">param</span>
               </div>
             ))}
           </div>
