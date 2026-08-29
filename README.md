@@ -1,15 +1,23 @@
-# 🐱 PatchCat
+<div align="center">
+  <a href="https://github.com/gu0bug/PatchCat">
+    <img src="./assets/logo.png" width="120" height="120" alt="PatchCat Logo" />
+  </a>
+  <h1>PatchCat</h1>
+  <p><strong>Precision prompts. Seamless workflows.</strong></p>
+  <p><em>The open-source prompt orchestration engine designed for AI builders.</em></p>
 
-> **Precision prompts. Seamless workflows.**  
-> *The open-source prompt orchestration engine designed for AI builders.*
+  <p>
+    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
+    <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.0%2B-blue?logo=typescript" alt="TypeScript" /></a>
+    <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/React_Flow-v12%2B-ff0072?logo=react" alt="React Flow" /></a>
+    <a href="https://github.com/gu0bug/PatchCat/actions"><img src="https://img.shields.io/badge/CI%2FCD-GitHub_Pages-green?logo=githubactions" alt="GitHub Actions" /></a>
+    <a href="https://github.com/gu0bug/PatchCat"><img src="https://img.shields.io/badge/GitHub-gu0bug%2FPatchCat-black?logo=github" alt="GitHub Repository" /></a>
+  </p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-blue?logo=typescript)](https://www.typescriptlang.org/)
-[![React Flow](https://img.shields.io/badge/React_Flow-v12%2B-ff0072?logo=react)](https://reactflow.dev/)
-[![GitHub Actions](https://img.shields.io/badge/CI%2FCD-GitHub_Pages-green?logo=githubactions)](https://github.com/gu0bug/PatchCat/actions)
-[![GitHub Repository](https://img.shields.io/badge/GitHub-gu0bug%2FPatchCat-black?logo=github)](https://github.com/gu0bug/PatchCat)
-
-[English](#english) | [中文说明](#中文说明)
+  <p>
+    <a href="#english">English</a> | <a href="#中文说明">中文说明</a>
+  </p>
+</div>
 
 ---
 
