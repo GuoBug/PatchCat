@@ -4,4 +4,5 @@
  */
 
 export { WorkflowCanvas } from './WorkflowCanvas';
-export const CANVAS_COMPONENT_VERSION = '1.0.0';
+export { DeletableEdge } from './DeletableEdge';
+export const CANVAS_COMPONENT_VERSION = '1.1.0';

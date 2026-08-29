@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   ReactFlow,
   Background,
@@ -13,6 +13,7 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { nodeTypes } from '../nodes';
+import { DeletableEdge } from './DeletableEdge';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import type { WorkflowNode, WorkflowEdge } from '../../engine/types.ts';
 
@@ -23,6 +24,14 @@ export const WorkflowCanvas: React.FC = () => {
   const onEdgesChange = useWorkflowStore((s) => s.onEdgesChange);
   const onConnect = useWorkflowStore((s) => s.onConnect);
   const setSelectedNodeId = useWorkflowStore((s) => s.setSelectedNodeId);
+
+  const edgeTypes = useMemo(
+    () => ({
+      default: DeletableEdge,
+      deletable: DeletableEdge,
+    }),
+    []
+  );
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
@@ -62,6 +71,7 @@ export const WorkflowCanvas: React.FC = () => {
         onEdgesChange={onEdgesChange as OnEdgesChange<WorkflowEdge>}
         onConnect={onConnect as OnConnect}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
         fitView
@@ -69,6 +79,7 @@ export const WorkflowCanvas: React.FC = () => {
         snapToGrid={true}
         snapGrid={[16, 16]}
         defaultEdgeOptions={{
+          type: 'default',
           animated: false,
           style: { stroke: '#475569', strokeWidth: 2 },
         }}

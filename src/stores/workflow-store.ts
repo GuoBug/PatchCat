@@ -83,6 +83,7 @@ export interface WorkflowStoreState {
   setNodes: (nodes: WorkflowNode[]) => void;
   setEdges: (edges: WorkflowEdge[]) => void;
   deleteNode: (nodeId: string) => void;
+  deleteEdge: (edgeId: string) => void;
 
   // ── Node CRUD ────────────────────────────────────────────────────────────
   /**
@@ -214,6 +215,12 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
         if (state.selectedNodeId === nodeId) {
           state.selectedNodeId = null;
         }
+      });
+    },
+
+    deleteEdge: (edgeId) => {
+      set((state) => {
+        state.edges = state.edges.filter((e) => e.id !== edgeId);
       });
     },
 
