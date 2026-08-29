@@ -264,7 +264,7 @@ export const ControlHeader: React.FC = () => {
                   PATCH<span className="text-blue-600 dark:text-sky-400">CAT</span>
                 </span>
                 <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-blue-50 dark:bg-sky-500/10 text-blue-600 dark:text-sky-400 border border-blue-200 dark:border-sky-500/30">
-                  v2.0
+                  v0.1
                 </span>
               </div>
               <span className="text-[9px] text-slate-500 dark:text-slate-400 font-sans tracking-wide">

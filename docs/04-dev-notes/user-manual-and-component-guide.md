@@ -108,7 +108,7 @@ The fixed 380px inspector provides live reactive controls:
 <a name="中文版本"></a>
 ## 中文版本
 
-### 1. 系统概览与界面布局
+### PATCHCAT v0.1 — AI 提示流编排器 用户手册与组件说明指南
 
 **AI 提示流编排器 (AI Prompt Flow Orchestrator)** 采用现代暗黑工业风（Dark Slate）设计，基于 `@xyflow/react` (React Flow v12)、Tailwind CSS、Lucide 图标库与 Zustand + Immer 打造全响应式交互。
 
