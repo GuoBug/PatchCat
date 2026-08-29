@@ -68,6 +68,7 @@ export const WorkflowCanvas: React.FC = () => {
   return (
     <div className={`w-full h-full relative transition-colors duration-200 ${isDark ? 'bg-[#0B0F17]' : 'bg-slate-50'}`}>
       <ReactFlow<WorkflowNode, WorkflowEdge>
+        style={{ backgroundColor: isDark ? '#0B0F17' : '#F8FAFC' }}
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange as OnNodesChange<WorkflowNode>}
@@ -92,6 +93,7 @@ export const WorkflowCanvas: React.FC = () => {
       >
         <Background
           variant={BackgroundVariant.Dots}
+          bgColor={isDark ? '#0B0F17' : '#F8FAFC'}
           gap={isDark ? 18 : 20}
           size={isDark ? 1.2 : 1.25}
           color={isDark ? '#334155' : '#CBD5E1'}

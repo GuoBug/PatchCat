@@ -24,6 +24,7 @@
   background: rgba(15, 23, 42, 0.05);
 }
 
+html.dark ::-webkit-scrollbar-track,
 .dark ::-webkit-scrollbar-track {
   background: rgba(15, 23, 42, 0.6);
 }
@@ -33,6 +34,7 @@
   border-radius: 3px;
 }
 
+html.dark ::-webkit-scrollbar-thumb,
 .dark ::-webkit-scrollbar-thumb {
   background: rgba(51, 65, 85, 0.8);
 }
@@ -41,19 +43,25 @@
   background: rgba(100, 116, 139, 0.8);
 }
 
+html.dark ::-webkit-scrollbar-thumb:hover,
 .dark ::-webkit-scrollbar-thumb:hover {
   background: rgba(71, 85, 105, 1);
 }
 
 /* React Flow custom light & dark theme adaptive styles */
-.dark .react-flow__background {
+html.dark .react-flow__background,
+html.dark .react-flow,
+.dark .react-flow__background,
+.dark .react-flow {
   background-color: #0B0F17 !important;
 }
 
-:not(.dark) .react-flow__background {
+html:not(.dark) .react-flow__background,
+html:not(.dark) .react-flow {
   background-color: #F8FAFC !important;
 }
 
+html.dark .react-flow__controls button,
 .dark .react-flow__controls button {
   background-color: #1E293B !important;
   color: #94A3B8 !important;
@@ -61,32 +69,34 @@
   fill: #94A3B8 !important;
 }
 
+html.dark .react-flow__controls button:hover,
 .dark .react-flow__controls button:hover {
   background-color: #334155 !important;
   color: #F8FAFC !important;
   fill: #F8FAFC !important;
 }
 
-:not(.dark) .react-flow__controls button {
+html:not(.dark) .react-flow__controls button {
   background-color: #FFFFFF !important;
   color: #64748B !important;
   border-bottom: 1px solid #E2E8F0 !important;
   fill: #64748B !important;
 }
 
-:not(.dark) .react-flow__controls button:hover {
+html:not(.dark) .react-flow__controls button:hover {
   background-color: #F1F5F9 !important;
   color: #0F172A !important;
   fill: #0F172A !important;
 }
 
+html.dark .react-flow__minimap,
 .dark .react-flow__minimap {
   background-color: #0F172A !important;
   border: 1px solid #334155 !important;
   border-radius: 8px !important;
 }
 
-:not(.dark) .react-flow__minimap {
+html:not(.dark) .react-flow__minimap {
   background-color: #FFFFFF !important;
   border: 1px solid #E2E8F0 !important;
   border-radius: 8px !important;
