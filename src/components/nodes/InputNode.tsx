@@ -6,6 +6,8 @@ import type { WorkflowNode } from '../../engine/types.ts';
 export const InputNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, selected }) => {
   const inputs = data.inputs || {};
   const inputEntries = Object.entries(inputs);
+  const visibleEntries = inputEntries.slice(0, 3);
+  const remainingCount = inputEntries.length - visibleEntries.length;
 
   return (
     <BaseNode
@@ -31,8 +33,8 @@ export const InputNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, se
             No default inputs configured
           </div>
         ) : (
-          <div className="space-y-1 max-h-28 overflow-y-auto pr-0.5">
-            {inputEntries.map(([key]) => (
+          <div className="space-y-1">
+            {visibleEntries.map(([key]) => (
               <div
                 key={key}
                 className="px-2.5 py-1.5 rounded-lg bg-slate-950/80 border border-emerald-500/20 font-mono text-[11px] text-emerald-400 flex items-center justify-between shadow-sm"
@@ -41,6 +43,12 @@ export const InputNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, se
                 <span className="text-[9px] text-emerald-500/60 font-mono uppercase">param</span>
               </div>
             ))}
+
+            {remainingCount > 0 && (
+              <div className="text-[10px] font-mono text-slate-500 text-center py-0.5">
+                +{remainingCount} more parameter(s)
+              </div>
+            )}
           </div>
         )}
       </div>
