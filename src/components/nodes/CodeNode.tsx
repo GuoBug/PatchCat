@@ -18,8 +18,6 @@ export const CodeNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, sel
       executionResult={data.executionResult}
       hasLeftHandle={true}
       hasRightHandle={true}
-      leftHandleId="inputs"
-      rightHandleId="result"
       leftHandleLabel="in"
       rightHandleLabel="result"
     >

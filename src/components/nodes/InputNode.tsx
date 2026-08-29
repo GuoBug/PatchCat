@@ -19,7 +19,6 @@ export const InputNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, se
       executionResult={data.executionResult}
       hasLeftHandle={false}
       hasRightHandle={true}
-      rightHandleId="output"
       rightHandleLabel="output"
     >
       <div className="space-y-1.5">

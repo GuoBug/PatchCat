@@ -23,8 +23,6 @@ export interface BaseNodeProps {
   executionResult?: NodeExecutionResult;
   hasLeftHandle?: boolean;
   hasRightHandle?: boolean;
-  leftHandleId?: string;
-  rightHandleId?: string;
   leftHandleLabel?: string;
   rightHandleLabel?: string;
   children?: ReactNode;
@@ -95,8 +93,6 @@ export const BaseNode: React.FC<BaseNodeProps> = memo(({
   executionResult,
   hasLeftHandle = true,
   hasRightHandle = true,
-  leftHandleId = 'input',
-  rightHandleId = 'output',
   leftHandleLabel,
   rightHandleLabel,
   children,
@@ -116,8 +112,7 @@ export const BaseNode: React.FC<BaseNodeProps> = memo(({
         <Handle
           type="target"
           position={Position.Left}
-          id={leftHandleId}
-          className="!w-3 !h-3 !bg-slate-700 !border-2 !border-slate-400 hover:!bg-sky-400 hover:!border-white !-left-[7px] transition-colors"
+          className="!w-3.5 !h-3.5 !bg-slate-800 !border-2 !border-slate-400 hover:!bg-sky-400 hover:!border-white !-left-[8px] transition-all cursor-crosshair shadow-md"
         />
       )}
       {leftHandleLabel && (
@@ -131,8 +126,7 @@ export const BaseNode: React.FC<BaseNodeProps> = memo(({
         <Handle
           type="source"
           position={Position.Right}
-          id={rightHandleId}
-          className="!w-3 !h-3 !bg-slate-700 !border-2 !border-slate-400 hover:!bg-sky-400 hover:!border-white !-right-[7px] transition-colors"
+          className="!w-3.5 !h-3.5 !bg-slate-800 !border-2 !border-slate-400 hover:!bg-sky-400 hover:!border-white !-right-[8px] transition-all cursor-crosshair shadow-md"
         />
       )}
       {rightHandleLabel && (

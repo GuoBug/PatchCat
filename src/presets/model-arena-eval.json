@@ -120,21 +120,21 @@
       "id": "edge-a",
       "source": "input_benchmark_prompt",
       "target": "llm_model_a",
-      "sourceHandle": "user_prompt",
+      "sourceHandle": "output",
       "targetHandle": "prompt"
     },
     {
       "id": "edge-b",
       "source": "input_benchmark_prompt",
       "target": "llm_model_b",
-      "sourceHandle": "user_prompt",
+      "sourceHandle": "output",
       "targetHandle": "prompt"
     },
     {
       "id": "edge-c",
       "source": "input_benchmark_prompt",
       "target": "llm_model_c",
-      "sourceHandle": "user_prompt",
+      "sourceHandle": "output",
       "targetHandle": "prompt"
     },
     {
@@ -177,7 +177,7 @@
       "source": "llm_judge",
       "target": "output_arena_result",
       "sourceHandle": "response",
-      "targetHandle": "inputs"
+      "targetHandle": "final"
     }
   ]
 }

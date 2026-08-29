@@ -20,8 +20,6 @@ export const LLMNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, sele
       executionResult={data.executionResult}
       hasLeftHandle={true}
       hasRightHandle={true}
-      leftHandleId="prompt"
-      rightHandleId="response"
       leftHandleLabel="prompt"
       rightHandleLabel="response"
     >

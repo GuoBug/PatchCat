@@ -18,8 +18,6 @@ export const PromptNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, s
       executionResult={data.executionResult}
       hasLeftHandle={true}
       hasRightHandle={true}
-      leftHandleId="inputs"
-      rightHandleId="promptText"
       leftHandleLabel="in"
       rightHandleLabel="prompt"
     >

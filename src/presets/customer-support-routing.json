@@ -31,7 +31,7 @@
     {
       "id": "prompt_intent_classification",
       "type": "prompt",
-      "position": { "x": 350, "y": 200 },
+      "position": { "x": 380, "y": 200 },
       "data": {
         "label": "意图分类提示词",
         "description": "组装分类器 Prompt",
@@ -43,7 +43,7 @@
     {
       "id": "llm_classifier",
       "type": "llm",
-      "position": { "x": 680, "y": 200 },
+      "position": { "x": 710, "y": 200 },
       "data": {
         "label": "意图识别大模型",
         "description": "执行结构化分类推理",
@@ -59,7 +59,7 @@
     {
       "id": "code_router_logic",
       "type": "code",
-      "position": { "x": 1000, "y": 200 },
+      "position": { "x": 1040, "y": 200 },
       "data": {
         "label": "路由决策脚本",
         "description": "解析 JSON 并分配优先级队列",
@@ -74,7 +74,7 @@
     {
       "id": "output_dispatch",
       "type": "output",
-      "position": { "x": 1320, "y": 200 },
+      "position": { "x": 1370, "y": 200 },
       "data": {
         "label": "最终工单路由分派",
         "description": "输出派单结果与 SLA 标记",
@@ -104,14 +104,14 @@
       "source": "llm_classifier",
       "target": "code_router_logic",
       "sourceHandle": "response",
-      "targetHandle": "raw_response"
+      "targetHandle": "inputs"
     },
     {
       "id": "edge-4",
       "source": "code_router_logic",
       "target": "output_dispatch",
       "sourceHandle": "result",
-      "targetHandle": "dispatch_result"
+      "targetHandle": "final"
     }
   ]
 }
