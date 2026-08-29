@@ -296,8 +296,18 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
 
     loadPreset: (graph) => {
       set((state) => {
-        state.nodes = graph.nodes;
-        state.edges = graph.edges;
+        state.nodes = (graph.nodes || []).map((node) => ({
+          ...node,
+          data: {
+            ...node.data,
+            type: node.type,
+            status: node.data?.status || 'idle',
+            inputs: node.data?.inputs || {},
+            outputs: node.data?.outputs || {},
+            config: node.data?.config || getDefaultNodeConfig(node.type),
+          },
+        }));
+        state.edges = graph.edges || [];
         state.selectedNodeId = null;
         state.isExecuting = false;
         state.globalInputs = {};
@@ -307,6 +317,11 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
     resetExecutionState: () => {
       set((state) => {
         state.isExecuting = false;
+        state.edges = state.edges.map((e) => ({
+          ...e,
+          animated: false,
+          style: { stroke: '#475569', strokeWidth: 2 },
+        }));
         for (const node of state.nodes) {
           node.data.status = 'idle';
           node.data.executionResult = undefined;

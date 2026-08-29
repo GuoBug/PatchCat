@@ -69,7 +69,15 @@ export const ControlHeader: React.FC = () => {
   const handleRunWorkflow = async () => {
     if (isExecuting) return;
 
-    useWorkflowStore.setState({ isExecuting: true });
+    useWorkflowStore.setState((state) => ({
+      ...state,
+      isExecuting: true,
+      edges: state.edges.map((e) => ({
+        ...e,
+        animated: true,
+        style: { stroke: '#38bdf8', strokeWidth: 2.5 },
+      })),
+    }));
     setExecutionTimeMs(0);
     const startTs = Date.now();
 
@@ -124,7 +132,15 @@ export const ControlHeader: React.FC = () => {
         clearInterval(timerIntervalRef.current);
         timerIntervalRef.current = null;
       }
-      useWorkflowStore.setState({ isExecuting: false });
+      useWorkflowStore.setState((state) => ({
+        ...state,
+        isExecuting: false,
+        edges: state.edges.map((e) => ({
+          ...e,
+          animated: false,
+          style: { stroke: '#475569', strokeWidth: 2 },
+        })),
+      }));
     }
   };
 
@@ -135,7 +151,15 @@ export const ControlHeader: React.FC = () => {
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
     }
-    useWorkflowStore.setState({ isExecuting: false });
+    useWorkflowStore.setState((state) => ({
+      ...state,
+      isExecuting: false,
+      edges: state.edges.map((e) => ({
+        ...e,
+        animated: false,
+        style: { stroke: '#475569', strokeWidth: 2 },
+      })),
+    }));
   };
 
   // Quick Add Node Helper
