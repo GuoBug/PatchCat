@@ -199,6 +199,23 @@ export class BrowserWorkflowEngine {
       const customDelay = typeof node.data.config?.['delayMs'] === 'number'
         ? (node.data.config['delayMs'] as number)
         : null;
+      const defaultDelay = nodeType === 'llm' ? 100 : 0;
+      const delayMs = customDelay ?? defaultDelay;
+
+      // In-flight abortable execution delay
+      if (delayMs > 0) {
+        await new Promise<void>((resolve, reject) => {
+          if (signal.aborted) {
+            return reject(new Error('Workflow execution aborted by user.'));
+          }
+          const timer = setTimeout(() => resolve(), delayMs);
+          const onAbort = () => {
+            clearTimeout(timer);
+            reject(new Error('Workflow execution aborted by user.'));
+          };
+          signal.addEventListener('abort', onAbort, { once: true });
+        });
+      }
 
       let output: Record<string, unknown> = {};
 
@@ -219,20 +236,6 @@ export class BrowserWorkflowEngine {
         }
 
         case 'llm': {
-          const delayMs = customDelay ?? (100 + Math.random() * 50);
-          // In-flight abortable sleep
-          await new Promise<void>((resolve, reject) => {
-            if (signal.aborted) {
-              return reject(new Error('Workflow execution aborted by user.'));
-            }
-            const timer = setTimeout(() => resolve(), delayMs);
-            const onAbort = () => {
-              clearTimeout(timer);
-              reject(new Error('Workflow execution aborted by user.'));
-            };
-            signal.addEventListener('abort', onAbort, { once: true });
-          });
-
           output = {
             response: `[Mock] Response for "${node.data.label}" — prompt: ${
               JSON.stringify(resolvedInputs).slice(0, 80)
@@ -244,13 +247,6 @@ export class BrowserWorkflowEngine {
         }
 
         case 'code': {
-          if (customDelay) {
-            await new Promise<void>((resolve, reject) => {
-              if (signal.aborted) return reject(new Error('Workflow execution aborted by user.'));
-              const timer = setTimeout(() => resolve(), customDelay);
-              signal.addEventListener('abort', () => { clearTimeout(timer); reject(new Error('Workflow execution aborted by user.')); }, { once: true });
-            });
-          }
           output = {
             result: `Processed ${Object.keys(resolvedInputs).length} input(s)`,
             stdout: '',
