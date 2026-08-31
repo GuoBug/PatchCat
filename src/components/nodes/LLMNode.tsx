@@ -2,13 +2,13 @@ import React, { memo } from 'react';
 import type { NodeProps } from '@xyflow/react';
 import { BaseNode } from './BaseNode';
 import type { WorkflowNode } from '../../engine/types.ts';
-import { Cpu, Thermometer } from 'lucide-react';
+import { Cpu, Thermometer, CheckCircle2 } from 'lucide-react';
 
 export const LLMNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, selected }) => {
   const model = (data.config?.['model'] as string) || 'gpt-4o-mini';
   const temperature = typeof data.config?.['temperature'] === 'number' ? data.config['temperature'] : 0.7;
   const outputs = data.outputs || {};
-  const responseText = (outputs['response'] as string) || '';
+  const hasResponse = Boolean(outputs['response']);
 
   return (
     <BaseNode
@@ -37,15 +37,18 @@ export const LLMNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, sele
           </div>
         </div>
 
-        {/* Live response preview or prompt placeholder */}
-        {responseText ? (
-          <div className="p-2 rounded-lg bg-blue-50/50 dark:bg-slate-950/80 border border-blue-100 dark:border-emerald-500/30 font-sans text-[11px] text-blue-900 dark:text-slate-200 line-clamp-3 leading-relaxed shadow-xs">
-            <span className="text-[10px] text-blue-600 dark:text-emerald-400 font-mono block mb-0.5 font-semibold">Response output:</span>
-            {responseText}
+        {/* Minimal status indicator without text output clutter */}
+        {hasResponse ? (
+          <div className="flex items-center justify-between px-2 py-1 rounded bg-blue-50/60 dark:bg-slate-950/80 border border-blue-100 dark:border-sky-500/30 text-[10px] text-blue-700 dark:text-sky-300 font-mono">
+            <span className="flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3 text-blue-600 dark:text-sky-400" />
+              <span>Response Ready</span>
+            </span>
+            <span className="text-[9px] text-slate-400 dark:text-slate-500">Click to view</span>
           </div>
         ) : (
-          <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/80 font-mono text-[10px] text-slate-400 dark:text-slate-500 text-center">
-            Awaiting execution...
+          <div className="p-1.5 rounded bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/80 font-mono text-[10px] text-slate-400 dark:text-slate-500 text-center">
+            Awaiting prompt input
           </div>
         )}
       </div>
