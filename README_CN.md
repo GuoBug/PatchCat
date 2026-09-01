@@ -24,7 +24,7 @@
   </p>
 
   <p>
-    <strong><a href="README.md">English</a></strong> | <strong><a href="README_CN.md">简体中文</a></strong>
+    <strong><a href="README.md">English</a></strong> | <strong><a href="README_CN.md">简体中文</a></strong> | <strong><a href="docs/quick-start-zh.md">📖 快速入门指南 (5分钟教程)</a></strong>
   </p>
 </div>
 
