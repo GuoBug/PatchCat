@@ -246,7 +246,7 @@ export type ExecutionEventType =
 export interface ExecutionEventPayloadMap {
   WORKFLOW_START:    { graphId: string; timestamp: number; totalNodes: number };
   NODE_START:        { nodeId: string; nodeType: NodeType; timestamp: number; inputs: Record<string, unknown> };
-  NODE_CHUNK:        { nodeId: string; delta: string; fullContent: string };
+  NODE_CHUNK:        { nodeId: string; delta: string; fullContent: string; reasoningDelta?: string; fullReasoning?: string };
   NODE_COMPLETE:     { nodeId: string; output: Record<string, unknown>; durationMs: number };
   NODE_ERROR:        { nodeId: string; error: string; durationMs: number };
   NODE_SKIPPED:      { nodeId: string; reason: string };

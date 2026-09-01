@@ -5,3 +5,5 @@
 
 export { ControlHeader } from './ControlHeader';
 export { PropertyPanel } from './PropertyPanel';
+export { SettingsModal } from './SettingsModal';
+export { LogConsole } from './LogConsole';

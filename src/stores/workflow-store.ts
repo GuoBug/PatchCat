@@ -115,6 +115,13 @@ export interface WorkflowStoreState {
     result?: NodeExecutionResult,
   ) => void;
 
+  /** Updates live streaming content / reasoning for a node during execution */
+  updateNodeStreamingOutput: (
+    nodeId: string,
+    content: string,
+    reasoning?: string,
+  ) => void;
+
   /** Sets or clears the currently selected (focused) node. */
   setSelectedNodeId: (nodeId: string | null) => void;
 
@@ -309,6 +316,19 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
           if (result !== undefined) {
             node.data.executionResult = result;
           }
+        }
+      });
+    },
+
+    updateNodeStreamingOutput: (nodeId, content, reasoning) => {
+      set((state) => {
+        const node = state.nodes.find((n) => n.id === nodeId);
+        if (node) {
+          node.data.outputs = {
+            ...node.data.outputs,
+            response: content,
+            ...(reasoning ? { reasoning } : {}),
+          };
         }
       });
     },

@@ -14,12 +14,17 @@ import {
   Loader2,
   AlertTriangle,
   Sun,
-  Moon
+  Moon,
+  KeyRound,
+  Terminal,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
+import { useSettingsStore } from '../../stores/settings-store.ts';
+import { useLogStore } from '../../stores/log-store.ts';
+import { SettingsModal } from './SettingsModal.tsx';
 import { BrowserWorkflowEngine } from '../../engine/browser-engine.ts';
 import { validateGraphTopology } from '../../engine/topological-sort.ts';
-import type { NodeType, WorkflowGraph } from '../../engine/types.ts';
+import type { NodeType, WorkflowGraph, TokenUsage } from '../../engine/types.ts';
 import { CatLogo } from '../icons/CatLogo.tsx';
 
 // Import presets JSON
@@ -162,10 +167,19 @@ export const ControlHeader: React.FC = () => {
           case 'NODE_START':
             store.setNodeStatus(event.payload.nodeId, 'running');
             break;
-          case 'NODE_COMPLETE':
+          case 'NODE_CHUNK':
+            store.updateNodeStreamingOutput(
+              event.payload.nodeId,
+              event.payload.fullContent,
+              event.payload.fullReasoning
+            );
+            break;
+          case 'NODE_COMPLETE': {
+            const rawUsage = event.payload.output?.usage as TokenUsage | undefined;
+            const tokenUsage = rawUsage || { prompt: 60, completion: 60, total: 120 };
             store.setNodeStatus(event.payload.nodeId, 'success', {
               latencyMs: event.payload.durationMs,
-              tokenUsage: { prompt: 60, completion: 60, total: 120 },
+              tokenUsage,
               timestamp: Date.now(),
             });
             if (event.payload.output) {
@@ -174,6 +188,7 @@ export const ControlHeader: React.FC = () => {
               });
             }
             break;
+          }
           case 'NODE_ERROR':
             store.setNodeStatus(event.payload.nodeId, 'error', {
               latencyMs: event.payload.durationMs,
@@ -250,6 +265,16 @@ export const ControlHeader: React.FC = () => {
   };
 
   const isDark = theme === 'dark';
+  const toggleSettingsModal = useSettingsStore((s) => s.toggleSettingsModal);
+  const activeProvider = useSettingsStore((s) => s.activeProvider);
+  const providers = useSettingsStore((s) => s.providers);
+
+  const isConsoleOpen = useLogStore((s) => s.isConsoleOpen);
+  const toggleConsole = useLogStore((s) => s.toggleConsole);
+  const logs = useLogStore((s) => s.logs);
+
+  const activeConfig = providers[activeProvider];
+  const hasActiveKey = activeProvider === 'ollama' ? true : Boolean(activeConfig?.apiKey?.trim());
 
   return (
     <>
@@ -312,7 +337,7 @@ export const ControlHeader: React.FC = () => {
                   <button
                     key={t}
                     onClick={() => handleQuickAdd(t)}
-                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors uppercase"
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors uppercase"
                   >
                     <span className="capitalize">{t} Node</span>
                     <span className="text-[10px] text-slate-400 dark:text-slate-500">+{t}</span>
@@ -343,8 +368,43 @@ export const ControlHeader: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Theme Switcher, Reset & Execution Controls */}
+        {/* Right: Provider Key Config, Theme Switcher, Reset & Execution Controls */}
         <div className="flex items-center gap-2.5">
+          {/* API Key / Provider Settings Button */}
+          <button
+            onClick={toggleSettingsModal}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 transition-all shadow-xs"
+            title="配置 API Keys & LLM Providers"
+          >
+            <KeyRound className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
+            <span className="hidden sm:inline font-mono">{activeConfig?.name.split(' ')[0] || 'API Key'}</span>
+            <span
+              className={`w-2 h-2 rounded-full ${
+                hasActiveKey ? 'bg-emerald-500 shadow-xs shadow-emerald-500/50' : 'bg-rose-400 animate-pulse'
+              }`}
+              title={hasActiveKey ? 'API Key 已配置' : '未配置 API Key'}
+            />
+          </button>
+
+          {/* Log Console Drawer Trigger Button */}
+          <button
+            onClick={toggleConsole}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all shadow-xs ${
+              isConsoleOpen
+                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-sky-400 border-blue-300 dark:border-blue-700'
+                : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800'
+            }`}
+            title="打开/收起执行日志控制台 (Workflow Logs Console)"
+          >
+            <Terminal className="w-3.5 h-3.5 text-blue-500" />
+            <span className="hidden sm:inline">日志</span>
+            {logs.length > 0 && (
+              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                {logs.length}
+              </span>
+            )}
+          </button>
+
           {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
@@ -396,6 +456,9 @@ export const ControlHeader: React.FC = () => {
           )}
         </div>
       </header>
+
+      {/* Settings Modal */}
+      <SettingsModal />
 
       {/* Floating Global Alert / Cycle Warning Banner */}
       {alertNotification && (

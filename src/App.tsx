@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
-import { ControlHeader, PropertyPanel } from './components/panels';
+import { ControlHeader, PropertyPanel, LogConsole } from './components/panels';
 import { WorkflowCanvas } from './components/canvas';
 import { useWorkflowStore } from './stores/workflow-store.ts';
 import customerSupportPreset from './presets/customer-support-routing.json';
@@ -46,6 +46,9 @@ export const App: React.FC = () => {
           {/* Right Property Inspector Drawer */}
           <PropertyPanel />
         </main>
+
+        {/* Bottom Execution Log Console Drawer */}
+        <LogConsole />
       </div>
     </ReactFlowProvider>
   );

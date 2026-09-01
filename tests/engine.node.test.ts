@@ -25,7 +25,7 @@ import {
   getNestedProperty,
   resolveObjectVariables,
 } from '../src/engine/variable-resolver.ts';
-import { BrowserWorkflowEngine } from '../src/engine/browser-engine.ts';
+import { BrowserWorkflowEngine, resolveTargetModel } from '../src/engine/browser-engine.ts';
 import { useWorkflowStore } from '../src/stores/workflow-store.ts';
 import { getDefaultNodeConfig } from '../src/engine/types.ts';
 import type { WorkflowNode, WorkflowEdge, ExecutionEvent } from '../src/engine/types.ts';
@@ -474,3 +474,96 @@ describe('Scenario Test: E-Commerce Multi-Agent Refund Arbitrator Pipeline', () 
     );
   });
 });
+
+describe('Model Resolution & Provider Compatibility', () => {
+  it('should preserve valid models supported by the active provider', () => {
+    const googleModels = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'];
+    const resolved = resolveTargetModel('gemini-2.5-pro', 'google', googleModels, 'gemini-2.5-flash');
+    assert.equal(resolved, 'gemini-2.5-pro');
+  });
+
+  it('should gracefully remap mismatched preset models (e.g. gpt-4o-mini on Google) to active provider default', () => {
+    const googleModels = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'];
+    // Preset has gpt-4o-mini, active provider is Google
+    const resolved = resolveTargetModel('gpt-4o-mini', 'google', googleModels, 'gemini-2.5-flash');
+    assert.equal(resolved, 'gemini-2.5-flash');
+  });
+
+  it('should gracefully remap mismatched preset models (e.g. claude on DeepSeek) to deepseek default', () => {
+    const deepseekModels = ['deepseek-chat', 'deepseek-reasoner'];
+    const resolved = resolveTargetModel('claude-3-5-sonnet', 'deepseek', deepseekModels, 'deepseek-chat');
+    assert.equal(resolved, 'deepseek-chat');
+  });
+});
+
+describe('Dynamic Code Node & Customer Support Routing Logic', () => {
+  it('should execute JavaScript code and route logistics complaints to Logistics VIP queue', async () => {
+    const engine = new BrowserWorkflowEngine();
+
+    const script = `
+      const raw = inputs.raw_response || '';
+      let parsed = {};
+      try {
+        const cleaned = typeof raw === 'string' ? raw.split('\\\`\\\`\\\`json').join('').split('\\\`\\\`\\\`').join('').trim() : raw;
+        parsed = JSON.parse(cleaned);
+      } catch (e) {
+        parsed = {};
+      }
+      const intent = parsed['主意图'] || '综合咨询';
+      const urgency = Number(parsed['情绪等级'] || 3);
+      
+      console.log('Parsed intent:', intent, 'urgency:', urgency);
+
+      let targetQueue = '综合客服通用池';
+      if (intent.includes('物流') || intent.includes('催单')) {
+        targetQueue = '🚀 物流专线极速客服队列 (Logistics VIP)';
+      }
+      return {
+        targetQueue,
+        intent,
+        urgency,
+        humanEscalation: urgency >= 4
+      };
+    `;
+
+    const nodes: WorkflowNode[] = [
+      makeNode('llm_classifier', 'input', {
+        response: '```json\n{\n  "主意图": "物流催单",\n  "情绪等级": 4,\n  "是否需要人工介入": true\n}\n```',
+      }),
+      makeNode(
+        'code_router_logic',
+        'code',
+        { raw_response: '{{llm_classifier.response}}' },
+        { script }
+      ),
+      makeNode('output_dispatch', 'output', {
+        dispatch_result: '{{code_router_logic.result}}',
+      }),
+    ];
+
+    const edges: WorkflowEdge[] = [
+      makeEdge('llm_classifier', 'code_router_logic', 'response', 'inputs'),
+      makeEdge('code_router_logic', 'output_dispatch', 'result', 'inputs'),
+    ];
+
+    const events = await collectEvents(engine.executeWorkflow({ nodes, edges }));
+    const finalEvent = events.find((e) => e.type === 'WORKFLOW_COMPLETE');
+    assert.ok(finalEvent);
+
+    const outputs = (finalEvent.payload as any).outputs;
+    const codeResult = outputs.code_router_logic.result;
+    assert.equal(codeResult.targetQueue, '🚀 物流专线极速客服队列 (Logistics VIP)');
+    assert.equal(codeResult.intent, '物流催单');
+    assert.equal(codeResult.urgency, 4);
+    assert.equal(codeResult.humanEscalation, true);
+    assert.ok(outputs.code_router_logic.stdout.includes('Parsed intent: 物流催单'));
+
+    const dispatchResult =
+      typeof outputs.output_dispatch.finalResult.dispatch_result === 'string'
+        ? JSON.parse(outputs.output_dispatch.finalResult.dispatch_result)
+        : outputs.output_dispatch.finalResult.dispatch_result;
+
+    assert.equal(dispatchResult.targetQueue, '🚀 物流专线极速客服队列 (Logistics VIP)');
+  });
+});
+

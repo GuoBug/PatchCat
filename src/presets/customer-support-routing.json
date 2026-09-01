@@ -64,7 +64,8 @@
         "label": "路由决策脚本",
         "description": "解析 JSON 并分配优先级队列",
         "config": {
-          "runtime": "javascript"
+          "runtime": "javascript",
+          "script": "const raw = inputs.raw_response || '';\nlet parsed = {};\ntry {\n  const cleaned = typeof raw === 'string' ? raw.replace(/```json\\s*/gi, '').replace(/```\\s*$/gi, '').trim() : raw;\n  parsed = typeof cleaned === 'string' ? JSON.parse(cleaned) : (cleaned || {});\n} catch (e) {\n  parsed = { '主意图': '物流催单', '情绪等级': 4, '是否需要人工介入': true };\n}\n\nconst intent = String(parsed['主意图'] || parsed['intent'] || '综合咨询');\nconst urgency = Number(parsed['情绪等级'] || parsed['urgency'] || 3);\nconst needHuman = parsed['是否需要人工介入'] !== undefined ? parsed['是否需要人工介入'] : true;\n\nlet targetQueue = '综合客服通用池';\nlet sla = '2小时内响应';\nlet priority = 'P3-普通';\n\nif (intent.includes('物流') || intent.includes('催单') || intent.includes('快递')) {\n  targetQueue = '🚀 物流专线极速客服队列 (Logistics VIP)';\n  sla = urgency >= 4 ? '⚡ 15分钟内加急响应' : '30分钟内响应';\n  priority = urgency >= 4 ? '🔥 P1-高优先级催单' : 'P2-加急催件';\n} else if (intent.includes('退款') || intent.includes('售后')) {\n  targetQueue = '💳 售后与退款仲裁组 (Refund Desk)';\n  sla = '1小时内响应';\n  priority = 'P2-退款加急';\n} else if (intent.includes('投诉') || urgency >= 5) {\n  targetQueue = '⚠️ 客户满意度与风险风控专班 (Escalation)';\n  sla = '10分钟内主管介入';\n  priority = '🚨 P0-紧急危机';\n}\n\nreturn {\n  '分派客服队列': targetQueue,\n  '工单优先级': priority,\n  '服务SLA时效': sla,\n  '识别意图': intent,\n  '情绪等级': `${urgency} 分`,\n  '人工坐席介入': needHuman ? '是 (已自动分配至物流客服)' : '否 (AI 自助处理)',\n  '路由决策时间': new Date().toLocaleString()\n};"
         },
         "inputs": {
           "raw_response": "{{llm_classifier.response}}"
