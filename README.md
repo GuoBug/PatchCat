@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://github.com/gu0bug/PatchCat">
-    <img src="https://raw.githubusercontent.com/gu0bug/PatchCat/main/src/assets/logo.png" width="128" height="128" alt="PatchCat Logo" onerror="this.src='https://api.iconify.design/lucide:cat.svg?color=%233b82f6&width=128&height=128'" />
+    <img src="./assets/logo.png" width="128" height="128" alt="PatchCat Logo" />
   </a>
 
   # PatchCat
