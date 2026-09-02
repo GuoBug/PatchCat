@@ -33,6 +33,11 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Run Quality Checks & Tests
+        run: |
+          npm run typecheck
+          npm test
+
       - name: Build Static Site
         run: npm run build
         env:

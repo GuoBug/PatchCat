@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
-import { ControlHeader, PropertyPanel, LogConsole } from './components/panels';
+import { ControlHeader, PropertyPanel, LogConsole, Footer } from './components/panels';
 import { WorkflowCanvas } from './components/canvas';
 import { useWorkflowStore } from './stores/workflow-store.ts';
 import customerSupportPreset from './presets/customer-support-routing.json';
@@ -37,7 +37,7 @@ export const App: React.FC = () => {
         <ControlHeader />
 
         {/* Main Canvas & Inspector Layout */}
-        <main className="flex-1 flex w-full h-[calc(100vh-56px)] overflow-hidden relative">
+        <main className="flex-1 flex w-full min-h-0 overflow-hidden relative">
           {/* Visual Canvas Area */}
           <section className="flex-1 h-full relative">
             <WorkflowCanvas />
@@ -46,6 +46,9 @@ export const App: React.FC = () => {
           {/* Right Property Inspector Drawer */}
           <PropertyPanel />
         </main>
+
+        {/* Bottom Status / Links Footer */}
+        <Footer />
 
         {/* Bottom Execution Log Console Drawer */}
         <LogConsole />
