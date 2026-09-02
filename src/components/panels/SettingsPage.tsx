@@ -29,6 +29,7 @@ import {
   Copy,
   Check,
   CheckCircle,
+  HardDrive,
 } from 'lucide-react';
 import {
   useSettingsStore,
@@ -36,6 +37,7 @@ import {
   DEFAULT_PROVIDERS,
 } from '../../stores/settings-store.ts';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
+import { useProjectStore } from '../../stores/project-store.ts';
 import { useLogStore } from '../../stores/log-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
 import { CatLogo } from '../icons/CatLogo.tsx';
@@ -77,6 +79,15 @@ export const SettingsPage: React.FC = () => {
   const setTheme = useWorkflowStore((s) => s.setTheme);
   const engineMode = useWorkflowStore((s) => s.engineMode);
   const setEngineMode = useWorkflowStore((s) => s.setEngineMode);
+
+  // Storage & Backend Mode
+  const storageMode = useSettingsStore((s) => s.storageMode);
+  const setStorageMode = useSettingsStore((s) => s.setStorageMode);
+  const serverBaseUrl = useSettingsStore((s) => s.serverBaseUrl);
+  const setServerBaseUrl = useSettingsStore((s) => s.setServerBaseUrl);
+  const serverTestResult = useSettingsStore((s) => s.serverTestResult);
+  const testServerConnection = useSettingsStore((s) => s.testServerConnection);
+  const syncWithStorage = useProjectStore((s) => s.syncWithStorage);
 
   // Log store
   const logLevel = useLogStore((s) => s.logLevel);
@@ -410,6 +421,137 @@ export const SettingsPage: React.FC = () => {
                     <div className="text-xs opacity-75 mt-1 leading-relaxed">{t.settings.engineMockDesc}</div>
                   </button>
                 </div>
+              </div>
+
+              {/* Storage & Backend Mode */}
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-xs space-y-4">
+                <div className="flex items-center gap-2.5">
+                  <HardDrive className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                      {t.settings.storageSection}
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {t.settings.storageSectionDesc}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {/* Local Mode */}
+                  <button
+                    onClick={() => {
+                      setStorageMode('local');
+                      syncWithStorage();
+                    }}
+                    className={`p-4 rounded-xl border text-left transition-all ${
+                      storageMode === 'local'
+                        ? 'border-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-300 ring-2 ring-emerald-600/30'
+                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="font-bold text-sm">{t.settings.storageLocal}</div>
+                      {storageMode === 'local' && <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
+                    </div>
+                    <div className="text-xs opacity-75 mt-1 leading-relaxed">{t.settings.storageLocalDesc}</div>
+                  </button>
+
+                  {/* Server Mode */}
+                  <button
+                    onClick={() => {
+                      setStorageMode('server');
+                      syncWithStorage();
+                      testServerConnection();
+                    }}
+                    className={`p-4 rounded-xl border text-left transition-all ${
+                      storageMode === 'server'
+                        ? 'border-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-300 ring-2 ring-emerald-600/30'
+                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="font-bold text-sm">{t.settings.storageServer}</div>
+                      {storageMode === 'server' && <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
+                    </div>
+                    <div className="text-xs opacity-75 mt-1 leading-relaxed">{t.settings.storageServerDesc}</div>
+                  </button>
+                </div>
+
+                {/* Server URL Input & Connection Tester (Shown when server mode is selected) */}
+                {storageMode === 'server' && (
+                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-3 animate-in fade-in duration-150">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        {t.settings.serverUrlLabel}
+                      </label>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="text"
+                          value={serverBaseUrl}
+                          onChange={(e) => setServerBaseUrl(e.target.value)}
+                          placeholder="http://localhost:8000"
+                          className="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500"
+                        />
+                        <button
+                          onClick={async () => {
+                            await testServerConnection();
+                            await syncWithStorage();
+                          }}
+                          disabled={serverTestResult.status === 'testing'}
+                          className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shrink-0"
+                        >
+                          {serverTestResult.status === 'testing' ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>{t.settings.testingServerBtn}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Zap className="w-3.5 h-3.5" />
+                              <span>{t.settings.testServerBtn}</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Test result status display */}
+                    {serverTestResult.status !== 'idle' && (
+                      <div
+                        className={`p-3 rounded-lg text-xs flex items-center justify-between gap-2 ${
+                          serverTestResult.status === 'success'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60'
+                            : serverTestResult.status === 'error'
+                            ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60'
+                            : 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {serverTestResult.status === 'success' ? (
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                          ) : serverTestResult.status === 'error' ? (
+                            <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                          ) : (
+                            <Loader2 className="w-4 h-4 text-blue-500 animate-spin shrink-0" />
+                          )}
+                          <span className="font-medium">
+                            {serverTestResult.message ||
+                              (serverTestResult.status === 'success'
+                                ? t.settings.serverTestSuccess
+                                : t.settings.serverTestFailed)}
+                          </span>
+                        </div>
+
+                        {serverTestResult.latencyMs !== undefined && (
+                          <span className="text-[11px] font-mono opacity-80 shrink-0">
+                            {serverTestResult.latencyMs}ms
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}

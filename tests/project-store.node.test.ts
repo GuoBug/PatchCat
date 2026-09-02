@@ -152,4 +152,43 @@ describe('Project & Workflow Folder Management Store', () => {
     store.setSearchQuery('customer');
     assert.equal(useProjectStore.getState().searchQuery, 'customer');
   });
+
+  it('should support StorageAdapter direct operations (LocalStorageAdapter)', async () => {
+    const { LocalStorageAdapter } = await import('../src/services/storage/storage-adapter.ts');
+    const adapter = new LocalStorageAdapter();
+
+    const folders = await adapter.getFolders();
+    assert.ok(folders.length >= 2);
+
+    const newFolder = await adapter.createFolder({ name: 'Adapter Test Folder' });
+    assert.equal(newFolder.name, 'Adapter Test Folder');
+
+    const updatedFolder = await adapter.updateFolder(newFolder.id, { name: 'Renamed Folder' });
+    assert.equal(updatedFolder.name, 'Renamed Folder');
+
+    const workflows = await adapter.getWorkflows();
+    assert.ok(workflows.length >= 1);
+
+    const newWf = await adapter.createWorkflow({
+      id: 'wf-adapter-test',
+      name: 'Adapter Workflow',
+      folderId: newFolder.id,
+      nodes: [],
+      edges: [],
+      globalInputs: {},
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    assert.equal(newWf.id, 'wf-adapter-test');
+
+    const fetchedWf = await adapter.getWorkflow('wf-adapter-test');
+    assert.ok(fetchedWf);
+    assert.equal(fetchedWf.name, 'Adapter Workflow');
+
+    await adapter.deleteWorkflow('wf-adapter-test');
+    const deletedWf = await adapter.getWorkflow('wf-adapter-test');
+    assert.equal(deletedWf, null);
+
+    await adapter.deleteFolder(newFolder.id);
+  });
 });

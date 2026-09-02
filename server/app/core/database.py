@@ -16,14 +16,24 @@ from ..models.base import Base
 
 logger = logging.getLogger("patchcat.database")
 
+# Engine connection arguments
+engine_kwargs = {
+    "echo": False,
+    "future": True,
+}
+
+# Only configure connection pooling for PostgreSQL (SQLite uses standard single/null pool)
+if "postgresql" in settings.DATABASE_URL:
+    engine_kwargs.update({
+        "pool_pre_ping": True,
+        "pool_size": 10,
+        "max_overflow": 20,
+    })
+
 # Create Async Engine
 engine: AsyncEngine = create_async_engine(
     settings.DATABASE_URL,
-    echo=False,
-    future=True,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
+    **engine_kwargs,
 )
 
 # Async Session Factory

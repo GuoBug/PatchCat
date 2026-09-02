@@ -128,6 +128,20 @@ export interface Translations {
     engineMockDesc: string;
     engineBrowser: string;
     engineBrowserDesc: string;
+    // Storage Mode Section
+    storageSection: string;
+    storageSectionDesc: string;
+    storageLocal: string;
+    storageLocalDesc: string;
+    storageServer: string;
+    storageServerDesc: string;
+    serverUrlLabel: string;
+    testServerBtn: string;
+    testingServerBtn: string;
+    serverConnectedBadge: string;
+    serverDisconnectedBadge: string;
+    serverTestSuccess: string;
+    serverTestFailed: string;
     // Providers Tab
     providersTitle: string;
     providersSubtitle: string;
@@ -344,6 +358,20 @@ export const translations: Record<Language, Translations> = {
       engineMockDesc: 'Simulate workflow runs locally with mock responses for instant testing.',
       engineBrowser: 'Browser BYOK Mode (Recommended)',
       engineBrowserDesc: 'Direct client-side connection using your own API keys with zero backend latency.',
+      // Storage Mode Section
+      storageSection: 'Storage & Backend Mode',
+      storageSectionDesc: 'Choose where workflows and project directories are saved.',
+      storageLocal: 'Browser Local Storage (BYOK)',
+      storageLocalDesc: 'Store workflows completely in your browser localStorage. 100% private with zero backend setup.',
+      storageServer: 'FastAPI Backend Server (PostgreSQL / SQLite)',
+      storageServerDesc: 'Persist workflows and project directories to your FastAPI backend server with database synchronization.',
+      serverUrlLabel: 'Backend API URL',
+      testServerBtn: 'Test Connection',
+      testingServerBtn: 'Testing...',
+      serverConnectedBadge: 'Connected',
+      serverDisconnectedBadge: 'Disconnected',
+      serverTestSuccess: 'Backend server is healthy and connected to database.',
+      serverTestFailed: 'Unable to connect to backend server. Please check if FastAPI is running.',
       // Providers Tab
       providersTitle: 'LLM Providers & API Keys',
       providersSubtitle: 'Configure model endpoints and API credentials (BYOK). Pure client-side direct connection.',
@@ -558,6 +586,20 @@ export const translations: Record<Language, Translations> = {
       engineMockDesc: '无网络依赖，使用本地预设快速体验工作流调度过程。',
       engineBrowser: '纯前端 BYOK 直连模式 (推荐)',
       engineBrowserDesc: '使用您自己的 API 密钥从浏览器直接调用大模型，零后端中转，安全隐私。',
+      // Storage Mode Section
+      storageSection: '存储与后端服务模式',
+      storageSectionDesc: '选择工作流和项目目录的保存位置与同步方式。',
+      storageLocal: '浏览器本地存储 (BYOK 模式)',
+      storageLocalDesc: '工作流完全保存在浏览器 LocalStorage 中，无需后端数据库，零配置且完全私密。',
+      storageServer: 'FastAPI 后端服务 (PostgreSQL / SQLite)',
+      storageServerDesc: '持久化存储至 FastAPI 后端数据库，支持多端数据同步与知识库向量检索。',
+      serverUrlLabel: '后端服务地址 (API Base URL)',
+      testServerBtn: '测试后端连接',
+      testingServerBtn: '正在连接...',
+      serverConnectedBadge: '后端已连接',
+      serverDisconnectedBadge: '后端未连接',
+      serverTestSuccess: '已成功连接至 FastAPI 后端服务并验证数据库连通正常。',
+      serverTestFailed: '无法连接至后端服务，请检查 FastAPI 服务是否已在对应端口启动。',
       // Providers Tab
       providersTitle: 'LLM Provider & API Key 设置',
       providersSubtitle: '配置大模型端点与 API 凭证 (BYOK)，零后端纯前端直连。',

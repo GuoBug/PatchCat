@@ -1,9 +1,9 @@
 /**
  * @file    src/stores/project-store.ts
- * @version 1.0.0
+ * @version 2.0.0
  * @description
  *   Zustand store for managing multi-workflow projects, hierarchical folders/directories,
- *   and LocalStorage persistence with Antigravity-style left drawer organization.
+ *   and Dual-Mode persistence (LocalStorage vs FastAPI Backend) with Antigravity-style left drawer.
  */
 
 import { create } from 'zustand';
@@ -11,7 +11,9 @@ import { immer } from 'zustand/middleware/immer';
 import { nanoid } from 'nanoid';
 import type { WorkflowNode, WorkflowEdge } from '../engine/types.ts';
 import { useWorkflowStore } from './workflow-store.ts';
+import { useSettingsStore } from './settings-store.ts';
 import { PRESETS_DATA } from '../presets/index.ts';
+import { getStorageAdapter } from '../services/storage/storage-adapter.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Types & Interfaces
@@ -43,6 +45,7 @@ export interface ProjectStoreState {
   activeWorkflowId: string | null;
   isSidebarOpen: boolean;
   searchQuery: string;
+  isLoading: boolean;
 
   // Actions
   setSidebarOpen: (open: boolean) => void;
@@ -51,7 +54,7 @@ export interface ProjectStoreState {
 
   // Workflow CRUD
   createWorkflow: (name?: string, folderId?: string) => string;
-  loadWorkflow: (id: string) => void;
+  loadWorkflow: (id: string) => Promise<void>;
   saveCurrentWorkflow: (id?: string) => void;
   renameWorkflow: (id: string, name: string) => void;
   duplicateWorkflow: (id: string) => string;
@@ -64,8 +67,9 @@ export interface ProjectStoreState {
   deleteFolder: (id: string) => void;
   toggleFolder: (id: string) => void;
 
-  // Re-initialize / seed with current language presets
+  // Synchronization & Seed
   seedPresetsIfEmpty: (language?: 'en' | 'zh') => void;
+  syncWithStorage: () => Promise<void>;
 }
 
 const STORAGE_KEY_FOLDERS = 'patchcat_folders_v2';
@@ -90,7 +94,6 @@ function loadInitialFolders(lang: 'en' | 'zh' = 'en'): Folder[] {
     console.warn('[ProjectStore] Failed to parse stored folders:', e);
   }
 
-  // Default seed folders
   return [
     {
       id: 'default',
@@ -122,7 +125,6 @@ function loadInitialWorkflows(lang: 'en' | 'zh' = 'en'): SavedWorkflow[] {
     console.warn('[ProjectStore] Failed to parse stored workflows:', e);
   }
 
-  // Default seed workflows from presets
   const presets = PRESETS_DATA[lang] || PRESETS_DATA.en;
   const now = Date.now();
 
@@ -140,7 +142,7 @@ function loadInitialWorkflows(lang: 'en' | 'zh' = 'en'): SavedWorkflow[] {
       nodes: customerSupport.data.nodes,
       edges: customerSupport.data.edges,
       globalInputs: (customerSupport.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs || {},
-      createdAt: now - 3600000 * 5, // 5 hours ago
+      createdAt: now - 3600000 * 5,
       updatedAt: now - 3600000 * 5,
       isPreset: true,
     });
@@ -154,7 +156,7 @@ function loadInitialWorkflows(lang: 'en' | 'zh' = 'en'): SavedWorkflow[] {
       nodes: reportCritic.data.nodes,
       edges: reportCritic.data.edges,
       globalInputs: (reportCritic.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs || {},
-      createdAt: now - 86400000 * 2, // 2 days ago
+      createdAt: now - 86400000 * 2,
       updatedAt: now - 86400000 * 2,
       isPreset: true,
     });
@@ -168,7 +170,7 @@ function loadInitialWorkflows(lang: 'en' | 'zh' = 'en'): SavedWorkflow[] {
       nodes: modelArena.data.nodes,
       edges: modelArena.data.edges,
       globalInputs: (modelArena.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs || {},
-      createdAt: now - 86400000 * 4, // 4 days ago
+      createdAt: now - 86400000 * 4,
       updatedAt: now - 86400000 * 4,
       isPreset: true,
     });
@@ -177,7 +179,7 @@ function loadInitialWorkflows(lang: 'en' | 'zh' = 'en'): SavedWorkflow[] {
   return initialList;
 }
 
-function persistToStorage(folders: Folder[], workflows: SavedWorkflow[], activeId: string | null) {
+function persistToLocalStorage(folders: Folder[], workflows: SavedWorkflow[], activeId: string | null) {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(STORAGE_KEY_FOLDERS, JSON.stringify(folders));
@@ -188,6 +190,11 @@ function persistToStorage(folders: Folder[], workflows: SavedWorkflow[], activeI
   } catch (e) {
     console.warn('[ProjectStore] Failed to save to localStorage:', e);
   }
+}
+
+function getActiveAdapter() {
+  const settings = useSettingsStore.getState();
+  return getStorageAdapter(settings.storageMode, settings.serverBaseUrl);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -213,6 +220,7 @@ export const useProjectStore = create<ProjectStoreState>()(
       activeWorkflowId: initialActiveId,
       isSidebarOpen: initialSidebarOpen,
       searchQuery: '',
+      isLoading: false,
 
       setSidebarOpen: (open) => {
         if (typeof window !== 'undefined') {
@@ -240,7 +248,6 @@ export const useProjectStore = create<ProjectStoreState>()(
         const workflowName = name?.trim() || `Workflow ${get().workflows.length + 1}`;
         const now = Date.now();
 
-        // Create an initial blank canvas with an Input Node and an LLM Node connected
         const initialNodes: WorkflowNode[] = [
           {
             id: 'input_1',
@@ -320,22 +327,28 @@ export const useProjectStore = create<ProjectStoreState>()(
           state.activeWorkflowId = id;
         });
 
-        // Load new graph into workflow canvas
         const wfStore = useWorkflowStore.getState();
         wfStore.loadPreset({
           nodes: initialNodes,
           edges: initialEdges,
         });
 
-        persistToStorage(get().folders, get().workflows, id);
+        persistToLocalStorage(get().folders, get().workflows, id);
+
+        // Async save to active storage adapter (e.g. FastAPI)
+        const adapter = getActiveAdapter();
+        adapter.createWorkflow(newWorkflow).catch((err) => {
+          console.warn('[ProjectStore] Failed to save workflow to backend:', err);
+        });
+
         return id;
       },
 
-      loadWorkflow: (id) => {
+      loadWorkflow: async (id) => {
         const wf = get().workflows.find((w) => w.id === id);
         if (!wf) return;
 
-        // First, auto-save current active workflow if needed
+        // Auto-save currently active workflow
         const currentActiveId = get().activeWorkflowId;
         if (currentActiveId && currentActiveId !== id) {
           const currentNodes = useWorkflowStore.getState().nodes;
@@ -354,14 +367,34 @@ export const useProjectStore = create<ProjectStoreState>()(
           state.activeWorkflowId = id;
         });
 
-        // Load into canvas store
+        // If nodes/edges are empty (lazy-loaded from server), fetch details from adapter
+        let targetWorkflow = wf;
+        if (!wf.nodes || wf.nodes.length === 0) {
+          try {
+            const fullWf = await getActiveAdapter().getWorkflow(id);
+            if (fullWf && fullWf.nodes && fullWf.nodes.length > 0) {
+              targetWorkflow = fullWf;
+              set((state) => {
+                const item = state.workflows.find((w) => w.id === id);
+                if (item) {
+                  item.nodes = fullWf.nodes;
+                  item.edges = fullWf.edges;
+                  item.globalInputs = fullWf.globalInputs;
+                }
+              });
+            }
+          } catch (e) {
+            console.warn('[ProjectStore] Failed to fetch full workflow detail:', e);
+          }
+        }
+
         const wfStore = useWorkflowStore.getState();
         wfStore.loadPreset({
-          nodes: wf.nodes,
-          edges: wf.edges,
+          nodes: targetWorkflow.nodes,
+          edges: targetWorkflow.edges,
         });
 
-        persistToStorage(get().folders, get().workflows, id);
+        persistToLocalStorage(get().folders, get().workflows, id);
       },
 
       saveCurrentWorkflow: (id) => {
@@ -382,7 +415,17 @@ export const useProjectStore = create<ProjectStoreState>()(
           }
         });
 
-        persistToStorage(get().folders, get().workflows, get().activeWorkflowId);
+        persistToLocalStorage(get().folders, get().workflows, get().activeWorkflowId);
+
+        getActiveAdapter()
+          .saveWorkflow(targetId, {
+            nodes: currentNodes,
+            edges: currentEdges,
+            globalInputs: currentInputs,
+          })
+          .catch((e) => {
+            console.warn('[ProjectStore] Failed to sync saved workflow to backend:', e);
+          });
       },
 
       renameWorkflow: (id, name) => {
@@ -397,7 +440,13 @@ export const useProjectStore = create<ProjectStoreState>()(
           }
         });
 
-        persistToStorage(get().folders, get().workflows, get().activeWorkflowId);
+        persistToLocalStorage(get().folders, get().workflows, get().activeWorkflowId);
+
+        getActiveAdapter()
+          .saveWorkflow(id, { name: cleanName })
+          .catch((e) => {
+            console.warn('[ProjectStore] Failed to rename workflow on backend:', e);
+          });
       },
 
       duplicateWorkflow: (id) => {
@@ -421,21 +470,26 @@ export const useProjectStore = create<ProjectStoreState>()(
           state.activeWorkflowId = newId;
         });
 
-        // Load into canvas
         const wfStore = useWorkflowStore.getState();
         wfStore.loadPreset({
           nodes: copy.nodes,
           edges: copy.edges,
         });
 
-        persistToStorage(get().folders, get().workflows, newId);
+        persistToLocalStorage(get().folders, get().workflows, newId);
+
+        getActiveAdapter()
+          .createWorkflow(copy)
+          .catch((e) => {
+            console.warn('[ProjectStore] Failed to duplicate workflow on backend:', e);
+          });
+
         return newId;
       },
 
       deleteWorkflow: (id) => {
         const workflows = get().workflows;
         if (workflows.length <= 1) {
-          // If only 1 workflow, don't leave canvas empty: reset it to a new blank workflow
           get().createWorkflow('New Workflow');
         }
 
@@ -457,7 +511,13 @@ export const useProjectStore = create<ProjectStoreState>()(
           }
         }
 
-        persistToStorage(get().folders, get().workflows, get().activeWorkflowId);
+        persistToLocalStorage(get().folders, get().workflows, get().activeWorkflowId);
+
+        getActiveAdapter()
+          .deleteWorkflow(id)
+          .catch((e) => {
+            console.warn('[ProjectStore] Failed to delete workflow on backend:', e);
+          });
       },
 
       moveWorkflow: (workflowId, targetFolderId) => {
@@ -469,7 +529,13 @@ export const useProjectStore = create<ProjectStoreState>()(
           }
         });
 
-        persistToStorage(get().folders, get().workflows, get().activeWorkflowId);
+        persistToLocalStorage(get().folders, get().workflows, get().activeWorkflowId);
+
+        getActiveAdapter()
+          .moveWorkflow(workflowId, targetFolderId)
+          .catch((e) => {
+            console.warn('[ProjectStore] Failed to move workflow on backend:', e);
+          });
       },
 
       createFolder: (name) => {
@@ -487,7 +553,14 @@ export const useProjectStore = create<ProjectStoreState>()(
           state.folders.push(newFolder);
         });
 
-        persistToStorage(get().folders, get().workflows, get().activeWorkflowId);
+        persistToLocalStorage(get().folders, get().workflows, get().activeWorkflowId);
+
+        getActiveAdapter()
+          .createFolder(newFolder)
+          .catch((err) => {
+            console.warn('[ProjectStore] Failed to create folder on backend:', err);
+          });
+
         return id;
       },
 
@@ -502,18 +575,23 @@ export const useProjectStore = create<ProjectStoreState>()(
           }
         });
 
-        persistToStorage(get().folders, get().workflows, get().activeWorkflowId);
+        persistToLocalStorage(get().folders, get().workflows, get().activeWorkflowId);
+
+        getActiveAdapter()
+          .updateFolder(id, { name: cleanName })
+          .catch((e) => {
+            console.warn('[ProjectStore] Failed to rename folder on backend:', e);
+          });
       },
 
       deleteFolder: (id) => {
         const folders = get().folders;
-        if (folders.length <= 1) return; // Keep at least one default folder
+        if (folders.length <= 1) return;
 
         const remainingFolderId = folders.find((f) => f.id !== id)?.id || 'default';
 
         set((state) => {
           state.folders = state.folders.filter((f) => f.id !== id);
-          // Move workflows in deleted folder to the remaining folder
           for (const wf of state.workflows) {
             if (wf.folderId === id) {
               wf.folderId = remainingFolderId;
@@ -521,7 +599,13 @@ export const useProjectStore = create<ProjectStoreState>()(
           }
         });
 
-        persistToStorage(get().folders, get().workflows, get().activeWorkflowId);
+        persistToLocalStorage(get().folders, get().workflows, get().activeWorkflowId);
+
+        getActiveAdapter()
+          .deleteFolder(id)
+          .catch((e) => {
+            console.warn('[ProjectStore] Failed to delete folder on backend:', e);
+          });
       },
 
       toggleFolder: (id) => {
@@ -532,7 +616,7 @@ export const useProjectStore = create<ProjectStoreState>()(
           }
         });
 
-        persistToStorage(get().folders, get().workflows, get().activeWorkflowId);
+        persistToLocalStorage(get().folders, get().workflows, get().activeWorkflowId);
       },
 
       seedPresetsIfEmpty: (lang = 'en') => {
@@ -545,7 +629,64 @@ export const useProjectStore = create<ProjectStoreState>()(
             state.workflows = initialWorkflows;
             state.activeWorkflowId = initialWorkflows[0]?.id || null;
           });
-          persistToStorage(initialFolders, initialWorkflows, initialWorkflows[0]?.id || null);
+          persistToLocalStorage(initialFolders, initialWorkflows, initialWorkflows[0]?.id || null);
+        }
+      },
+
+      syncWithStorage: async () => {
+        const adapter = getActiveAdapter();
+        set((state) => {
+          state.isLoading = true;
+        });
+
+        try {
+          const [remoteFolders, remoteWorkflows] = await Promise.all([
+            adapter.getFolders(),
+            adapter.getWorkflows(),
+          ]);
+
+          // If server is connected but empty, initialize with default seed data
+          if (remoteFolders.length === 0 && remoteWorkflows.length === 0) {
+            const seedFolders = loadInitialFolders();
+            const seedWorkflows = loadInitialWorkflows();
+            for (const f of seedFolders) {
+              await adapter.createFolder(f).catch(() => {});
+            }
+            for (const w of seedWorkflows) {
+              await adapter.createWorkflow(w).catch(() => {});
+            }
+            set((state) => {
+              state.folders = seedFolders;
+              state.workflows = seedWorkflows;
+              state.activeWorkflowId = seedWorkflows[0]?.id || null;
+              state.isLoading = false;
+            });
+            return;
+          }
+
+          set((state) => {
+            state.folders = remoteFolders;
+            state.workflows = remoteWorkflows;
+            state.activeWorkflowId = remoteWorkflows[0]?.id || state.activeWorkflowId;
+            state.isLoading = false;
+          });
+
+          // Load first workflow into canvas if activeWorkflowId changed
+          const firstId = remoteWorkflows[0]?.id;
+          if (firstId) {
+            const fullWf = await adapter.getWorkflow(firstId);
+            if (fullWf && fullWf.nodes.length > 0) {
+              useWorkflowStore.getState().loadPreset({
+                nodes: fullWf.nodes,
+                edges: fullWf.edges,
+              });
+            }
+          }
+        } catch (e) {
+          console.warn('[ProjectStore] syncWithStorage fallback to local:', e);
+          set((state) => {
+            state.isLoading = false;
+          });
         }
       },
     };

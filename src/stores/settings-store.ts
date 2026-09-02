@@ -100,6 +100,8 @@ export const DEFAULT_PROVIDERS: Record<ProviderId, ProviderConfig> = {
 
 const STORAGE_KEY = 'patchcat-llm-settings-v1';
 const LANG_STORAGE_KEY = 'patchcat-language-v1';
+const STORAGE_MODE_KEY = 'patchcat-storage-mode-v1';
+const SERVER_URL_KEY = 'patchcat-server-url-v1';
 
 export interface SettingsStoreState {
   // Navigation
@@ -122,6 +124,14 @@ export interface SettingsStoreState {
   providers: Record<ProviderId, ProviderConfig>;
   testResults: Record<ProviderId, ConnectionTestResult>;
 
+  // Storage & Backend Mode
+  storageMode: 'local' | 'server';
+  serverBaseUrl: string;
+  serverTestResult: ConnectionTestResult;
+  setStorageMode: (mode: 'local' | 'server') => void;
+  setServerBaseUrl: (url: string) => void;
+  testServerConnection: () => Promise<ConnectionTestResult>;
+
   // Actions
   setActiveProvider: (id: ProviderId) => void;
   updateProviderConfig: (id: ProviderId, partial: Partial<ProviderConfig>) => void;
@@ -142,10 +152,14 @@ function loadInitialState(): {
   language: Language;
   activeProvider: ProviderId;
   providers: Record<ProviderId, ProviderConfig>;
+  storageMode: 'local' | 'server';
+  serverBaseUrl: string;
 } {
   let language: Language = 'en';
   let activeProvider: ProviderId = 'deepseek';
   let providers: Record<ProviderId, ProviderConfig> = DEFAULT_PROVIDERS;
+  let storageMode: 'local' | 'server' = 'local';
+  let serverBaseUrl = 'http://localhost:8000';
 
   if (typeof window !== 'undefined') {
     try {
@@ -155,6 +169,19 @@ function loadInitialState(): {
       }
     } catch (e) {
       console.warn('[SettingsStore] Failed to load language from localStorage:', e);
+    }
+
+    try {
+      const savedMode = localStorage.getItem(STORAGE_MODE_KEY);
+      if (savedMode === 'local' || savedMode === 'server') {
+        storageMode = savedMode;
+      }
+      const savedUrl = localStorage.getItem(SERVER_URL_KEY);
+      if (savedUrl) {
+        serverBaseUrl = savedUrl;
+      }
+    } catch (e) {
+      console.warn('[SettingsStore] Failed to load storage settings:', e);
     }
 
     try {
@@ -172,7 +199,7 @@ function loadInitialState(): {
     }
   }
 
-  return { language, activeProvider, providers };
+  return { language, activeProvider, providers, storageMode, serverBaseUrl };
 }
 
 function saveState(state: { activeProvider: ProviderId; providers: Record<ProviderId, ProviderConfig> }) {
@@ -272,6 +299,93 @@ export const useSettingsStore = create<SettingsStoreState>()(
         google: { status: 'idle' },
         ollama: { status: 'idle' },
         custom: { status: 'idle' },
+      },
+
+      // Storage & Backend Mode
+      storageMode: initial.storageMode,
+      serverBaseUrl: initial.serverBaseUrl,
+      serverTestResult: { status: 'idle' },
+
+      setStorageMode: (mode) => {
+        set((state) => {
+          state.storageMode = mode;
+        });
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(STORAGE_MODE_KEY, mode);
+          } catch (e) {
+            console.error('[SettingsStore] Failed to save storageMode:', e);
+          }
+        }
+      },
+
+      setServerBaseUrl: (url) => {
+        const clean = url.trim();
+        set((state) => {
+          state.serverBaseUrl = clean;
+          state.serverTestResult = { status: 'idle' };
+        });
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(SERVER_URL_KEY, clean);
+          } catch (e) {
+            console.error('[SettingsStore] Failed to save serverBaseUrl:', e);
+          }
+        }
+      },
+
+      testServerConnection: async () => {
+        const url = get().serverBaseUrl.replace(/\/+$/, '');
+        set((state) => {
+          state.serverTestResult = { status: 'testing' };
+        });
+
+        const start = performance.now();
+        try {
+          const res = await fetch(`${url}/api/v1/health`, {
+            method: 'GET',
+            headers: { Accept: 'application/json' },
+            signal: AbortSignal.timeout(5000),
+          });
+
+          const latencyMs = Math.round(performance.now() - start);
+
+          if (!res.ok) {
+            const result: ConnectionTestResult = {
+              status: 'error',
+              latencyMs,
+              message: `HTTP ${res.status}: ${res.statusText}`,
+            };
+            set((state) => {
+              state.serverTestResult = result;
+            });
+            return result;
+          }
+
+          const data = await res.json();
+          const result: ConnectionTestResult = {
+            status: 'success',
+            latencyMs,
+            message: `Connected (${data.app_name || 'FastAPI'} v${data.version || '0.1.0'}) - DB: ${
+              data.database_connected ? 'Connected' : 'Degraded'
+            }`,
+          };
+          set((state) => {
+            state.serverTestResult = result;
+          });
+          return result;
+        } catch (err: any) {
+          const latencyMs = Math.round(performance.now() - start);
+          const result: ConnectionTestResult = {
+            status: 'error',
+            latencyMs,
+            message: err.name === 'TimeoutError' ? 'Connection timed out (5s)' : err.message || 'Connection failed',
+          };
+          set((state) => {
+            state.serverTestResult = result;
+          });
+          return result;
+        }
       },
 
       setSettingsOpen: (open) => {

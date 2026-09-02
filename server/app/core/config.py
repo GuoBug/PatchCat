@@ -33,10 +33,8 @@ class Settings(BaseSettings):
         "*",
     ]
 
-    # Database Configuration (PostgreSQL + asyncpg)
-    DATABASE_URL: str = (
-        "postgresql+asyncpg://patchcat:patchcat_secret@localhost:5432/patchcat_db"
-    )
+    # Database Configuration (Default: zero-setup local SQLite; or PostgreSQL with asyncpg)
+    DATABASE_URL: str = "sqlite+aiosqlite:///./patchcat.db"
 
     @field_validator("CORS_ORIGINS", mode="before")
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:

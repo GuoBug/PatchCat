@@ -174,5 +174,38 @@ describe('Settings Store & Provider Configuration', () => {
     assert.equal(useSettingsStore.getState().language, 'en');
     assert.equal(useSettingsStore.getState().currentView, 'canvas');
   });
+
+  it('should support storage mode switching and server base url configuration', async () => {
+    const store = useSettingsStore.getState();
+    assert.equal(store.storageMode, 'local');
+    assert.equal(store.serverBaseUrl, 'http://localhost:8000');
+
+    store.setStorageMode('server');
+    assert.equal(useSettingsStore.getState().storageMode, 'server');
+
+    store.setServerBaseUrl('http://127.0.0.1:8000');
+    assert.equal(useSettingsStore.getState().serverBaseUrl, 'http://127.0.0.1:8000');
+
+    // Mock fetch for health test
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (input: RequestInfo | URL) => {
+      if (String(input).includes('/api/v1/health')) {
+        return new Response(
+          JSON.stringify({ status: 'healthy', app_name: 'PatchCat Backend', version: '0.1.0', database_connected: true }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      return new Response('Not Found', { status: 404 });
+    };
+
+    try {
+      const result = await store.testServerConnection();
+      assert.equal(result.status, 'success');
+      assert.ok(result.latencyMs !== undefined);
+      assert.ok(result.message?.includes('Connected'));
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
 });
 
