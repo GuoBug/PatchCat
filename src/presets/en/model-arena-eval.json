@@ -1,0 +1,129 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Multi-LLM Arena Benchmark & Judge",
+    "description": "Concurrently query multiple language models with identical benchmark prompts, then aggregate and score results via an impartial LLM judge.",
+    "author": "PatchCat Team",
+    "tags": ["Evaluation", "Arena", "Benchmarking", "LLM-as-a-Judge"],
+    "createdAt": "2026-08-28T00:00:00Z",
+    "updatedAt": "2026-08-28T00:00:00Z"
+  },
+  "viewport": {
+    "x": 80,
+    "y": 100,
+    "zoom": 0.9
+  },
+  "nodes": [
+    {
+      "id": "input_benchmark_prompt",
+      "type": "input",
+      "position": { "x": 50, "y": 300 },
+      "data": {
+        "label": "Benchmark Query Input",
+        "inputs": {
+          "user_prompt": "Explain quantum entanglement in a witty, humorous way using a relatable everyday metaphor.",
+          "eval_criteria": "Humor, Scientific Rigor, Metaphor Appropriateness"
+        }
+      }
+    },
+    {
+      "id": "llm_model_a",
+      "type": "llm",
+      "position": { "x": 420, "y": 120 },
+      "data": {
+        "label": "Model A (GPT-4o)",
+        "config": {
+          "model": "gpt-4o",
+          "temperature": 0.7
+        },
+        "inputs": {
+          "prompt": "{{input_benchmark_prompt.user_prompt}}"
+        }
+      }
+    },
+    {
+      "id": "llm_model_b",
+      "type": "llm",
+      "position": { "x": 420, "y": 300 },
+      "data": {
+        "label": "Model B (Claude-3.5-Sonnet)",
+        "config": {
+          "model": "claude-3-5-sonnet",
+          "temperature": 0.7
+        },
+        "inputs": {
+          "prompt": "{{input_benchmark_prompt.user_prompt}}"
+        }
+      }
+    },
+    {
+      "id": "llm_model_c",
+      "type": "llm",
+      "position": { "x": 420, "y": 480 },
+      "data": {
+        "label": "Model C (Gemini-1.5-Pro)",
+        "config": {
+          "model": "gemini-1.5-pro",
+          "temperature": 0.7
+        },
+        "inputs": {
+          "prompt": "{{input_benchmark_prompt.user_prompt}}"
+        }
+      }
+    },
+    {
+      "id": "prompt_judge",
+      "type": "prompt",
+      "position": { "x": 800, "y": 300 },
+      "data": {
+        "label": "Impartial Judge Prompt",
+        "inputs": {
+          "template": "You are an objective, expert LLM benchmark referee. Given the original query:\n\"{{input_benchmark_prompt.user_prompt}}\"\n\nBased on criteria [{{input_benchmark_prompt.eval_criteria}}], score each contestant (1-10 scale), critique strengths/weaknesses, and declare the Winner:\n\n[Model A]:\n{{llm_model_a.response}}\n\n[Model B]:\n{{llm_model_b.response}}\n\n[Model C]:\n{{llm_model_c.response}}"
+        }
+      }
+    },
+    {
+      "id": "llm_judge",
+      "type": "llm",
+      "position": { "x": 1150, "y": 300 },
+      "data": {
+        "label": "Referee LLM (Judge)",
+        "config": {
+          "model": "gpt-4o",
+          "temperature": 0.1
+        },
+        "inputs": {
+          "prompt": "{{prompt_judge.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "output_arena_result",
+      "type": "output",
+      "position": { "x": 1500, "y": 300 },
+      "data": {
+        "label": "Arena Leaderboard Output",
+        "inputs": {
+          "judge_verdict": "{{llm_judge.response}}",
+          "responses": {
+            "model_a": "{{llm_model_a.response}}",
+            "model_b": "{{llm_model_b.response}}",
+            "model_c": "{{llm_model_c.response}}"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    { "id": "edge-a", "source": "input_benchmark_prompt", "target": "llm_model_a" },
+    { "id": "edge-b", "source": "input_benchmark_prompt", "target": "llm_model_b" },
+    { "id": "edge-c", "source": "input_benchmark_prompt", "target": "llm_model_c" },
+    { "id": "edge-j1", "source": "input_benchmark_prompt", "target": "prompt_judge" },
+    { "id": "edge-j2", "source": "llm_model_a", "target": "prompt_judge" },
+    { "id": "edge-j3", "source": "llm_model_b", "target": "prompt_judge" },
+    { "id": "edge-j4", "source": "llm_model_c", "target": "prompt_judge" },
+    { "id": "edge-j5", "source": "prompt_judge", "target": "llm_judge" },
+    { "id": "edge-j6", "source": "llm_judge", "target": "output_arena_result" }
+  ]
+}

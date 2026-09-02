@@ -23,11 +23,14 @@ import {
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import { useSettingsStore } from '../../stores/settings-store.ts';
+import { useTranslation } from '../../i18n/useTranslation.ts';
 import { extractVariableReferences } from '../../engine/variable-resolver.ts';
 
 interface InputParameterItemProps {
   paramKey: string;
   paramValue: string;
+  keyLabel: string;
+  valueLabel: string;
   onRenameKey: (newKey: string) => void;
   onChangeValue: (newValue: string) => void;
   onDelete: () => void;
@@ -36,6 +39,8 @@ interface InputParameterItemProps {
 const InputParameterItem: React.FC<InputParameterItemProps> = ({
   paramKey,
   paramValue,
+  keyLabel,
+  valueLabel,
   onRenameKey,
   onChangeValue,
   onDelete,
@@ -65,7 +70,9 @@ const InputParameterItem: React.FC<InputParameterItemProps> = ({
     <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2 focus-within:border-emerald-500/50 transition-colors shadow-xs">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          <span className="text-[10px] uppercase font-mono text-emerald-600 dark:text-emerald-500 font-bold shrink-0">KEY:</span>
+          <span className="text-[10px] uppercase font-mono text-emerald-600 dark:text-emerald-500 font-bold shrink-0">
+            {keyLabel}:
+          </span>
           <input
             type="text"
             value={localKey}
@@ -86,7 +93,9 @@ const InputParameterItem: React.FC<InputParameterItemProps> = ({
       </div>
 
       <div className="space-y-1">
-        <span className="text-[10px] uppercase font-mono text-slate-500 dark:text-slate-400 font-medium block">VALUE:</span>
+        <span className="text-[10px] uppercase font-mono text-slate-500 dark:text-slate-400 font-medium block">
+          {valueLabel}:
+        </span>
         <textarea
           rows={2}
           value={paramValue}
@@ -100,13 +109,16 @@ const InputParameterItem: React.FC<InputParameterItemProps> = ({
 };
 
 export const PropertyPanel: React.FC = () => {
+  const { t } = useTranslation();
+
   const selectedNodeId = useWorkflowStore((s) => s.selectedNodeId);
   const setSelectedNodeId = useWorkflowStore((s) => s.setSelectedNodeId);
   const nodes = useWorkflowStore((s) => s.nodes);
   const updateNodeData = useWorkflowStore((s) => s.updateNodeData);
   const updateNodeConfig = useWorkflowStore((s) => s.updateNodeConfig);
 
-  const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
+  const setCurrentView = useSettingsStore((s) => s.setCurrentView);
+  const setSettingsTab = useSettingsStore((s) => s.setSettingsTab);
   const activeProvider = useSettingsStore((s) => s.activeProvider);
   const providers = useSettingsStore((s) => s.providers);
   const fetchAvailableModels = useSettingsStore((s) => s.fetchAvailableModels);
@@ -131,9 +143,11 @@ export const PropertyPanel: React.FC = () => {
         <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 mb-4 text-slate-400 dark:text-slate-500">
           <Settings2 className="w-8 h-8 stroke-[1.5]" />
         </div>
-        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1">No Node Selected</h3>
+        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1">
+          {t.propertyPanel.noNodeSelected}
+        </h3>
         <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-[240px]">
-          Click any node on the canvas to inspect its configuration and view live execution outputs.
+          {t.propertyPanel.noNodeSelectedDesc}
         </p>
       </aside>
     );
@@ -219,8 +233,8 @@ export const PropertyPanel: React.FC = () => {
 
         <button
           onClick={() => setSelectedNodeId(null)}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
-          title="Close panel"
+          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          title={t.common.close}
         >
           <X className="w-4 h-4" />
         </button>
@@ -231,7 +245,7 @@ export const PropertyPanel: React.FC = () => {
         {/* Common Section: Node Label */}
         <div className="space-y-2">
           <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-            Node Label
+            {t.propertyPanel.nodeLabel}
           </label>
           <input
             type="text"
@@ -247,28 +261,36 @@ export const PropertyPanel: React.FC = () => {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Input Parameters
+                {t.propertyPanel.parameters}
               </label>
               <button
                 onClick={handleAddInputKey}
-                className="flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/30 transition-all shadow-xs"
+                className="flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/30 transition-all shadow-xs cursor-pointer"
               >
                 <Plus className="w-3 h-3" />
-                <span>Add Key</span>
+                <span>{t.propertyPanel.addParameter}</span>
               </button>
             </div>
 
             <div className="space-y-2.5">
-              {Object.entries(inputs).map(([key, val]) => (
-                <InputParameterItem
-                  key={key}
-                  paramKey={key}
-                  paramValue={typeof val === 'object' ? JSON.stringify(val) : String(val)}
-                  onRenameKey={(newKey) => handleRenameInputKey(key, newKey)}
-                  onChangeValue={(newVal) => handleInputChange(key, newVal)}
-                  onDelete={() => handleDeleteInputKey(key)}
-                />
-              ))}
+              {Object.entries(inputs).length === 0 ? (
+                <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 text-xs italic text-center">
+                  {t.propertyPanel.noParameters}
+                </div>
+              ) : (
+                Object.entries(inputs).map(([key, val]) => (
+                  <InputParameterItem
+                    key={key}
+                    paramKey={key}
+                    paramValue={typeof val === 'object' ? JSON.stringify(val) : String(val)}
+                    keyLabel={t.propertyPanel.paramKey}
+                    valueLabel={t.propertyPanel.paramValue}
+                    onRenameKey={(newKey) => handleRenameInputKey(key, newKey)}
+                    onChangeValue={(newVal) => handleInputChange(key, newVal)}
+                    onDelete={() => handleDeleteInputKey(key)}
+                  />
+                ))
+              )}
             </div>
           </div>
         )}
@@ -279,14 +301,14 @@ export const PropertyPanel: React.FC = () => {
             <div className="space-y-2">
               <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-violet-600 dark:text-purple-400" />
-                <span>Prompt Template</span>
+                <span>{t.propertyPanel.promptTemplate}</span>
               </label>
               <textarea
                 rows={8}
                 value={promptTemplate}
                 onChange={(e) => handleTemplateChange(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 resize-y transition-all"
-                placeholder="Write template with dynamic slots like {{nodeId.outputKey}}..."
+                placeholder={t.propertyPanel.promptPlaceholder}
               />
               <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
                 Use <code className="text-violet-600 dark:text-purple-400">{"{{nodeId.outputKey}}"}</code> or <code className="text-violet-600 dark:text-purple-400">{"{{nodeId.val | 'fallback'}}"}</code>
@@ -296,11 +318,11 @@ export const PropertyPanel: React.FC = () => {
             {/* Extracted Slots Badges */}
             <div className="space-y-2">
               <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                Detected Slots ({extractedSlots.length})
+                {t.propertyPanel.detectedVars} ({extractedSlots.length})
               </label>
               {extractedSlots.length === 0 ? (
                 <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 text-xs italic text-center">
-                  No variable slots found in template
+                  {t.propertyPanel.noVarsDetected}
                 </div>
               ) : (
                 <div className="space-y-1.5">
@@ -337,7 +359,7 @@ export const PropertyPanel: React.FC = () => {
                     }`}
                   />
                   <div>
-                    <span className="text-[10px] font-mono uppercase text-slate-400 block">PROVIDER</span>
+                    <span className="text-[10px] font-mono uppercase text-slate-400 block">{t.propertyPanel.provider}</span>
                     <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                       {currentProvider?.name || 'OpenAI'}
                     </span>
@@ -345,11 +367,14 @@ export const PropertyPanel: React.FC = () => {
                 </div>
 
                 <button
-                  onClick={() => setSettingsOpen(true)}
-                  className="flex items-center gap-1 text-[11px] font-medium text-blue-600 dark:text-sky-400 hover:text-blue-700 dark:hover:text-sky-300 px-2 py-1 rounded bg-blue-50 dark:bg-sky-500/10 hover:bg-blue-100 dark:hover:bg-sky-500/20 border border-blue-200 dark:border-sky-500/30 transition-all shadow-xs"
+                  onClick={() => {
+                    setSettingsTab('providers');
+                    setCurrentView('settings');
+                  }}
+                  className="flex items-center gap-1 text-[11px] font-medium text-blue-600 dark:text-sky-400 hover:text-blue-700 dark:hover:text-sky-300 px-2 py-1 rounded bg-blue-50 dark:bg-sky-500/10 hover:bg-blue-100 dark:hover:bg-sky-500/20 border border-blue-200 dark:border-sky-500/30 transition-all shadow-xs cursor-pointer"
                 >
                   <KeyRound className="w-3 h-3" />
-                  <span>{hasKey ? '配置' : '设置 Key'}</span>
+                  <span>{hasKey ? t.common.settings : t.settings.apiKeyLabel}</span>
                 </button>
               </div>
 
@@ -357,7 +382,7 @@ export const PropertyPanel: React.FC = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <span>Model Selection</span>
+                    <span>{t.propertyPanel.model}</span>
                     {availableModels.length > 0 && (
                       <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                         ({availableModels.length})
@@ -373,10 +398,10 @@ export const PropertyPanel: React.FC = () => {
                     }}
                     disabled={isRefreshingModels || !hasKey}
                     className="text-[10px] text-blue-600 dark:text-sky-400 hover:text-blue-700 dark:hover:text-sky-300 disabled:opacity-40 flex items-center gap-1 transition-colors"
-                    title="从当前服务商拉取最新可用模型"
+                    title={t.propertyPanel.refreshModels}
                   >
                     <RefreshCw className={`w-3 h-3 ${isRefreshingModels ? 'animate-spin' : ''}`} />
-                    <span>{isRefreshingModels ? '拉取中' : '刷新模型'}</span>
+                    <span>{isRefreshingModels ? t.propertyPanel.refreshing : t.propertyPanel.refreshModels}</span>
                   </button>
                 </div>
                 {availableModels.length > 0 ? (
@@ -401,46 +426,46 @@ export const PropertyPanel: React.FC = () => {
                     value={(config['model'] as string) || currentProvider?.defaultModel || 'gpt-4o-mini'}
                     onChange={(e) => updateNodeConfig(id, { model: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
-                    placeholder="e.g. gpt-4o-mini, deepseek-chat"
+                    placeholder={t.propertyPanel.customModelPlaceholder}
                   />
                 )}
               </div>
 
-            {/* Temperature Slider */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                  <Sliders className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-                  <span>Temperature</span>
-                </span>
-                <span className="text-amber-600 dark:text-amber-400 font-bold">
-                  {typeof config['temperature'] === 'number' ? config['temperature'] : 0.7}
-                </span>
+              {/* Temperature Slider */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <Sliders className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
+                    <span>{t.propertyPanel.temperature}</span>
+                  </span>
+                  <span className="text-amber-600 dark:text-amber-400 font-bold">
+                    {typeof config['temperature'] === 'number' ? config['temperature'] : 0.7}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={2}
+                  step={0.1}
+                  value={typeof config['temperature'] === 'number' ? config['temperature'] : 0.7}
+                  onChange={(e) => updateNodeConfig(id, { temperature: parseFloat(e.target.value) })}
+                  className="w-full accent-blue-600 dark:accent-sky-400 bg-slate-200 dark:bg-slate-950 cursor-pointer"
+                />
               </div>
-              <input
-                type="range"
-                min={0}
-                max={2}
-                step={0.1}
-                value={typeof config['temperature'] === 'number' ? config['temperature'] : 0.7}
-                onChange={(e) => updateNodeConfig(id, { temperature: parseFloat(e.target.value) })}
-                className="w-full accent-blue-600 dark:accent-sky-400 bg-slate-200 dark:bg-slate-950"
-              />
-            </div>
 
-            {/* System Prompt */}
-            <div className="space-y-2">
-              <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                System Prompt (Optional)
-              </label>
-              <textarea
-                rows={3}
-                value={(config['systemPrompt'] as string) || ''}
-                onChange={(e) => updateNodeConfig(id, { systemPrompt: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-y"
-                placeholder="You are an expert AI assistant..."
-              />
-            </div>
+              {/* System Prompt */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                  System Prompt (Optional)
+                </label>
+                <textarea
+                  rows={3}
+                  value={(config['systemPrompt'] as string) || ''}
+                  onChange={(e) => updateNodeConfig(id, { systemPrompt: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-y"
+                  placeholder="You are an expert AI assistant..."
+                />
+              </div>
             </div>
           );
         })()}
@@ -451,7 +476,7 @@ export const PropertyPanel: React.FC = () => {
             <div className="space-y-2">
               <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Terminal className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-                <span>Script Code</span>
+                <span>{t.propertyPanel.scriptCode}</span>
               </label>
               <textarea
                 rows={8}
@@ -469,15 +494,15 @@ export const PropertyPanel: React.FC = () => {
           <div className="flex items-center justify-between">
             <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
               {type === 'llm' ? <Bot className="w-3.5 h-3.5 text-blue-600 dark:text-sky-400" /> : <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
-              <span>Execution Output</span>
+              <span>{t.propertyPanel.finalOutput}</span>
             </label>
             {hasOutputs && (
               <button
                 onClick={() => handleCopyText(outputString)}
-                className="flex items-center gap-1 text-[10px] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-xs"
+                className="flex items-center gap-1 text-[10px] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-xs cursor-pointer"
               >
                 {copied ? <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                <span>{copied ? 'Copied' : 'Copy'}</span>
+                <span>{copied ? t.common.copied : t.common.copy}</span>
               </button>
             )}
           </div>
@@ -507,11 +532,11 @@ export const PropertyPanel: React.FC = () => {
               <div className="rounded-xl bg-violet-50/70 dark:bg-purple-950/20 border border-violet-200 dark:border-purple-500/30 overflow-hidden shadow-xs">
                 <button
                   onClick={() => setShowReasoning(!showReasoning)}
-                  className="w-full px-3 py-2 flex items-center justify-between text-xs font-semibold text-violet-700 dark:text-purple-300 hover:bg-violet-100/50 dark:hover:bg-purple-900/30 transition-colors"
+                  className="w-full px-3 py-2 flex items-center justify-between text-xs font-semibold text-violet-700 dark:text-purple-300 hover:bg-violet-100/50 dark:hover:bg-purple-900/30 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-1.5">
                     <Brain className="w-3.5 h-3.5 text-violet-600 dark:text-purple-400" />
-                    <span>思考过程 (Reasoning Process)</span>
+                    <span>{t.propertyPanel.reasoningThought}</span>
                   </div>
                   {showReasoning ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                 </button>
@@ -534,11 +559,11 @@ export const PropertyPanel: React.FC = () => {
               ) : data.status === 'running' ? (
                 <div className="flex items-center justify-center gap-2 py-4 text-blue-600 dark:text-sky-400">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>正在流式生成 (Streaming Tokens)...</span>
+                  <span>{t.propertyPanel.liveStreaming}...</span>
                 </div>
               ) : (
                 <span className="text-slate-400 dark:text-slate-500 italic text-center block py-2">
-                  No execution output yet. Click "Run Workflow" to run this pipeline.
+                  {t.propertyPanel.noNodeSelectedDesc}
                 </span>
               )}
             </div>
@@ -550,10 +575,10 @@ export const PropertyPanel: React.FC = () => {
       <div className="p-4 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/60 flex items-center justify-between">
         <button
           onClick={handleDeleteNode}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-xs font-medium transition-all shadow-xs"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-xs font-medium transition-all shadow-xs cursor-pointer"
         >
           <Trash2 className="w-3.5 h-3.5" />
-          <span>Delete Node</span>
+          <span>{t.propertyPanel.deleteNode}</span>
         </button>
 
         <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">

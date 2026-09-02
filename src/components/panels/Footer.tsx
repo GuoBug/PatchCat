@@ -7,8 +7,10 @@ import {
 } from 'lucide-react';
 import { CatLogo } from '../icons/CatLogo.tsx';
 import { HelpModal } from './HelpModal.tsx';
+import { useTranslation } from '../../i18n/useTranslation.ts';
 
 export const Footer: React.FC = () => {
+  const { t } = useTranslation();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   return (
@@ -26,14 +28,14 @@ export const Footer: React.FC = () => {
           <span className="text-slate-300 dark:text-slate-700">|</span>
 
           <span className="hidden sm:inline text-[11px] text-slate-500 dark:text-slate-400 font-sans">
-            Visual Prompt Orchestration Engine
+            {t.footer.tagline}
           </span>
         </div>
 
         {/* Center: Author Credit */}
         <div className="flex items-center gap-1.5 text-[11px]">
           <span className="text-slate-400 dark:text-slate-500 flex items-center gap-1">
-            <span>Author</span>
+            <span>{t.footer.author}</span>
             <span className="text-slate-300 dark:text-slate-700">:</span>
           </span>
           <a
@@ -41,7 +43,7 @@ export const Footer: React.FC = () => {
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 font-medium text-slate-700 hover:text-blue-600 dark:text-slate-300 dark:hover:text-sky-400 transition-colors group"
-            title="访问作者 GitHub 主页 @gu0bug"
+            title="GitHub @gu0bug"
           >
             <User className="w-3 h-3 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-sky-400 transition-colors" />
             <span className="font-semibold underline underline-offset-2 decoration-slate-300 dark:decoration-slate-700 group-hover:decoration-blue-500">
@@ -56,10 +58,10 @@ export const Footer: React.FC = () => {
           <button
             onClick={() => setIsHelpOpen(true)}
             className="flex items-center gap-1 text-[11px] text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-sky-400 transition-colors group cursor-pointer"
-            title="查看帮助文档与快速入门指南"
+            title={t.footer.helpDocs}
           >
             <BookOpen className="w-3.5 h-3.5 text-blue-500 dark:text-sky-400 group-hover:scale-110 transition-transform" />
-            <span className="font-medium">帮助文档</span>
+            <span className="font-medium">{t.footer.helpDocs}</span>
           </button>
 
           <span className="text-slate-300 dark:text-slate-700">|</span>
@@ -70,10 +72,10 @@ export const Footer: React.FC = () => {
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 text-[11px] text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors group"
-            title="访问 PatchCat GitHub 开源仓库"
+            title="GitHub Repository"
           >
             <Github className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300 group-hover:scale-110 transition-transform" />
-            <span className="font-medium">GitHub</span>
+            <span className="font-medium">{t.footer.github}</span>
             <ExternalLink className="w-2.5 h-2.5 opacity-60 group-hover:opacity-100 transition-opacity" />
           </a>
         </div>

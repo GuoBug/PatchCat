@@ -1,0 +1,131 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "id": "f5c2d893-10a4-43f2-b1e6-6e0d8f3c2002",
+    "name": "自反思研报生成与 Critic 优化 (Report Generation with Critic)",
+    "description": "通过 Generator 初稿生成与 Critic 专家审阅评审，实现自我反思与高质量多轮润色输出。",
+    "author": "PatchCat Team",
+    "tags": ["Research", "Reflection", "Critic", "Multi-Agent"],
+    "createdAt": "2026-08-28T00:00:00Z",
+    "updatedAt": "2026-08-28T00:00:00Z"
+  },
+  "viewport": {
+    "x": 80,
+    "y": 120,
+    "zoom": 0.95
+  },
+  "nodes": [
+    {
+      "id": "input_topic",
+      "type": "input",
+      "position": { "x": 50, "y": 250 },
+      "data": {
+        "label": "研究主题输入",
+        "inputs": {
+          "topic": "2026年具身智能（Embodied AI）在工业自动化领域的商业化落地进展",
+          "audience": "科技行业投资人"
+        }
+      }
+    },
+    {
+      "id": "prompt_drafter",
+      "type": "prompt",
+      "position": { "x": 380, "y": 150 },
+      "data": {
+        "label": "初稿起草 Prompt",
+        "inputs": {
+          "template": "你是一名行业高级分析师。请围绕以下主题撰写一份前瞻研报初稿：\n主题: {{input_topic.topic}}\n受众: {{input_topic.audience}}\n要求：结构严密，包含核心痛点、技术突破、产业链格局与商业化预测。"
+        }
+      }
+    },
+    {
+      "id": "llm_generator",
+      "type": "llm",
+      "position": { "x": 710, "y": 150 },
+      "data": {
+        "label": "生成者 (Generator LLM)",
+        "config": {
+          "model": "claude-3-5-sonnet",
+          "temperature": 0.7
+        },
+        "inputs": {
+          "prompt": "{{prompt_drafter.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "prompt_critic",
+      "type": "prompt",
+      "position": { "x": 1040, "y": 150 },
+      "data": {
+        "label": "审阅评审 Prompt",
+        "inputs": {
+          "template": "你是一名挑剔的顶级合伙人。请深度审阅以下初稿，指出逻辑漏洞、缺乏数据支撑的论点并给出修改建议：\n\n【初稿内容】：\n{{llm_generator.response}}"
+        }
+      }
+    },
+    {
+      "id": "llm_critic",
+      "type": "llm",
+      "position": { "x": 1370, "y": 150 },
+      "data": {
+        "label": "评审专家 (Critic LLM)",
+        "config": {
+          "model": "gpt-4o",
+          "temperature": 0.3
+        },
+        "inputs": {
+          "prompt": "{{prompt_critic.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "prompt_polisher",
+      "type": "prompt",
+      "position": { "x": 1040, "y": 380 },
+      "data": {
+        "label": "终稿润色 Prompt",
+        "inputs": {
+          "template": "结合初稿与评审意见，重构并输出最终专业研究报告：\n【初稿】：\n{{llm_generator.response}}\n\n【评审意见】：\n{{llm_critic.response}}"
+        }
+      }
+    },
+    {
+      "id": "llm_final_polisher",
+      "type": "llm",
+      "position": { "x": 1370, "y": 380 },
+      "data": {
+        "label": "润色输出 LLM",
+        "config": {
+          "model": "claude-3-5-sonnet",
+          "temperature": 0.4
+        },
+        "inputs": {
+          "prompt": "{{prompt_polisher.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "output_final_report",
+      "type": "output",
+      "position": { "x": 1700, "y": 380 },
+      "data": {
+        "label": "最终精编报告",
+        "inputs": {
+          "final_report": "{{llm_final_polisher.response}}",
+          "critic_notes": "{{llm_critic.response}}"
+        }
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e-1", "source": "input_topic", "target": "prompt_drafter" },
+    { "id": "e-2", "source": "prompt_drafter", "target": "llm_generator" },
+    { "id": "e-3", "source": "llm_generator", "target": "prompt_critic" },
+    { "id": "e-4", "source": "prompt_critic", "target": "llm_critic" },
+    { "id": "e-5", "source": "llm_generator", "target": "prompt_polisher" },
+    { "id": "e-6", "source": "llm_critic", "target": "prompt_polisher" },
+    { "id": "e-7", "source": "prompt_polisher", "target": "llm_final_polisher" },
+    { "id": "e-8", "source": "llm_final_polisher", "target": "output_final_report" }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "id": "e4b1c782-95f3-42e1-a0f5-5d9c7e2b1001",
+    "name": "Customer Support Intent & Ticket Routing",
+    "description": "Analyze incoming customer support tickets for intent, sentiment, and urgency, then automatically dispatch to the appropriate service queue.",
+    "author": "PatchCat Team",
+    "tags": ["Support", "Routing", "Classification", "NLP"],
+    "createdAt": "2026-08-28T00:00:00Z",
+    "updatedAt": "2026-08-28T00:00:00Z"
+  },
+  "viewport": {
+    "x": 100,
+    "y": 150,
+    "zoom": 1.0
+  },
+  "nodes": [
+    {
+      "id": "input_user_query",
+      "type": "input",
+      "position": { "x": 50, "y": 200 },
+      "data": {
+        "label": "Ticket Input Parameters",
+        "description": "Receives user query text and customer metadata",
+        "inputs": {
+          "user_message": "My order placed yesterday still shows pending dispatch. When will it arrive? If not shipped soon I want a refund!",
+          "user_tier": "VIP"
+        }
+      }
+    },
+    {
+      "id": "prompt_intent_classification",
+      "type": "prompt",
+      "position": { "x": 380, "y": 200 },
+      "data": {
+        "label": "Intent Classifier Prompt",
+        "description": "Assembles structured classification prompt",
+        "inputs": {
+          "template": "You are a senior support ticket triage specialist. Analyze the following customer query:\nMessage: {{input_user_query.user_message}}\nCustomer Tier: {{input_user_query.user_tier}}\n\nExtract: 1. Main intent (logistics_expedite / refund_aftersales / general_inquiry) 2. Sentiment urgency score (1-5) 3. Requires human agent (true/false). Respond strictly in JSON format with keys: intent, urgency, requires_human."
+        }
+      }
+    },
+    {
+      "id": "llm_classifier",
+      "type": "llm",
+      "position": { "x": 710, "y": 200 },
+      "data": {
+        "label": "Triage Inference LLM",
+        "description": "Executes structured classification inference",
+        "config": {
+          "model": "gpt-4o-mini",
+          "temperature": 0.2
+        },
+        "inputs": {
+          "prompt": "{{prompt_intent_classification.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "code_router_logic",
+      "type": "code",
+      "position": { "x": 1040, "y": 200 },
+      "data": {
+        "label": "Dispatch Decision Logic",
+        "description": "Parses classification JSON and assigns priority queue",
+        "config": {
+          "runtime": "javascript",
+          "script": "const raw = inputs.raw_response || '';\nlet parsed = {};\ntry {\n  const cleaned = typeof raw === 'string' ? raw.replace(/```json\\s*/gi, '').replace(/```\\s*$/gi, '').trim() : raw;\n  parsed = typeof cleaned === 'string' ? JSON.parse(cleaned) : (cleaned || {});\n} catch (e) {\n  parsed = { 'intent': 'logistics_expedite', 'urgency': 4, 'requires_human': true };\n}\n\nconst intent = String(parsed['intent'] || parsed['主意图'] || 'general_inquiry');\nconst urgency = Number(parsed['urgency'] || parsed['情绪等级'] || 3);\nconst needHuman = parsed['requires_human'] !== undefined ? parsed['requires_human'] : true;\n\nlet targetQueue = 'General Customer Support Pool';\nlet sla = 'Response within 2 hours';\nlet priority = 'P3-Normal';\n\nif (intent.includes('logistics') || intent.includes('expedite') || intent.includes('shipping') || intent.includes('物流')) {\n  targetQueue = '🚀 Logistics Expedited VIP Queue';\n  sla = urgency >= 4 ? '⚡ Response within 15 mins' : 'Response within 30 mins';\n  priority = urgency >= 4 ? '🔥 P1-High Expedited' : 'P2-Priority Shipping';\n} else if (intent.includes('refund') || intent.includes('aftersales') || intent.includes('退款')) {\n  targetQueue = '💳 Refund & Dispute Resolution Desk';\n  sla = 'Response within 1 hour';\n  priority = 'P2-Refund Urgent';\n} else if (intent.includes('complaint') || urgency >= 5) {\n  targetQueue = '⚠️ Customer Escalation & Risk Control Team';\n  sla = 'Supervisor intervention within 10 mins';\n  priority = '🚨 P0-Critical Escalation';\n}\n\nreturn {\n  'dispatched_queue': targetQueue,\n  'ticket_priority': priority,\n  'sla_target': sla,\n  'detected_intent': intent,\n  'urgency_score': `${urgency} / 5`,\n  'agent_handover': needHuman ? 'Yes (Assigned to Logistics VIP)' : 'No (AI Auto Handled)',\n  'routed_at': new Date().toISOString()\n};"
+        },
+        "inputs": {
+          "raw_response": "{{llm_classifier.response}}"
+        }
+      }
+    },
+    {
+      "id": "output_dispatch",
+      "type": "output",
+      "position": { "x": 1370, "y": 200 },
+      "data": {
+        "label": "Final Ticket Dispatch",
+        "description": "Displays routing result and SLA tagging",
+        "inputs": {
+          "dispatch_result": "{{code_router_logic.result}}"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "source": "input_user_query",
+      "target": "prompt_intent_classification"
+    },
+    {
+      "id": "edge-2",
+      "source": "prompt_intent_classification",
+      "target": "llm_classifier"
+    },
+    {
+      "id": "edge-3",
+      "source": "llm_classifier",
+      "target": "code_router_logic"
+    },
+    {
+      "id": "edge-4",
+      "source": "code_router_logic",
+      "target": "output_dispatch"
+    }
+  ]
+}

@@ -154,4 +154,25 @@ describe('Settings Store & Provider Configuration', () => {
       globalThis.fetch = originalFetch;
     }
   });
+
+  it('should support language switching and view navigation', () => {
+    const store = useSettingsStore.getState();
+    assert.equal(store.language, 'en');
+    assert.equal(store.currentView, 'canvas');
+
+    store.setLanguage('zh');
+    assert.equal(useSettingsStore.getState().language, 'zh');
+
+    store.setCurrentView('settings');
+    assert.equal(useSettingsStore.getState().currentView, 'settings');
+
+    store.setSettingsTab('logs');
+    assert.equal(useSettingsStore.getState().settingsTab, 'logs');
+
+    store.setLanguage('en');
+    store.setCurrentView('canvas');
+    assert.equal(useSettingsStore.getState().language, 'en');
+    assert.equal(useSettingsStore.getState().currentView, 'canvas');
+  });
 });
+

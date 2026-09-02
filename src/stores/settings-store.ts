@@ -1,15 +1,18 @@
 /**
  * @file    src/stores/settings-store.ts
- * @version 1.0.0
+ * @version 2.0.0
  * @description
  *   Zustand store for managing global LLM Provider configurations, API Keys,
- *   and base URLs with automatic LocalStorage synchronization.
+ *   active language (i18n), and application view routing with LocalStorage sync.
  */
 
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
+import type { Language } from '../i18n/translations.ts';
 
 export type ProviderId = 'openai' | 'deepseek' | 'siliconflow' | 'google' | 'ollama' | 'custom';
+export type AppView = 'canvas' | 'settings';
+export type SettingsTab = 'general' | 'providers' | 'logs';
 
 export interface ProviderConfig {
   id: ProviderId;
@@ -96,16 +99,30 @@ export const DEFAULT_PROVIDERS: Record<ProviderId, ProviderConfig> = {
 };
 
 const STORAGE_KEY = 'patchcat-llm-settings-v1';
+const LANG_STORAGE_KEY = 'patchcat-language-v1';
 
 export interface SettingsStoreState {
+  // Navigation
+  currentView: AppView;
+  setCurrentView: (view: AppView) => void;
+  settingsTab: SettingsTab;
+  setSettingsTab: (tab: SettingsTab) => void;
+
+  // i18n Language
+  language: Language;
+  setLanguage: (lang: Language) => void;
+
+  // Legacy modal flag for backward compatibility
   isSettingsOpen: boolean;
+  setSettingsOpen: (open: boolean) => void;
+  toggleSettingsModal: () => void;
+
+  // LLM Providers
   activeProvider: ProviderId;
   providers: Record<ProviderId, ProviderConfig>;
   testResults: Record<ProviderId, ConnectionTestResult>;
 
   // Actions
-  setSettingsOpen: (open: boolean) => void;
-  toggleSettingsModal: () => void;
   setActiveProvider: (id: ProviderId) => void;
   updateProviderConfig: (id: ProviderId, partial: Partial<ProviderConfig>) => void;
   resetProviderConfig: (id: ProviderId) => void;
@@ -122,36 +139,40 @@ export interface SettingsStoreState {
 
 // Helper to load settings from LocalStorage
 function loadInitialState(): {
+  language: Language;
   activeProvider: ProviderId;
   providers: Record<ProviderId, ProviderConfig>;
 } {
-  if (typeof window === 'undefined') {
-    return {
-      activeProvider: 'deepseek',
-      providers: DEFAULT_PROVIDERS,
-    };
-  }
+  let language: Language = 'en';
+  let activeProvider: ProviderId = 'deepseek';
+  let providers: Record<ProviderId, ProviderConfig> = DEFAULT_PROVIDERS;
 
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return {
-        activeProvider: parsed.activeProvider || 'deepseek',
-        providers: {
+  if (typeof window !== 'undefined') {
+    try {
+      const savedLang = localStorage.getItem(LANG_STORAGE_KEY);
+      if (savedLang === 'en' || savedLang === 'zh') {
+        language = savedLang;
+      }
+    } catch (e) {
+      console.warn('[SettingsStore] Failed to load language from localStorage:', e);
+    }
+
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        activeProvider = parsed.activeProvider || 'deepseek';
+        providers = {
           ...DEFAULT_PROVIDERS,
           ...(parsed.providers || {}),
-        },
-      };
+        };
+      }
+    } catch (e) {
+      console.warn('[SettingsStore] Failed to load settings from localStorage:', e);
     }
-  } catch (e) {
-    console.warn('[SettingsStore] Failed to load settings from localStorage:', e);
   }
 
-  return {
-    activeProvider: 'deepseek',
-    providers: DEFAULT_PROVIDERS,
-  };
+  return { language, activeProvider, providers };
 }
 
 function saveState(state: { activeProvider: ProviderId; providers: Record<ProviderId, ProviderConfig> }) {
@@ -213,6 +234,34 @@ export const useSettingsStore = create<SettingsStoreState>()(
     const initial = loadInitialState();
 
     return {
+      currentView: 'canvas',
+      setCurrentView: (view) => {
+        set((state) => {
+          state.currentView = view;
+        });
+      },
+
+      settingsTab: 'general',
+      setSettingsTab: (tab) => {
+        set((state) => {
+          state.settingsTab = tab;
+        });
+      },
+
+      language: initial.language,
+      setLanguage: (lang) => {
+        set((state) => {
+          state.language = lang;
+        });
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(LANG_STORAGE_KEY, lang);
+          } catch (e) {
+            console.error('[SettingsStore] Failed to save language:', e);
+          }
+        }
+      },
+
       isSettingsOpen: false,
       activeProvider: initial.activeProvider,
       providers: initial.providers,
@@ -228,12 +277,14 @@ export const useSettingsStore = create<SettingsStoreState>()(
       setSettingsOpen: (open) => {
         set((state) => {
           state.isSettingsOpen = open;
+          state.currentView = open ? 'settings' : 'canvas';
         });
       },
 
       toggleSettingsModal: () => {
         set((state) => {
           state.isSettingsOpen = !state.isSettingsOpen;
+          state.currentView = state.isSettingsOpen ? 'settings' : 'canvas';
         });
       },
 
@@ -334,7 +385,7 @@ export const useSettingsStore = create<SettingsStoreState>()(
         if (!isOllama && !apiKey) {
           const result: ConnectionTestResult = {
             status: 'error',
-            message: 'API Key 不能为空 (API Key cannot be empty)',
+            message: 'API Key cannot be empty / API Key 不能为空',
           };
           set((state) => {
             state.testResults[id] = result;
@@ -391,8 +442,8 @@ export const useSettingsStore = create<SettingsStoreState>()(
 
             const modelCount = fetched.length > 0 ? fetched.length : (Array.isArray(data?.data) ? data.data.length : null);
             const msg = modelCount !== null 
-              ? `连接成功 (已获取 ${modelCount} 个可用模型)` 
-              : '连接成功 (Endpoint reachable)';
+              ? `Connected successfully (${modelCount} models available)` 
+              : 'Connected successfully (Endpoint reachable)';
 
             const result: ConnectionTestResult = {
               status: 'success',
@@ -420,7 +471,7 @@ export const useSettingsStore = create<SettingsStoreState>()(
             const result: ConnectionTestResult = {
               status: 'error',
               latencyMs,
-              message: `连接失败 (${errDetail})`,
+              message: `Connection failed: ${errDetail}`,
             };
             set((state) => {
               state.testResults[id] = result;
@@ -432,13 +483,13 @@ export const useSettingsStore = create<SettingsStoreState>()(
           const latencyMs = Date.now() - startTime;
           const isAbort = err instanceof Error && err.name === 'AbortError';
           const errMsg = isAbort 
-            ? '连接超时 (Request timed out >8s)' 
+            ? 'Connection timed out (>8s)' 
             : err instanceof Error ? err.message : String(err);
 
           const result: ConnectionTestResult = {
             status: 'error',
             latencyMs,
-            message: `网络错误: ${errMsg}`,
+            message: `Network error: ${errMsg}`,
           };
           set((state) => {
             state.testResults[id] = result;

@@ -1,0 +1,131 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "id": "f5c2d893-10a4-43f2-b1e6-6e0d8f3c2002",
+    "name": "Report Generator with Self-Reflective Critic",
+    "description": "Multi-agent loop featuring initial draft generation, critical peer review, and final polished synthesis.",
+    "author": "PatchCat Team",
+    "tags": ["Research", "Reflection", "Critic", "Multi-Agent"],
+    "createdAt": "2026-08-28T00:00:00Z",
+    "updatedAt": "2026-08-28T00:00:00Z"
+  },
+  "viewport": {
+    "x": 80,
+    "y": 120,
+    "zoom": 0.95
+  },
+  "nodes": [
+    {
+      "id": "input_topic",
+      "type": "input",
+      "position": { "x": 50, "y": 250 },
+      "data": {
+        "label": "Research Topic Input",
+        "inputs": {
+          "topic": "2026 Commercialization of Embodied AI in Industrial Automation",
+          "audience": "Tech Venture Capital Investors"
+        }
+      }
+    },
+    {
+      "id": "prompt_drafter",
+      "type": "prompt",
+      "position": { "x": 380, "y": 150 },
+      "data": {
+        "label": "Drafting Prompt",
+        "inputs": {
+          "template": "You are a senior tech industry analyst. Draft an insightful executive briefing on:\nTopic: {{input_topic.topic}}\nTarget Audience: {{input_topic.audience}}\nRequirements: Rigorous structure covering core bottlenecks, technical breakthroughs, market dynamics, and a 3-year commercialization outlook."
+        }
+      }
+    },
+    {
+      "id": "llm_generator",
+      "type": "llm",
+      "position": { "x": 710, "y": 150 },
+      "data": {
+        "label": "Generator LLM",
+        "config": {
+          "model": "claude-3-5-sonnet",
+          "temperature": 0.7
+        },
+        "inputs": {
+          "prompt": "{{prompt_drafter.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "prompt_critic",
+      "type": "prompt",
+      "position": { "x": 1040, "y": 150 },
+      "data": {
+        "label": "Peer Critic Prompt",
+        "inputs": {
+          "template": "You are a demanding investment partner. Critically review the following draft report. Identify logical fallacies, unsubstantiated claims, and provide concrete revision directives:\n\n[Draft Content]:\n{{llm_generator.response}}"
+        }
+      }
+    },
+    {
+      "id": "llm_critic",
+      "type": "llm",
+      "position": { "x": 1370, "y": 150 },
+      "data": {
+        "label": "Critic LLM (Reviewer)",
+        "config": {
+          "model": "gpt-4o",
+          "temperature": 0.3
+        },
+        "inputs": {
+          "prompt": "{{prompt_critic.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "prompt_polisher",
+      "type": "prompt",
+      "position": { "x": 1040, "y": 380 },
+      "data": {
+        "label": "Refinement Prompt",
+        "inputs": {
+          "template": "Synthesize the original draft with the critical review notes to produce a definitive, publication-grade executive report:\n[Original Draft]:\n{{llm_generator.response}}\n\n[Critic Review Notes]:\n{{llm_critic.response}}"
+        }
+      }
+    },
+    {
+      "id": "llm_final_polisher",
+      "type": "llm",
+      "position": { "x": 1370, "y": 380 },
+      "data": {
+        "label": "Synthesis & Polisher LLM",
+        "config": {
+          "model": "claude-3-5-sonnet",
+          "temperature": 0.4
+        },
+        "inputs": {
+          "prompt": "{{prompt_polisher.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "output_final_report",
+      "type": "output",
+      "position": { "x": 1700, "y": 380 },
+      "data": {
+        "label": "Final Executive Report",
+        "inputs": {
+          "final_report": "{{llm_final_polisher.response}}",
+          "critic_notes": "{{llm_critic.response}}"
+        }
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e-1", "source": "input_topic", "target": "prompt_drafter" },
+    { "id": "e-2", "source": "prompt_drafter", "target": "llm_generator" },
+    { "id": "e-3", "source": "llm_generator", "target": "prompt_critic" },
+    { "id": "e-4", "source": "prompt_critic", "target": "llm_critic" },
+    { "id": "e-5", "source": "llm_generator", "target": "prompt_polisher" },
+    { "id": "e-6", "source": "llm_critic", "target": "prompt_polisher" },
+    { "id": "e-7", "source": "prompt_polisher", "target": "llm_final_polisher" },
+    { "id": "e-8", "source": "llm_final_polisher", "target": "output_final_report" }
+  ]
+}

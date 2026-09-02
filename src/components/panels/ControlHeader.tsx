@@ -16,39 +16,16 @@ import {
   Sun,
   Moon,
   KeyRound,
-  Terminal,
+  Settings,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import { useSettingsStore } from '../../stores/settings-store.ts';
-import { useLogStore } from '../../stores/log-store.ts';
-import { SettingsModal } from './SettingsModal.tsx';
+import { useTranslation } from '../../i18n/useTranslation.ts';
 import { BrowserWorkflowEngine } from '../../engine/browser-engine.ts';
 import { validateGraphTopology } from '../../engine/topological-sort.ts';
 import type { NodeType, WorkflowGraph, TokenUsage } from '../../engine/types.ts';
 import { CatLogo } from '../icons/CatLogo.tsx';
-
-// Import presets JSON
-import customerSupportPreset from '../../presets/customer-support-routing.json';
-import reportCriticPreset from '../../presets/report-generation-critic.json';
-import modelArenaPreset from '../../presets/model-arena-eval.json';
-
-const PRESETS: Record<string, { name: string; desc: string; data: unknown }> = {
-  'customer-support': {
-    name: 'Customer Support Routing',
-    desc: 'Intent Classification & Ticket Dispatch',
-    data: customerSupportPreset,
-  },
-  'report-critic': {
-    name: 'Report Generator with Critic',
-    desc: 'Self-Reflective Multi-Agent Loop',
-    data: reportCriticPreset,
-  },
-  'model-arena': {
-    name: 'Multi-LLM Arena & Judge',
-    desc: 'Side-by-Side Model Benchmark',
-    data: modelArenaPreset,
-  },
-};
+import { PRESETS_DATA } from '../../presets/index.ts';
 
 export interface AlertNotification {
   type: 'error' | 'warning';
@@ -58,6 +35,8 @@ export interface AlertNotification {
 }
 
 export const ControlHeader: React.FC = () => {
+  const { t, language } = useTranslation();
+
   const nodes = useWorkflowStore((s) => s.nodes);
   const edges = useWorkflowStore((s) => s.edges);
   const isExecuting = useWorkflowStore((s) => s.isExecuting);
@@ -68,6 +47,11 @@ export const ControlHeader: React.FC = () => {
   const theme = useWorkflowStore((s) => s.theme);
   const toggleTheme = useWorkflowStore((s) => s.toggleTheme);
 
+  const setCurrentView = useSettingsStore((s) => s.setCurrentView);
+  const setSettingsTab = useSettingsStore((s) => s.setSettingsTab);
+  const activeProvider = useSettingsStore((s) => s.activeProvider);
+  const providers = useSettingsStore((s) => s.providers);
+
   const [selectedPresetKey, setSelectedPresetKey] = useState<string>('customer-support');
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [executionTimeMs, setExecutionTimeMs] = useState<number | null>(null);
@@ -75,6 +59,10 @@ export const ControlHeader: React.FC = () => {
 
   const engineRef = useRef<BrowserWorkflowEngine>(new BrowserWorkflowEngine());
   const timerIntervalRef = useRef<number | null>(null);
+
+  const currentPresets = useMemo(() => {
+    return PRESETS_DATA[language] || PRESETS_DATA.en;
+  }, [language]);
 
   // Real-time pre-flight topology validation (detects cycles live)
   const topologyValidation = useMemo(() => {
@@ -85,7 +73,7 @@ export const ControlHeader: React.FC = () => {
   const handleSelectPreset = (key: string) => {
     setSelectedPresetKey(key);
     setAlertNotification(null);
-    const preset = PRESETS[key];
+    const preset = currentPresets[key];
     if (preset?.data) {
       loadPreset(preset.data as WorkflowGraph);
       setExecutionTimeMs(null);
@@ -104,7 +92,7 @@ export const ControlHeader: React.FC = () => {
       nodes.forEach((n) => {
         if (cycleNodes.includes(n.id)) {
           setNodeStatus(n.id, 'error', {
-            error: '环路死锁 (Cycle Deadlock)',
+            error: language === 'zh' ? '环路死锁 (Cycle Deadlock)' : 'Cycle Deadlock',
             timestamp: Date.now(),
           });
         }
@@ -123,11 +111,11 @@ export const ControlHeader: React.FC = () => {
       });
       useWorkflowStore.getState().setEdges(updatedEdges);
 
-      const cyclePathText = cycleNodes.length > 0 ? `成环节点: [${cycleNodes.join(' ⇄ ')}]` : '';
+      const cyclePathText = cycleNodes.length > 0 ? `[${cycleNodes.join(' ⇄ ')}]` : '';
       setAlertNotification({
         type: 'error',
-        title: '工作流校验失败：检测到拓扑环路 (Cycle Detected)',
-        message: `图中存在闭环依赖死锁，无法确定拓扑层级。${cyclePathText}。请删除回环边后重试。`,
+        title: t.header.cycleAlertTitle,
+        message: `${t.header.cycleAlertMsg} ${t.header.cycleNodesLabel} ${cyclePathText}`,
         cycleNodes,
       });
       return;
@@ -197,7 +185,7 @@ export const ControlHeader: React.FC = () => {
             });
             setAlertNotification({
               type: 'error',
-              title: `节点执行异常: [${event.payload.nodeId}]`,
+              title: `[${event.payload.nodeId}] Execution Error`,
               message: event.payload.error,
             });
             break;
@@ -219,7 +207,7 @@ export const ControlHeader: React.FC = () => {
             ) {
               setAlertNotification({
                 type: 'error',
-                title: '工作流校验或运行异常',
+                title: t.header.cycleAlertTitle,
                 message: event.payload.error,
               });
             }
@@ -230,7 +218,7 @@ export const ControlHeader: React.FC = () => {
       console.error('[Engine Execution Exception]:', e);
       setAlertNotification({
         type: 'error',
-        title: '执行引擎发生未知错误',
+        title: t.header.unknownEngineError,
         message: e?.message || String(e),
       });
     } finally {
@@ -265,14 +253,6 @@ export const ControlHeader: React.FC = () => {
   };
 
   const isDark = theme === 'dark';
-  const toggleSettingsModal = useSettingsStore((s) => s.toggleSettingsModal);
-  const activeProvider = useSettingsStore((s) => s.activeProvider);
-  const providers = useSettingsStore((s) => s.providers);
-
-  const isConsoleOpen = useLogStore((s) => s.isConsoleOpen);
-  const toggleConsole = useLogStore((s) => s.toggleConsole);
-  const logs = useLogStore((s) => s.logs);
-
   const activeConfig = providers[activeProvider];
   const hasActiveKey = activeProvider === 'ollama' ? true : Boolean(activeConfig?.apiKey?.trim());
 
@@ -293,7 +273,7 @@ export const ControlHeader: React.FC = () => {
                 </span>
               </div>
               <span className="text-[9px] text-slate-500 dark:text-slate-400 font-sans tracking-wide">
-                Precision prompts. Seamless workflows.
+                {t.header.tagline}
               </span>
             </div>
           </div>
@@ -304,18 +284,18 @@ export const ControlHeader: React.FC = () => {
           <div className="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400">
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
               <Layers className="w-3 h-3 text-blue-500 dark:text-sky-400" />
-              <span>{nodes.length} nodes</span>
+              <span>{nodes.length} {t.common.nodes}</span>
             </span>
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
               <Share2 className="w-3 h-3 text-purple-500 dark:text-purple-400" />
-              <span>{edges.length} edges</span>
+              <span>{edges.length} {t.common.edges}</span>
             </span>
 
             {/* Realtime Cycle Warning Alert Badge */}
             {!topologyValidation.valid && (
               <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-50 dark:bg-rose-500/15 border border-rose-300 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 font-bold animate-pulse">
                 <AlertOctagon className="w-3 h-3" />
-                <span>检测到环路 ({topologyValidation.cycleNodes?.length || 0} 节点)</span>
+                <span>{t.header.cycleDetected} ({topologyValidation.cycleNodes?.length || 0})</span>
               </span>
             )}
           </div>
@@ -327,20 +307,20 @@ export const ControlHeader: React.FC = () => {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 transition-colors shadow-xs"
             >
               <Plus className="w-3.5 h-3.5 text-blue-600 dark:text-sky-400" />
-              <span>Add Node</span>
+              <span>{t.header.addNode}</span>
               <ChevronDown className="w-3 h-3 text-slate-400 dark:text-slate-500" />
             </button>
 
             {showAddMenu && (
-              <div className="absolute left-0 mt-1.5 w-44 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-1.5 z-50 space-y-1">
-                {(['input', 'prompt', 'llm', 'code', 'output'] as NodeType[]).map((t) => (
+              <div className="absolute left-0 mt-1.5 w-48 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-1.5 z-50 space-y-1">
+                {(['input', 'prompt', 'llm', 'code', 'output'] as NodeType[]).map((type) => (
                   <button
-                    key={t}
-                    onClick={() => handleQuickAdd(t)}
-                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors uppercase"
+                    key={type}
+                    onClick={() => handleQuickAdd(type)}
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                   >
-                    <span className="capitalize">{t} Node</span>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500">+{t}</span>
+                    <span className="font-medium">{t.nodeTypes[type]}</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono uppercase">+{type}</span>
                   </button>
                 ))}
               </div>
@@ -352,14 +332,14 @@ export const ControlHeader: React.FC = () => {
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 text-xs font-sans">
             <FileCode2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-            <span className="text-slate-500 dark:text-slate-400 font-medium">Preset:</span>
+            <span className="text-slate-500 dark:text-slate-400 font-medium">{t.header.preset}</span>
             <select
               value={selectedPresetKey}
               onChange={(e) => handleSelectPreset(e.target.value)}
               disabled={isExecuting}
               className="bg-transparent text-slate-800 dark:text-slate-200 font-medium text-xs focus:outline-none cursor-pointer disabled:opacity-50"
             >
-              {Object.entries(PRESETS).map(([k, p]) => (
+              {Object.entries(currentPresets).map(([k, p]) => (
                 <option key={k} value={k} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
                   {p.name}
                 </option>
@@ -368,48 +348,45 @@ export const ControlHeader: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Provider Key Config, Theme Switcher, Reset & Execution Controls */}
+        {/* Right: API Key Trigger, Settings Page Trigger, Theme Switcher, Reset & Execution Controls */}
         <div className="flex items-center gap-2.5">
-          {/* API Key / Provider Settings Button */}
+          {/* API Key Button (Navigates to Settings -> Providers) */}
           <button
-            onClick={toggleSettingsModal}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 transition-all shadow-xs"
-            title="配置 API Keys & LLM Providers"
+            onClick={() => {
+              setSettingsTab('providers');
+              setCurrentView('settings');
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 transition-all shadow-xs cursor-pointer"
+            title={t.header.apiKeyTooltip}
           >
             <KeyRound className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-            <span className="hidden sm:inline font-mono">{activeConfig?.name.split(' ')[0] || 'API Key'}</span>
+            <span className="hidden sm:inline font-mono">{activeConfig?.name.split(' ')[0] || t.header.apiKey}</span>
             <span
               className={`w-2 h-2 rounded-full ${
                 hasActiveKey ? 'bg-emerald-500 shadow-xs shadow-emerald-500/50' : 'bg-rose-400 animate-pulse'
               }`}
-              title={hasActiveKey ? 'API Key 已配置' : '未配置 API Key'}
+              title={hasActiveKey ? t.header.apiKeyConfigured : t.header.apiKeyMissing}
             />
           </button>
 
-          {/* Log Console Drawer Trigger Button */}
+          {/* Settings Page Trigger Button (Replaces old inline "Logs" button) */}
           <button
-            onClick={toggleConsole}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all shadow-xs ${
-              isConsoleOpen
-                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-sky-400 border-blue-300 dark:border-blue-700'
-                : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800'
-            }`}
-            title="打开/收起执行日志控制台 (Workflow Logs Console)"
+            onClick={() => {
+              setSettingsTab('general');
+              setCurrentView('settings');
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 text-xs font-medium transition-all shadow-xs cursor-pointer"
+            title={t.header.settingsTooltip}
           >
-            <Terminal className="w-3.5 h-3.5 text-blue-500" />
-            <span className="hidden sm:inline">日志</span>
-            {logs.length > 0 && (
-              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                {logs.length}
-              </span>
-            )}
+            <Settings className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+            <span className="hidden sm:inline">{t.common.settings}</span>
           </button>
 
           {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
             className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 transition-all shadow-xs"
-            title={isDark ? '切换为浅色主题 (Switch to Light Mode)' : '切换为暗黑主题 (Switch to Dark Mode)'}
+            title={isDark ? t.header.themeTooltipLight : t.header.themeTooltipDark}
           >
             {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
           </button>
@@ -431,7 +408,7 @@ export const ControlHeader: React.FC = () => {
             onClick={handleReset}
             disabled={isExecuting}
             className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800 transition-colors disabled:opacity-40"
-            title="Reset node states and clear alerts"
+            title={t.header.resetTooltip}
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -443,22 +420,19 @@ export const ControlHeader: React.FC = () => {
               className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-medium text-xs shadow-xs shadow-rose-600/20 transition-all"
             >
               <Square className="w-3.5 h-3.5 fill-white" />
-              <span>Stop</span>
+              <span>{t.header.stopWorkflow}</span>
             </button>
           ) : (
             <button
               onClick={handleRunWorkflow}
-              className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium text-xs shadow-xs shadow-blue-600/20 transition-all active:scale-95"
+              className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium text-xs shadow-xs shadow-blue-600/20 transition-all active:scale-95 cursor-pointer"
             >
               <Play className="w-3.5 h-3.5 fill-white" />
-              <span>Run Workflow</span>
+              <span>{t.header.runWorkflow}</span>
             </button>
           )}
         </div>
       </header>
-
-      {/* Settings Modal */}
-      <SettingsModal />
 
       {/* Floating Global Alert / Cycle Warning Banner */}
       {alertNotification && (
@@ -477,7 +451,9 @@ export const ControlHeader: React.FC = () => {
               </p>
               {alertNotification.cycleNodes && alertNotification.cycleNodes.length > 0 && (
                 <div className="pt-1 flex flex-wrap gap-1.5">
-                  <span className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold font-mono">涉及成环节点:</span>
+                  <span className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold font-mono">
+                    {t.header.cycleNodesLabel}
+                  </span>
                   {alertNotification.cycleNodes.map((nid) => (
                     <span
                       key={nid}
@@ -493,7 +469,7 @@ export const ControlHeader: React.FC = () => {
             <button
               onClick={() => setAlertNotification(null)}
               className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
-              title="Close alert"
+              title={t.common.close}
             >
               <X className="w-4 h-4" />
             </button>
