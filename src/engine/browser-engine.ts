@@ -255,6 +255,7 @@ export class BrowserWorkflowEngine {
                     },
                   });
                 },
+                options,
               );
 
               if (result.status === 'error') {
@@ -377,6 +378,7 @@ export class BrowserWorkflowEngine {
       reasoningDelta?: string;
       fullReasoning?: string;
     }) => void,
+    options?: WorkflowRunOptions,
   ): Promise<InternalNodeResult> {
     const start = Date.now();
 
@@ -450,7 +452,9 @@ export class BrowserWorkflowEngine {
           const settings = settingsStore.getEffectiveConfig();
           const activeProviderConfig = settingsStore.providers[settings.provider];
 
-          if (settings.hasKey) {
+          const isValidationOnly = Boolean(options?.skipLLM || options?.validationOnly);
+
+          if (settings.hasKey && !isValidationOnly) {
             // REAL LLM CALL (Google Gemini / DeepSeek / OpenAI / Ollama / Custom)
             const messages: ChatMessage[] = [];
             if (systemPrompt) {
@@ -491,8 +495,8 @@ export class BrowserWorkflowEngine {
               finishReason: llmResult.finishReason,
             };
           } else {
-            // MOCK MODE FALLBACK (Simulated response with notice)
-            const delayMs = customDelay ?? 100;
+            // MOCK / FLOW VALIDATION MODE (Simulated response with notice)
+            const delayMs = customDelay ?? 80;
             if (delayMs > 0) {
               await new Promise<void>((resolve, reject) => {
                 if (signal.aborted) {
@@ -507,15 +511,39 @@ export class BrowserWorkflowEngine {
               });
             }
 
-            const mockText = `[Mock] Response for "${node.data.label}" — prompt: ${userPrompt.slice(0, 80)}… (提示: 点击顶部 API Key 配置 Google Gemini 或 DeepSeek 以启用真实大模型)`;
+            // Check if prompt or node label implies structured JSON format (e.g. classifier, router)
+            const promptLower = userPrompt.toLowerCase();
+            const labelLower = node.data.label.toLowerCase();
+            const expectsJson =
+              promptLower.includes('json') ||
+              labelLower.includes('intent') ||
+              labelLower.includes('router') ||
+              labelLower.includes('classifier') ||
+              node.data.label.includes('意图') ||
+              node.data.label.includes('分类');
+
+            const mockText = expectsJson
+              ? JSON.stringify(
+                  {
+                    intent: 'logistics_expedite',
+                    urgency: 4,
+                    requires_human: true,
+                    summary: `[Flow Validation] Simulated intent classification for "${node.data.label}"`,
+                  },
+                  null,
+                  2,
+                )
+              : `[Flow Validation] Simulated response for "${node.data.label}" (LLM model execution skipped for flow validation).`;
+
             if (onChunk) {
               onChunk({ delta: mockText, fullContent: mockText });
             }
 
             output = {
               response: mockText,
-              usage: { prompt: 60, completion: 60, total: 120 },
+              usage: { prompt: 50, completion: 50, total: 100 },
               finishReason: 'stop',
+              model: configuredModel || settings.model || 'mock-validator',
             };
           }
           break;

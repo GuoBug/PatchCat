@@ -307,6 +307,10 @@ export interface WorkflowRunOptions {
   apiKeys?: Record<string, string>;
   /** Abort signal for cooperative cancellation. */
   signal?: AbortSignal;
+  /** When true, skips real LLM provider network calls and returns simulated outputs for dry-run/flow validation. */
+  skipLLM?: boolean;
+  /** When true, runs in validation-only mode. */
+  validationOnly?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

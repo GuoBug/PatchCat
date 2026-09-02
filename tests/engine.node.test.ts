@@ -565,5 +565,31 @@ describe('Dynamic Code Node & Customer Support Routing Logic', () => {
 
     assert.equal(dispatchResult.targetQueue, '🚀 物流专线极速客服队列 (Logistics VIP)');
   });
+
+  it('should support skipLLM flow validation mode without invoking external APIs', async () => {
+    const engine = new BrowserWorkflowEngine();
+    const nodes: WorkflowNode[] = [
+      makeNode('input_1', 'input', { query: 'Hello world' }),
+      makeNode('prompt_1', 'prompt', { template: 'Query: {{input_1.query}}' }),
+      makeNode('llm_classifier', 'llm', { prompt: '{{prompt_1.promptText}}' }, { model: 'gpt-4o-mini' }),
+      makeNode('output_1', 'output', { final: '{{llm_classifier.response}}' }),
+    ];
+
+    const edges: WorkflowEdge[] = [
+      makeEdge('input_1', 'prompt_1'),
+      makeEdge('prompt_1', 'llm_classifier'),
+      makeEdge('llm_classifier', 'output_1'),
+    ];
+
+    const events = await collectEvents(engine.executeWorkflow({ nodes, edges }, { skipLLM: true }));
+    const completeEvent = events.find((e) => e.type === 'WORKFLOW_COMPLETE');
+    assert.ok(completeEvent);
+
+    const outputs = (completeEvent.payload as any).outputs;
+    assert.ok(outputs.llm_classifier.response);
+    assert.match(outputs.llm_classifier.response, /Flow Validation/i);
+    assert.ok(outputs.output_1);
+  });
 });
+
 

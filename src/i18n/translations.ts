@@ -46,6 +46,11 @@ export interface Translations {
     cycleAlertMsg: string;
     cycleNodesLabel: string;
     unknownEngineError: string;
+    unconfiguredModalTitle: string;
+    unconfiguredModalDesc: string;
+    bindApiKeyBtn: string;
+    validateFlowOnlyBtn: string;
+    unconfiguredBadge: string;
   };
   nodeTypes: {
     input: string;
@@ -232,6 +237,11 @@ export const translations: Record<Language, Translations> = {
       cycleAlertMsg: 'A closed dependency loop was detected. Unable to determine execution order. Please remove feedback edges and retry.',
       cycleNodesLabel: 'Involved cyclic nodes:',
       unknownEngineError: 'Execution Engine encountered an error',
+      unconfiguredModalTitle: 'LLM Model API Key Not Configured',
+      unconfiguredModalDesc: 'The current workflow contains LLM inference nodes, but the active provider has no verified API Key configured. You can bind your API Key now, or run a flow validation that skips model calls and verifies data routing.',
+      bindApiKeyBtn: 'Configure API Key',
+      validateFlowOnlyBtn: 'Validate Flow Only (Skip LLM)',
+      unconfiguredBadge: 'No API Key Set',
     },
     nodeTypes: {
       input: 'Input Node',
@@ -416,6 +426,11 @@ export const translations: Record<Language, Translations> = {
       cycleAlertMsg: '图中存在闭环依赖死锁，无法确定拓扑执行层级。请删除回环边后重试。',
       cycleNodesLabel: '涉及成环节点:',
       unknownEngineError: '执行引擎发生未知错误',
+      unconfiguredModalTitle: '未配置大模型 API Key 凭证',
+      unconfiguredModalDesc: '当前工作流包含 LLM 推理节点，但所选的大模型服务商尚未配置或绑定有效 API Key。您可以前往设置页面绑定 Key，或仅执行工作流流程校验（自动跳过模型调用，校验数据流转）。',
+      bindApiKeyBtn: '去配置绑定 API Key',
+      validateFlowOnlyBtn: '仅进行流程校验 (跳过模型)',
+      unconfiguredBadge: '未配置 API Key',
     },
     nodeTypes: {
       input: '输入节点',
