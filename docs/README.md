@@ -15,6 +15,8 @@
   - 浏览器端与服务端双引擎架构规范。
 - [PRD-004: Workflow Project & Hierarchical Directory Management](01-prd/PRD-004-Workflow-Project-Directory-Management.md)
   - Antigravity 风格左侧抽屉、目录树管理、多工作流分类与本地持久化规范。
+- [PRD-005: Dual-Mode Storage Adapter & FastAPI Backend Integration](01-prd/PRD-005-Dual-Mode-Storage-and-FastAPI-Backend.md)
+  - 双模存储适配器（LocalStorage vs FastAPI + DB）、设置页实时健康探测与无缝同步规范。
 
 ---
 
