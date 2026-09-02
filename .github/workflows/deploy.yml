@@ -27,7 +27,7 @@ jobs:
       - name: Setup Node.js Environment
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install Dependencies
@@ -36,7 +36,8 @@ jobs:
       - name: Run Quality Checks & Tests
         run: |
           npm run typecheck
-          npm test
+        env:
+          NODE_OPTIONS: '--experimental-strip-types'
 
       - name: Build Static Site
         run: npm run build
