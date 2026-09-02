@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 16 with pgvector extension pre-installed
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: patchcat_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-patchcat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-patchcat_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-patchcat_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-patchcat} -d ${POSTGRES_DB:-patchcat_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
