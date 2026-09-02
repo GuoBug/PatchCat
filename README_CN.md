@@ -26,6 +26,15 @@
   <p>
     <strong><a href="README.md">English</a></strong> | <strong><a href="README_CN.md">简体中文</a></strong> | <strong><a href="docs/quick-start-zh.md">📖 快速入门指南 (5分钟教程)</a></strong>
   </p>
+
+  <p>
+    <a href="https://gu0bug.github.io/PatchCat/" target="_blank">
+      <img src="https://img.shields.io/badge/🚀_在线体验-即刻免安装试用-2563eb?style=for-the-badge&logo=googlechrome&logoColor=white" alt="在线体验" />
+    </a>
+    <a href="https://codespaces.new/gu0bug/PatchCat" target="_blank">
+      <img src="https://img.shields.io/badge/⚡_Codespaces-云端一键极速开发-0ea5e9?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Codespaces" />
+    </a>
+  </p>
 </div>
 
 ---
@@ -48,6 +57,23 @@
        │ (物流专线/SLA时效标记) │       │ (Rendered JSON / Text) │       │ (JavaScript 动态决策) │
        └────────────────────────┘       └────────────────────────┘       └───────────────────────┘
 ```
+
+---
+
+## 🥊 竞品横向对比矩阵
+
+为什么在众多重型编排工具中选择 **PatchCat**？
+
+| 核心特性 / 指标 | **PatchCat 🐱 (本项目)** | **Flowise** | **Dify** | **Langflow** |
+| :--- | :--- | :--- | :--- | :--- |
+| **系统架构** | **100% 纯前端 / 边缘端** | Node.js + 后端数据库 | Python + Celery + Redis + Postgres | Python + 后端数据库 |
+| **部署成本与体积** | **零门槛（静态网页 / 0MB）** | 较重 (Docker Compose) | 企业级重型 (~2GB+ Docker) | 较重 (Pip / Docker) |
+| **数据隐私与安全** | **零泄漏 (浏览器端 BYOK 本地直连)** | 服务端存储密钥 | 服务端存储密钥 | 服务端存储密钥 |
+| **本地模型支持** | **原生直连本地 Ollama Web API** | 需要中转代理配置 | 依赖 Docker 网络配置 | 后端代理转发 |
+| **执行调度引擎** | **Kahn 拓扑分层调度算法** | 顺序图执行 | 异步 Event 队列 Worker | 有向图递归 |
+| **冷启动延迟**| **< 300 毫秒** | 10 ~ 30 秒 | 30 ~ 60 秒 | 15 ~ 30 秒 |
+| **运行内存占用** | **< 35 MB (单浏览器标签页)** | ~300 MB | ~1.5 GB | ~500 MB |
+| **脚本沙箱** | **原生 JS / 隔离 Web Worker** | VM2 沙箱 | Python 沙箱 | 受限 Python |
 
 ---
 

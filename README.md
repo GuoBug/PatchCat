@@ -26,6 +26,15 @@
   <p>
     <strong><a href="README.md">English</a></strong> | <strong><a href="README_CN.md">简体中文</a></strong> | <strong><a href="docs/quick-start.md">📖 Quick Start Guide</a></strong>
   </p>
+
+  <p>
+    <a href="https://gu0bug.github.io/PatchCat/" target="_blank">
+      <img src="https://img.shields.io/badge/🚀_Live_Demo-Try_PatchCat_Online-2563eb?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live Demo" />
+    </a>
+    <a href="https://codespaces.new/gu0bug/PatchCat" target="_blank">
+      <img src="https://img.shields.io/badge/⚡_Codespaces-Instant_Cloud_Dev-0ea5e9?style=for-the-badge&logo=github&logoColor=white" alt="Open in GitHub Codespaces" />
+    </a>
+  </p>
 </div>
 
 ---
@@ -48,6 +57,23 @@ With **zero mandatory backend setup** (Client-Only BYOK Mode) and direct connect
        │ (VIP Logistics / SLA)  │       │ (Rendered JSON / Text) │       │ (JavaScript Decision) │
        └────────────────────────┘       └────────────────────────┘       └───────────────────────┘
 ```
+
+---
+
+## 🥊 Feature Matrix & Comparison
+
+Why choose **PatchCat** over heavyweight orchestration tools?
+
+| Feature / Metric | **PatchCat 🐱 (Ours)** | **Flowise** | **Dify** | **Langflow** |
+| :--- | :--- | :--- | :--- | :--- |
+| **Architecture** | **100% Client-Side / Edge** | Node.js + Backend DB | Python + Celery + Redis + Postgres | Python + Backend DB |
+| **Deployment Weight** | **Zero Setup (Static Web / 0MB)** | Heavy (Docker Compose) | Enterprise Heavy (~2GB+ Docker) | Heavy (Pip / Docker) |
+| **Data Privacy** | **Zero Data Leakage (BYOK In-Browser)** | Server-stored Keys | Server-stored Keys | Server-stored Keys |
+| **Local LLM Support** | **Direct Ollama Web API** | Proxy Bridge Required | Docker Network Configuration | Backend Proxy |
+| **Execution Engine** | **Kahn Topological DAG Scheduler** | Sequential Graph | Async Event Worker | Directed Graph |
+| **Cold Start Latency**| **< 300 ms** | 10 ~ 30 s | 30 ~ 60 s | 15 ~ 30 s |
+| **Memory Footprint** | **< 35 MB (Browser Tab)** | ~300 MB | ~1.5 GB | ~500 MB |
+| **Code Node Sandbox**| **Native JS / Isolated Worker** | VM2 Sandbox | Python Sandbox | Restricted Python |
 
 ---
 
