@@ -188,7 +188,7 @@ export interface Translations {
 export const translations: Record<Language, Translations> = {
   en: {
     common: {
-      backToCanvas: '← Back to Canvas',
+      backToCanvas: 'Back to Canvas',
       settings: 'Settings',
       logs: 'Logs',
       save: 'Save',
@@ -372,7 +372,7 @@ export const translations: Record<Language, Translations> = {
   },
   zh: {
     common: {
-      backToCanvas: '← 返回画布',
+      backToCanvas: '返回画布',
       settings: '设置',
       logs: '日志',
       save: '保存',
