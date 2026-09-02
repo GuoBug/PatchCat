@@ -26,7 +26,7 @@ class WorkflowUpdate(BaseModel):
     description: Optional[str] = None
     nodes: Optional[List[Dict[str, Any]]] = None
     edges: Optional[List[Dict[str, Any]]] = None
-    global_inputs: Optional[Dict[str, Any]]] = None
+    global_inputs: Optional[Dict[str, Any]] = None
 
 
 class WorkflowSummaryResponse(BaseModel):
