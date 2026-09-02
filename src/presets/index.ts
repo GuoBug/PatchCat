@@ -1,10 +1,10 @@
-import customerSupportEn from './en/customer-support-routing.json';
-import reportCriticEn from './en/report-generation-critic.json';
-import modelArenaEn from './en/model-arena-eval.json';
+import customerSupportEn from './en/customer-support-routing.json' with { type: 'json' };
+import reportCriticEn from './en/report-generation-critic.json' with { type: 'json' };
+import modelArenaEn from './en/model-arena-eval.json' with { type: 'json' };
 
-import customerSupportZh from './zh/customer-support-routing.json';
-import reportCriticZh from './zh/report-generation-critic.json';
-import modelArenaZh from './zh/model-arena-eval.json';
+import customerSupportZh from './zh/customer-support-routing.json' with { type: 'json' };
+import reportCriticZh from './zh/report-generation-critic.json' with { type: 'json' };
+import modelArenaZh from './zh/model-arena-eval.json' with { type: 'json' };
 
 import type { WorkflowGraph } from '../engine/types.ts';
 import type { Language } from '../i18n/translations.ts';

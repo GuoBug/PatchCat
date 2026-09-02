@@ -132,7 +132,7 @@ export interface WorkflowStoreState {
    * Replaces the entire canvas with a previously saved or preset
    * workflow graph.
    */
-  loadPreset: (graph: WorkflowGraph) => void;
+  loadPreset: (graph: WorkflowGraph | { nodes: WorkflowNode[]; edges: WorkflowEdge[]; }) => void;
 
   /**
    * Resets **every** node's `status` to `idle` and clears its

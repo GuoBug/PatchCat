@@ -188,6 +188,31 @@ export interface Translations {
     helpDocs: string;
     github: string;
   };
+  sidebar: {
+    newWorkflow: string;
+    allWorkflows: string;
+    workflowHistory: string;
+    projects: string;
+    newFolder: string;
+    searchPlaceholder: string;
+    folderNamePlaceholder: string;
+    workflowNamePlaceholder: string;
+    defaultFolder: string;
+    presetsFolder: string;
+    untitledWorkflow: string;
+    rename: string;
+    duplicate: string;
+    moveTo: string;
+    delete: string;
+    deleteFolderConfirm: string;
+    deleteWorkflowConfirm: string;
+    noWorkflowsInFolder: string;
+    toggleSidebar: string;
+    collapseSidebar: string;
+    expandSidebar: string;
+    workflowsCount: string;
+    selectFolder: string;
+  };
 }
 
 export const translations: Record<Language, Translations> = {
@@ -379,6 +404,31 @@ export const translations: Record<Language, Translations> = {
       helpDocs: 'Help & Docs',
       github: 'GitHub',
     },
+    sidebar: {
+      newWorkflow: 'New Workflow',
+      allWorkflows: 'All Workflows',
+      workflowHistory: 'Workflow History',
+      projects: 'Projects & Folders',
+      newFolder: 'New Folder',
+      searchPlaceholder: 'Search workflows...',
+      folderNamePlaceholder: 'Folder name...',
+      workflowNamePlaceholder: 'Workflow name...',
+      defaultFolder: 'Default',
+      presetsFolder: 'Built-in Presets',
+      untitledWorkflow: 'Untitled Workflow',
+      rename: 'Rename',
+      duplicate: 'Duplicate',
+      moveTo: 'Move to Folder',
+      delete: 'Delete',
+      deleteFolderConfirm: 'Are you sure you want to delete this folder and its workflows?',
+      deleteWorkflowConfirm: 'Are you sure you want to delete this workflow?',
+      noWorkflowsInFolder: 'No workflows in this folder',
+      toggleSidebar: 'Toggle Workflow Drawer',
+      collapseSidebar: 'Collapse Sidebar',
+      expandSidebar: 'Expand Sidebar',
+      workflowsCount: 'workflows',
+      selectFolder: 'Select destination folder',
+    },
   },
   zh: {
     common: {
@@ -567,6 +617,31 @@ export const translations: Record<Language, Translations> = {
       author: '作者',
       helpDocs: '帮助文档',
       github: 'GitHub 仓库',
+    },
+    sidebar: {
+      newWorkflow: '新建流程',
+      allWorkflows: '全部流程',
+      workflowHistory: '流程历史',
+      projects: '目录与项目',
+      newFolder: '新建目录',
+      searchPlaceholder: '搜索工作流...',
+      folderNamePlaceholder: '目录名称...',
+      workflowNamePlaceholder: '流程名称...',
+      defaultFolder: '默认目录',
+      presetsFolder: '官方预设库',
+      untitledWorkflow: '未命名流程',
+      rename: '重命名',
+      duplicate: '复制副本',
+      moveTo: '移动至目录',
+      delete: '删除',
+      deleteFolderConfirm: '确定要删除此目录及其包含的所有工作流吗？',
+      deleteWorkflowConfirm: '确定要删除此工作流吗？',
+      noWorkflowsInFolder: '该目录下暂无工作流',
+      toggleSidebar: '切换流程侧边栏',
+      collapseSidebar: '收起侧边栏',
+      expandSidebar: '展开侧边栏',
+      workflowsCount: '个流程',
+      selectFolder: '选择目标目录',
     },
   },
 };

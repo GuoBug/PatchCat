@@ -10,3 +10,4 @@ export { SettingsPage } from './SettingsPage';
 export { LogConsole } from './LogConsole';
 export { Footer } from './Footer';
 export { HelpModal } from './HelpModal';
+export { WorkflowSidebar } from './WorkflowSidebar';
