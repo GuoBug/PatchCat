@@ -316,11 +316,11 @@ export const ControlHeader: React.FC = () => {
     <>
       <header className="h-14 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/90 backdrop-blur-md px-4 flex items-center justify-between shrink-0 z-20 select-none shadow-xs transition-colors duration-200">
         {/* Left: Brand + Realtime DAG Stats */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* Sidebar drawer toggle button */}
           <button
             onClick={toggleSidebar}
-            className={`p-1.5 rounded-lg border text-xs font-medium transition-all shadow-xs cursor-pointer ${
+            className={`p-1.5 rounded-lg border text-xs font-medium transition-all shadow-xs cursor-pointer shrink-0 ${
               isSidebarOpen
                 ? 'bg-blue-50 dark:bg-sky-500/10 text-blue-600 dark:text-sky-400 border-blue-200 dark:border-sky-500/30'
                 : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800'
@@ -330,19 +330,19 @@ export const ControlHeader: React.FC = () => {
             <PanelLeft className="w-4 h-4" />
           </button>
 
-          <div className="flex items-center gap-2">
-            <CatLogo className="w-7 h-7" />
-            <div className="flex flex-col">
-              <span className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white font-mono uppercase">
+          <div className="flex items-center gap-2 shrink-0 select-none">
+            <CatLogo className="w-7 h-7 shrink-0" />
+            <div className="flex flex-col shrink-0">
+              <span className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white font-mono uppercase whitespace-nowrap leading-none">
                 PATCH<span className="text-blue-600 dark:text-sky-400">CAT</span>
               </span>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans hidden sm:inline">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans hidden xl:inline whitespace-nowrap mt-0.5">
                 {t.header.tagline}
               </span>
             </div>
           </div>
 
-          <div className="h-5 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1 hidden md:block" />
+          <div className="h-5 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1 hidden md:block shrink-0" />
 
           {/* Quick Add Node Dropdown */}
           <div className="relative">
@@ -401,16 +401,16 @@ export const ControlHeader: React.FC = () => {
         </div>
 
         {/* Center: Preset Scenarios Selector */}
-        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-inner">
-          <FileCode2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 hidden sm:block" />
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden md:inline">
+        <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-100 dark:bg-slate-900 px-2 sm:px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-inner shrink min-w-0 max-w-[180px] sm:max-w-xs md:max-w-sm">
+          <FileCode2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 hidden sm:block shrink-0" />
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden md:inline shrink-0">
             {t.header.preset}
           </span>
           <select
             value={selectedPresetKey}
             onChange={(e) => handleSelectPreset(e.target.value)}
             disabled={isExecuting}
-            className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+            className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer truncate min-w-0 w-full"
           >
             {Object.entries(currentPresets).map(([key, item]) => (
               <option key={key} value={key} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
@@ -421,7 +421,7 @@ export const ControlHeader: React.FC = () => {
         </div>
 
         {/* Right: Actions & Execution Controls */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0">
           {/* API Key / Provider Status Button */}
           <button
             onClick={() => {

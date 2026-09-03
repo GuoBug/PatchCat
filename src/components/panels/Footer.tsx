@@ -18,9 +18,9 @@ export const Footer: React.FC = () => {
     <>
       <footer className="h-8 bg-white/95 dark:bg-slate-950/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-800/80 px-4 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 shrink-0 z-30 select-none transition-colors duration-200">
         {/* Left: Brand / System Info */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 font-mono text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-            <CatLogo className="w-3.5 h-3.5" />
+        <div className="flex items-center gap-2 shrink-0 select-none">
+          <div className="flex items-center gap-1.5 font-mono text-[11px] font-semibold text-slate-700 dark:text-slate-300 shrink-0 whitespace-nowrap">
+            <CatLogo className="w-3.5 h-3.5 shrink-0" />
             <span className="tracking-tight">
               PATCH<span className="text-blue-600 dark:text-sky-400">CAT</span>
             </span>

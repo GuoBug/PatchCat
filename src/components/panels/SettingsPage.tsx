@@ -178,13 +178,13 @@ export const SettingsPage: React.FC = () => {
 
           <div className="h-5 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1" />
 
-          <div className="flex items-center gap-2.5">
-            <CatLogo className="w-7 h-7" />
-            <div className="flex flex-col">
-              <span className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white font-mono uppercase">
+          <div className="flex items-center gap-2.5 shrink-0 select-none">
+            <CatLogo className="w-7 h-7 shrink-0" />
+            <div className="flex flex-col shrink-0">
+              <span className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white font-mono uppercase whitespace-nowrap leading-none">
                 PATCH<span className="text-blue-600 dark:text-sky-400">CAT</span>
               </span>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans whitespace-nowrap mt-0.5">
                 {t.settings.pageTitle}
               </span>
             </div>
