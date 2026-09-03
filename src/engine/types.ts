@@ -31,9 +31,10 @@ import type { Node, Edge } from '@xyflow/react';
  * | `prompt` | Assembles a prompt template with dynamic variable slots   |
  * | `llm`    | Calls a large language model (cloud or local)             |
  * | `code`   | Runs a lightweight JS / Python transformation             |
- * | `output` | Aggregates and renders the final workflow response        |
+ * | `output`    | Aggregates and renders the final workflow response        |
+ * | `knowledge` | Retrieves semantic context from knowledge base (RAG)      |
  */
-export type NodeType = 'input' | 'prompt' | 'llm' | 'code' | 'output';
+export type NodeType = 'input' | 'prompt' | 'llm' | 'code' | 'output' | 'knowledge';
 
 /**
  * Execution lifecycle status for an individual node.
@@ -333,6 +334,8 @@ export function getDefaultNodeConfig(type: NodeType): Record<string, unknown> {
       return { runtime: 'javascript', script: '' };
     case 'output':
       return { format: 'markdown' };
+    case 'knowledge':
+      return { knowledgeBaseId: '', query: '', topK: 3, scoreThreshold: 0.0 };
   }
 }
 
@@ -341,11 +344,12 @@ export function getDefaultNodeConfig(type: NodeType): Record<string, unknown> {
  */
 export function getDefaultNodeLabel(type: NodeType): string {
   const labels: Record<NodeType, string> = {
-    input:  'Input',
-    prompt: 'Prompt Template',
-    llm:    'LLM Call',
-    code:   'Code Transform',
-    output: 'Output',
+    input:     'Input',
+    prompt:    'Prompt Template',
+    llm:       'LLM Call',
+    code:      'Code Transform',
+    output:    'Output',
+    knowledge: 'Knowledge Retrieval',
   };
   return labels[type];
 }

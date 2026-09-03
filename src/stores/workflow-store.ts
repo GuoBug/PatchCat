@@ -155,6 +155,7 @@ const nodeCounters: Record<NodeType, number> = {
   llm: 0,
   code: 0,
   output: 0,
+  knowledge: 0,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

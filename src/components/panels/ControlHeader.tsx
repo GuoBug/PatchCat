@@ -305,6 +305,12 @@ export const ControlHeader: React.FC = () => {
       desc: t.nodeTypes.outputDesc,
       color: 'bg-rose-500/10 text-rose-600 dark:text-pink-400 border-rose-500/30',
     },
+    {
+      type: 'knowledge',
+      label: t.nodeTypes.knowledge,
+      desc: t.nodeTypes.knowledgeDesc,
+      color: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30',
+    },
   ];
 
   return (

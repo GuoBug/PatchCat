@@ -58,11 +58,13 @@ export interface Translations {
     llm: string;
     code: string;
     output: string;
+    knowledge: string;
     inputDesc: string;
     promptDesc: string;
     llmDesc: string;
     codeDesc: string;
     outputDesc: string;
+    knowledgeDesc: string;
   };
   propertyPanel: {
     title: string;
@@ -83,6 +85,15 @@ export interface Translations {
     variableHelper: string;
     detectedVars: string;
     noVarsDetected: string;
+    knowledgeConfig: string;
+    knowledgeBase: string;
+    selectKnowledgeBase: string;
+    noKnowledgeBaseFound: string;
+    knowledgeQuery: string;
+    knowledgeQueryPlaceholder: string;
+    topK: string;
+    scoreThreshold: string;
+    knowledgeAttributionHint: string;
     modelConfig: string;
     provider: string;
     model: string;
@@ -288,11 +299,13 @@ export const translations: Record<Language, Translations> = {
       llm: 'LLM Call',
       code: 'Code Node',
       output: 'Output Node',
+      knowledge: 'Knowledge Retrieval',
       inputDesc: 'Inject entry parameters into workflow',
       promptDesc: 'Dynamic prompt template assembly',
       llmDesc: 'Execute LLM inference call',
       codeDesc: 'Execute JavaScript code transformation',
       outputDesc: 'Format and display final outputs',
+      knowledgeDesc: 'Semantic retrieval from knowledge base (RAG)',
     },
     propertyPanel: {
       title: 'Node Properties',
@@ -313,6 +326,15 @@ export const translations: Record<Language, Translations> = {
       variableHelper: 'Upstream Variable Reference:',
       detectedVars: 'Detected Variables:',
       noVarsDetected: 'No variables detected yet. Type {{ to reference upstream nodes.',
+      knowledgeConfig: 'Knowledge Base (RAG) Config',
+      knowledgeBase: 'Target Knowledge Base',
+      selectKnowledgeBase: 'Select Knowledge Base...',
+      noKnowledgeBaseFound: 'No knowledge bases found. Create one in backend.',
+      knowledgeQuery: 'Query String',
+      knowledgeQueryPlaceholder: 'Query to search (supports {{input_1.query}})...',
+      topK: 'Top-K Recall Count',
+      scoreThreshold: 'Similarity Threshold',
+      knowledgeAttributionHint: 'Outputs {{result}} (markdown text) and {{chunks}} (array).',
       modelConfig: 'Model Configuration',
       provider: 'Provider',
       model: 'Model',
@@ -516,11 +538,13 @@ export const translations: Record<Language, Translations> = {
       llm: '大模型推理',
       code: '代码转换',
       output: '输出节点',
+      knowledge: '知识库检索',
       inputDesc: '向工作流注入入参变量',
       promptDesc: '动态组装提示词模板',
       llmDesc: '执行大模型推理调用',
       codeDesc: '运行 JavaScript 数据处理与路由',
       outputDesc: '汇总并展示最终生成结果',
+      knowledgeDesc: '从私有知识库中语义召回相关切片 (RAG)',
     },
     propertyPanel: {
       title: '节点属性配置',
@@ -541,6 +565,15 @@ export const translations: Record<Language, Translations> = {
       variableHelper: '上游可用变量参考:',
       detectedVars: '已识别模板变量:',
       noVarsDetected: '尚未检测到变量。输入 {{ 即可引用上游节点输出。',
+      knowledgeConfig: '知识库增强检索 (RAG) 配置',
+      knowledgeBase: '目标知识库',
+      selectKnowledgeBase: '选择知识库...',
+      noKnowledgeBaseFound: '暂未发现可用知识库，请先在服务端创建知识库',
+      knowledgeQuery: '检索查询语句 (Query)',
+      knowledgeQueryPlaceholder: '输入搜索内容，支持 {{input_1.query}} 动态变量...',
+      topK: 'Top-K 召回数量',
+      scoreThreshold: '相似度过滤阈值',
+      knowledgeAttributionHint: '输出 {{result}} (标准 Markdown 上下文) 与 {{chunks}} (结构化切片数组)。',
       modelConfig: '模型与推理配置',
       provider: '模型服务商',
       model: '推理模型',

@@ -18,7 +18,7 @@
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/engine.node.test.ts tests/settings.node.test.ts tests/llm-client.node.test.ts tests/logger.node.test.ts tests/project-store.node.test.ts",
+    "test": "node --test tests/engine.node.test.ts tests/settings.node.test.ts tests/llm-client.node.test.ts tests/logger.node.test.ts tests/project-store.node.test.ts tests/knowledge-node.node.test.ts",
     "demo": "node scripts/demo-run.ts"
   },
   "dependencies": {

@@ -10,7 +10,8 @@ import {
   Coins, 
   AlertTriangle,
   Loader2,
-  Check
+  Check,
+  Database
 } from 'lucide-react';
 import type { NodeType, NodeStatus, NodeExecutionResult } from '../../engine/types.ts';
 
@@ -58,6 +59,12 @@ const typeConfig: Record<NodeType, { icon: React.ComponentType<{ className?: str
     color: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-pink-500/10 dark:text-pink-400 dark:border-pink-500/30',
     handleColor: '#F43F5E',
     badge: 'OUTPUT',
+  },
+  knowledge: {
+    icon: Database,
+    color: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-500/10 dark:text-cyan-400 dark:border-cyan-500/30',
+    handleColor: '#06B6D4',
+    badge: 'RAG',
   },
 };
 
