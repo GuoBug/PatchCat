@@ -27,6 +27,7 @@ import { validateGraphTopology } from '../../engine/topological-sort.ts';
 import type { NodeType, WorkflowGraph, TokenUsage } from '../../engine/types.ts';
 import { CatLogo } from '../icons/CatLogo.tsx';
 import { PRESETS_DATA } from '../../presets/index.ts';
+import { PROJECT_VERSION } from '../../config/project.ts';
 
 export interface AlertNotification {
   type: 'error' | 'warning';
@@ -321,8 +322,11 @@ export const ControlHeader: React.FC = () => {
           <div className="flex items-center gap-2 shrink-0 select-none">
             <CatLogo className="w-7 h-7 shrink-0" />
             <div className="flex flex-col shrink-0">
-              <span className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white font-mono uppercase whitespace-nowrap leading-none">
-                PATCH<span className="text-blue-600 dark:text-sky-400">CAT</span>
+              <span className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white font-mono uppercase whitespace-nowrap leading-none flex items-center gap-1.5">
+                <span>PATCH<span className="text-blue-600 dark:text-sky-400">CAT</span></span>
+                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-50 dark:bg-sky-500/10 text-blue-600 dark:text-sky-400 border border-blue-200 dark:border-sky-500/30 tracking-normal normal-case">
+                  v{PROJECT_VERSION}
+                </span>
               </span>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans hidden xl:inline whitespace-nowrap mt-0.5">
                 {t.header.tagline}

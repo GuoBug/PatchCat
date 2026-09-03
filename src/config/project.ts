@@ -6,6 +6,8 @@
  *   Supports dynamic overrides via Vite environment variables (VITE_*).
  */
 
+import pkg from '../../package.json' with { type: 'json' };
+
 // Safe retrieval of environment variables across Vite browser bundle and Node.js test runners
 const getEnvVar = (key: string, fallback: string): string => {
   try {
@@ -27,6 +29,7 @@ const getEnvVar = (key: string, fallback: string): string => {
   return fallback;
 };
 
+export const PROJECT_VERSION = getEnvVar('VITE_APP_VERSION', pkg.version || '0.2.0');
 export const PROJECT_OWNER = getEnvVar('VITE_GITHUB_OWNER', 'GuoBug');
 export const PROJECT_REPO = getEnvVar('VITE_GITHUB_REPO', 'PatchCat');
 export const PROJECT_AUTHOR = getEnvVar('VITE_AUTHOR_NAME', 'GuoQiang');
@@ -61,6 +64,7 @@ export const GITHUB_RAW_BASE_URL = `https://raw.githubusercontent.com/${GITHUB_P
  * Aggregated links registry for convenient imports
  */
 export const PROJECT_LINKS = {
+  version: PROJECT_VERSION,
   home: PROJECT_HOME_URL,
   repo: GITHUB_REPO_URL,
   owner: GITHUB_OWNER_URL,
