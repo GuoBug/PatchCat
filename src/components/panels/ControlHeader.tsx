@@ -18,11 +18,9 @@ import {
   KeyRound,
   Settings,
   ShieldAlert,
-  PanelLeft,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import { useSettingsStore } from '../../stores/settings-store.ts';
-import { useProjectStore } from '../../stores/project-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
 import { BrowserWorkflowEngine } from '../../engine/browser-engine.ts';
 import { validateGraphTopology } from '../../engine/topological-sort.ts';
@@ -54,9 +52,6 @@ export const ControlHeader: React.FC = () => {
   const setSettingsTab = useSettingsStore((s) => s.setSettingsTab);
   const activeProvider = useSettingsStore((s) => s.activeProvider);
   const providers = useSettingsStore((s) => s.providers);
-
-  const isSidebarOpen = useProjectStore((s) => s.isSidebarOpen);
-  const toggleSidebar = useProjectStore((s) => s.toggleSidebar);
 
   const [selectedPresetKey, setSelectedPresetKey] = useState<string>('customer-support');
   const [showAddMenu, setShowAddMenu] = useState(false);
@@ -317,19 +312,6 @@ export const ControlHeader: React.FC = () => {
       <header className="h-14 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/90 backdrop-blur-md px-4 flex items-center justify-between shrink-0 z-20 select-none shadow-xs transition-colors duration-200">
         {/* Left: Brand + Realtime DAG Stats */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Sidebar drawer toggle button */}
-          <button
-            onClick={toggleSidebar}
-            className={`p-1.5 rounded-lg border text-xs font-medium transition-all shadow-xs cursor-pointer shrink-0 ${
-              isSidebarOpen
-                ? 'bg-blue-50 dark:bg-sky-500/10 text-blue-600 dark:text-sky-400 border-blue-200 dark:border-sky-500/30'
-                : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800'
-            }`}
-            title={t.sidebar.toggleSidebar}
-          >
-            <PanelLeft className="w-4 h-4" />
-          </button>
-
           <div className="flex items-center gap-2 shrink-0 select-none">
             <CatLogo className="w-7 h-7 shrink-0" />
             <div className="flex flex-col shrink-0">

@@ -15,8 +15,8 @@ import {
   X,
   History,
   Sparkles,
-  PanelLeftClose,
-  PanelLeftOpen,
+  ChevronsLeft,
+  ChevronsRight,
   Check,
 } from 'lucide-react';
 import { useProjectStore, type SavedWorkflow, type Folder } from '../../stores/project-store.ts';
@@ -317,16 +317,25 @@ export const WorkflowSidebar: React.FC = () => {
     return (
       <button
         onClick={toggleSidebar}
-        className="absolute left-3 top-3 z-30 p-2 rounded-xl bg-white/90 dark:bg-slate-900/90 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 shadow-md text-slate-600 dark:text-slate-300 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+        className="absolute left-0 top-3 z-30 w-6 h-9 rounded-r-lg bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-y border-r border-slate-200 dark:border-slate-800 shadow-md flex items-center justify-center text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-sky-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer group"
         title={t.sidebar.expandSidebar}
       >
-        <PanelLeftOpen className="w-4 h-4 text-blue-600 dark:text-sky-400" />
+        <ChevronsRight className="w-3.5 h-3.5 text-blue-600 dark:text-sky-400 group-hover:translate-x-0.5 transition-transform" />
       </button>
     );
   }
 
   return (
-    <aside className="w-64 md:w-72 shrink-0 border-r border-slate-200 dark:border-slate-800/80 bg-slate-50/70 dark:bg-[#0A0E17]/95 backdrop-blur-md flex flex-col h-full overflow-hidden text-slate-800 dark:text-slate-200 font-sans select-none transition-all duration-200 z-20 shadow-xs">
+    <aside className="w-64 md:w-72 shrink-0 border-r border-slate-200 dark:border-slate-800/80 bg-slate-50/70 dark:bg-[#0A0E17]/95 backdrop-blur-md flex flex-col h-full relative overflow-visible text-slate-800 dark:text-slate-200 font-sans select-none transition-all duration-200 z-20 shadow-xs">
+      {/* Protruding drawer close tab (<<) beside New Workflow */}
+      <button
+        onClick={toggleSidebar}
+        className="absolute -right-6 top-3 z-30 w-6 h-9 rounded-r-lg bg-white dark:bg-slate-900 border-y border-r border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-center text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-sky-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer group"
+        title={t.sidebar.collapseSidebar}
+      >
+        <ChevronsLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+      </button>
+
       {/* ── TOP SECTION: New Workflow Button & Quick Views ── */}
       <div className="p-3 pb-2 space-y-2.5">
         {/* + New Workflow Action Button */}
@@ -573,14 +582,6 @@ export const WorkflowSidebar: React.FC = () => {
             {workflows.length} {t.sidebar.workflowsCount}
           </span>
         </div>
-
-        <button
-          onClick={toggleSidebar}
-          className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-          title={t.sidebar.collapseSidebar}
-        >
-          <PanelLeftClose className="w-4 h-4" />
-        </button>
       </div>
     </aside>
   );
