@@ -59,6 +59,8 @@
   - 功能特性总览与测试指南。
 - [User Manual & Component Guide](04-dev-notes/user-manual-and-component-guide.md)
   - 最终用户使用手册与节点配置指南。
+- [🌟 开发日志：第二阶段 RAG 知识库体系与画布节点全链路闭环](04-dev-notes/dev-log-phase-2-rag-knowledge-base-and-canvas-node.md)
+  - 记录 Phase 2 完整四步落地、交互打磨、三层建模、滑动分块、向量检索与全链路双端测试。
 
 ---
 
