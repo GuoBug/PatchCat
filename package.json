@@ -1,7 +1,7 @@
 {
   "name": "patchcat",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "PatchCat: The open-source prompt orchestration engine designed for AI builders. Precision prompts. Seamless workflows.",
   "homepage": "https://GuoBug.github.io/PatchCat/",

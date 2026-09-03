@@ -1,0 +1,131 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "id": "f5c2d893-a6e4-43f2-b1f6-6e0d8f3c2002",
+    "name": "RAG Knowledge Base Grounded Q&A",
+    "description": "Enterprise-grade RAG pipeline: User question ➔ Semantic vector search Top-K recall ➔ Prompt citation assembly ➔ Grounded LLM reasoning ➔ Formatted output.",
+    "author": "PatchCat Team",
+    "tags": ["RAG", "KnowledgeBase", "VectorSearch", "Q&A"],
+    "createdAt": "2026-09-03T00:00:00Z",
+    "updatedAt": "2026-09-03T00:00:00Z"
+  },
+  "viewport": {
+    "x": 80,
+    "y": 120,
+    "zoom": 0.85
+  },
+  "nodes": [
+    {
+      "id": "input_user",
+      "type": "input",
+      "position": { "x": 50, "y": 200 },
+      "data": {
+        "label": "User Question Input",
+        "description": "Receives user query and user role",
+        "inputs": {
+          "query": "How does PatchCat detect and prevent deadlocks in cyclical workflows? What algorithm is used?",
+          "user_role": "System Architect"
+        }
+      }
+    },
+    {
+      "id": "knowledge_retrieval",
+      "type": "knowledge",
+      "position": { "x": 380, "y": 200 },
+      "data": {
+        "label": "Private Knowledge Recall",
+        "description": "Retrieves Top-3 semantic chunks from the knowledge base",
+        "config": {
+          "knowledgeBaseId": "kb_patchcat_arch",
+          "knowledgeBaseName": "PatchCat Architecture Whitepaper",
+          "query": "{{input_user.query}}",
+          "topK": 3,
+          "scoreThreshold": 0.3
+        },
+        "inputs": {
+          "query": "{{input_user.query}}"
+        }
+      }
+    },
+    {
+      "id": "prompt_rag_augmented",
+      "type": "prompt",
+      "position": { "x": 710, "y": 200 },
+      "data": {
+        "label": "RAG Augmented Prompt",
+        "description": "Dynamically injects retrieved citations into the prompt template",
+        "inputs": {
+          "template": "You are a meticulous PatchCat system architecture consultant. Answer the user question based strictly on the retrieved knowledge base materials below.\n\n[Retrieved Knowledge Base References]:\n{{knowledge_retrieval.result}}\n\n[User Role]: {{input_user.user_role}}\n[User Question]: {{input_user.query}}\n\n[Requirements]:\n1. Base your answer strictly on the provided references and cite specific algorithms;\n2. If the context does not contain the answer, state so honestly without fabricating;\n3. Keep the response clear, structured, and professional."
+        }
+      }
+    },
+    {
+      "id": "llm_rag_answer",
+      "type": "llm",
+      "position": { "x": 1040, "y": 200 },
+      "data": {
+        "label": "Grounded LLM Reasoning",
+        "description": "Generates structured answer with factual citations",
+        "config": {
+          "model": "deepseek-chat",
+          "temperature": 0.2
+        },
+        "inputs": {
+          "prompt": "{{prompt_rag_augmented.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "output_final",
+      "type": "output",
+      "position": { "x": 1370, "y": 200 },
+      "data": {
+        "label": "Final Q&A Output",
+        "description": "Presents synthesized response and citation sources",
+        "config": {
+          "format": "markdown"
+        },
+        "inputs": {
+          "answer": "{{llm_rag_answer.response}}",
+          "reference_context": "{{knowledge_retrieval.result}}"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_in_to_knowledge",
+      "source": "input_user",
+      "target": "knowledge_retrieval",
+      "animated": true
+    },
+    {
+      "id": "edge_in_to_prompt",
+      "source": "input_user",
+      "target": "prompt_rag_augmented"
+    },
+    {
+      "id": "edge_knowledge_to_prompt",
+      "source": "knowledge_retrieval",
+      "target": "prompt_rag_augmented",
+      "animated": true
+    },
+    {
+      "id": "edge_prompt_to_llm",
+      "source": "prompt_rag_augmented",
+      "target": "llm_rag_answer",
+      "animated": true
+    },
+    {
+      "id": "edge_llm_to_output",
+      "source": "llm_rag_answer",
+      "target": "output_final",
+      "animated": true
+    },
+    {
+      "id": "edge_knowledge_to_output",
+      "source": "knowledge_retrieval",
+      "target": "output_final"
+    }
+  ]
+}

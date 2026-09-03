@@ -1,0 +1,131 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "id": "f5c2d893-a6e4-43f2-b1f6-6e0d8f3c2002",
+    "name": "RAG 知识库增强精准问答 (RAG Knowledge Base Q&A)",
+    "description": "基于私有知识库语义向量检索的问答流水线：提取用户问题 ➔ 向量相似度召回切片 ➔ 提示词引文注入 ➔ 大模型严谨解答 ➔ 格式化输出。",
+    "author": "PatchCat Team",
+    "tags": ["RAG", "KnowledgeBase", "VectorSearch", "Q&A"],
+    "createdAt": "2026-09-03T00:00:00Z",
+    "updatedAt": "2026-09-03T00:00:00Z"
+  },
+  "viewport": {
+    "x": 80,
+    "y": 120,
+    "zoom": 0.85
+  },
+  "nodes": [
+    {
+      "id": "input_user",
+      "type": "input",
+      "position": { "x": 50, "y": 200 },
+      "data": {
+        "label": "用户提问入参",
+        "description": "接收用户咨询问题与提问者身份",
+        "inputs": {
+          "query": "PatchCat 是如何防止拓扑图死循环死锁的？它使用了什么算法？",
+          "user_role": "系统架构师"
+        }
+      }
+    },
+    {
+      "id": "knowledge_retrieval",
+      "type": "knowledge",
+      "position": { "x": 380, "y": 200 },
+      "data": {
+        "label": "私有知识库语义召回",
+        "description": "从知识库中根据语义相似度召回 Top-3 切片",
+        "config": {
+          "knowledgeBaseId": "kb_patchcat_arch",
+          "knowledgeBaseName": "PatchCat 架构白皮书",
+          "query": "{{input_user.query}}",
+          "topK": 3,
+          "scoreThreshold": 0.3
+        },
+        "inputs": {
+          "query": "{{input_user.query}}"
+        }
+      }
+    },
+    {
+      "id": "prompt_rag_augmented",
+      "type": "prompt",
+      "position": { "x": 710, "y": 200 },
+      "data": {
+        "label": "RAG 增强提示词",
+        "description": "将召回的引文与用户提问动态组装入 Prompt",
+        "inputs": {
+          "template": "你是一名严谨的 PatchCat 系统架构顾问。请严格依据以下提供的系统知识库文档内容，精准回答用户的疑问。\n\n【知识库检索参考资料】：\n{{knowledge_retrieval.result}}\n\n【提问者角色】：{{input_user.user_role}}\n【用户问题】：{{input_user.query}}\n\n【回答要求】：\n1. 严格依据参考资料回答，指出具体解决原理与算法名称；\n2. 若资料中未提及相关信息，请实事求是指出，严禁主观捏造；\n3. 结构清晰，条理分明。"
+        }
+      }
+    },
+    {
+      "id": "llm_rag_answer",
+      "type": "llm",
+      "position": { "x": 1040, "y": 200 },
+      "data": {
+        "label": "大模型严谨解答",
+        "description": "基于真实知识库引文生成结构化解答",
+        "config": {
+          "model": "deepseek-chat",
+          "temperature": 0.2
+        },
+        "inputs": {
+          "prompt": "{{prompt_rag_augmented.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "output_final",
+      "type": "output",
+      "position": { "x": 1370, "y": 200 },
+      "data": {
+        "label": "问答结果输出",
+        "description": "汇总模型解答与引文溯源",
+        "config": {
+          "format": "markdown"
+        },
+        "inputs": {
+          "answer": "{{llm_rag_answer.response}}",
+          "reference_context": "{{knowledge_retrieval.result}}"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_in_to_knowledge",
+      "source": "input_user",
+      "target": "knowledge_retrieval",
+      "animated": true
+    },
+    {
+      "id": "edge_in_to_prompt",
+      "source": "input_user",
+      "target": "prompt_rag_augmented"
+    },
+    {
+      "id": "edge_knowledge_to_prompt",
+      "source": "knowledge_retrieval",
+      "target": "prompt_rag_augmented",
+      "animated": true
+    },
+    {
+      "id": "edge_prompt_to_llm",
+      "source": "prompt_rag_augmented",
+      "target": "llm_rag_answer",
+      "animated": true
+    },
+    {
+      "id": "edge_llm_to_output",
+      "source": "llm_rag_answer",
+      "target": "output_final",
+      "animated": true
+    },
+    {
+      "id": "edge_knowledge_to_output",
+      "source": "knowledge_retrieval",
+      "target": "output_final"
+    }
+  ]
+}

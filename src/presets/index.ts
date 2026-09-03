@@ -1,10 +1,12 @@
 import customerSupportEn from './en/customer-support-routing.json' with { type: 'json' };
 import reportCriticEn from './en/report-generation-critic.json' with { type: 'json' };
 import modelArenaEn from './en/model-arena-eval.json' with { type: 'json' };
+import ragKnowledgeQaEn from './en/rag-knowledge-qa.json' with { type: 'json' };
 
 import customerSupportZh from './zh/customer-support-routing.json' with { type: 'json' };
 import reportCriticZh from './zh/report-generation-critic.json' with { type: 'json' };
 import modelArenaZh from './zh/model-arena-eval.json' with { type: 'json' };
+import ragKnowledgeQaZh from './zh/rag-knowledge-qa.json' with { type: 'json' };
 
 import type { WorkflowGraph } from '../engine/types.ts';
 import type { Language } from '../i18n/translations.ts';
@@ -36,6 +38,12 @@ export const PRESETS_DATA: Record<Language, Record<string, PresetItem>> = {
       desc: 'Side-by-Side Model Benchmark',
       data: modelArenaEn as unknown as WorkflowGraph,
     },
+    'rag-qa': {
+      key: 'rag-qa',
+      name: 'RAG Grounded Q&A',
+      desc: 'Knowledge Base Retrieval & Grounded Answer',
+      data: ragKnowledgeQaEn as unknown as WorkflowGraph,
+    },
   },
   zh: {
     'customer-support': {
@@ -56,6 +64,12 @@ export const PRESETS_DATA: Record<Language, Record<string, PresetItem>> = {
       desc: '多模型并发评测与 LLM-as-a-Judge',
       data: modelArenaZh as unknown as WorkflowGraph,
     },
+    'rag-qa': {
+      key: 'rag-qa',
+      name: 'RAG 知识库增强精准问答',
+      desc: '私有文档向量语义检索与引文回答',
+      data: ragKnowledgeQaZh as unknown as WorkflowGraph,
+    },
   },
 };
 
@@ -63,7 +77,9 @@ export {
   customerSupportEn,
   reportCriticEn,
   modelArenaEn,
+  ragKnowledgeQaEn,
   customerSupportZh,
   reportCriticZh,
   modelArenaZh,
+  ragKnowledgeQaZh,
 };

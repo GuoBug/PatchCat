@@ -399,7 +399,7 @@ export class BrowserWorkflowEngine {
         node.data.inputs as Record<string, string>,
         context,
       );
-      const nodeType: NodeType = node.data.type;
+      const nodeType: NodeType = node.data.type ?? (node.type as NodeType);
       const customDelay =
         typeof node.data.config?.['delayMs'] === 'number'
           ? (node.data.config['delayMs'] as number)

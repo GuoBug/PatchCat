@@ -1,8 +1,10 @@
 # 📚 PatchCat 开发者与架构文档全景索引 (Documentation Index)
 
 > **欢迎查阅 PatchCat 开发文档库**。本目录包含了系统的产品需求规范 (PRD)、系统架构设计 (Architecture)、API 契约 (API Specifications)、决策记录与开发笔记 (Dev Notes)。  
-> ⚡ **下次接续开发清单**: 详见根目录 [`NEXT_STEPS.md`](../NEXT_STEPS.md)  
-> 🗺️ **产品长期演进路线图**: 详见根目录 [`ROADMAP.md`](../ROADMAP.md)
+> ⚡ **当前接续开发清单**: 详见根目录 [`NEXT_STEPS.md`](../NEXT_STEPS.md)  
+> 🗺️ **产品长期演进路线图**: 详见根目录 [`ROADMAP.md`](../ROADMAP.md)  
+> 📜 **版本演进与发布日志**: 详见根目录 [`CHANGELOG.md`](../CHANGELOG.md)  
+> 🤝 **开源贡献与代码规范指南**: 详见根目录 [`CONTRIBUTING.md`](../CONTRIBUTING.md)
 
 ---
 

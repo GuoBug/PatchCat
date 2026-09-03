@@ -44,7 +44,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               <h2 className="text-base font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
                 <span>{t.help.title}</span>
                 <span className="text-[11px] font-mono font-medium px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-sky-300">
-                  v0.1.0
+                  v0.2.0
                 </span>
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">

@@ -143,4 +143,32 @@ describe('Knowledge Node & RAG Pipeline Execution', () => {
       ),
     );
   });
+
+  it('should validate and execute the official RAG preset workflow (rag-qa) end-to-end', async () => {
+    const { PRESETS_DATA } = await import('../src/presets/index.ts');
+    const zhPreset = PRESETS_DATA.zh['rag-qa'];
+    assert.ok(zhPreset, 'Chinese RAG preset must exist');
+    assert.equal(zhPreset.data.nodes.length, 5, 'RAG preset must have 5 nodes');
+
+    const enPreset = PRESETS_DATA.en['rag-qa'];
+    assert.ok(enPreset, 'English RAG preset must exist');
+    assert.equal(enPreset.data.nodes.length, 5, 'English RAG preset must have 5 nodes');
+
+    // Execute the preset graph with skipLLM mode
+    const events: unknown[] = [];
+    for await (const event of engine.executeWorkflow(zhPreset.data, { skipLLM: true })) {
+      events.push(event);
+    }
+
+    const outputFinish = events.find(
+      (e: any) => (e.type === 'NODE_COMPLETE' || e.type === 'NODE_ERROR') && e.payload?.nodeId === 'output_final',
+    ) as any;
+
+    assert.ok(outputFinish, 'RAG preset output node must complete');
+    assert.equal(outputFinish.type, 'NODE_COMPLETE', 'Must complete successfully without error');
+    assert.ok(outputFinish.payload.output.finalResult, 'Output node must have finalResult');
+    const finalResult = outputFinish.payload.output.finalResult as any;
+    assert.ok(finalResult.answer);
+    assert.ok(finalResult.reference_context.includes('Similarity'));
+  });
 });
