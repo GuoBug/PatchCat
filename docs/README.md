@@ -59,7 +59,15 @@
   - 功能特性总览与测试指南。
 - [User Manual & Component Guide](04-dev-notes/user-manual-and-component-guide.md)
   - 最终用户使用手册与节点配置指南。
-- [🌟 开发日志：第二阶段 RAG 知识库体系与画布节点全链路闭环](04-dev-notes/dev-log-phase-2-rag-knowledge-base-and-canvas-node.md)
+
+#### 🗓️ 项目全周期研发演进日志 (Chronological Dev Logs)
+- [📖 开发日志：Phase 0 - 核心拓扑调度引擎与可视化画布构建](04-dev-notes/dev-log-phase-0-core-engine-and-visual-canvas.md)
+  - 记录 Kahn 算法调度器、变量解析引擎、React Flow 12 画布与 4 大混沌基准压测。
+- [📖 开发日志：Phase 0.5 - 多模型生态适配、三层脱敏日志与全屏设置](04-dev-notes/dev-log-phase-0-5-multi-model-logging-and-i18n.md)
+  - 记录 Gemini/DeepSeek 抹平、三层脱敏日志架构、全屏设置中心与 Dry-Run 仿真拦截。
+- [📖 开发日志：Phase 1 - 抽屉式多流程管理与双模存储架构](04-dev-notes/dev-log-phase-1-drawer-management-and-dual-storage.md)
+  - 记录抽屉式目录树管理、StorageAdapter 契约隔离与 FastAPI 异步后端底座设计。
+- [📖 开发日志：Phase 2 - RAG 知识库体系与画布节点全链路闭环](04-dev-notes/dev-log-phase-2-rag-knowledge-base-and-canvas-node.md)
   - 记录 Phase 2 完整四步落地、交互打磨、三层建模、滑动分块、向量检索与全链路双端测试。
 
 ---
