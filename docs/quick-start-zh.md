@@ -42,7 +42,7 @@
 
 ### 1. 克隆代码仓库
 ```bash
-git clone https://github.com/gu0bug/PatchCat.git
+git clone https://github.com/GuoBug/PatchCat.git
 cd PatchCat
 ```
 
@@ -195,4 +195,4 @@ npm test
 - 📖 查看 [系统架构详细设计文档](02-architecture/system-architecture.md)
 - 📐 查看 [工作流 Graph Schema 规范](02-architecture/graph-schema-specification.json)
 - 💡 查阅 [开发笔记与架构决策记录 ADR](04-dev-notes/adr-001-canvas-engine-selection.md)
-- ⭐️ 前往 [GitHub 仓库](https://github.com/gu0bug/PatchCat) 点赞 Star 与参与贡献
+- ⭐️ 前往 [GitHub 仓库](https://github.com/GuoBug/PatchCat) 点赞 Star 与参与贡献

@@ -42,6 +42,7 @@ import { useLogStore } from '../../stores/log-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
 import { CatLogo } from '../icons/CatLogo.tsx';
 import type { LogLevel, LogType } from '../../engine/logger.ts';
+import { PROJECT_LINKS } from '../../config/project.ts';
 
 const PROVIDER_DOCS: Record<ProviderId, { label: string; url: string }> = {
   openai: { label: 'OpenAI API Keys', url: 'https://platform.openai.com/api-keys' },
@@ -49,7 +50,7 @@ const PROVIDER_DOCS: Record<ProviderId, { label: string; url: string }> = {
   siliconflow: { label: 'SiliconFlow API Keys', url: 'https://cloud.siliconflow.cn/account/ak' },
   google: { label: 'Google AI Studio Keys', url: 'https://aistudio.google.com/app/apikey' },
   ollama: { label: 'Ollama Documentation', url: 'https://ollama.com/' },
-  custom: { label: 'OpenAI-Compatible Guide', url: 'https://github.com/gu0bug/PatchCat' },
+  custom: { label: 'OpenAI-Compatible Guide', url: PROJECT_LINKS.guide },
 };
 
 const TYPE_ICONS: Record<LogType, { icon: React.FC<{ className?: string }>; color: string }> = {

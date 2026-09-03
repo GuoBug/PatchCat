@@ -86,3 +86,6 @@ __pycache__/
 *.sqlite3
 .pytest_cache/
 server/.env
+
+# Security & Internal Audit (Not for Public Release)
+docs/安全TODO/

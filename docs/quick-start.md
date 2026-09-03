@@ -42,7 +42,7 @@ Before you start, make sure you have:
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/gu0bug/PatchCat.git
+git clone https://github.com/GuoBug/PatchCat.git
 cd PatchCat
 ```
 
@@ -195,4 +195,4 @@ npm test
 - 📖 Explore the [System Architecture Documentation](02-architecture/system-architecture.md)
 - 📐 Review the [Graph Schema Specification](02-architecture/graph-schema-specification.json)
 - 💡 Check out the [Development Notes & ADRs](04-dev-notes/adr-001-canvas-engine-selection.md)
-- ⭐️ Star and contribute to [PatchCat on GitHub](https://github.com/gu0bug/PatchCat)
+- ⭐️ Star and contribute to [PatchCat on GitHub](https://github.com/GuoBug/PatchCat)

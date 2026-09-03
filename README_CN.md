@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://github.com/gu0bug/PatchCat">
+  <a href="https://github.com/GuoBug/PatchCat">
     <img src="./assets/logo.png" width="128" height="128" alt="PatchCat Logo" />
   </a>
 
@@ -14,13 +14,13 @@
   </p>
 
   <p>
-    <a href="https://github.com/gu0bug/PatchCat/releases"><img src="https://img.shields.io/github/v/release/gu0bug/PatchCat?color=blue&label=版本" alt="Release" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/github/v/release/GuoBug/PatchCat?color=blue&label=版本" alt="Release" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/开源协议-MIT-emerald.svg" alt="License: MIT" /></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.8%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=black" alt="React 19" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/gu0bug/PatchCat/actions"><img src="https://img.shields.io/badge/单元测试-50%2F50%20通过-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/单元测试-50%2F50%20通过-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
@@ -28,10 +28,10 @@
   </p>
 
   <p>
-    <a href="https://gu0bug.github.io/PatchCat/" target="_blank">
+    <a href="https://GuoBug.github.io/PatchCat/" target="_blank">
       <img src="https://img.shields.io/badge/🚀_在线体验-即刻免安装试用-2563eb?style=for-the-badge&logo=googlechrome&logoColor=white" alt="在线体验" />
     </a>
-    <a href="https://codespaces.new/gu0bug/PatchCat" target="_blank">
+    <a href="https://codespaces.new/GuoBug/PatchCat" target="_blank">
       <img src="https://img.shields.io/badge/⚡_Codespaces-云端一键极速开发-0ea5e9?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Codespaces" />
     </a>
   </p>
@@ -126,7 +126,7 @@
 
 | 可视化工作流画布 | 多级别安全日志控制台 |
 | :---: | :---: |
-| ![Canvas](https://raw.githubusercontent.com/gu0bug/PatchCat/main/docs/assets/canvas-preview.png) | ![Console](https://raw.githubusercontent.com/gu0bug/PatchCat/main/docs/assets/console-preview.png) |
+| ![Canvas](https://raw.githubusercontent.com/GuoBug/PatchCat/main/docs/assets/canvas-preview.png) | ![Console](https://raw.githubusercontent.com/GuoBug/PatchCat/main/docs/assets/console-preview.png) |
 
 ---
 
@@ -139,7 +139,7 @@
 ### 1. 克隆项目并安装依赖
 ```bash
 # 克隆代码仓库
-git clone https://github.com/gu0bug/PatchCat.git
+git clone https://github.com/GuoBug/PatchCat.git
 cd PatchCat
 
 # 安装项目依赖
@@ -224,8 +224,8 @@ PatchCat 内置了开箱即用的工业级场景模板：
 ## 🤝 参与贡献
 
 我们非常欢迎来自开源社区的每一位开发者参与贡献！
-- 🐛 发现 Bug？欢迎 [提交 Issue](https://github.com/gu0bug/PatchCat/issues)
-- 💡 有新的功能想法？欢迎 [发起 Discussion](https://github.com/gu0bug/PatchCat/discussions)
+- 🐛 发现 Bug？欢迎 [提交 Issue](https://github.com/GuoBug/PatchCat/issues)
+- 💡 有新的功能想法？欢迎 [发起 Discussion](https://github.com/GuoBug/PatchCat/discussions)
 - 🚀 贡献代码？Fork 本仓库并提交 Pull Request。
 
 ---

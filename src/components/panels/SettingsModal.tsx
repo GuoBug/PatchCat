@@ -22,6 +22,7 @@ import {
   DEFAULT_PROVIDERS,
 } from '../../stores/settings-store.ts';
 import { useLogStore } from '../../stores/log-store.ts';
+import { PROJECT_LINKS } from '../../config/project.ts';
 
 const PROVIDER_DOCS: Record<ProviderId, { label: string; url: string }> = {
   openai: { label: 'OpenAI API Keys', url: 'https://platform.openai.com/api-keys' },
@@ -29,7 +30,7 @@ const PROVIDER_DOCS: Record<ProviderId, { label: string; url: string }> = {
   siliconflow: { label: 'SiliconFlow API Keys', url: 'https://cloud.siliconflow.cn/account/ak' },
   google: { label: 'Google AI Studio Keys', url: 'https://aistudio.google.com/app/apikey' },
   ollama: { label: 'Ollama Documentation', url: 'https://ollama.com/' },
-  custom: { label: 'OpenAI-Compatible Guide', url: 'https://github.com/gu0bug/PatchCat' },
+  custom: { label: 'OpenAI-Compatible Guide', url: PROJECT_LINKS.guide },
 };
 
 export const SettingsModal: React.FC = () => {

@@ -4,13 +4,13 @@
   "version": "0.1.0",
   "type": "module",
   "description": "PatchCat: The open-source prompt orchestration engine designed for AI builders. Precision prompts. Seamless workflows.",
-  "homepage": "https://gu0bug.github.io/PatchCat/",
+  "homepage": "https://GuoBug.github.io/PatchCat/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gu0bug/PatchCat.git"
+    "url": "git+https://github.com/GuoBug/PatchCat.git"
   },
   "bugs": {
-    "url": "https://github.com/gu0bug/PatchCat/issues"
+    "url": "https://github.com/GuoBug/PatchCat/issues"
   },
   "scripts": {
     "dev": "vite",

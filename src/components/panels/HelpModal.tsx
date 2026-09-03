@@ -13,6 +13,7 @@ import {
   User,
 } from 'lucide-react';
 import { useTranslation } from '../../i18n/useTranslation.ts';
+import { PROJECT_LINKS } from '../../config/project.ts';
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -284,7 +285,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           {activeTab === 'docs' && (
             <div className="space-y-3">
               <a
-                href="https://github.com/gu0bug/PatchCat"
+                href={PROJECT_LINKS.repo}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 flex items-center justify-between transition-colors group"
@@ -304,7 +305,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               </a>
 
               <a
-                href="https://github.com/gu0bug/PatchCat/blob/main/README.md"
+                href={PROJECT_LINKS.readme}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 flex items-center justify-between transition-colors group"
@@ -324,7 +325,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               </a>
 
               <a
-                href="https://github.com/gu0bug/PatchCat/issues"
+                href={PROJECT_LINKS.issues}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 flex items-center justify-between transition-colors group"
@@ -344,7 +345,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               </a>
 
               <a
-                href="https://github.com/gu0bug"
+                href={PROJECT_LINKS.owner}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 flex items-center justify-between transition-colors group"
@@ -353,10 +354,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   <User className="w-5 h-5 text-purple-500 group-hover:text-blue-600 dark:group-hover:text-sky-400 transition-colors" />
                   <div>
                     <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                      <span>Author: Gu0Qiang</span>
+                      <span>Author: {PROJECT_LINKS.authorName}</span>
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                      GitHub @gu0bug (Gu0Qiang)
+                      GitHub {PROJECT_LINKS.authorHandle} ({PROJECT_LINKS.authorName})
                     </div>
                   </div>
                 </div>
@@ -371,18 +372,18 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           <div className="flex items-center gap-1.5">
             <span>Author:</span>
             <a
-              href="https://github.com/gu0bug"
+              href={PROJECT_LINKS.owner}
               target="_blank"
               rel="noopener noreferrer"
               className="font-medium text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-sky-400 underline underline-offset-2 transition-colors"
             >
-              Gu0Qiang
+              {PROJECT_LINKS.authorName}
             </a>
           </div>
 
           <div className="flex items-center gap-3">
             <a
-              href="https://github.com/gu0bug/PatchCat"
+              href={PROJECT_LINKS.repo}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"

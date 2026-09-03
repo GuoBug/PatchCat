@@ -8,6 +8,7 @@ import {
 import { CatLogo } from '../icons/CatLogo.tsx';
 import { HelpModal } from './HelpModal.tsx';
 import { useTranslation } from '../../i18n/useTranslation.ts';
+import { PROJECT_LINKS } from '../../config/project.ts';
 
 export const Footer: React.FC = () => {
   const { t } = useTranslation();
@@ -39,15 +40,15 @@ export const Footer: React.FC = () => {
             <span className="text-slate-300 dark:text-slate-700">:</span>
           </span>
           <a
-            href="https://github.com/gu0bug"
+            href={PROJECT_LINKS.owner}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 font-medium text-slate-700 hover:text-blue-600 dark:text-slate-300 dark:hover:text-sky-400 transition-colors group"
-            title="GitHub @gu0bug"
+            title={`GitHub ${PROJECT_LINKS.authorHandle}`}
           >
             <User className="w-3 h-3 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-sky-400 transition-colors" />
             <span className="font-semibold underline underline-offset-2 decoration-slate-300 dark:decoration-slate-700 group-hover:decoration-blue-500">
-              Gu0Qiang
+              {PROJECT_LINKS.authorName}
             </span>
           </a>
         </div>
@@ -68,7 +69,7 @@ export const Footer: React.FC = () => {
 
           {/* GitHub Repository Link */}
           <a
-            href="https://github.com/gu0bug/PatchCat"
+            href={PROJECT_LINKS.repo}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 text-[11px] text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors group"

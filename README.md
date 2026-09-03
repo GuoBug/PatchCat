@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://github.com/gu0bug/PatchCat">
+  <a href="https://github.com/GuoBug/PatchCat">
     <img src="./assets/logo.png" width="128" height="128" alt="PatchCat Logo" />
   </a>
 
@@ -14,13 +14,13 @@
   </p>
 
   <p>
-    <a href="https://github.com/gu0bug/PatchCat/releases"><img src="https://img.shields.io/github/v/release/gu0bug/PatchCat?color=blue&label=version" alt="Release" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/github/v/release/GuoBug/PatchCat?color=blue&label=version" alt="Release" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-emerald.svg" alt="License: MIT" /></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.8%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=black" alt="React 19" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/gu0bug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-50%2F50%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-50%2F50%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
@@ -28,10 +28,10 @@
   </p>
 
   <p>
-    <a href="https://gu0bug.github.io/PatchCat/" target="_blank">
+    <a href="https://GuoBug.github.io/PatchCat/" target="_blank">
       <img src="https://img.shields.io/badge/🚀_Live_Demo-Try_PatchCat_Online-2563eb?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live Demo" />
     </a>
-    <a href="https://codespaces.new/gu0bug/PatchCat" target="_blank">
+    <a href="https://codespaces.new/GuoBug/PatchCat" target="_blank">
       <img src="https://img.shields.io/badge/⚡_Codespaces-Instant_Cloud_Dev-0ea5e9?style=for-the-badge&logo=github&logoColor=white" alt="Open in GitHub Codespaces" />
     </a>
   </p>
@@ -131,7 +131,7 @@ Why choose **PatchCat** over heavyweight orchestration tools?
 ### 1. Clone & Install Dependencies
 ```bash
 # Clone the repository
-git clone https://github.com/gu0bug/PatchCat.git
+git clone https://github.com/GuoBug/PatchCat.git
 cd PatchCat
 
 # Install dependencies
@@ -216,8 +216,8 @@ PatchCat comes with ready-to-use industrial presets:
 ## 🤝 Contributing
 
 We welcome contributions from the global open-source community!
-- 🐛 Found a bug? [Submit an Issue](https://github.com/gu0bug/PatchCat/issues)
-- 💡 Have a feature idea? [Start a Discussion](https://github.com/gu0bug/PatchCat/discussions)
+- 🐛 Found a bug? [Submit an Issue](https://github.com/GuoBug/PatchCat/issues)
+- 💡 Have a feature idea? [Start a Discussion](https://github.com/GuoBug/PatchCat/discussions)
 - 🚀 Want to contribute code? Fork the repo and open a Pull Request.
 
 ---
