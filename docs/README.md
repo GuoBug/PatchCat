@@ -17,6 +17,8 @@
   - Antigravity 风格左侧抽屉、目录树管理、多工作流分类与本地持久化规范。
 - [PRD-005: Dual-Mode Storage Adapter & FastAPI Backend Integration](01-prd/PRD-005-Dual-Mode-Storage-and-FastAPI-Backend.md)
   - 双模存储适配器（LocalStorage vs FastAPI + DB）、设置页实时健康探测与无缝同步规范。
+- [PRD-006: Knowledge Base Management & Canvas RAG Retrieval Node](01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md)
+  - 知识库管理、文档切片流水线与画布 RAG 检索节点产品规范。
 
 ---
 
@@ -27,8 +29,10 @@
   - 前端状态机与持久化策略设计。
 - [Graph Schema Specification](02-architecture/graph-schema-specification.json)
   - 工作流图 JSON 格式强类型规范定义。
-- [🌟 Phase 1: FastAPI + PostgreSQL (pgvector) 后端架构与双模存储设计](02-architecture/phase-1-backend-and-dual-storage-architecture.md)
-  - 服务端底座、pgvector 向量库与双模存储适配器设计。
+- [Phase 1: FastAPI + PostgreSQL 后端架构与双模存储设计](02-architecture/phase-1-backend-and-dual-storage-architecture.md)
+  - 服务端底座与双模存储适配器设计。
+- [🌟 Phase 2: 知识库（RAG）向量引擎与数据建模技术方案](02-architecture/phase-2-knowledge-base-and-rag-architecture.md)
+  - 经典三层知识库模型（KB ➔ Document ➔ Chunk）、pgvector / SQLite 双模向量检索架构。
 
 ---
 

@@ -7,6 +7,19 @@ from .workflow import (
     WorkflowSummaryResponse,
     MoveWorkflowRequest,
 )
+from .knowledge import (
+    KnowledgeBaseBase,
+    KnowledgeBaseCreate,
+    KnowledgeBaseUpdate,
+    KnowledgeBaseResponse,
+    KnowledgeBaseSummaryResponse,
+    DocumentCreate,
+    DocumentResponse,
+    DocumentChunkResponse,
+    RetrievalRequest,
+    RetrievedChunk,
+    RetrievalResponse,
+)
 
 __all__ = [
     "FolderBase",
@@ -19,4 +32,15 @@ __all__ = [
     "WorkflowResponse",
     "WorkflowSummaryResponse",
     "MoveWorkflowRequest",
+    "KnowledgeBaseBase",
+    "KnowledgeBaseCreate",
+    "KnowledgeBaseUpdate",
+    "KnowledgeBaseResponse",
+    "KnowledgeBaseSummaryResponse",
+    "DocumentCreate",
+    "DocumentResponse",
+    "DocumentChunkResponse",
+    "RetrievalRequest",
+    "RetrievedChunk",
+    "RetrievalResponse",
 ]
