@@ -70,6 +70,28 @@ class DocumentCreate(BaseModel):
     chunk_overlap: int = Field(50, ge=0, le=1000, description="Overlap in characters")
 
 
+class ChunkPreviewRequest(BaseModel):
+    content: str = Field(..., min_length=1, description="Raw document text content to preview")
+    delimiter: str = Field("\n\n", description="Primary paragraph delimiter")
+    chunk_size: int = Field(500, ge=50, le=4000, description="Max chunk size in characters")
+    chunk_overlap: int = Field(50, ge=0, le=1000, description="Overlap in characters")
+    clean_whitespace: bool = Field(True, description="Whether to normalize consecutive newlines and spaces")
+
+
+class ChunkPreviewItem(BaseModel):
+    position: int
+    content: str
+    char_count: int
+    token_count: int
+
+
+class ChunkPreviewResponse(BaseModel):
+    total_characters: int
+    total_chunks: int
+    estimated_tokens: int
+    chunks: List[ChunkPreviewItem]
+
+
 class DocumentResponse(BaseModel):
     id: str
     kb_id: str

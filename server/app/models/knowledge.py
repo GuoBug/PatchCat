@@ -82,12 +82,14 @@ class KnowledgeBaseORM(Base, TimestampMixin):
         "DocumentORM",
         back_populates="knowledge_base",
         cascade="all, delete-orphan",
+        passive_deletes=True,
         lazy="selectin",
     )
     chunks: Mapped[List["DocumentChunkORM"]] = relationship(
         "DocumentChunkORM",
         back_populates="knowledge_base",
         cascade="all, delete-orphan",
+        passive_deletes=True,
         lazy="selectin",
     )
 
@@ -101,6 +103,7 @@ class DocumentORM(Base, TimestampMixin):
     Represents an uploaded or synchronized source file (TXT, MD, PDF).
     """
     __tablename__ = "documents"
+    __mapper_args__ = {"confirm_deleted_rows": False}
 
     id: Mapped[str] = mapped_column(
         String(64),
@@ -177,6 +180,7 @@ class DocumentORM(Base, TimestampMixin):
         "DocumentChunkORM",
         back_populates="document",
         cascade="all, delete-orphan",
+        passive_deletes=True,
         lazy="selectin",
     )
 
@@ -189,6 +193,7 @@ class DocumentChunkORM(Base, TimestampMixin):
     Text Segment / Chunk with vector embeddings for semantic similarity search.
     """
     __tablename__ = "document_chunks"
+    __mapper_args__ = {"confirm_deleted_rows": False}
 
     id: Mapped[str] = mapped_column(
         String(64),
