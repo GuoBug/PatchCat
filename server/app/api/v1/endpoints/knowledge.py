@@ -16,7 +16,10 @@ from app.schemas.knowledge import (
     KnowledgeBaseResponse,
     KnowledgeBaseSummaryResponse,
     KnowledgeBaseUpdate,
+    RetrievalRequest,
+    RetrievalResponse,
 )
+from app.services.rag.retriever import vector_retriever
 
 logger = logging.getLogger("patchcat.api.knowledge")
 router = APIRouter()
@@ -158,3 +161,29 @@ async def list_kb_documents(
     stmt = select(DocumentORM).where(DocumentORM.kb_id == kb_id).order_by(desc(DocumentORM.created_at))
     result = await db.execute(stmt)
     return result.scalars().all()
+
+
+@router.post(
+    "/{kb_id}/retrieve",
+    response_model=RetrievalResponse,
+    summary="Retrieve relevant chunks from knowledge base",
+    description="Vectorize user query and perform semantic similarity search against knowledge base chunks.",
+)
+async def retrieve_from_knowledge_base(
+    kb_id: str,
+    payload: RetrievalRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await vector_retriever.retrieve(
+            db=db,
+            kb_id=kb_id,
+            query=payload.query,
+            top_k=payload.top_k,
+            score_threshold=payload.score_threshold,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )

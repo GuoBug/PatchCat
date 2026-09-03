@@ -20,6 +20,7 @@ from app.schemas.knowledge import (
 )
 from app.services.rag.chunker import TextChunker, estimate_tokens
 from app.services.rag.cleaner import clean_document_text
+from app.services.rag.embedder import embedding_client
 
 logger = logging.getLogger("patchcat.api.documents")
 router = APIRouter()
@@ -113,15 +114,24 @@ async def create_document(
     db.add(doc)
     await db.flush()  # populate doc.id
 
+    # Generate embeddings for generated chunks
+    chunk_texts = [item.content for item in generated_chunks]
+    embeddings = await embedding_client.embed_documents(
+        texts=chunk_texts,
+        provider=kb.embedding_provider,
+        model=kb.embedding_model,
+        dimension=kb.embedding_dimension,
+    )
+
     # Create DocumentChunk records
-    for chunk_item in generated_chunks:
+    for chunk_item, emb in zip(generated_chunks, embeddings):
         chunk_orm = DocumentChunkORM(
             kb_id=kb_id,
             doc_id=doc.id,
             position=chunk_item.position,
             content=chunk_item.content,
             token_count=chunk_item.token_count,
-            embedding=[],  # Will be populated during embedding phase in Step 3
+            embedding=emb,
             hit_count=0,
             is_active=True,
         )
