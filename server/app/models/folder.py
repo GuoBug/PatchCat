@@ -19,11 +19,10 @@ class FolderORM(Base, TimestampMixin):
     is_expanded: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_preset: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    # Relationships
+    # Relationships (workflows are preserved and moved to default on folder deletion)
     workflows: Mapped[List["WorkflowORM"]] = relationship(
         "WorkflowORM",
         back_populates="folder",
-        cascade="all, delete-orphan",
         lazy="selectin",
     )
 

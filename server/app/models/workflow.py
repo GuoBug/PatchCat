@@ -22,7 +22,8 @@ class WorkflowORM(Base, TimestampMixin):
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     folder_id: Mapped[Optional[str]] = mapped_column(
         String(64),
-        ForeignKey("folders.id", ondelete="CASCADE"),
+        ForeignKey("folders.id", ondelete="SET NULL"),
+        default="default",
         nullable=True,
         index=True,
     )

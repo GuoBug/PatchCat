@@ -26,6 +26,7 @@ import {
   resolveObjectVariables,
 } from '../src/engine/variable-resolver.ts';
 import { BrowserWorkflowEngine, resolveTargetModel } from '../src/engine/browser-engine.ts';
+import { runSandboxedScript } from '../src/engine/sandbox-executor.ts';
 import { useWorkflowStore } from '../src/stores/workflow-store.ts';
 import { getDefaultNodeConfig } from '../src/engine/types.ts';
 import type { WorkflowNode, WorkflowEdge, ExecutionEvent } from '../src/engine/types.ts';
@@ -589,6 +590,27 @@ describe('Dynamic Code Node & Customer Support Routing Logic', () => {
     assert.ok(outputs.llm_classifier.response);
     assert.match(outputs.llm_classifier.response, /Flow Validation/i);
     assert.ok(outputs.output_1);
+  });
+});
+
+describe('Sandbox Isolation & Prototype Pollution Security', () => {
+  it('should intercept infinite loops with watchdog timeout', async () => {
+    await assert.rejects(
+      async () => {
+        await runSandboxedScript('while (true) {}', {}, { timeoutMs: 150 });
+      },
+      (err: Error) => {
+        return /timeout|timed out/i.test(err.message);
+      }
+    );
+  });
+
+  it('should filter __proto__ and constructor keys during recursive variable resolution', () => {
+    const maliciousPayload = JSON.parse('{"__proto__": {"polluted": true}, "constructor": {"evil": true}, "safe": "ok"}');
+    const resolved = resolveObjectVariables(maliciousPayload, {});
+    assert.equal((resolved as any).safe, 'ok');
+    assert.equal((resolved as any).__proto__.polluted, undefined);
+    assert.equal(({} as any).polluted, undefined);
   });
 });
 

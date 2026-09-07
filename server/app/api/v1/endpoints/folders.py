@@ -4,7 +4,7 @@ Folders & Category Management Endpoints
 
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, func
+from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from nanoid import generate
 
@@ -144,6 +144,31 @@ async def delete_folder(folder_id: str, db: AsyncSession = Depends(get_db)):
             detail="Cannot delete built-in preset folder",
         )
 
+    # Move all workflows in this folder to 'default' folder to prevent data loss
+    wfs_to_migrate = list(folder.workflows)
+    if wfs_to_migrate:
+        default_folder = await db.get(FolderORM, "default")
+        if not default_folder:
+            default_folder = FolderORM(
+                id="default",
+                name="Default",
+                is_expanded=True,
+                is_preset=True,
+            )
+            db.add(default_folder)
+            await db.flush()
+
+        for wf in wfs_to_migrate:
+            wf.folder_id = "default"
+            wf.folder = default_folder
+
     await db.delete(folder)
     await db.commit()
+
+    for wf in wfs_to_migrate:
+        try:
+            await db.refresh(wf)
+        except Exception:
+            pass
+
     return None

@@ -258,6 +258,18 @@ export const ControlHeader: React.FC = () => {
       clearInterval(timerIntervalRef.current);
     }
     useWorkflowStore.setState({ isExecuting: false });
+
+    // Reset status of any nodes currently marked 'running' to 'idle'
+    const currentNodes = useWorkflowStore.getState().nodes;
+    const hasRunning = currentNodes.some((n) => n.data.status === 'running');
+    if (hasRunning) {
+      const resetNodes = currentNodes.map((n) =>
+        n.data.status === 'running'
+          ? { ...n, data: { ...n.data, status: 'idle' as const } }
+          : n
+      );
+      useWorkflowStore.setState({ nodes: resetNodes });
+    }
   };
 
   // Quick Add Node

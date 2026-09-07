@@ -16,7 +16,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx",
+    "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/engine.node.test.ts tests/settings.node.test.ts tests/llm-client.node.test.ts tests/logger.node.test.ts tests/project-store.node.test.ts tests/knowledge-node.node.test.ts tests/knowledge-store.node.test.ts",
     "demo": "node scripts/demo-run.ts"

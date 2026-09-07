@@ -144,3 +144,35 @@ async def test_workflow_crud_and_operations(client: AsyncClient):
     # Verify 404 on get
     get_res2 = await client.get(f"/api/v1/workflows/{wf_id}")
     assert get_res2.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_delete_folder_preserves_workflows_to_default(client: AsyncClient):
+    """Verify that deleting a folder does not delete workflows and moves them to default."""
+    # 1. Create a custom folder
+    f_res = await client.post("/api/v1/folders", json={"name": "Folder To Delete"})
+    assert f_res.status_code == 201
+    f_id = f_res.json()["id"]
+
+    # 2. Create a workflow in that folder
+    wf_res = await client.post(
+        "/api/v1/workflows",
+        json={
+            "name": "Important Workflow",
+            "folder_id": f_id,
+            "nodes": [],
+            "edges": [],
+        },
+    )
+    assert wf_res.status_code == 201
+    wf_id = wf_res.json()["id"]
+
+    # 3. Delete the folder
+    del_folder_res = await client.delete(f"/api/v1/folders/{f_id}")
+    assert del_folder_res.status_code == 204
+
+    # 4. Assert workflow is NOT deleted and moved to 'default'
+    get_wf_res = await client.get(f"/api/v1/workflows/{wf_id}")
+    assert get_wf_res.status_code == 200
+    wf_data = get_wf_res.json()
+    assert wf_data["folder_id"] == "default"

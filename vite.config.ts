@@ -15,4 +15,16 @@ export default defineConfig({
     port: 5173,
     host: true,
   },
+  build: {
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-flow': ['@xyflow/react'],
+          'vendor-ui': ['lucide-react', 'zustand', 'immer'],
+        },
+      },
+    },
+  },
 });

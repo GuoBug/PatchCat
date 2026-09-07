@@ -24,6 +24,7 @@ import type {
 import { topologicalSort, validateGraphTopology } from './topological-sort.ts';
 import { resolveObjectVariables } from './variable-resolver.ts';
 import { streamChatCompletion, type ChatMessage } from './llm-client.ts';
+import { runSandboxedScript } from './sandbox-executor.ts';
 import { useSettingsStore } from '../stores/settings-store.ts';
 import { logger } from './logger.ts';
 
@@ -556,25 +557,14 @@ export class BrowserWorkflowEngine {
 
           let result: unknown = null;
           let stdout = '';
-          const logs: string[] = [];
-
-          const customConsole = {
-            log: (...args: unknown[]) => {
-              logs.push(args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' '));
-            },
-            error: (...args: unknown[]) => {
-              logs.push('[Error] ' + args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' '));
-            },
-          };
 
           if (rawScript && rawScript.trim().length > 0) {
             try {
-              const fn = new Function(
-                'inputs',
-                'console',
-                `"use strict";\n${rawScript.includes('return') ? rawScript : `return (${rawScript});`}`,
-              );
-              result = fn(resolvedInputs, customConsole);
+              const sandboxRes = await runSandboxedScript(rawScript, resolvedInputs, {
+                timeoutMs: 5000,
+              });
+              result = sandboxRes.result;
+              stdout = sandboxRes.stdout;
             } catch (err: unknown) {
               const errMsg = err instanceof Error ? err.message : String(err);
               throw new Error(`[代码节点执行异常] 节点 "${node.data.label || node.id}": ${errMsg}`);
@@ -583,7 +573,6 @@ export class BrowserWorkflowEngine {
             result = resolvedInputs;
           }
 
-          stdout = logs.join('\n');
           output = {
             result,
             stdout,

@@ -117,6 +117,9 @@ export function resolveObjectVariables<T>(
   if (data !== null && typeof data === 'object') {
     const result: Record<string, unknown> = {};
     for (const [key, val] of Object.entries(data)) {
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+        continue;
+      }
       result[key] = resolveObjectVariables(val, context);
     }
     return result as T;

@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     API_V1_STR: str = "/api/v1"
 
-    HOST: str = "0.0.0.0"
+    HOST: str = "127.0.0.1"
     PORT: int = 8000
 
     # CORS Configuration
@@ -30,7 +30,7 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:3000",
-        "*",
+        "http://127.0.0.1:3000",
     ]
 
     # Database Configuration (Default: zero-setup local SQLite; or PostgreSQL with asyncpg)

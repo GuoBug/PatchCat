@@ -25,6 +25,14 @@ globalThis.localStorage = {
 describe('Project & Workflow Folder Management Store', () => {
   beforeEach(() => {
     localStorage.clear();
+    useProjectStore.setState({
+      folders: [],
+      workflows: [],
+      activeWorkflowId: null,
+      activeFolderId: 'default',
+      searchQuery: '',
+      isSidebarOpen: true,
+    });
     const store = useProjectStore.getState();
     store.seedPresetsIfEmpty('en');
   });

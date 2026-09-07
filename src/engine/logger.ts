@@ -66,6 +66,13 @@ export function sanitizeData(value: unknown, seen = new WeakSet()): unknown {
     sanitized = sanitized.replace(/(AIzaSy[a-zA-Z0-9_\-]{4})[a-zA-Z0-9_\-]+([a-zA-Z0-9_\-]{4})/g, '$1***[MASKED]***$2');
     // Mask Bearer tokens
     sanitized = sanitized.replace(/(Bearer\s+)[a-zA-Z0-9._\-]{10,}/gi, '$1***[MASKED]***');
+    // Mask AWS access key IDs
+    sanitized = sanitized.replace(/(AKIA[0-9A-Z]{4})[0-9A-Z]{8,}([0-9A-Z]{4})/g, '$1***[MASKED]***$2');
+    // Mask explicit key assignments in config/error strings (e.g. api_key="xxx")
+    sanitized = sanitized.replace(
+      /((?:api[_-]?key|secret[_-]?key|access[_-]?token)["']?\s*[:=]\s*["']?)([a-zA-Z0-9_\-]{8,})(["']?)/gi,
+      '$1***[MASKED]***$3'
+    );
     return sanitized;
   }
 
