@@ -18,6 +18,8 @@ python-dotenv>=1.0.1
 
 # Utilities
 nanoid>=2.0.0
+pypdf>=4.0.0
+python-multipart>=0.0.9
 
 # Testing
 pytest>=8.2.0

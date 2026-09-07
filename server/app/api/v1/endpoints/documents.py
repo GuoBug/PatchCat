@@ -3,8 +3,11 @@ RESTful API Endpoints for Document Upload, Preprocessing, Chunking, and Preview
 """
 
 import logging
+import os
+from io import BytesIO
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from pypdf import PdfReader
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -233,3 +236,152 @@ async def delete_document(
     await db.commit()
     logger.info("Deleted Document id=%s and its chunks", doc_id)
     return None
+
+
+@router.patch(
+    "/chunks/{chunk_id}/toggle",
+    response_model=DocumentChunkResponse,
+    summary="Toggle or set chunk active status",
+    description="Enable or disable a specific document chunk from semantic retrieval.",
+)
+async def toggle_chunk_active(
+    chunk_id: str,
+    is_active: Optional[bool] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = select(DocumentChunkORM).where(DocumentChunkORM.id == chunk_id)
+    res = await db.execute(stmt)
+    chunk = res.scalar_one_or_none()
+    if not chunk:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Chunk '{chunk_id}' not found",
+        )
+
+    if is_active is None:
+        chunk.is_active = not chunk.is_active
+    else:
+        chunk.is_active = is_active
+
+    await db.commit()
+    await db.refresh(chunk)
+    logger.info("Toggled chunk %s is_active=%s", chunk_id, chunk.is_active)
+    return chunk
+
+
+@router.post(
+    "/knowledge-bases/{kb_id}/upload",
+    response_model=DocumentResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload document file (PDF, TXT, MD) and index into knowledge base",
+    description="Extract text from uploaded file, clean, chunk, embed, and index into knowledge base.",
+)
+async def upload_document_file(
+    kb_id: str,
+    file: UploadFile = File(...),
+    chunk_size: int = Form(500),
+    chunk_overlap: int = Form(50),
+    db: AsyncSession = Depends(get_db),
+):
+    # Verify Knowledge Base exists
+    kb_stmt = select(KnowledgeBaseORM).where(KnowledgeBaseORM.id == kb_id)
+    kb_res = await db.execute(kb_stmt)
+    kb = kb_res.scalar_one_or_none()
+    if not kb:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Knowledge base '{kb_id}' not found",
+        )
+
+    filename = file.filename or "uploaded_doc"
+    _, ext = os.path.splitext(filename)
+    ext_lower = ext.lower().lstrip(".")
+
+    file_bytes = await file.read()
+    raw_text = ""
+
+    if ext_lower == "pdf":
+        try:
+            reader = PdfReader(BytesIO(file_bytes))
+            pages_text = [page.extract_text() or "" for page in reader.pages]
+            raw_text = "\n\n".join(pages_text)
+        except Exception as e:
+            logger.error("Failed to parse PDF file '%s': %s", filename, e)
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Failed to parse PDF document: {str(e)}",
+            )
+    else:
+        # Default text/markdown decoding
+        try:
+            raw_text = file_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            raw_text = file_bytes.decode("latin-1", errors="replace")
+
+    cleaned_text = clean_document_text(raw_text)
+    if not cleaned_text:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file contains no readable text content.",
+        )
+
+    # Chunk text
+    chunker = TextChunker(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+    )
+    generated_chunks = chunker.split_text(cleaned_text)
+
+    # Create Document record
+    doc = DocumentORM(
+        kb_id=kb_id,
+        name=filename,
+        file_extension=ext_lower or "txt",
+        file_size=len(file_bytes),
+        char_count=len(cleaned_text),
+        chunk_count=len(generated_chunks),
+        status="completed",
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+    )
+    db.add(doc)
+    await db.flush()
+
+    # Generate embeddings
+    chunk_texts = [item.content for item in generated_chunks]
+    embeddings = await embedding_client.embed_documents(
+        texts=chunk_texts,
+        provider=kb.embedding_provider,
+        model=kb.embedding_model,
+        dimension=kb.embedding_dimension,
+    )
+
+    # Create DocumentChunk records
+    for chunk_item, emb in zip(generated_chunks, embeddings):
+        chunk_orm = DocumentChunkORM(
+            kb_id=kb_id,
+            doc_id=doc.id,
+            position=chunk_item.position,
+            content=chunk_item.content,
+            token_count=chunk_item.token_count,
+            embedding=emb,
+            hit_count=0,
+            is_active=True,
+        )
+        db.add(chunk_orm)
+
+    # Update KnowledgeBase cached metrics
+    kb.document_count += 1
+    kb.total_chunks += len(generated_chunks)
+
+    await db.commit()
+    await db.refresh(doc)
+    logger.info(
+        "Uploaded & Indexed file '%s' (id=%s) into KB '%s' with %d chunks",
+        doc.name,
+        doc.id,
+        kb_id,
+        len(generated_chunks),
+    )
+    return doc
+

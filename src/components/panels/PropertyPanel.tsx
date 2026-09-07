@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import { useSettingsStore } from '../../stores/settings-store.ts';
+import { useKnowledgeStore } from '../../stores/knowledge-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
 import { extractVariableReferences } from '../../engine/variable-resolver.ts';
 
@@ -123,6 +124,9 @@ export const PropertyPanel: React.FC = () => {
   const activeProvider = useSettingsStore((s) => s.activeProvider);
   const providers = useSettingsStore((s) => s.providers);
   const fetchAvailableModels = useSettingsStore((s) => s.fetchAvailableModels);
+
+  const knowledgeBases = useKnowledgeStore((s) => s.knowledgeBases);
+  const openKnowledgeDetail = useKnowledgeStore((s) => s.openDetail);
 
   const [copied, setCopied] = useState(false);
   const [showReasoning, setShowReasoning] = useState(true);
@@ -500,17 +504,41 @@ export const PropertyPanel: React.FC = () => {
               </label>
 
               {/* Target Knowledge Base */}
-              <div className="space-y-1">
-                <label className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-                  {t.propertyPanel.knowledgeBase}
-                </label>
-                <input
-                  type="text"
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-slate-700 dark:text-slate-300 font-medium">
+                    {t.propertyPanel.knowledgeBase}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => openKnowledgeDetail((config['knowledgeBaseId'] as string) || undefined)}
+                    className="text-[11px] font-medium text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer"
+                  >
+                    {t.knowledge.manageKb} &rarr;
+                  </button>
+                </div>
+                <select
                   value={(config['knowledgeBaseId'] as string) || ''}
                   onChange={(e) => updateNodeConfig(id, { knowledgeBaseId: e.target.value })}
-                  placeholder="Enter KB ID (e.g. kb_xxx or custom name)..."
-                  className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
-                />
+                  className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 cursor-pointer"
+                >
+                  <option value="">{t.propertyPanel.selectKnowledgeBase}</option>
+                  {knowledgeBases.map((kb) => (
+                    <option key={kb.id} value={kb.id}>
+                      {kb.name} ({kb.document_count || 0} {t.knowledge.documentsCount})
+                    </option>
+                  ))}
+                  {Boolean(config['knowledgeBaseId']) && !knowledgeBases.some((k) => k.id === config['knowledgeBaseId']) && (
+                    <option value={config['knowledgeBaseId'] as string}>
+                      {config['knowledgeBaseId'] as string}
+                    </option>
+                  )}
+                </select>
+                {knowledgeBases.length === 0 && (
+                  <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                    {t.propertyPanel.noKnowledgeBaseFound}
+                  </p>
+                )}
               </div>
 
               {/* Query */}

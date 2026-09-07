@@ -11,3 +11,4 @@ export { LogConsole } from './LogConsole';
 export { Footer } from './Footer';
 export { HelpModal } from './HelpModal';
 export { WorkflowSidebar } from './WorkflowSidebar';
+export { KnowledgeDetailDrawer } from './KnowledgeDetailDrawer';

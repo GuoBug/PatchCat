@@ -6,20 +6,25 @@ import {
   SettingsPage,
   Footer,
   WorkflowSidebar,
+  KnowledgeDetailDrawer,
 } from './components/panels';
 import { WorkflowCanvas } from './components/canvas';
 import { useWorkflowStore } from './stores/workflow-store.ts';
 import { useSettingsStore } from './stores/settings-store.ts';
 import { useProjectStore } from './stores/project-store.ts';
+import { useKnowledgeStore } from './stores/knowledge-store.ts';
 
 export const App: React.FC = () => {
   const loadPreset = useWorkflowStore((s) => s.loadPreset);
   const theme = useWorkflowStore((s) => s.theme);
   const currentView = useSettingsStore((s) => s.currentView);
   const language = useSettingsStore((s) => s.language);
+  const storageMode = useSettingsStore((s) => s.storageMode);
+  const serverBaseUrl = useSettingsStore((s) => s.serverBaseUrl);
   const activeWorkflowId = useProjectStore((s) => s.activeWorkflowId);
   const workflows = useProjectStore((s) => s.workflows);
   const seedPresetsIfEmpty = useProjectStore((s) => s.seedPresetsIfEmpty);
+  const syncStorageMode = useKnowledgeStore((s) => s.syncStorageMode);
 
   const initialLoadedRef = useRef(false);
 
@@ -31,6 +36,11 @@ export const App: React.FC = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [theme]);
+
+  // Sync knowledge storage mode
+  useEffect(() => {
+    syncStorageMode(storageMode, serverBaseUrl);
+  }, [storageMode, serverBaseUrl, syncStorageMode]);
 
   // Seed / load initial workflow from project store on mount
   useEffect(() => {
@@ -87,6 +97,9 @@ export const App: React.FC = () => {
             <Footer />
           </>
         )}
+
+        {/* Global Knowledge Base & Chunks Management Drawer */}
+        <KnowledgeDetailDrawer />
       </div>
     </ReactFlowProvider>
   );

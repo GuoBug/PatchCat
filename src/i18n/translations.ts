@@ -238,6 +238,42 @@ export interface Translations {
     workflowsCount: string;
     selectFolder: string;
   };
+  knowledge: {
+    tabTitle: string;
+    workflowsTab: string;
+    knowledgeTab: string;
+    newKnowledgeBase: string;
+    knowledgeBasesCount: string;
+    searchPlaceholder: string;
+    noKnowledgeBases: string;
+    createFirstKb: string;
+    kbNameLabel: string;
+    kbNamePlaceholder: string;
+    kbDescLabel: string;
+    kbDescPlaceholder: string;
+    embeddingModel: string;
+    documentsCount: string;
+    chunksCount: string;
+    manageDocuments: string;
+    uploadDocument: string;
+    dropzoneTitle: string;
+    dropzoneSubtitle: string;
+    chunkSize: string;
+    chunkOverlap: string;
+    previewChunks: string;
+    uploading: string;
+    chunkPosition: string;
+    tokensCount: string;
+    hitCount: string;
+    chunkActive: string;
+    chunkDisabled: string;
+    noDocuments: string;
+    noChunks: string;
+    deleteKbConfirm: string;
+    deleteDocConfirm: string;
+    openInCanvas: string;
+    manageKb: string;
+  };
 }
 
 export const translations: Record<Language, Translations> = {
@@ -479,6 +515,42 @@ export const translations: Record<Language, Translations> = {
       workflowsCount: 'workflows',
       selectFolder: 'Select destination folder',
     },
+    knowledge: {
+      tabTitle: 'Knowledge Bases',
+      workflowsTab: 'Workflows',
+      knowledgeTab: 'Knowledge',
+      newKnowledgeBase: 'New Knowledge Base',
+      knowledgeBasesCount: 'knowledge bases',
+      searchPlaceholder: 'Search knowledge bases...',
+      noKnowledgeBases: 'No knowledge bases found.',
+      createFirstKb: 'Create your first knowledge base collection',
+      kbNameLabel: 'Knowledge Base Name',
+      kbNamePlaceholder: 'e.g. Product Knowledge Base',
+      kbDescLabel: 'Description',
+      kbDescPlaceholder: 'Describe the contents and retrieval purpose...',
+      embeddingModel: 'Embedding Model',
+      documentsCount: 'documents',
+      chunksCount: 'chunks',
+      manageDocuments: 'Manage Documents',
+      uploadDocument: 'Upload Document',
+      dropzoneTitle: 'Drag & drop .txt, .md, or .pdf files here',
+      dropzoneSubtitle: 'Supports UTF-8 plain text, Markdown, and parsed PDF documents (Max 10MB)',
+      chunkSize: 'Chunk Size (chars)',
+      chunkOverlap: 'Chunk Overlap (chars)',
+      previewChunks: 'Preview Chunks',
+      uploading: 'Uploading & Indexing...',
+      chunkPosition: 'Chunk',
+      tokensCount: 'tokens',
+      hitCount: 'hits',
+      chunkActive: 'Active (Retrieval Enabled)',
+      chunkDisabled: 'Disabled (Excluded from Retrieval)',
+      noDocuments: 'No documents in this knowledge base yet. Upload one above!',
+      noChunks: 'No chunks available.',
+      deleteKbConfirm: 'Are you sure you want to delete this knowledge base and all its chunks?',
+      deleteDocConfirm: 'Are you sure you want to delete this document and all its chunks?',
+      openInCanvas: 'Use in Canvas',
+      manageKb: 'Manage Knowledge Bases',
+    },
   },
   zh: {
     common: {
@@ -717,6 +789,42 @@ export const translations: Record<Language, Translations> = {
       expandSidebar: '展开侧边栏',
       workflowsCount: '个流程',
       selectFolder: '选择目标目录',
+    },
+    knowledge: {
+      tabTitle: '私有知识库',
+      workflowsTab: '编排流程',
+      knowledgeTab: '知识库',
+      newKnowledgeBase: '新建知识库',
+      knowledgeBasesCount: '个知识库',
+      searchPlaceholder: '搜索知识库...',
+      noKnowledgeBases: '暂无知识库。',
+      createFirstKb: '创建您的首个私有知识库集合',
+      kbNameLabel: '知识库名称',
+      kbNamePlaceholder: '例如：产品研发与架构白皮书',
+      kbDescLabel: '功能描述',
+      kbDescPlaceholder: '描述知识库内容与适用业务场景...',
+      embeddingModel: '向量化模型 (Embedding)',
+      documentsCount: '篇文档',
+      chunksCount: '个切片',
+      manageDocuments: '管理文档与切片',
+      uploadDocument: '上传解析文档',
+      dropzoneTitle: '点击或拖拽上传 .txt、.md、.pdf 文件',
+      dropzoneSubtitle: '支持纯文本、Markdown 与 PDF 自动文本抽取与清洗切片 (最大 10MB)',
+      chunkSize: '切片分块大小 (字符)',
+      chunkOverlap: '分块重叠步长 (字符)',
+      previewChunks: '即时切片预览',
+      uploading: '正在清洗并向量化入库...',
+      chunkPosition: '分块段落',
+      tokensCount: 'Tokens',
+      hitCount: '次命中',
+      chunkActive: '已启用（参与向量检索）',
+      chunkDisabled: '已停用（排除在检索之外）',
+      noDocuments: '该知识库下暂无文档，请在上方上传入库！',
+      noChunks: '暂无切片数据。',
+      deleteKbConfirm: '确定要删除该知识库及其所有文档与切片吗？',
+      deleteDocConfirm: '确定要删除该文档及其全部切片吗？',
+      openInCanvas: '在画布中检索',
+      manageKb: '管理知识库',
     },
   },
 };
