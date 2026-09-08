@@ -7,6 +7,7 @@
  */
 
 import { nanoid } from 'nanoid';
+import { parseDocumentFile, checkTextPurity, cleanDocumentText } from '../document-parser.ts';
 
 export interface KnowledgeBaseSummary {
   id: string;
@@ -331,13 +332,22 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       const parts = filename.split('.');
       extension = parts.length > 1 ? parts.pop()!.toLowerCase() : 'txt';
       size = fileInput.size;
-      text = await fileInput.text();
+
+      // Extract and clean text using document parser (supports PDF, MD, TXT with purity check)
+      const parsed = await parseDocumentFile(fileInput);
+      text = parsed.text;
     } else {
       const customFile = fileInput as { name: string; content: string; extension?: string; size?: number };
       filename = customFile.name;
-      text = customFile.content;
       extension = customFile.extension || 'txt';
-      size = customFile.size || text.length;
+      size = customFile.size || customFile.content.length;
+
+      // Check text purity
+      const purity = checkTextPurity(customFile.content);
+      if (!purity.isPure) {
+        throw new Error(purity.error || '文档纯净度检查未通过，疑似乱码。');
+      }
+      text = cleanDocumentText(customFile.content);
     }
 
     const chunkSize = options?.chunkSize || 500;
@@ -451,36 +461,51 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
     let currentChunk = '';
     let position = 1;
 
+    const pushChunk = (content: string) => {
+      const c = content.trim();
+      if (!c) return;
+      chunks.push({
+        position: position++,
+        content: c,
+        char_count: c.length,
+        token_count: Math.ceil(c.length / 3.2),
+      });
+    };
+
     for (const p of paragraphs) {
       const trimmed = p.trim();
       if (!trimmed) continue;
+
+      // If a single paragraph is longer than chunkSize, split it using a sliding window
+      if (trimmed.length > chunkSize) {
+        if (currentChunk) {
+          pushChunk(currentChunk);
+          currentChunk = '';
+        }
+        let start = 0;
+        const step = Math.max(1, chunkSize - chunkOverlap);
+        while (start < trimmed.length) {
+          const end = Math.min(start + chunkSize, trimmed.length);
+          pushChunk(trimmed.slice(start, end));
+          if (end >= trimmed.length) break;
+          start += step;
+        }
+        continue;
+      }
 
       if (!currentChunk) {
         currentChunk = trimmed;
       } else if (currentChunk.length + trimmed.length + 2 <= chunkSize) {
         currentChunk += '\n\n' + trimmed;
       } else {
-        // Push current chunk
-        chunks.push({
-          position: position++,
-          content: currentChunk,
-          char_count: currentChunk.length,
-          token_count: Math.ceil(currentChunk.length / 3.2),
-        });
-
-        // Compute overlap
+        pushChunk(currentChunk);
         const overlap = currentChunk.slice(-chunkOverlap);
         currentChunk = overlap + '\n\n' + trimmed;
       }
     }
 
     if (currentChunk.trim()) {
-      chunks.push({
-        position: position++,
-        content: currentChunk.trim(),
-        char_count: currentChunk.trim().length,
-        token_count: Math.ceil(currentChunk.trim().length / 3.2),
-      });
+      pushChunk(currentChunk);
     }
 
     return {

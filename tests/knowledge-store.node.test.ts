@@ -87,4 +87,62 @@ describe('LocalKnowledgeAdapter & Knowledge Management', () => {
     // Clean up KB
     await adapter.deleteKnowledgeBase(kb.id);
   });
+
+  it('should enforce hard chunk size cap even with huge single unbroken paragraphs', async () => {
+    const adapter = new LocalKnowledgeAdapter();
+    const kb = await adapter.createKnowledgeBase({ name: 'Hard Cap Test KB' });
+
+    // Single unbroken paragraph with 3500 chars (like dense stream / OCR / unspaced text)
+    const longUnbrokenText = 'A'.repeat(3500);
+    const doc = await adapter.uploadDocument(
+      kb.id,
+      {
+        name: 'dense-unbroken.txt',
+        content: longUnbrokenText,
+      },
+      { chunkSize: 500, chunkOverlap: 50 }
+    );
+
+    const chunks = await adapter.getDocumentChunks(doc.id);
+    assert.ok(chunks.length >= 7, `Expected at least 7 chunks, got ${chunks.length}`);
+    for (const chunk of chunks) {
+      assert.ok(
+        chunk.content.length <= 500,
+        `Chunk length ${chunk.content.length} exceeds chunkSize 500`
+      );
+    }
+
+    await adapter.deleteKnowledgeBase(kb.id);
+  });
+
+  it('should reject raw %PDF binary streams and garbled text with descriptive error', async () => {
+    const adapter = new LocalKnowledgeAdapter();
+    const kb = await adapter.createKnowledgeBase({ name: 'Purity Test KB' });
+
+    // Raw PDF container binary stream
+    const rawPdfStream = '%PDF-1.7\n4 0 obj\n<< /Filter /FlateDecode /Length 29236 >>\nstream\nx\x9c...';
+    await assert.rejects(
+      async () => {
+        await adapter.uploadDocument(kb.id, {
+          name: 'fake-corrupt.pdf',
+          content: rawPdfStream,
+        });
+      },
+      /检测到未解析的二进制 PDF 原始数据流/
+    );
+
+    // Corrupted binary string with null/unprintable bytes (>15% garbled)
+    const garbledText = 'Hello \x00\x01\x02\x03\x04\x05\x06\x07\x08 World \x0e\x0f\x10\x11\x12';
+    await assert.rejects(
+      async () => {
+        await adapter.uploadDocument(kb.id, {
+          name: 'garbled.txt',
+          content: garbledText,
+        });
+      },
+      /乱码或异常控制符/
+    );
+
+    await adapter.deleteKnowledgeBase(kb.id);
+  });
 });

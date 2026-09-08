@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useKnowledgeStore } from '../../stores/knowledge-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
+import { parseDocumentFile } from '../../services/document-parser.ts';
 
 export const KnowledgeDetailDrawer: React.FC = () => {
   const { t } = useTranslation();
@@ -38,6 +39,7 @@ export const KnowledgeDetailDrawer: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [chunkSize, setChunkSize] = useState<number>(500);
   const [chunkOverlap, setChunkOverlap] = useState<number>(50);
+  const [parsedContent, setParsedContent] = useState<string | null>(null);
   const [previewData, setPreviewData] = useState<{
     chars: number;
     chunks: number;
@@ -60,28 +62,53 @@ export const KnowledgeDetailDrawer: React.FC = () => {
     setIsPreviewing(true);
 
     try {
-      let text = '';
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      if (ext === 'pdf') {
-        // PDF binary preview estimation
-        setPreviewData({
-          chars: Math.round(file.size * 0.4),
-          chunks: Math.max(1, Math.round((file.size * 0.4) / chunkSize)),
-          tokens: Math.round((file.size * 0.4) / 3.5),
-        });
-      } else {
-        text = await file.text();
-        const res = await previewChunks(text, { chunkSize, chunkOverlap });
+      const parsed = await parseDocumentFile(file);
+      setParsedContent(parsed.text);
+      const res = await previewChunks(parsed.text, { chunkSize, chunkOverlap });
+      setPreviewData({
+        chars: res.total_characters,
+        chunks: res.total_chunks,
+        tokens: res.estimated_tokens,
+      });
+    } catch (e: any) {
+      console.warn('Failed to parse and preview document:', e);
+      setUploadError(e.message || 'Failed to process document');
+      setPreviewData(null);
+      setParsedContent(null);
+    } finally {
+      setIsPreviewing(false);
+    }
+  };
+
+  const handleChunkSizeChange = async (newSize: number) => {
+    setChunkSize(newSize);
+    if (parsedContent) {
+      try {
+        const res = await previewChunks(parsedContent, { chunkSize: newSize, chunkOverlap });
         setPreviewData({
           chars: res.total_characters,
           chunks: res.total_chunks,
           tokens: res.estimated_tokens,
         });
+      } catch (e) {
+        console.warn('Failed to update chunk size preview:', e);
       }
-    } catch (e: any) {
-      console.warn('Failed to preview chunks:', e);
-    } finally {
-      setIsPreviewing(false);
+    }
+  };
+
+  const handleChunkOverlapChange = async (newOverlap: number) => {
+    setChunkOverlap(newOverlap);
+    if (parsedContent) {
+      try {
+        const res = await previewChunks(parsedContent, { chunkSize, chunkOverlap: newOverlap });
+        setPreviewData({
+          chars: res.total_characters,
+          chunks: res.total_chunks,
+          tokens: res.estimated_tokens,
+        });
+      } catch (e) {
+        console.warn('Failed to update chunk overlap preview:', e);
+      }
     }
   };
 
@@ -108,8 +135,23 @@ export const KnowledgeDetailDrawer: React.FC = () => {
     if (!selectedFile || !activeKbId) return;
     setUploadError(null);
     try {
-      await uploadDocument(activeKbId, selectedFile, { chunkSize, chunkOverlap });
+      const ext = selectedFile.name.split('.').pop()?.toLowerCase() || '';
+      if (parsedContent !== null) {
+        await uploadDocument(
+          activeKbId,
+          {
+            name: selectedFile.name,
+            content: parsedContent,
+            extension: ext,
+            size: selectedFile.size,
+          },
+          { chunkSize, chunkOverlap }
+        );
+      } else {
+        await uploadDocument(activeKbId, selectedFile, { chunkSize, chunkOverlap });
+      }
       setSelectedFile(null);
+      setParsedContent(null);
       setPreviewData(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err: any) {
@@ -220,8 +262,7 @@ export const KnowledgeDetailDrawer: React.FC = () => {
                   value={chunkSize}
                   onChange={(e) => {
                     const val = Number(e.target.value);
-                    setChunkSize(val);
-                    if (selectedFile) handleFileChange(selectedFile);
+                    handleChunkSizeChange(val);
                   }}
                   className="w-full accent-cyan-500 cursor-pointer"
                 />
@@ -243,8 +284,7 @@ export const KnowledgeDetailDrawer: React.FC = () => {
                   value={chunkOverlap}
                   onChange={(e) => {
                     const val = Number(e.target.value);
-                    setChunkOverlap(val);
-                    if (selectedFile) handleFileChange(selectedFile);
+                    handleChunkOverlapChange(val);
                   }}
                   className="w-full accent-cyan-500 cursor-pointer"
                 />
@@ -384,7 +424,7 @@ export const KnowledgeDetailDrawer: React.FC = () => {
                 </div>
 
                 {/* Chunks List Cards */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-3">
+                <div className="flex-1 overflow-y-auto p-6 space-y-3 min-w-0">
                   {chunks.length === 0 ? (
                     <div className="text-center py-16 text-slate-400 text-xs">{t.knowledge.noChunks}</div>
                   ) : (
@@ -392,7 +432,7 @@ export const KnowledgeDetailDrawer: React.FC = () => {
                       return (
                         <div
                           key={chunk.id}
-                          className={`p-4 rounded-xl border transition-all ${
+                          className={`p-4 rounded-xl border transition-all min-w-0 max-w-full overflow-hidden ${
                             chunk.is_active
                               ? 'bg-slate-50/60 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800'
                               : 'bg-slate-100/40 dark:bg-slate-900/10 border-slate-200/60 dark:border-slate-800/40 opacity-60'
@@ -435,7 +475,7 @@ export const KnowledgeDetailDrawer: React.FC = () => {
                           </div>
 
                           {/* Chunk Content Text */}
-                          <div className="p-3 rounded-lg bg-white dark:bg-slate-950/80 border border-slate-200/80 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap select-text">
+                          <div className="p-3 rounded-lg bg-white dark:bg-slate-950/80 border border-slate-200/80 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap select-text break-all break-words overflow-x-hidden max-h-96 overflow-y-auto">
                             {chunk.content}
                           </div>
                         </div>
