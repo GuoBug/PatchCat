@@ -228,7 +228,7 @@ export const KnowledgeDetailDrawer: React.FC = () => {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".txt,.md,.markdown,.pdf"
+                  accept=".txt,.md,.markdown,.pdf,.html,.htm"
                   className="hidden"
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {

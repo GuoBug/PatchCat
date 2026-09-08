@@ -7,7 +7,7 @@
  */
 
 import { nanoid } from 'nanoid';
-import { parseDocumentFile, checkTextPurity, cleanDocumentText } from '../document-parser.ts';
+import { parseDocumentFile } from '../document-parser.ts';
 
 export interface KnowledgeBaseSummary {
   id: string;
@@ -339,15 +339,16 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
     } else {
       const customFile = fileInput as { name: string; content: string; extension?: string; size?: number };
       filename = customFile.name;
-      extension = customFile.extension || 'txt';
+      extension = customFile.extension || filename.split('.').pop()?.toLowerCase() || 'txt';
       size = customFile.size || customFile.content.length;
 
-      // Check text purity
-      const purity = checkTextPurity(customFile.content);
-      if (!purity.isPure) {
-        throw new Error(purity.error || '文档纯净度检查未通过，疑似乱码。');
-      }
-      text = cleanDocumentText(customFile.content);
+      const buffer = new TextEncoder().encode(customFile.content).buffer;
+      const parsed = await parseDocumentFile({
+        name: filename,
+        buffer,
+        extension,
+      });
+      text = parsed.text;
     }
 
     const chunkSize = options?.chunkSize || 500;

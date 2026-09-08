@@ -128,7 +128,7 @@ describe('LocalKnowledgeAdapter & Knowledge Management', () => {
           content: rawPdfStream,
         });
       },
-      /检测到未解析的二进制 PDF 原始数据流/
+      /PDF 解析失败|检测到未解析的二进制 PDF 原始数据流/
     );
 
     // Corrupted binary string with null/unprintable bytes (>15% garbled)
@@ -142,6 +142,37 @@ describe('LocalKnowledgeAdapter & Knowledge Management', () => {
       },
       /乱码或异常控制符/
     );
+
+    await adapter.deleteKnowledgeBase(kb.id);
+  });
+
+  it('should parse HTML documents, strip script/style tags and index clean text', async () => {
+    const adapter = new LocalKnowledgeAdapter();
+    const kb = await adapter.createKnowledgeBase({ name: 'HTML Ingestion KB' });
+
+    const htmlContent = `
+      <!doctype html>
+      <html>
+        <head><style>.title { color: red; }</style><script>console.log('secret');</script></head>
+        <body>
+          <h1>Guo Qiang - Product Manager</h1>
+          <p>Extensive experience in SaaS platforms, DAG workflow orchestration, and Agentic AI.</p>
+        </body>
+      </html>
+    `;
+
+    const doc = await adapter.uploadDocument(kb.id, {
+      name: 'resume.html',
+      content: htmlContent,
+      extension: 'html',
+    });
+
+    assert.ok(doc.id.startsWith('doc_'));
+    const chunks = await adapter.getDocumentChunks(doc.id);
+    assert.ok(chunks.length >= 1);
+    assert.ok(chunks[0].content.includes('Guo Qiang - Product Manager'));
+    assert.ok(!chunks[0].content.includes('<style>'));
+    assert.ok(!chunks[0].content.includes('console.log'));
 
     await adapter.deleteKnowledgeBase(kb.id);
   });

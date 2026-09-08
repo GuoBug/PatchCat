@@ -116,7 +116,40 @@ export async function parseDocumentFile(
     }
 
     if (!rawText || rawText.trim().length === 0) {
-      throw new Error('未能从该 PDF 中提取到可读文本。该文件可能是纯图片扫描件（缺少 OCR 文本层）或带有加密限制。');
+      throw new Error(
+        '未能从该 PDF 中提取到可读文本：该文件未包含文字编码层（常见于通过 Windows“Microsoft Print to PDF”虚拟打印机导出时文字被转为了矢量线条/转曲，或为纯扫描件）。建议在浏览器打印时选择“另存为 PDF (Save as PDF)”重新导出，或直接上传 .html / .md / .txt 源文件。'
+      );
+    }
+  } else if (ext === 'html' || ext === 'htm') {
+    // HTML web page / resume extraction
+    let htmlContent = '';
+    if ('text' in file && typeof file.text === 'function') {
+      htmlContent = await file.text();
+    } else if ('buffer' in file) {
+      const decoder = new TextDecoder('utf-8');
+      htmlContent = decoder.decode(file.buffer);
+    }
+
+    if (typeof DOMParser !== 'undefined') {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlContent, 'text/html');
+      // Remove scripts, styles, and meta elements
+      const elementsToRemove = doc.querySelectorAll('script, style, noscript, svg');
+      elementsToRemove.forEach((el) => el.remove());
+      rawText = doc.body.innerText || doc.body.textContent || '';
+    } else {
+      // Fallback for Node.js test environment
+      rawText = htmlContent
+        .replace(/<style[\s\S]*?<\/style>/gi, '')
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/<svg[\s\S]*?<\/svg>/gi, '')
+        .replace(/<[^>]+>/g, '\n')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&#39;/g, "'")
+        .replace(/&quot;/g, '"');
     }
   } else {
     // Markdown or Plain Text
