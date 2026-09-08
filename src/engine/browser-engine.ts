@@ -26,6 +26,7 @@ import { resolveObjectVariables } from './variable-resolver.ts';
 import { streamChatCompletion, type ChatMessage } from './llm-client.ts';
 import { runSandboxedScript } from './sandbox-executor.ts';
 import { useSettingsStore } from '../stores/settings-store.ts';
+import { useKnowledgeStore } from '../stores/knowledge-store.ts';
 import { logger } from './logger.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -600,41 +601,69 @@ export class BrowserWorkflowEngine {
               : 0.0;
 
           const settingsStore = useSettingsStore.getState();
+          const storageMode = settingsStore.storageMode;
           const serverBaseUrl = settingsStore.serverBaseUrl || 'http://localhost:8000';
           let contextStr = '';
           let recalledChunks: unknown[] = [];
 
-          if (kbId && !options?.skipLLM) {
-            try {
-              const res = await fetch(
-                `${serverBaseUrl}/api/v1/knowledge-bases/${kbId}/retrieve`,
-                {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    query: query || 'knowledge query',
-                    top_k: topK,
-                    score_threshold: scoreThreshold,
-                  }),
-                  signal,
-                },
-              );
-              if (res.ok) {
-                const data = (await res.json()) as { context?: string; chunks?: unknown[] };
-                contextStr = data.context || '';
-                recalledChunks = data.chunks || [];
+          if (kbId) {
+            // 1. If in server mode, try server retrieval endpoint
+            if (storageMode === 'server' && !options?.skipLLM) {
+              try {
+                const res = await fetch(
+                  `${serverBaseUrl}/api/v1/knowledge-bases/${kbId}/retrieve`,
+                  {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      query: query || 'knowledge query',
+                      top_k: topK,
+                      score_threshold: scoreThreshold,
+                    }),
+                    signal,
+                  },
+                );
+                if (res.ok) {
+                  const data = (await res.json()) as { context?: string; chunks?: unknown[] };
+                  contextStr = data.context || '';
+                  recalledChunks = data.chunks || [];
+                }
+              } catch (err) {
+                logger.detailed(
+                  'WorkflowEngine',
+                  `Server knowledge retrieval failed, falling back to local adapter: ${err}`,
+                  {},
+                  node.id,
+                );
               }
-            } catch (err) {
-              logger.detailed(
-                'WorkflowEngine',
-                `Knowledge retrieval endpoint call failed, using mock context: ${err}`,
-                {},
-                node.id,
-              );
+            }
+
+            // 2. Client-side local retrieval (default LocalStorage mode or offline fallback)
+            if (!contextStr) {
+              try {
+                const knowledgeStore = useKnowledgeStore.getState();
+                const retrieved = await knowledgeStore.retrieve(
+                  kbId,
+                  query,
+                  topK,
+                  scoreThreshold
+                );
+                if (retrieved && retrieved.context) {
+                  contextStr = retrieved.context;
+                  recalledChunks = retrieved.chunks;
+                }
+              } catch (err) {
+                logger.detailed(
+                  'WorkflowEngine',
+                  `Local knowledge retrieval failed: ${err}`,
+                  {},
+                  node.id,
+                );
+              }
             }
           }
 
-          // Fallback context for offline test / mock validation
+          // Fallback context for offline test / mock validation when KB has no matching chunks
           if (!contextStr) {
             contextStr = `### [Document: manual.md (Similarity: 0.88)]\nQuery "${query || 'default'}" matched knowledge base context for RAG orchestration.`;
             recalledChunks = [

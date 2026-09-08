@@ -14,6 +14,7 @@ import {
   type DocumentChunkItem,
   type ChunkOptions,
   type ChunkPreviewResponse,
+  type KnowledgeRetrievalResult,
   LocalKnowledgeAdapter,
   ServerKnowledgeAdapter,
 } from '../services/storage/knowledge-adapter.ts';
@@ -49,6 +50,12 @@ interface KnowledgeState {
   deleteDocument: (docId: string) => Promise<void>;
   toggleChunk: (chunkId: string, isActive?: boolean) => Promise<void>;
   previewChunks: (content: string, options?: ChunkOptions) => Promise<ChunkPreviewResponse>;
+  retrieve: (
+    kbId: string,
+    query: string,
+    topK?: number,
+    scoreThreshold?: number
+  ) => Promise<KnowledgeRetrievalResult>;
   setSearchQuery: (query: string) => void;
   openDetail: (kbId?: string) => void;
   closeDetail: () => void;
@@ -217,6 +224,10 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
 
   previewChunks: async (content: string, options?: ChunkOptions) => {
     return activeAdapter.previewChunks(content, options);
+  },
+
+  retrieve: async (kbId: string, query: string, topK?: number, scoreThreshold?: number) => {
+    return activeAdapter.retrieve(kbId, query, topK, scoreThreshold);
   },
 
   setSearchQuery: (query: string) => {

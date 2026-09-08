@@ -75,6 +75,21 @@ export interface ChunkOptions {
   chunkOverlap?: number;
 }
 
+export interface KnowledgeRetrievalChunk {
+  id: string;
+  doc_id: string;
+  doc_name: string;
+  position: number;
+  content: string;
+  similarity: number;
+  token_count: number;
+}
+
+export interface KnowledgeRetrievalResult {
+  context: string;
+  chunks: KnowledgeRetrievalChunk[];
+}
+
 export interface IKnowledgeAdapter {
   getKnowledgeBases(search?: string): Promise<KnowledgeBaseSummary[]>;
   createKnowledgeBase(payload: KnowledgeBaseCreate): Promise<KnowledgeBaseSummary>;
@@ -89,6 +104,12 @@ export interface IKnowledgeAdapter {
   getDocumentChunks(docId: string): Promise<DocumentChunkItem[]>;
   toggleChunkActive(chunkId: string, isActive?: boolean): Promise<DocumentChunkItem>;
   previewChunks(content: string, options?: ChunkOptions): Promise<ChunkPreviewResponse>;
+  retrieve(
+    kbId: string,
+    query: string,
+    topK?: number,
+    scoreThreshold?: number
+  ): Promise<KnowledgeRetrievalResult>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -106,12 +127,12 @@ function getSeedData() {
   const seedKb: KnowledgeBaseSummary = {
     id: SEED_KB_ID,
     name: 'PatchCat Architecture Whitepaper',
-    description: 'Core specifications, Kahn DAG scheduling, and RAG retrieval mechanisms.',
+    description: 'PatchCat 系统核心架构白皮书：涵盖 Kahn 算法拓扑调度、死锁检测机制、React Flow 性能优化规范及双模存储架构。',
     embedding_provider: 'local',
     embedding_model: 'deterministic',
     embedding_dimension: 64,
     document_count: 1,
-    total_chunks: 3,
+    total_chunks: 5,
     created_at: Date.now() - 86400000 * 2,
     updated_at: Date.now() - 86400000,
   };
@@ -121,11 +142,11 @@ function getSeedData() {
     kb_id: SEED_KB_ID,
     name: 'patchcat-architecture.md',
     file_extension: 'md',
-    file_size: 1024,
-    char_count: 512,
-    chunk_count: 3,
+    file_size: 3840,
+    char_count: 1860,
+    chunk_count: 5,
     status: 'completed',
-    chunk_size: 300,
+    chunk_size: 500,
     chunk_overlap: 50,
     created_at: Date.now() - 86400000 * 2,
   };
@@ -137,9 +158,9 @@ function getSeedData() {
       doc_id: SEED_DOC_ID,
       position: 1,
       content:
-        'PatchCat is an industrial-grade AI prompt orchestrator featuring Kahn topological scheduling and React Flow 12 visual canvas.',
-      token_count: 38,
-      hit_count: 15,
+        '【第1章 核心调度算法与拓扑排序】：\nPatchCat 核心图调度引擎采用经典 Kahn 拓扑排序算法（Kahn\'s Algorithm）管理有向无环图（DAG）的执行流程。\n工作流启动时，调度引擎首先静态遍历图中的全部节点（Nodes）与边（Edges），构建出全局节点的入度映射表（In-Degree Map）。\n随后，引擎将所有入度为 0 的起始节点（如 Input 入参节点、Knowledge 知识检索等初始数据源）推进并发执行队列。\n在每个节点执行成功的回调中，调度器原子化移除该节点的所有出边，并对应递减其所有下游节点的入度计数；一旦下游节点的入度归零，即判定该节点所有前置依赖已就绪，立即将其投递至调度就绪队列，实现完全事件驱动的高性能拓扑排序调度。',
+      token_count: 128,
+      hit_count: 24,
       is_active: true,
       created_at: Date.now() - 86400000 * 2,
     },
@@ -149,9 +170,9 @@ function getSeedData() {
       doc_id: SEED_DOC_ID,
       position: 2,
       content:
-        'Dual-Mode Storage Architecture: Supports browser LocalStorage for client-side zero-key operation and FastAPI backend for persistent team collaboration.',
-      token_count: 42,
-      hit_count: 9,
+        '【第2章 环路死锁实时检测与防御机制】：\n为了防止团队配置工作流时由于错误连线导致死循环死锁（Cycle Deadlock），PatchCat 在预检（Pre-flight）与运行时实施了双重阻断：\n1. Kahn 算法收敛性判定：当调度就绪队列为空时，引擎比对“已成功访问的节点总数”与“画布节点总数”。若二者不相等，在数学图论上严格证明图谱中存在闭合有向环；\n2. 环路节点精准定位：系统提取未完成收敛的所有节点集合（cycleNodes），准确定位构成循环的闭合回路；\n3. 画布联动告警：引擎在触发执行前立即拦截请求，对涉环节点标红高亮并抛出 NODE_ERROR 状态提示，彻底阻断死循环对浏览器主线程或服务器计算资源的无谓耗尽。',
+      token_count: 142,
+      hit_count: 31,
       is_active: true,
       created_at: Date.now() - 86400000 * 2,
     },
@@ -161,9 +182,33 @@ function getSeedData() {
       doc_id: SEED_DOC_ID,
       position: 3,
       content:
-        'Knowledge Retrieval Node: Retrieves top-K semantic chunks from private knowledge base collections and feeds citations to downstream LLM prompt contexts.',
-      token_count: 46,
-      hit_count: 21,
+        '【第3章 异步分层并发与数据流穿透】：\nPatchCat 调度器将 DAG 结构自动划分为若干相互独立的拓扑分层（Topological Layers）。\n同一层级中互不依赖的多分支节点（例如平行的多模型盲测 LLM 节点或多源知识检索节点）由 Promise.all 真正并发调度，执行总耗时取决于最慢单节点的 max(T_i)，而非串行耗时的累加 sum(T_i)。\n在数据传递层面，系统内置安全的变量解析器（Variable Resolver），支持 {{nodeId.fieldName}} 表达式深度递归穿透，并全面实施原型污染防御（严格过滤 __proto__ 与 constructor 属性）。',
+      token_count: 115,
+      hit_count: 16,
+      is_active: true,
+      created_at: Date.now() - 86400000 * 2,
+    },
+    {
+      id: 'chunk_arch_04',
+      kb_id: SEED_KB_ID,
+      doc_id: SEED_DOC_ID,
+      position: 4,
+      content:
+        '【第4章 画布大批量节点拖拽性能优化与渲染防护】：\n针对 100+ 节点大型复杂工作流拖拽易卡顿、掉帧的工程痛点，PatchCat 基于 React Flow 12 与 Zustand 实现精细化状态切片（Fine-Grained State Slicing）：\n1. 单一节点局部重绘：每个节点组件仅订阅自身的位置、数据和执行状态切片，拖拽单个节点不会引发全局整画布的脏重绘；\n2. 视口裁剪（Viewport Culling）：视口外部不可见的复杂节点不参与高开销 DOM 树计算；\n3. 事件调度节流：对高频鼠标移动与连线吸附事件实施微任务节流，保障百级节点画布拖拽在各类显示设备上稳定维持 60 FPS 丝滑帧率。',
+      token_count: 122,
+      hit_count: 19,
+      is_active: true,
+      created_at: Date.now() - 86400000 * 2,
+    },
+    {
+      id: 'chunk_arch_05',
+      kb_id: SEED_KB_ID,
+      doc_id: SEED_DOC_ID,
+      position: 5,
+      content:
+        '【第5章 双模存储与 Web Worker 沙箱安全隔离】：\n1. 零门槛双模存储：系统默认采用浏览器纯本地 LocalStorage 存储（Local-First），无需配置服务端或外部数据库即可完整运行；需要团队协作时可平滑切换为 FastAPI + SQLite/PostgreSQL 服务端模式；\n2. Worker 沙箱与看门狗：代码执行节点（Code Node）在主线程外的独立 Web Worker 沙箱中运行，屏蔽 localStorage、cookies 及网络外联能力以防凭据失窃；同时配置 5 秒看门狗定时器，任何 while(true) 等死循环代码将在 5000ms 被强制销毁并优雅报错。',
+      token_count: 130,
+      hit_count: 14,
       is_active: true,
       created_at: Date.now() - 86400000 * 2,
     },
@@ -178,22 +223,30 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
   private memChunks: DocumentChunkItem[] | null = null;
 
   private getStoredKBs(): KnowledgeBaseSummary[] {
+    const { seedKb } = getSeedData();
     if (typeof localStorage === 'undefined') {
       if (!this.memKBs) {
-        this.memKBs = [getSeedData().seedKb];
+        this.memKBs = [seedKb];
       }
       return this.memKBs;
     }
     try {
       const raw = localStorage.getItem(STORAGE_KEY_KBS);
       if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        const parsed: KnowledgeBaseSummary[] = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const archKb = parsed.find((k) => k.id === SEED_KB_ID);
+          if (archKb && archKb.total_chunks < seedKb.total_chunks) {
+            archKb.total_chunks = seedKb.total_chunks;
+            archKb.description = seedKb.description;
+            this.setStoredKBs(parsed);
+          }
+          return parsed;
+        }
       }
     } catch (e) {
       console.warn('[LocalKnowledgeAdapter] Failed to parse knowledge bases:', e);
     }
-    const { seedKb } = getSeedData();
     this.setStoredKBs([seedKb]);
     return [seedKb];
   }
@@ -207,22 +260,30 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
   }
 
   private getStoredDocs(): DocumentItem[] {
+    const { seedDoc } = getSeedData();
     if (typeof localStorage === 'undefined') {
       if (!this.memDocs) {
-        this.memDocs = [getSeedData().seedDoc];
+        this.memDocs = [seedDoc];
       }
       return this.memDocs;
     }
     try {
       const raw = localStorage.getItem(STORAGE_KEY_DOCS);
       if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        const parsed: DocumentItem[] = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const archDoc = parsed.find((d) => d.id === SEED_DOC_ID);
+          if (archDoc && archDoc.chunk_count < seedDoc.chunk_count) {
+            archDoc.chunk_count = seedDoc.chunk_count;
+            archDoc.char_count = seedDoc.char_count;
+            this.setStoredDocs(parsed);
+          }
+          return parsed;
+        }
       }
     } catch (e) {
       console.warn('[LocalKnowledgeAdapter] Failed to parse documents:', e);
     }
-    const { seedDoc } = getSeedData();
     this.setStoredDocs([seedDoc]);
     return [seedDoc];
   }
@@ -236,22 +297,35 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
   }
 
   private getStoredChunks(): DocumentChunkItem[] {
+    const { seedChunks } = getSeedData();
     if (typeof localStorage === 'undefined') {
       if (!this.memChunks) {
-        this.memChunks = [...getSeedData().seedChunks];
+        this.memChunks = [...seedChunks];
       }
       return this.memChunks;
     }
     try {
       const raw = localStorage.getItem(STORAGE_KEY_CHUNKS);
       if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        const parsed: DocumentChunkItem[] = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const arch01 = parsed.find((c) => c.id === 'chunk_arch_01');
+          if (
+            !arch01 ||
+            arch01.content.length < 200 ||
+            parsed.filter((c) => c.kb_id === SEED_KB_ID).length < seedChunks.length
+          ) {
+            const nonArchChunks = parsed.filter((c) => c.kb_id !== SEED_KB_ID);
+            const upgraded = [...seedChunks, ...nonArchChunks];
+            this.setStoredChunks(upgraded);
+            return upgraded;
+          }
+          return parsed;
+        }
       }
     } catch (e) {
       console.warn('[LocalKnowledgeAdapter] Failed to parse chunks:', e);
     }
-    const { seedChunks } = getSeedData();
     this.setStoredChunks(seedChunks);
     return seedChunks;
   }
@@ -516,6 +590,111 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       chunks,
     };
   }
+
+  async retrieve(
+    kbId: string,
+    query: string,
+    topK = 3,
+    scoreThreshold = 0.0
+  ): Promise<KnowledgeRetrievalResult> {
+    const docs = this.getStoredDocs().filter((d) => d.kb_id === kbId);
+    const docMap = new Map<string, string>();
+    docs.forEach((d) => docMap.set(d.id, d.name));
+
+    const chunks = this.getStoredChunks().filter(
+      (c) => c.kb_id === kbId && c.is_active !== false
+    );
+
+    if (chunks.length === 0) {
+      return { context: '', chunks: [] };
+    }
+
+    const q = (query || '').toLowerCase().trim();
+    const terms = new Set<string>();
+    const engMatches = q.match(/[a-z0-9_-]+/g) || [];
+    engMatches.forEach((w) => {
+      if (w.length >= 2) terms.add(w);
+    });
+
+    const chineseChars = q.match(/[\u4e00-\u9fa5]/g) || [];
+    const chineseWords = q.match(/[\u4e00-\u9fa5]{2,4}/g) || [];
+    chineseWords.forEach((w) => terms.add(w));
+
+    const keyVocabulary = [
+      '拓扑', '算法', '死锁', '死循环', 'kahn', 'dag', '调度',
+      '并发', 'promise', '性能', '卡顿', 'react flow', '拖拽',
+      '优化', '沙箱', 'worker', '看门狗', '存储', '双模', '白皮书',
+      '重绘', '切片', '架构', '入度', '环路'
+    ];
+    keyVocabulary.forEach((kv) => {
+      if (q.includes(kv)) terms.add(kv);
+    });
+
+    const scored = chunks.map((chunk) => {
+      const contentLower = chunk.content.toLowerCase();
+      let termMatches = 0;
+
+      terms.forEach((term) => {
+        if (contentLower.includes(term)) {
+          termMatches++;
+        }
+      });
+
+      let charOverlapCount = 0;
+      chineseChars.forEach((ch) => {
+        if (contentLower.includes(ch)) charOverlapCount++;
+      });
+      const charOverlapRatio = chineseChars.length > 0 ? charOverlapCount / chineseChars.length : 0;
+
+      let similarity = 0.35;
+      if (terms.size > 0) {
+        const termRatio = termMatches / Math.max(1, terms.size);
+        similarity = Math.min(0.96, 0.45 + termRatio * 0.35 + charOverlapRatio * 0.16);
+      } else {
+        similarity = 0.75;
+      }
+
+      return {
+        chunk,
+        similarity: parseFloat(similarity.toFixed(2)),
+      };
+    });
+
+    const filtered = scored.filter((item) => item.similarity >= scoreThreshold);
+    filtered.sort((a, b) => b.similarity - a.similarity);
+    const selected = filtered.slice(0, topK);
+    const finalSelection = selected.length > 0 ? selected : scored.slice(0, Math.min(2, topK));
+
+    // Increment hit_count for recalled chunks
+    const allStoredChunks = this.getStoredChunks();
+    const recalledIds = new Set(finalSelection.map((s) => s.chunk.id));
+    allStoredChunks.forEach((c) => {
+      if (recalledIds.has(c.id)) {
+        c.hit_count = (c.hit_count || 0) + 1;
+      }
+    });
+    this.setStoredChunks(allStoredChunks);
+
+    const formattedChunks = finalSelection.map((s) => ({
+      id: s.chunk.id,
+      doc_id: s.chunk.doc_id,
+      doc_name: docMap.get(s.chunk.doc_id) || 'document.md',
+      position: s.chunk.position,
+      content: s.chunk.content,
+      similarity: s.similarity,
+      token_count: s.chunk.token_count,
+    }));
+
+    const contextParts = formattedChunks.map(
+      (c) =>
+        `### [Document: ${c.doc_name} (Position #${c.position} - Similarity: ${c.similarity.toFixed(2)})]\n${c.content}`
+    );
+
+    return {
+      context: contextParts.join('\n\n'),
+      chunks: formattedChunks,
+    };
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -670,6 +849,27 @@ export class ServerKnowledgeAdapter implements IKnowledgeAdapter {
     });
     if (!res.ok) {
       throw new Error(`Failed to preview chunks: ${res.status}`);
+    }
+    return res.json();
+  }
+
+  async retrieve(
+    kbId: string,
+    query: string,
+    topK = 3,
+    scoreThreshold = 0.0
+  ): Promise<KnowledgeRetrievalResult> {
+    const res = await fetch(`${this.baseUrl}/api/v1/knowledge-bases/${kbId}/retrieve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: query || 'knowledge query',
+        top_k: topK,
+        score_threshold: scoreThreshold,
+      }),
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to retrieve knowledge from server: ${res.status}`);
     }
     return res.json();
   }
