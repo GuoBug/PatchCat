@@ -1,0 +1,211 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "id": "e8a1d492-7b2c-4ef1-9a1d-8f3c4001a011",
+    "name": "知识库增强方案生成与合规质检流",
+    "description": "工业级双阶段 Agentic RAG：私有知识库切片召回 ➔ 定制方案初稿生成 ➔ 知识库基准事实溯源与反思质检 ➔ 专家终审定稿。",
+    "author": "PatchCat Team",
+    "tags": [
+      "AgenticRAG",
+      "KnowledgeBase",
+      "Compliance",
+      "MultiAgent",
+      "Audit"
+    ],
+    "createdAt": "2026-09-08T00:00:00Z",
+    "updatedAt": "2026-09-08T00:00:00Z"
+  },
+  "viewport": {
+    "x": 60,
+    "y": 140,
+    "zoom": 0.75
+  },
+  "nodes": [
+    {
+      "id": "node_input",
+      "type": "input",
+      "position": {
+        "x": 50,
+        "y": 260
+      },
+      "data": {
+        "label": "业务诉求入参",
+        "description": "接收企业客户实际技术诉求与合规要求",
+        "inputs": {
+          "client_requirement": "我们企业在生产环境中使用微服务编排工作流，最近遇到了由于团队成员配置错误导致图调度陷入环路死锁的问题。请根据 PatchCat 核心架构规范，详细说明 PatchCat 是如何检测有向无环图（DAG）死锁的？它采用的算法原理是什么？另外针对大批量节点拖拽性能卡顿，系统有哪些优化设计？",
+          "industry_sector": "金融级智能决策中台",
+          "compliance_level": "最高级严格事实核验 (Zero-Hallucination)"
+        }
+      }
+    },
+    {
+      "id": "node_knowledge",
+      "type": "knowledge",
+      "position": {
+        "x": 380,
+        "y": 260
+      },
+      "data": {
+        "label": "架构白皮书语义检索",
+        "description": "从 PatchCat 核心知识库中精准检索算法与性能切片",
+        "config": {
+          "knowledgeBaseId": "kb_patchcat_arch",
+          "knowledgeBaseName": "PatchCat 架构白皮书",
+          "query": "{{node_input.client_requirement}}",
+          "topK": 4,
+          "scoreThreshold": 0.25
+        },
+        "inputs": {
+          "query": "{{node_input.client_requirement}}"
+        }
+      }
+    },
+    {
+      "id": "node_prompt_generator",
+      "type": "prompt",
+      "position": {
+        "x": 720,
+        "y": 160
+      },
+      "data": {
+        "label": "方案初稿组装提示词",
+        "description": "注入召回材料与客户诉求，指示生成第一版架构方案",
+        "inputs": {
+          "template": "你是一名高级解决方案架构师。请针对客户业务诉求，结合知识库检索到的技术资料，为客户定制一份【系统架构可靠性与性能优化方案初稿】。\n\n【知识库检索切片参考资料】：\n{{node_knowledge.result}}\n\n【行业领域】：{{node_input.industry_sector}}\n【合规级别】：{{node_input.compliance_level}}\n【客户业务诉求】：\n{{node_input.client_requirement}}\n\n【撰写要求】：\n1. 明确说明死锁检测的核心算法与机制，列举关键步骤；\n2. 阐述画布大批量节点拖拽卡顿的优化原则与前端渲染防护；\n3. 方案结构专业严谨，包含【架构原理剖析】、【落地实施建议】与【性能指标保障】。"
+        }
+      }
+    },
+    {
+      "id": "node_llm_generator",
+      "type": "llm",
+      "position": {
+        "x": 1060,
+        "y": 160
+      },
+      "data": {
+        "label": "方案初稿生成器 (Generator)",
+        "description": "基于检索到的知识库切片生成技术方案初稿",
+        "config": {
+          "model": "deepseek-chat",
+          "temperature": 0.3
+        },
+        "inputs": {
+          "prompt": "{{node_prompt_generator.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "node_prompt_auditor",
+      "type": "prompt",
+      "position": {
+        "x": 1400,
+        "y": 360
+      },
+      "data": {
+        "label": "合规与幻觉审计提示词",
+        "description": "同时接收原始知识库切片与初稿方案，进行严格的事实对照",
+        "inputs": {
+          "template": "你是一名资深首席架构师与 AI 事实核查委员会（Zero-Hallucination Auditor）专家。\n请对解决方案初稿进行严格的【知识库事实溯源与反思质检（Fact-Checking & Compliance Audit）】。\n\n【知识库真实原始切片资料】：\n{{node_knowledge.result}}\n\n【解决方案初稿】：\n{{node_llm_generator.response}}\n\n【审计维度与输出规范】：\n请输出结构化审核报告：\n1. 【事实一致性评分】：0~100分（依据是否精准契合白皮书真实算法，如 Kahn 拓扑排序、分层调度等）；\n2. 【幻觉风险排查】：指出初稿中是否有未在知识库中得到证实的夸大描述或捏造特性；\n3. 【引文溯源校验】：确认知识库切片引用是否对应准确；\n4. 【专家终审评级】：(Pass / Conditional Pass / Reject)；\n5. 【终审定稿批注与优化建议】：给出可直接交付给客户的专家修正与结论摘要。"
+        }
+      }
+    },
+    {
+      "id": "node_llm_auditor",
+      "type": "llm",
+      "position": {
+        "x": 1740,
+        "y": 360
+      },
+      "data": {
+        "label": "事实核查与合规质检官 (Auditor)",
+        "description": "基于知识库原文严格审核初稿，产出质检评分与专家定稿批注",
+        "config": {
+          "model": "deepseek-chat",
+          "temperature": 0.1
+        },
+        "inputs": {
+          "prompt": "{{node_prompt_auditor.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "node_output",
+      "type": "output",
+      "position": {
+        "x": 2080,
+        "y": 260
+      },
+      "data": {
+        "label": "终审交付报告",
+        "description": "汇总初稿方案、质检审计报告与知识库原始切片溯源",
+        "config": {
+          "format": "markdown"
+        },
+        "inputs": {
+          "solution_draft": "{{node_llm_generator.response}}",
+          "audit_report": "{{node_llm_auditor.response}}",
+          "knowledge_sources": "{{node_knowledge.result}}"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_in_to_knowledge",
+      "source": "node_input",
+      "target": "node_knowledge",
+      "animated": true
+    },
+    {
+      "id": "edge_in_to_gen_prompt",
+      "source": "node_input",
+      "target": "node_prompt_generator"
+    },
+    {
+      "id": "edge_knowledge_to_gen_prompt",
+      "source": "node_knowledge",
+      "target": "node_prompt_generator",
+      "animated": true
+    },
+    {
+      "id": "edge_gen_prompt_to_llm",
+      "source": "node_prompt_generator",
+      "target": "node_llm_generator",
+      "animated": true
+    },
+    {
+      "id": "edge_knowledge_to_audit_prompt",
+      "source": "node_knowledge",
+      "target": "node_prompt_auditor",
+      "animated": true
+    },
+    {
+      "id": "edge_llm_to_audit_prompt",
+      "source": "node_llm_generator",
+      "target": "node_prompt_auditor",
+      "animated": true
+    },
+    {
+      "id": "edge_audit_prompt_to_auditor",
+      "source": "node_prompt_auditor",
+      "target": "node_llm_auditor",
+      "animated": true
+    },
+    {
+      "id": "edge_llm_gen_to_output",
+      "source": "node_llm_generator",
+      "target": "node_output"
+    },
+    {
+      "id": "edge_llm_auditor_to_output",
+      "source": "node_llm_auditor",
+      "target": "node_output",
+      "animated": true
+    },
+    {
+      "id": "edge_knowledge_to_output",
+      "source": "node_knowledge",
+      "target": "node_output"
+    }
+  ]
+}

@@ -171,4 +171,33 @@ describe('Knowledge Node & RAG Pipeline Execution', () => {
     assert.ok(finalResult.answer);
     assert.ok(finalResult.reference_context.includes('Similarity'));
   });
+
+  it('should validate and execute the new Agentic RAG preset (rag-agentic-auditor) end-to-end', async () => {
+    const { PRESETS_DATA } = await import('../src/presets/index.ts');
+    const zhPreset = PRESETS_DATA.zh['rag-agentic-auditor'];
+    assert.ok(zhPreset, 'Chinese Agentic RAG preset must exist');
+    assert.equal(zhPreset.data.nodes.length, 7, 'Agentic RAG preset must have 7 nodes');
+
+    const enPreset = PRESETS_DATA.en['rag-agentic-auditor'];
+    assert.ok(enPreset, 'English Agentic RAG preset must exist');
+    assert.equal(enPreset.data.nodes.length, 7, 'English Agentic RAG preset must have 7 nodes');
+
+    // Execute the preset graph with skipLLM mode
+    const events: unknown[] = [];
+    for await (const event of engine.executeWorkflow(zhPreset.data, { skipLLM: true })) {
+      events.push(event);
+    }
+
+    const outputFinish = events.find(
+      (e: any) => (e.type === 'NODE_COMPLETE' || e.type === 'NODE_ERROR') && e.payload?.nodeId === 'node_output',
+    ) as any;
+
+    assert.ok(outputFinish, 'Agentic RAG preset output node must complete');
+    assert.equal(outputFinish.type, 'NODE_COMPLETE', 'Must complete successfully without error');
+    assert.ok(outputFinish.payload.output.finalResult, 'Output node must have finalResult');
+    const finalResult = outputFinish.payload.output.finalResult as any;
+    assert.ok(finalResult.solution_draft);
+    assert.ok(finalResult.audit_report);
+    assert.ok(finalResult.knowledge_sources.includes('Similarity'));
+  });
 });

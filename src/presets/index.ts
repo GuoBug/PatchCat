@@ -2,11 +2,13 @@ import customerSupportEn from './en/customer-support-routing.json' with { type: 
 import reportCriticEn from './en/report-generation-critic.json' with { type: 'json' };
 import modelArenaEn from './en/model-arena-eval.json' with { type: 'json' };
 import ragKnowledgeQaEn from './en/rag-knowledge-qa.json' with { type: 'json' };
+import ragAgenticAuditorEn from './en/rag-agentic-auditor.json' with { type: 'json' };
 
 import customerSupportZh from './zh/customer-support-routing.json' with { type: 'json' };
 import reportCriticZh from './zh/report-generation-critic.json' with { type: 'json' };
 import modelArenaZh from './zh/model-arena-eval.json' with { type: 'json' };
 import ragKnowledgeQaZh from './zh/rag-knowledge-qa.json' with { type: 'json' };
+import ragAgenticAuditorZh from './zh/rag-agentic-auditor.json' with { type: 'json' };
 
 import type { WorkflowGraph } from '../engine/types.ts';
 import type { Language } from '../i18n/translations.ts';
@@ -44,6 +46,12 @@ export const PRESETS_DATA: Record<Language, Record<string, PresetItem>> = {
       desc: 'Knowledge Base Retrieval & Grounded Answer',
       data: ragKnowledgeQaEn as unknown as WorkflowGraph,
     },
+    'rag-agentic-auditor': {
+      key: 'rag-agentic-auditor',
+      name: 'Enterprise RAG: Proposal & Compliance Auditor',
+      desc: 'Dual-Stage Agentic RAG with Grounded Fact-Checking',
+      data: ragAgenticAuditorEn as unknown as WorkflowGraph,
+    },
   },
   zh: {
     'customer-support': {
@@ -70,6 +78,12 @@ export const PRESETS_DATA: Record<Language, Record<string, PresetItem>> = {
       desc: '私有文档向量语义检索与引文回答',
       data: ragKnowledgeQaZh as unknown as WorkflowGraph,
     },
+    'rag-agentic-auditor': {
+      key: 'rag-agentic-auditor',
+      name: '知识库增强方案生成与合规质检流',
+      desc: '切片召回 ➔ 方案生成 ➔ 知识库基准质检 ➔ 终审定稿',
+      data: ragAgenticAuditorZh as unknown as WorkflowGraph,
+    },
   },
 };
 
@@ -78,8 +92,10 @@ export {
   reportCriticEn,
   modelArenaEn,
   ragKnowledgeQaEn,
+  ragAgenticAuditorEn,
   customerSupportZh,
   reportCriticZh,
   modelArenaZh,
   ragKnowledgeQaZh,
+  ragAgenticAuditorZh,
 };

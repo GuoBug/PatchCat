@@ -1,0 +1,211 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "id": "e8a1d492-7b2c-4ef1-9a1d-8f3c4001a011",
+    "name": "Enterprise RAG: Proposal Generation & Compliance Auditor",
+    "description": "Industrial-grade dual-stage Agentic RAG: Private KB retrieval ➔ Grounded proposal draft ➔ Fact-checking & hallucination audit ➔ Audited deliverable.",
+    "author": "PatchCat Team",
+    "tags": [
+      "AgenticRAG",
+      "KnowledgeBase",
+      "Compliance",
+      "MultiAgent",
+      "Audit"
+    ],
+    "createdAt": "2026-09-08T00:00:00Z",
+    "updatedAt": "2026-09-08T00:00:00Z"
+  },
+  "viewport": {
+    "x": 60,
+    "y": 140,
+    "zoom": 0.75
+  },
+  "nodes": [
+    {
+      "id": "node_input",
+      "type": "input",
+      "position": {
+        "x": 50,
+        "y": 260
+      },
+      "data": {
+        "label": "Client Requirement Input",
+        "description": "Receives enterprise technical requirement and compliance constraints",
+        "inputs": {
+          "client_requirement": "Our microservice workflow cluster recently suffered from deadlock caused by cyclical graph configurations. Based on PatchCat core architecture, explain how PatchCat detects DAG cycle deadlocks and its algorithmic principle. Furthermore, what optimizations are implemented to prevent UI lag with large node sets?",
+          "industry_sector": "FinTech Intelligent Decision Platform",
+          "compliance_level": "Strict Fact Grounding (Zero-Hallucination)"
+        }
+      }
+    },
+    {
+      "id": "node_knowledge",
+      "type": "knowledge",
+      "position": {
+        "x": 380,
+        "y": 260
+      },
+      "data": {
+        "label": "Architecture Whitepaper Retrieval",
+        "description": "Retrieves algorithm and performance specifications from PatchCat knowledge base",
+        "config": {
+          "knowledgeBaseId": "kb_patchcat_arch",
+          "knowledgeBaseName": "PatchCat Architecture Whitepaper",
+          "query": "{{node_input.client_requirement}}",
+          "topK": 4,
+          "scoreThreshold": 0.25
+        },
+        "inputs": {
+          "query": "{{node_input.client_requirement}}"
+        }
+      }
+    },
+    {
+      "id": "node_prompt_generator",
+      "type": "prompt",
+      "position": {
+        "x": 720,
+        "y": 160
+      },
+      "data": {
+        "label": "Proposal Generator Prompt",
+        "description": "Injects retrieved knowledge citations to draft technical architecture proposal",
+        "inputs": {
+          "template": "You are a Principal Solutions Architect. Tailor a comprehensive [System Architecture Reliability & Performance Proposal Draft] based on the client requirements and retrieved knowledge base materials.\n\n[Retrieved Knowledge Base References]:\n{{node_knowledge.result}}\n\n[Industry Sector]: {{node_input.industry_sector}}\n[Compliance Level]: {{node_input.compliance_level}}\n[Client Requirement]:\n{{node_input.client_requirement}}\n\n[Requirements]:\n1. Explain cycle deadlock detection algorithms and key steps clearly;\n2. Detail rendering optimization principles for large-scale node manipulation on canvas;\n3. Maintain professional structure: [Architectural Principles], [Implementation Recommendations], and [Performance Guarantees]."
+        }
+      }
+    },
+    {
+      "id": "node_llm_generator",
+      "type": "llm",
+      "position": {
+        "x": 1060,
+        "y": 160
+      },
+      "data": {
+        "label": "Proposal Generator (LLM)",
+        "description": "Generates initial architectural proposal grounded in retrieved chunks",
+        "config": {
+          "model": "deepseek-chat",
+          "temperature": 0.3
+        },
+        "inputs": {
+          "prompt": "{{node_prompt_generator.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "node_prompt_auditor",
+      "type": "prompt",
+      "position": {
+        "x": 1400,
+        "y": 360
+      },
+      "data": {
+        "label": "Compliance & Hallucination Audit Prompt",
+        "description": "Performs dual-input factual verification against raw knowledge chunks",
+        "inputs": {
+          "template": "You are a Distinguished Chief Architect serving as a Zero-Hallucination Compliance Auditor.\nPerform a strict [Fact-Checking & Compliance Audit] on the proposal draft against the raw knowledge base citations.\n\n[Raw Ground-Truth Knowledge Base References]:\n{{node_knowledge.result}}\n\n[Proposal Draft to Audit]:\n{{node_llm_generator.response}}\n\n[Audit Dimensions & Output Format]:\nProvide a structured evaluation report:\n1. [Factual Consistency Score]: 0-100 (based on fidelity to whitepaper algorithms e.g. Kahn topological sort, layered execution);\n2. [Hallucination Risk Screening]: Pinpoint any unverified claims or fabricated features;\n3. [Citation Verification]: Verify accuracy of reference citations;\n4. [Executive Verdict]: (Pass / Conditional Pass / Reject);\n5. [Final Audited Revisions]: Provide verified recommendations and executive summary ready for client delivery."
+        }
+      }
+    },
+    {
+      "id": "node_llm_auditor",
+      "type": "llm",
+      "position": {
+        "x": 1740,
+        "y": 360
+      },
+      "data": {
+        "label": "Compliance & Fact Auditor (LLM)",
+        "description": "Audits proposal against knowledge ground truth with scoring and feedback",
+        "config": {
+          "model": "deepseek-chat",
+          "temperature": 0.1
+        },
+        "inputs": {
+          "prompt": "{{node_prompt_auditor.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "node_output",
+      "type": "output",
+      "position": {
+        "x": 2080,
+        "y": 260
+      },
+      "data": {
+        "label": "Final Audited Proposal Report",
+        "description": "Consolidates proposal draft, compliance audit report, and citation references",
+        "config": {
+          "format": "markdown"
+        },
+        "inputs": {
+          "solution_draft": "{{node_llm_generator.response}}",
+          "audit_report": "{{node_llm_auditor.response}}",
+          "knowledge_sources": "{{node_knowledge.result}}"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_in_to_knowledge",
+      "source": "node_input",
+      "target": "node_knowledge",
+      "animated": true
+    },
+    {
+      "id": "edge_in_to_gen_prompt",
+      "source": "node_input",
+      "target": "node_prompt_generator"
+    },
+    {
+      "id": "edge_knowledge_to_gen_prompt",
+      "source": "node_knowledge",
+      "target": "node_prompt_generator",
+      "animated": true
+    },
+    {
+      "id": "edge_gen_prompt_to_llm",
+      "source": "node_prompt_generator",
+      "target": "node_llm_generator",
+      "animated": true
+    },
+    {
+      "id": "edge_knowledge_to_audit_prompt",
+      "source": "node_knowledge",
+      "target": "node_prompt_auditor",
+      "animated": true
+    },
+    {
+      "id": "edge_llm_to_audit_prompt",
+      "source": "node_llm_generator",
+      "target": "node_prompt_auditor",
+      "animated": true
+    },
+    {
+      "id": "edge_audit_prompt_to_auditor",
+      "source": "node_prompt_auditor",
+      "target": "node_llm_auditor",
+      "animated": true
+    },
+    {
+      "id": "edge_llm_gen_to_output",
+      "source": "node_llm_generator",
+      "target": "node_output"
+    },
+    {
+      "id": "edge_llm_auditor_to_output",
+      "source": "node_llm_auditor",
+      "target": "node_output",
+      "animated": true
+    },
+    {
+      "id": "edge_knowledge_to_output",
+      "source": "node_knowledge",
+      "target": "node_output"
+    }
+  ]
+}

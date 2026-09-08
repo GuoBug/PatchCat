@@ -176,6 +176,36 @@ function loadInitialWorkflows(lang: 'en' | 'zh' = 'en'): SavedWorkflow[] {
     });
   }
 
+  const ragQa = presets['rag-qa'];
+  if (ragQa) {
+    initialList.push({
+      id: 'wf-rag-qa',
+      name: ragQa.name,
+      folderId: 'presets',
+      nodes: ragQa.data.nodes,
+      edges: ragQa.data.edges,
+      globalInputs: (ragQa.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs || {},
+      createdAt: now - 86400000 * 5,
+      updatedAt: now - 86400000 * 5,
+      isPreset: true,
+    });
+  }
+
+  const ragAuditor = presets['rag-agentic-auditor'];
+  if (ragAuditor) {
+    initialList.push({
+      id: 'wf-rag-agentic-auditor',
+      name: ragAuditor.name,
+      folderId: 'presets',
+      nodes: ragAuditor.data.nodes,
+      edges: ragAuditor.data.edges,
+      globalInputs: (ragAuditor.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs || {},
+      createdAt: now - 86400000 * 6,
+      updatedAt: now - 86400000 * 6,
+      isPreset: true,
+    });
+  }
+
   return initialList;
 }
 

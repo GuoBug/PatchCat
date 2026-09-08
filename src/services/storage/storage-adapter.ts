@@ -87,6 +87,34 @@ export class LocalStorageAdapter implements IStorageAdapter {
       });
     }
 
+    if (presets['rag-qa']) {
+      list.push({
+        id: 'wf-rag-qa',
+        name: presets['rag-qa'].name,
+        folderId: 'presets',
+        nodes: presets['rag-qa'].data.nodes,
+        edges: presets['rag-qa'].data.edges,
+        globalInputs: {},
+        createdAt: now - 86400000 * 5,
+        updatedAt: now - 86400000 * 5,
+        isPreset: true,
+      });
+    }
+
+    if (presets['rag-agentic-auditor']) {
+      list.push({
+        id: 'wf-rag-agentic-auditor',
+        name: presets['rag-agentic-auditor'].name,
+        folderId: 'presets',
+        nodes: presets['rag-agentic-auditor'].data.nodes,
+        edges: presets['rag-agentic-auditor'].data.edges,
+        globalInputs: {},
+        createdAt: now - 86400000 * 6,
+        updatedAt: now - 86400000 * 6,
+        isPreset: true,
+      });
+    }
+
     return list;
   }
 
