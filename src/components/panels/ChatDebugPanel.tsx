@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import { BrowserWorkflowEngine } from '../../engine/browser-engine.ts';
+import { useTranslation } from '../../i18n/useTranslation.ts';
 import { nanoid } from 'nanoid';
 
 export interface ChatNodeTrace {
@@ -49,6 +50,7 @@ interface ChatDebugPanelProps {
 }
 
 export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
   const nodes = useWorkflowStore((s) => s.nodes);
   const edges = useWorkflowStore((s) => s.edges);
 
@@ -231,7 +233,7 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
         id: assistantMsgId,
         timestamp: Date.now(),
         role: 'assistant',
-        content: assistantContent || (errorMsg ? `Workflow Execution Error: ${errorMsg}` : 'Completed with no textual output.'),
+        content: assistantContent || (errorMsg ? `Workflow Execution Error: ${errorMsg}` : t.chatDebug.emptyResponse),
         outputs: finalOutputs,
         durationMs: totalDurationMs,
         error: errorMsg,
@@ -269,13 +271,13 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
           </div>
           <div>
             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-              <span>Chat Debug Panel</span>
+              <span>{t.chatDebug.title}</span>
               <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                 Ctrl+Shift+D
               </span>
             </h3>
             <span className="text-[10px] text-slate-400 block">
-              Interactive DAG pipeline runner
+              {t.chatDebug.subtitle}
             </span>
           </div>
         </div>
@@ -287,7 +289,7 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
                 type="button"
                 onClick={() => handleExportHistory('markdown')}
                 className="p-1.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                title="Export Conversation as Markdown"
+                title={t.chatDebug.exportHistory}
               >
                 <Download className="w-3.5 h-3.5" />
               </button>
@@ -295,7 +297,7 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
                 type="button"
                 onClick={handleClearHistory}
                 className="p-1.5 rounded text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                title="Clear Chat History"
+                title={t.chatDebug.clearHistory}
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -305,7 +307,7 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
             type="button"
             onClick={onClose}
             className="p-1.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            title="Close Panel"
+            title={t.chatDebug.closePanel}
           >
             <X className="w-4 h-4" />
           </button>
@@ -320,10 +322,10 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
               <Sparkles className="w-6 h-6" />
             </div>
             <p className="font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Start Conversation Debugging
+              {t.chatDebug.emptyTitle}
             </p>
             <p className="text-[11px] max-w-[260px] leading-relaxed">
-              Type a prompt below to run your workflow graph and inspect streaming LLM output with per-node execution trace.
+              {t.chatDebug.emptyDesc}
             </p>
           </div>
         )}
@@ -338,13 +340,13 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
             <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400 px-1">
               {msg.role === 'user' ? (
                 <>
-                  <span>You</span>
+                  <span>{t.chatDebug.userRole}</span>
                   <User className="w-3 h-3 text-emerald-500" />
                 </>
               ) : (
                 <>
                   <Bot className="w-3 h-3 text-blue-500" />
-                  <span>Assistant</span>
+                  <span>{t.chatDebug.assistantRole}</span>
                   {msg.durationMs && (
                     <span className="flex items-center gap-0.5 ml-1 text-slate-400">
                       <Clock className="w-2.5 h-2.5" />
@@ -389,7 +391,7 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
                   ) : (
                     <ChevronRight className="w-3 h-3" />
                   )}
-                  <span>Execution Trace ({msg.trace.length} nodes)</span>
+                  <span>{t.chatDebug.executionTrace} ({msg.trace.length} {t.chatDebug.nodesUnit})</span>
                 </button>
 
                 {expandedTraceId === msg.id && (
@@ -436,10 +438,10 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
           <div className="flex flex-col space-y-1.5 items-start">
             <div className="flex items-center gap-1 text-[10px] font-mono text-blue-500 px-1">
               <Loader2 className="w-3 h-3 animate-spin" />
-              <span>Streaming response...</span>
+              <span>{t.chatDebug.streamingResponse}</span>
             </div>
             <div className="p-3 rounded-2xl rounded-tl-xs bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 border border-blue-300 dark:border-sky-500/40 max-w-[90%] text-xs leading-relaxed whitespace-pre-wrap">
-              {activeStreamingText || <span className="text-slate-400 italic">Thinking...</span>}
+              {activeStreamingText || <span className="text-slate-400 italic">{t.chatDebug.thinking}</span>}
               <span className="animate-pulse font-bold text-blue-500"> ▌</span>
             </div>
           </div>
@@ -457,7 +459,7 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
             onChange={(e) => setInputQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={isRunning}
-            placeholder="Type your message... (Enter to send, Shift+Enter for newline)"
+            placeholder={t.chatDebug.inputPlaceholder}
             className="w-full bg-transparent text-xs text-slate-800 dark:text-slate-100 focus:outline-none resize-none leading-relaxed"
           />
 
@@ -472,7 +474,7 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
               className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-medium transition-all shadow-xs cursor-pointer"
             >
               {isRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-              <span>Send</span>
+              <span>{t.chatDebug.send}</span>
             </button>
           </div>
         </div>

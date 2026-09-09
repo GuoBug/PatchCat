@@ -47,33 +47,23 @@
         "label": "Category Router",
         "description": "Evaluate ticket category to route to specialized prompt",
         "config": {
-          "cases": [
+          "conditions": [
             {
               "id": "case_tech",
-              "label": "Technical",
-              "conditions": [
-                {
-                  "variable": "input_ticket.category",
-                  "operator": "equals",
-                  "value": "technical"
-                }
-              ],
-              "logicalOperator": "and"
+              "variable": "{{input_ticket.category}}",
+              "operator": "equals",
+              "value": "technical",
+              "targetHandle": "case_tech"
             },
             {
               "id": "case_billing",
-              "label": "Billing",
-              "conditions": [
-                {
-                  "variable": "input_ticket.category",
-                  "operator": "equals",
-                  "value": "billing"
-                }
-              ],
-              "logicalOperator": "and"
+              "variable": "{{input_ticket.category}}",
+              "operator": "equals",
+              "value": "billing",
+              "targetHandle": "case_billing"
             }
           ],
-          "defaultBranchLabel": "General"
+          "defaultBranch": "default"
         },
         "inputs": {
           "category": "{{input_ticket.category}}"

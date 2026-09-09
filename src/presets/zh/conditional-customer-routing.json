@@ -47,33 +47,23 @@
         "label": "工单分类路由器",
         "description": "根据工单类别动态命中对应分支，跳过无关处理路径",
         "config": {
-          "cases": [
+          "conditions": [
             {
               "id": "case_tech",
-              "label": "技术排障",
-              "conditions": [
-                {
-                  "variable": "input_ticket.category",
-                  "operator": "equals",
-                  "value": "technical"
-                }
-              ],
-              "logicalOperator": "and"
+              "variable": "{{input_ticket.category}}",
+              "operator": "equals",
+              "value": "technical",
+              "targetHandle": "case_tech"
             },
             {
               "id": "case_billing",
-              "label": "账单计费",
-              "conditions": [
-                {
-                  "variable": "input_ticket.category",
-                  "operator": "equals",
-                  "value": "billing"
-                }
-              ],
-              "logicalOperator": "and"
+              "variable": "{{input_ticket.category}}",
+              "operator": "equals",
+              "value": "billing",
+              "targetHandle": "case_billing"
             }
           ],
-          "defaultBranchLabel": "通用咨询"
+          "defaultBranch": "default"
         },
         "inputs": {
           "category": "{{input_ticket.category}}"

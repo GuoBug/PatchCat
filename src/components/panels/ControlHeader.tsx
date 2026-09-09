@@ -482,10 +482,10 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
             <button
               onClick={onOpenPublishApi}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-sky-500/10 dark:hover:bg-sky-500/20 text-blue-600 dark:text-sky-400 border border-blue-200 dark:border-sky-500/30 text-xs font-medium transition-all shadow-xs cursor-pointer"
-              title="Publish Workflow as REST API"
+              title={t.publishApi.title}
             >
               <Share2 className="w-3.5 h-3.5" />
-              <span className="hidden xl:inline">Publish API</span>
+              <span className="hidden xl:inline">{t.header.publishApi}</span>
             </button>
           )}
 
@@ -498,10 +498,10 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
                   ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
                   : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800'
               }`}
-              title="Chat Debug Panel (Ctrl+Shift+D)"
+              title={t.chatDebug.title}
             >
               <MessageSquare className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Chat</span>
+              <span className="hidden sm:inline">{t.header.chatDebug}</span>
             </button>
           )}
 

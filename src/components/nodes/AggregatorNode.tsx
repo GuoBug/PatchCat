@@ -2,28 +2,32 @@ import React, { memo } from 'react';
 import type { NodeProps } from '@xyflow/react';
 import { BaseNode } from './BaseNode';
 import type { WorkflowNode, AggregatorNodeConfig } from '../../engine/types.ts';
+import { useTranslation } from '../../i18n/useTranslation.ts';
 import { GitMerge, Layers, Zap } from 'lucide-react';
 
 export const AggregatorNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, selected }) => {
+  const { language } = useTranslation();
+  const isZh = language === 'zh';
+
   const config = (data.config || {}) as unknown as AggregatorNodeConfig;
   const mode = config.mode || 'first_available';
   const outputKey = config.outputKey || 'result';
 
   const modeDescriptions: Record<string, { label: string; icon: React.ReactNode; desc: string }> = {
     first_available: {
-      label: 'First Available',
+      label: isZh ? '首个有效输出' : 'First Available',
       icon: <Zap className="w-3 h-3 text-amber-500" />,
-      desc: 'Takes the first non-skipped branch output',
+      desc: isZh ? '提取最先执行完毕且未被跳过的分支结果' : 'Takes the first non-skipped branch output',
     },
     merge_all: {
-      label: 'Merge All',
+      label: isZh ? '合并全部输出' : 'Merge All',
       icon: <Layers className="w-3 h-3 text-purple-500" />,
-      desc: 'Combines all active outputs into an object',
+      desc: isZh ? '将所有激活分支产出合并为对象字典' : 'Combines all active outputs into an object',
     },
     wait_all: {
-      label: 'Wait All',
+      label: isZh ? '等待全部就绪' : 'Wait All',
       icon: <GitMerge className="w-3 h-3 text-violet-500" />,
-      desc: 'Waits for all branches (null for skipped)',
+      desc: isZh ? '等待所有分支就绪 (跳过分支置 null)' : 'Waits for all branches (null for skipped)',
     },
   };
 
@@ -39,7 +43,7 @@ export const AggregatorNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, dat
       executionResult={data.executionResult}
       hasLeftHandle={true}
       hasRightHandle={true}
-      leftHandleLabel="in (all)"
+      leftHandleLabel={isZh ? '输入 (多路)' : 'in (all)'}
       rightHandleLabel={outputKey}
     >
       <div className="space-y-2">

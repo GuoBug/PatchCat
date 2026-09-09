@@ -665,7 +665,7 @@ export const PropertyPanel: React.FC = () => {
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                   <GitBranch className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                  <span>Condition Routing Rules ({conditions.length})</span>
+                  <span>{t.propertyPanel.conditionRulesTitle} ({conditions.length})</span>
                 </label>
                 <button
                   type="button"
@@ -673,7 +673,7 @@ export const PropertyPanel: React.FC = () => {
                   className="flex items-center gap-1 text-[10px] font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 px-2 py-1 rounded bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 transition-all cursor-pointer"
                 >
                   <Plus className="w-3 h-3" />
-                  <span>Add Rule</span>
+                  <span>{t.propertyPanel.addRule}</span>
                 </button>
               </div>
 
@@ -686,14 +686,14 @@ export const PropertyPanel: React.FC = () => {
                   >
                     <div className="flex items-center justify-between font-mono text-[10px]">
                       <span className="font-bold text-amber-700 dark:text-amber-300">
-                        RULE #{idx + 1}
+                        {t.propertyPanel.ruleIndex} #{idx + 1}
                       </span>
                       {conditions.length > 1 && (
                         <button
                           type="button"
                           onClick={() => handleDeleteRule(idx)}
                           className="text-slate-400 hover:text-rose-500 p-0.5 rounded cursor-pointer"
-                          title="Delete rule"
+                          title={t.propertyPanel.deleteRule}
                         >
                           <Trash className="w-3 h-3" />
                         </button>
@@ -703,13 +703,13 @@ export const PropertyPanel: React.FC = () => {
                     {/* Variable Reference */}
                     <div className="space-y-1">
                       <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block uppercase">
-                        Variable:
+                        {t.propertyPanel.variableLabel}
                       </label>
                       <input
                         type="text"
                         value={rule.variable || ''}
                         onChange={(e) => handleUpdateRule(idx, { variable: e.target.value })}
-                        placeholder="{{llm_1.response}} or category"
+                        placeholder={t.propertyPanel.variablePlaceholder}
                         className="w-full px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500"
                       />
                     </div>
@@ -718,34 +718,34 @@ export const PropertyPanel: React.FC = () => {
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
                         <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block uppercase">
-                          Operator:
+                          {t.propertyPanel.operatorLabel}
                         </label>
                         <select
                           value={rule.operator || 'equals'}
                           onChange={(e) => handleUpdateRule(idx, { operator: e.target.value })}
                           className="w-full px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500 cursor-pointer"
                         >
-                          <option value="equals">equals (==)</option>
-                          <option value="not_equals">not equals (!=)</option>
-                          <option value="contains">contains</option>
-                          <option value="not_contains">not contains</option>
-                          <option value="greater_than">greater than (&gt;)</option>
-                          <option value="less_than">less than (&lt;)</option>
-                          <option value="is_empty">is empty</option>
-                          <option value="is_not_empty">is not empty</option>
-                          <option value="regex_match">regex match</option>
+                          <option value="equals">{t.propertyPanel.operatorEquals}</option>
+                          <option value="not_equals">{t.propertyPanel.operatorNotEquals}</option>
+                          <option value="contains">{t.propertyPanel.operatorContains}</option>
+                          <option value="not_contains">{t.propertyPanel.operatorNotContains}</option>
+                          <option value="greater_than">{t.propertyPanel.operatorGreaterThan}</option>
+                          <option value="less_than">{t.propertyPanel.operatorLessThan}</option>
+                          <option value="is_empty">{t.propertyPanel.operatorIsEmpty}</option>
+                          <option value="is_not_empty">{t.propertyPanel.operatorIsNotEmpty}</option>
+                          <option value="regex_match">{t.propertyPanel.operatorRegexMatch}</option>
                         </select>
                       </div>
 
                       <div className="space-y-1">
                         <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block uppercase">
-                          Compare Value:
+                          {t.propertyPanel.compareValueLabel}
                         </label>
                         <input
                           type="text"
                           value={rule.value !== undefined ? String(rule.value) : ''}
                           onChange={(e) => handleUpdateRule(idx, { value: e.target.value })}
-                          placeholder="value or text"
+                          placeholder={t.propertyPanel.compareValuePlaceholder}
                           className="w-full px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500"
                         />
                       </div>
@@ -754,7 +754,7 @@ export const PropertyPanel: React.FC = () => {
                     {/* Target Handle Output Port */}
                     <div className="space-y-1">
                       <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block uppercase">
-                        Active Branch Handle:
+                        {t.propertyPanel.targetHandleLabel}
                       </label>
                       <input
                         type="text"
@@ -771,17 +771,17 @@ export const PropertyPanel: React.FC = () => {
               {/* Fallback Branch */}
               <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block uppercase">
-                  Fallback / Else Branch:
+                  {t.propertyPanel.fallbackBranchTitle}
                 </label>
                 <input
                   type="text"
                   value={defaultBranch}
                   onChange={(e) => updateNodeConfig(id, { defaultBranch: e.target.value })}
-                  placeholder="else"
+                  placeholder={t.propertyPanel.fallbackBranchPlaceholder}
                   className="w-full px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-amber-700 dark:text-amber-400 font-semibold focus:outline-none focus:border-amber-500"
                 />
                 <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
-                  Activated if none of the above conditions evaluate to true.
+                  {t.propertyPanel.fallbackBranchHint}
                 </span>
               </div>
             </div>
@@ -798,7 +798,7 @@ export const PropertyPanel: React.FC = () => {
             <div className="space-y-4">
               <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                 <GitMerge className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                <span>Variable Reconvergence Mode</span>
+                <span>{t.propertyPanel.aggregatorModeTitle}</span>
               </label>
 
               {/* Mode Selectors */}
@@ -806,18 +806,18 @@ export const PropertyPanel: React.FC = () => {
                 {[
                   {
                     key: 'first_available',
-                    label: 'First Available',
-                    desc: 'Takes the output of whichever upstream branch actually executed and was not skipped.',
+                    label: t.propertyPanel.aggFirstAvailableLabel,
+                    desc: t.propertyPanel.aggFirstAvailableDesc,
                   },
                   {
                     key: 'merge_all',
-                    label: 'Merge All Active',
-                    desc: 'Combines all executed upstream branch outputs into an object keyed by source node ID.',
+                    label: t.propertyPanel.aggMergeAllLabel,
+                    desc: t.propertyPanel.aggMergeAllDesc,
                   },
                   {
                     key: 'wait_all',
-                    label: 'Wait All (Preserve Skipped)',
-                    desc: 'Waits for all connected branches, setting skipped branch results to null.',
+                    label: t.propertyPanel.aggWaitAllLabel,
+                    desc: t.propertyPanel.aggWaitAllDesc,
                   },
                 ].map((m) => (
                   <button
@@ -848,7 +848,7 @@ export const PropertyPanel: React.FC = () => {
               {/* Output Key */}
               <div className="space-y-1.5 pt-1">
                 <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                  Output Variable Key:
+                  {t.propertyPanel.aggOutputKeyLabel}
                 </label>
                 <input
                   type="text"
@@ -858,7 +858,7 @@ export const PropertyPanel: React.FC = () => {
                   className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-purple-700 dark:text-purple-300 font-semibold focus:outline-none focus:border-purple-500"
                 />
                 <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
-                  Downstream nodes can reference this via <code className="text-purple-600 dark:text-purple-400">{`{{${id}.${outputKey}}}`}</code>.
+                  {t.propertyPanel.aggOutputKeyHint} <code className="text-purple-600 dark:text-purple-400">{`{{${id}.${outputKey}}}`}</code>.
                 </span>
               </div>
             </div>
@@ -896,7 +896,7 @@ export const PropertyPanel: React.FC = () => {
             <div className="space-y-4">
               <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Globe className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-                <span>REST API Request Configuration</span>
+                <span>{t.propertyPanel.httpConfigTitle}</span>
               </label>
 
               {/* Method & URL Row */}
@@ -918,29 +918,35 @@ export const PropertyPanel: React.FC = () => {
                     type="text"
                     value={url}
                     onChange={(e) => updateNodeConfig(id, { url: e.target.value })}
-                    placeholder="https://api.example.com/v1/data"
+                    placeholder={t.propertyPanel.httpUrlPlaceholder}
                     className="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-teal-500"
                   />
                 </div>
                 <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
-                  Supports template interpolation like <code className="text-teal-600 dark:text-teal-400">{"{{input_1.city}}"}</code> in URL or params.
+                  {t.propertyPanel.httpUrlHint}
                 </span>
               </div>
 
               {/* Tabs Bar */}
               <div className="flex items-center border-b border-slate-200 dark:border-slate-800 text-xs font-medium">
-                {(['params', 'headers', 'body', 'auth', 'settings'] as const).map((tab) => (
+                {[
+                  { id: 'params', label: t.propertyPanel.httpTabParams },
+                  { id: 'headers', label: t.propertyPanel.httpTabHeaders },
+                  { id: 'body', label: t.propertyPanel.httpTabBody },
+                  { id: 'auth', label: t.propertyPanel.httpTabAuth },
+                  { id: 'settings', label: t.propertyPanel.httpTabSettings },
+                ].map((tab) => (
                   <button
-                    key={tab}
+                    key={tab.id}
                     type="button"
-                    onClick={() => setHttpTab(tab)}
+                    onClick={() => setHttpTab(tab.id as any)}
                     className={`px-3 py-1.5 border-b-2 capitalize transition-colors cursor-pointer ${
-                      httpTab === tab
+                      httpTab === tab.id
                         ? 'border-teal-600 text-teal-600 dark:border-teal-400 dark:text-teal-400 font-semibold'
                         : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                     }`}
                   >
-                    {tab}
+                    {tab.label}
                   </button>
                 ))}
               </div>
@@ -949,7 +955,7 @@ export const PropertyPanel: React.FC = () => {
               {httpTab === 'params' && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono text-slate-400 uppercase">Query Parameters</span>
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">{t.propertyPanel.httpQueryParamsTitle}</span>
                     <button
                       type="button"
                       onClick={() => {
@@ -958,7 +964,7 @@ export const PropertyPanel: React.FC = () => {
                       }}
                       className="text-[10px] text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-0.5 cursor-pointer"
                     >
-                      <Plus className="w-3 h-3" /> Add Param
+                      <Plus className="w-3 h-3" /> {t.propertyPanel.httpAddParam}
                     </button>
                   </div>
                   {Object.entries(queryParams).map(([k, v], idx) => (
@@ -998,7 +1004,7 @@ export const PropertyPanel: React.FC = () => {
                     </div>
                   ))}
                   {Object.keys(queryParams).length === 0 && (
-                    <p className="text-[11px] text-slate-400 italic py-1">No query parameters configured.</p>
+                    <p className="text-[11px] text-slate-400 italic py-1">{t.propertyPanel.httpNoQueryParams}</p>
                   )}
                 </div>
               )}
@@ -1006,7 +1012,7 @@ export const PropertyPanel: React.FC = () => {
               {httpTab === 'headers' && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono text-slate-400 uppercase">HTTP Headers</span>
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">{t.propertyPanel.httpHeadersTitle}</span>
                     <button
                       type="button"
                       onClick={() => {
@@ -1015,7 +1021,7 @@ export const PropertyPanel: React.FC = () => {
                       }}
                       className="text-[10px] text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-0.5 cursor-pointer"
                     >
-                      <Plus className="w-3 h-3" /> Add Header
+                      <Plus className="w-3 h-3" /> {t.propertyPanel.httpAddHeader}
                     </button>
                   </div>
                   {Object.entries(headers).map(([k, v], idx) => (
@@ -1055,7 +1061,7 @@ export const PropertyPanel: React.FC = () => {
                     </div>
                   ))}
                   {Object.keys(headers).length === 0 && (
-                    <p className="text-[11px] text-slate-400 italic py-1">Using default Content-Type: application/json.</p>
+                    <p className="text-[11px] text-slate-400 italic py-1">{t.propertyPanel.httpDefaultHeadersHint}</p>
                   )}
                 </div>
               )}
@@ -1063,7 +1069,7 @@ export const PropertyPanel: React.FC = () => {
               {httpTab === 'body' && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-mono text-slate-400 uppercase">Body Format</label>
+                    <label className="text-[10px] font-mono text-slate-400 uppercase">{t.propertyPanel.httpBodyFormat}</label>
                     <select
                       value={bodyType}
                       onChange={(e) => updateNodeConfig(id, { bodyType: e.target.value })}
@@ -1089,22 +1095,22 @@ export const PropertyPanel: React.FC = () => {
               {httpTab === 'auth' && (
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-mono text-slate-400 uppercase block">Authentication Type</label>
+                    <label className="text-[10px] font-mono text-slate-400 uppercase block">{t.propertyPanel.httpAuthType}</label>
                     <select
                       value={authType}
                       onChange={(e) => updateNodeConfig(id, { authType: e.target.value })}
                       className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono cursor-pointer"
                     >
-                      <option value="none">None</option>
-                      <option value="bearer">Bearer Token</option>
-                      <option value="basic">Basic Auth (Username / Password)</option>
-                      <option value="api-key">API Key</option>
+                      <option value="none">{t.propertyPanel.httpAuthNone}</option>
+                      <option value="bearer">{t.propertyPanel.httpAuthBearer}</option>
+                      <option value="basic">{t.propertyPanel.httpAuthBasic}</option>
+                      <option value="api-key">{t.propertyPanel.httpAuthApiKey}</option>
                     </select>
                   </div>
 
                   {authType === 'bearer' && (
                     <div className="space-y-1">
-                      <label className="text-[10px] text-slate-400 uppercase block">Bearer Token</label>
+                      <label className="text-[10px] text-slate-400 uppercase block">{t.propertyPanel.httpBearerTokenLabel}</label>
                       <input
                         type="password"
                         value={authConfig.token || ''}
@@ -1118,7 +1124,7 @@ export const PropertyPanel: React.FC = () => {
                   {authType === 'basic' && (
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
-                        <label className="text-[10px] text-slate-400 uppercase block">Username</label>
+                        <label className="text-[10px] text-slate-400 uppercase block">{t.propertyPanel.httpUsernameLabel}</label>
                         <input
                           type="text"
                           value={authConfig.username || ''}
@@ -1127,7 +1133,7 @@ export const PropertyPanel: React.FC = () => {
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] text-slate-400 uppercase block">Password</label>
+                        <label className="text-[10px] text-slate-400 uppercase block">{t.propertyPanel.httpPasswordLabel}</label>
                         <input
                           type="password"
                           value={authConfig.password || ''}
@@ -1145,14 +1151,14 @@ export const PropertyPanel: React.FC = () => {
                           type="text"
                           value={authConfig.keyName || ''}
                           onChange={(e) => updateNodeConfig(id, { authConfig: { ...authConfig, keyName: e.target.value } })}
-                          placeholder="Header/Query Name (e.g. X-API-Key)"
+                          placeholder={t.propertyPanel.httpKeyNamePlaceholder}
                           className="px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
                         />
                         <input
                           type="password"
                           value={authConfig.keyValue || ''}
                           onChange={(e) => updateNodeConfig(id, { authConfig: { ...authConfig, keyValue: e.target.value } })}
-                          placeholder="API Key Value"
+                          placeholder={t.propertyPanel.httpKeyValuePlaceholder}
                           className="px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
                         />
                       </div>
@@ -1164,7 +1170,7 @@ export const PropertyPanel: React.FC = () => {
                             checked={authConfig.addTo !== 'query'}
                             onChange={() => updateNodeConfig(id, { authConfig: { ...authConfig, addTo: 'header' } })}
                           />
-                          <span>Send in Header</span>
+                          <span>{t.propertyPanel.httpSendInHeader}</span>
                         </label>
                         <label className="flex items-center gap-1 cursor-pointer">
                           <input
@@ -1173,7 +1179,7 @@ export const PropertyPanel: React.FC = () => {
                             checked={authConfig.addTo === 'query'}
                             onChange={() => updateNodeConfig(id, { authConfig: { ...authConfig, addTo: 'query' } })}
                           />
-                          <span>Send in Query Param</span>
+                          <span>{t.propertyPanel.httpSendInQuery}</span>
                         </label>
                       </div>
                     </div>
@@ -1185,7 +1191,7 @@ export const PropertyPanel: React.FC = () => {
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <label className="text-[10px] text-slate-400 uppercase block">Timeout (ms)</label>
+                      <label className="text-[10px] text-slate-400 uppercase block">{t.propertyPanel.httpTimeoutLabel}</label>
                       <input
                         type="number"
                         value={timeout}
@@ -1194,7 +1200,7 @@ export const PropertyPanel: React.FC = () => {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] text-slate-400 uppercase block">Max Retries</label>
+                      <label className="text-[10px] text-slate-400 uppercase block">{t.propertyPanel.httpMaxRetriesLabel}</label>
                       <input
                         type="number"
                         min="0"

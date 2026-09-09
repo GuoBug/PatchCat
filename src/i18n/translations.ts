@@ -51,6 +51,8 @@ export interface Translations {
     bindApiKeyBtn: string;
     validateFlowOnlyBtn: string;
     unconfiguredBadge: string;
+    publishApi: string;
+    chatDebug: string;
   };
   nodeTypes: {
     input: string;
@@ -121,6 +123,69 @@ export interface Translations {
     liveStreaming: string;
     reasoningThought: string;
     finalOutput: string;
+    // Condition Node
+    conditionRulesTitle: string;
+    addRule: string;
+    deleteRule: string;
+    ruleIndex: string;
+    variableLabel: string;
+    variablePlaceholder: string;
+    operatorLabel: string;
+    operatorEquals: string;
+    operatorNotEquals: string;
+    operatorContains: string;
+    operatorNotContains: string;
+    operatorGreaterThan: string;
+    operatorLessThan: string;
+    operatorIsEmpty: string;
+    operatorIsNotEmpty: string;
+    operatorRegexMatch: string;
+    compareValueLabel: string;
+    compareValuePlaceholder: string;
+    targetHandleLabel: string;
+    fallbackBranchTitle: string;
+    fallbackBranchPlaceholder: string;
+    fallbackBranchHint: string;
+    // Aggregator Node
+    aggregatorModeTitle: string;
+    aggFirstAvailableLabel: string;
+    aggFirstAvailableDesc: string;
+    aggMergeAllLabel: string;
+    aggMergeAllDesc: string;
+    aggWaitAllLabel: string;
+    aggWaitAllDesc: string;
+    aggOutputKeyLabel: string;
+    aggOutputKeyHint: string;
+    // HTTP Request Node
+    httpConfigTitle: string;
+    httpUrlPlaceholder: string;
+    httpUrlHint: string;
+    httpTabParams: string;
+    httpTabHeaders: string;
+    httpTabBody: string;
+    httpTabAuth: string;
+    httpTabSettings: string;
+    httpQueryParamsTitle: string;
+    httpAddParam: string;
+    httpNoQueryParams: string;
+    httpHeadersTitle: string;
+    httpAddHeader: string;
+    httpDefaultHeadersHint: string;
+    httpBodyFormat: string;
+    httpAuthType: string;
+    httpAuthNone: string;
+    httpAuthBearer: string;
+    httpAuthBasic: string;
+    httpAuthApiKey: string;
+    httpBearerTokenLabel: string;
+    httpUsernameLabel: string;
+    httpPasswordLabel: string;
+    httpKeyNamePlaceholder: string;
+    httpKeyValuePlaceholder: string;
+    httpSendInHeader: string;
+    httpSendInQuery: string;
+    httpTimeoutLabel: string;
+    httpMaxRetriesLabel: string;
   };
   settings: {
     pageTitle: string;
@@ -280,6 +345,42 @@ export interface Translations {
     openInCanvas: string;
     manageKb: string;
   };
+  chatDebug: {
+    title: string;
+    subtitle: string;
+    emptyTitle: string;
+    emptyDesc: string;
+    userRole: string;
+    assistantRole: string;
+    executionTrace: string;
+    streamingResponse: string;
+    thinking: string;
+    inputPlaceholder: string;
+    clearHistory: string;
+    exportHistory: string;
+    closePanel: string;
+    send: string;
+    exportJson: string;
+    exportMarkdown: string;
+    nodesUnit: string;
+    emptyResponse: string;
+  };
+  publishApi: {
+    title: string;
+    subtitle: string;
+    statusActive: string;
+    statusDisabled: string;
+    statusHint: string;
+    enableBtn: string;
+    disableBtn: string;
+    endpointUrl: string;
+    copyUrl: string;
+    apiKey: string;
+    copyKey: string;
+    regenerateKey: string;
+    copyCode: string;
+    noKey: string;
+  };
 }
 
 export const translations: Record<Language, Translations> = {
@@ -334,6 +435,8 @@ export const translations: Record<Language, Translations> = {
       bindApiKeyBtn: 'Configure API Key',
       validateFlowOnlyBtn: 'Validate Flow Only (Skip LLM)',
       unconfiguredBadge: 'No API Key Set',
+      publishApi: 'Publish API',
+      chatDebug: 'Chat',
     },
     nodeTypes: {
       input: 'Input Node',
@@ -404,6 +507,69 @@ export const translations: Record<Language, Translations> = {
       liveStreaming: 'Live Streaming Output',
       reasoningThought: 'Reasoning Thought (DeepSeek R1 / o1)',
       finalOutput: 'Execution Result Output',
+      // Condition Node
+      conditionRulesTitle: 'Condition Routing Rules',
+      addRule: 'Add Rule',
+      deleteRule: 'Delete rule',
+      ruleIndex: 'RULE',
+      variableLabel: 'Variable:',
+      variablePlaceholder: '{{llm_1.response}} or category',
+      operatorLabel: 'Operator:',
+      operatorEquals: 'equals (==)',
+      operatorNotEquals: 'not equals (!=)',
+      operatorContains: 'contains',
+      operatorNotContains: 'not contains',
+      operatorGreaterThan: 'greater than (>)',
+      operatorLessThan: 'less than (<)',
+      operatorIsEmpty: 'is empty',
+      operatorIsNotEmpty: 'is not empty',
+      operatorRegexMatch: 'regex match',
+      compareValueLabel: 'Compare Value:',
+      compareValuePlaceholder: 'value or text',
+      targetHandleLabel: 'Active Branch Handle:',
+      fallbackBranchTitle: 'Fallback / Else Branch:',
+      fallbackBranchPlaceholder: 'else',
+      fallbackBranchHint: 'Activated if none of the above conditions evaluate to true.',
+      // Aggregator Node
+      aggregatorModeTitle: 'Variable Reconvergence Mode',
+      aggFirstAvailableLabel: 'First Available',
+      aggFirstAvailableDesc: 'Takes the output of whichever upstream branch actually executed and was not skipped.',
+      aggMergeAllLabel: 'Merge All Active',
+      aggMergeAllDesc: 'Combines all executed upstream branch outputs into an object keyed by source node ID.',
+      aggWaitAllLabel: 'Wait All (Preserve Skipped)',
+      aggWaitAllDesc: 'Waits for all connected branches, setting skipped branch results to null.',
+      aggOutputKeyLabel: 'Output Variable Key:',
+      aggOutputKeyHint: 'Downstream nodes can reference this via',
+      // HTTP Request Node
+      httpConfigTitle: 'REST API Request Configuration',
+      httpUrlPlaceholder: 'https://api.example.com/v1/data',
+      httpUrlHint: 'Supports template interpolation like {{input_1.city}} in URL or params.',
+      httpTabParams: 'params',
+      httpTabHeaders: 'headers',
+      httpTabBody: 'body',
+      httpTabAuth: 'auth',
+      httpTabSettings: 'settings',
+      httpQueryParamsTitle: 'Query Parameters',
+      httpAddParam: 'Add Param',
+      httpNoQueryParams: 'No query parameters configured.',
+      httpHeadersTitle: 'HTTP Headers',
+      httpAddHeader: 'Add Header',
+      httpDefaultHeadersHint: 'Using default Content-Type: application/json.',
+      httpBodyFormat: 'Body Format',
+      httpAuthType: 'Authentication Type',
+      httpAuthNone: 'None',
+      httpAuthBearer: 'Bearer Token',
+      httpAuthBasic: 'Basic Auth (Username / Password)',
+      httpAuthApiKey: 'API Key',
+      httpBearerTokenLabel: 'Bearer Token',
+      httpUsernameLabel: 'Username',
+      httpPasswordLabel: 'Password',
+      httpKeyNamePlaceholder: 'Header/Query Name (e.g. X-API-Key)',
+      httpKeyValuePlaceholder: 'API Key Value',
+      httpSendInHeader: 'Send in Header',
+      httpSendInQuery: 'Send in Query Param',
+      httpTimeoutLabel: 'Timeout (ms)',
+      httpMaxRetriesLabel: 'Max Retries',
     },
     settings: {
       pageTitle: 'Settings & Configuration',
@@ -563,6 +729,42 @@ export const translations: Record<Language, Translations> = {
       openInCanvas: 'Use in Canvas',
       manageKb: 'Manage Knowledge Bases',
     },
+    chatDebug: {
+      title: 'Chat Debug Panel (Ctrl+Shift+D)',
+      subtitle: 'Run graph & inspect streaming trace',
+      emptyTitle: 'Start Conversation Debugging',
+      emptyDesc: 'Type a prompt below to run your workflow graph and inspect streaming LLM output with per-node execution trace.',
+      userRole: 'You',
+      assistantRole: 'Assistant',
+      executionTrace: 'Execution Trace',
+      streamingResponse: 'Streaming response...',
+      thinking: 'Thinking...',
+      inputPlaceholder: 'Type a message to run workflow...',
+      clearHistory: 'Clear history',
+      exportHistory: 'Export history',
+      closePanel: 'Close Panel',
+      send: 'Send',
+      exportJson: 'Export JSON',
+      exportMarkdown: 'Export Markdown',
+      nodesUnit: 'nodes',
+      emptyResponse: 'Completed with no textual output.',
+    },
+    publishApi: {
+      title: 'Publish Workflow as REST API',
+      subtitle: 'Expose workflow as an automated HTTP endpoint',
+      statusActive: 'API Access Status: Active (Ready)',
+      statusDisabled: 'API Access Status: Disabled',
+      statusHint: 'When enabled, external applications can trigger this DAG using POST requests.',
+      enableBtn: 'Enable API',
+      disableBtn: 'Disable API',
+      endpointUrl: 'Endpoint URL',
+      copyUrl: 'Copy URL',
+      apiKey: 'Workflow API Key',
+      copyKey: 'Copy Key',
+      regenerateKey: 'Regenerate API Key',
+      copyCode: 'Copy Code',
+      noKey: 'No API key generated',
+    },
   },
   zh: {
     common: {
@@ -615,6 +817,8 @@ export const translations: Record<Language, Translations> = {
       bindApiKeyBtn: '去配置绑定 API Key',
       validateFlowOnlyBtn: '仅进行流程校验 (跳过模型)',
       unconfiguredBadge: '未配置 API Key',
+      publishApi: '发布 API',
+      chatDebug: '对话调试',
     },
     nodeTypes: {
       input: '输入节点',
@@ -685,6 +889,69 @@ export const translations: Record<Language, Translations> = {
       liveStreaming: '实时流式输出',
       reasoningThought: '思考过程 (DeepSeek R1 / o1 推理链)',
       finalOutput: '执行结果输出',
+      // Condition Node
+      conditionRulesTitle: '条件分支路由规则',
+      addRule: '添加规则',
+      deleteRule: '删除规则',
+      ruleIndex: '规则',
+      variableLabel: '比较变量:',
+      variablePlaceholder: '{{llm_1.response}} 或参数名',
+      operatorLabel: '判断条件:',
+      operatorEquals: '等于 (==)',
+      operatorNotEquals: '不等于 (!=)',
+      operatorContains: '包含 (contains)',
+      operatorNotContains: '不包含 (not contains)',
+      operatorGreaterThan: '大于 (>)',
+      operatorLessThan: '小于 (<)',
+      operatorIsEmpty: '为空 (is empty)',
+      operatorIsNotEmpty: '非空 (is not empty)',
+      operatorRegexMatch: '正则匹配 (regex match)',
+      compareValueLabel: '目标比对值:',
+      compareValuePlaceholder: '对比数值或字符串',
+      targetHandleLabel: '命中输出端口名:',
+      fallbackBranchTitle: '默认兜底分支 (Else):',
+      fallbackBranchPlaceholder: 'else',
+      fallbackBranchHint: '当上方所有条件均未命中时将走此分支。',
+      // Aggregator Node
+      aggregatorModeTitle: '多路分支汇聚重敛模式',
+      aggFirstAvailableLabel: '首个有效分支 (First Available)',
+      aggFirstAvailableDesc: '提取任意最先执行完毕且未被跳过的前序有效分支产出。',
+      aggMergeAllLabel: '合并所有有效输出 (Merge All Active)',
+      aggMergeAllDesc: '将所有实际执行的前序分支结果汇总为按来源节点 ID 映射的键值对象。',
+      aggWaitAllLabel: '等待所有分支 (Wait All)',
+      aggWaitAllDesc: '等待所有连接的分支结束，被跳过分支的结果置为 null。',
+      aggOutputKeyLabel: '输出变量名 (Key):',
+      aggOutputKeyHint: '下游节点可通过此路径引用',
+      // HTTP Request Node
+      httpConfigTitle: 'REST API 请求配置',
+      httpUrlPlaceholder: 'https://api.example.com/v1/data',
+      httpUrlHint: '支持在 URL 或参数中使用 {{input_1.city}} 格式的动态模板变量。',
+      httpTabParams: 'Query 参数',
+      httpTabHeaders: '请求头',
+      httpTabBody: '请求体',
+      httpTabAuth: '鉴权认证',
+      httpTabSettings: '高级设置',
+      httpQueryParamsTitle: 'Query 检索参数',
+      httpAddParam: '添加参数',
+      httpNoQueryParams: '暂无 Query 参数配置。',
+      httpHeadersTitle: 'HTTP 请求头',
+      httpAddHeader: '添加请求头',
+      httpDefaultHeadersHint: '默认使用 Content-Type: application/json。',
+      httpBodyFormat: '请求体格式',
+      httpAuthType: '身份认证方式',
+      httpAuthNone: '无认证 (None)',
+      httpAuthBearer: 'Bearer Token',
+      httpAuthBasic: 'Basic 基础认证 (账号 / 密码)',
+      httpAuthApiKey: 'API Key',
+      httpBearerTokenLabel: 'Bearer 令牌',
+      httpUsernameLabel: '用户名',
+      httpPasswordLabel: '密码',
+      httpKeyNamePlaceholder: 'Header/Query 名称 (例如 X-API-Key)',
+      httpKeyValuePlaceholder: 'API Key 密钥值',
+      httpSendInHeader: '在 Header 请求头中携带',
+      httpSendInQuery: '在 Query 参数中携带',
+      httpTimeoutLabel: '超时时长 (ms)',
+      httpMaxRetriesLabel: '重试次数',
     },
     settings: {
       pageTitle: '系统设置与配置',
@@ -843,6 +1110,42 @@ export const translations: Record<Language, Translations> = {
       deleteDocConfirm: '确定要删除该文档及其全部切片吗？',
       openInCanvas: '在画布中检索',
       manageKb: '管理知识库',
+    },
+    chatDebug: {
+      title: '交互式多轮对话调试 (Ctrl+Shift+D)',
+      subtitle: '运行工作流图谱并观察逐节点遥测',
+      emptyTitle: '开启对话联调',
+      emptyDesc: '在下方输入内容即可触发工作流运行，实时查看流式输出并检查每一步节点的执行轨迹与状态。',
+      userRole: '用户',
+      assistantRole: '助手',
+      executionTrace: '节点执行轨迹',
+      streamingResponse: '正在流式响应...',
+      thinking: '思考中...',
+      inputPlaceholder: '输入测试消息触发工作流...',
+      clearHistory: '清空会话',
+      exportHistory: '导出记录',
+      closePanel: '关闭面板',
+      send: '发送',
+      exportJson: '导出 JSON',
+      exportMarkdown: '导出 Markdown',
+      nodesUnit: '个节点',
+      emptyResponse: '执行完成，无文本内容输出。',
+    },
+    publishApi: {
+      title: '发布工作流为 REST API',
+      subtitle: '将工作流作为自动化 HTTP 接口对外开放',
+      statusActive: 'API 访问状态: 已激活 (就绪)',
+      statusDisabled: 'API 访问状态: 未开启',
+      statusHint: '启用后，外部第三方系统可通过 HTTP POST 请求触发此有向无环图 (DAG) 运行。',
+      enableBtn: '启用 API',
+      disableBtn: '关闭 API',
+      endpointUrl: '接口调用地址 (Endpoint URL)',
+      copyUrl: '复制地址',
+      apiKey: '工作流专用 API 密钥',
+      copyKey: '复制密钥',
+      regenerateKey: '重新生成 API 密钥',
+      copyCode: '复制代码',
+      noKey: '暂未生成密钥',
     },
   },
 };

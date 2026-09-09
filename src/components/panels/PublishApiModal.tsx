@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useProjectStore } from '../../stores/project-store.ts';
 import { useSettingsStore } from '../../stores/settings-store.ts';
+import { useTranslation } from '../../i18n/useTranslation.ts';
 import { nanoid } from 'nanoid';
 
 interface PublishApiModalProps {
@@ -16,6 +17,7 @@ interface PublishApiModalProps {
 }
 
 export const PublishApiModal: React.FC<PublishApiModalProps> = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
   const activeWorkflowId = useProjectStore((s) => s.activeWorkflowId);
   const workflows = useProjectStore((s) => s.workflows);
   const updateWorkflow = useProjectStore((s) => s.updateWorkflow);
@@ -118,10 +120,10 @@ console.log(data);`;
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                Publish Workflow as REST API
+                {t.publishApi.title}
               </h3>
               <p className="text-xs text-slate-400">
-                Expose "{activeWf.name}" as an automated HTTP endpoint
+                {t.publishApi.subtitle} ({activeWf.name})
               </p>
             </div>
           </div>
@@ -140,10 +142,10 @@ console.log(data);`;
             <div className="space-y-0.5">
               <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                 <span className={`w-2.5 h-2.5 rounded-full ${isEnabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`} />
-                <span>API Access Status: {isEnabled ? 'Active (Ready)' : 'Disabled'}</span>
+                <span>{isEnabled ? t.publishApi.statusActive : t.publishApi.statusDisabled}</span>
               </span>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                When enabled, external applications can trigger this DAG using POST requests.
+                {t.publishApi.statusHint}
               </p>
             </div>
 
@@ -155,14 +157,14 @@ console.log(data);`;
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
             >
-              {isEnabled ? 'Disable API' : 'Enable API'}
+              {isEnabled ? t.publishApi.disableBtn : t.publishApi.enableBtn}
             </button>
           </div>
 
           {/* Endpoint URL Display */}
           <div className="space-y-1.5">
             <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
-              Endpoint URL
+              {t.publishApi.endpointUrl}
             </label>
             <div className="flex items-center gap-2">
               <div className="flex-1 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-slate-800 dark:text-slate-200 select-all truncate">
@@ -173,7 +175,7 @@ console.log(data);`;
                 className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1 font-medium transition-colors"
               >
                 {copiedSnippet ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>Copy URL</span>
+                <span>{t.publishApi.copyUrl}</span>
               </button>
             </div>
           </div>
@@ -182,23 +184,23 @@ console.log(data);`;
           {isEnabled && (
             <div className="space-y-1.5">
               <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
-                Workflow API Key
+                {t.publishApi.apiKey}
               </label>
               <div className="flex items-center gap-2">
                 <div className="flex-1 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-slate-800 dark:text-slate-200 select-all truncate">
-                  {currentKey || 'No API key generated'}
+                  {currentKey || t.publishApi.noKey}
                 </div>
                 <button
                   onClick={() => handleCopy(currentKey, 'key')}
                   className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1 font-medium transition-colors"
                 >
                   {copiedKey ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>Copy Key</span>
+                  <span>{t.publishApi.copyKey}</span>
                 </button>
                 <button
                   onClick={handleRegenerateKey}
                   className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 transition-colors"
-                  title="Regenerate API Key"
+                  title={t.publishApi.regenerateKey}
                 >
                   <RefreshCw className="w-4 h-4" />
                 </button>
@@ -230,7 +232,7 @@ console.log(data);`;
                 className="flex items-center gap-1 text-[11px] text-blue-600 dark:text-sky-400 hover:underline cursor-pointer"
               >
                 {copiedSnippet ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                <span>Copy Code</span>
+                <span>{t.publishApi.copyCode}</span>
               </button>
             </div>
 

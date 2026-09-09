@@ -1,10 +1,14 @@
-﻿import React, { memo } from 'react';
+import React, { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { BaseNode } from './BaseNode';
 import type { WorkflowNode, ConditionNodeConfig, ConditionRule } from '../../engine/types.ts';
+import { useTranslation } from '../../i18n/useTranslation.ts';
 import { GitBranch, CornerDownRight } from 'lucide-react';
 
 export const ConditionNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, selected }) => {
+  const { language } = useTranslation();
+  const isZh = language === 'zh';
+
   const config = (data.config || {}) as unknown as ConditionNodeConfig;
   const conditions: ConditionRule[] = config.conditions || [
     { id: 'rule_1', variable: '', operator: 'equals', value: '', targetHandle: 'if_true' },
@@ -21,7 +25,7 @@ export const ConditionNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data
     {
       id: defaultBranch,
       label: defaultBranch.toUpperCase(),
-      rule: 'Fallback / Default',
+      rule: isZh ? '默认兜底分支' : 'Fallback / Default',
     },
   ];
 
@@ -35,16 +39,16 @@ export const ConditionNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data
       executionResult={data.executionResult}
       hasLeftHandle={true}
       hasRightHandle={false} // Custom dynamic right handles for each branch
-      leftHandleLabel="in"
+      leftHandleLabel={isZh ? '输入' : 'in'}
     >
       <div className="space-y-2 relative">
         <div className="flex items-center justify-between text-[10px] font-mono text-amber-700 dark:text-amber-300">
           <span className="flex items-center gap-1 font-semibold">
             <GitBranch className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-            <span>{conditions.length} RULE{conditions.length > 1 ? 'S' : ''}</span>
+            <span>{isZh ? `${conditions.length} 条判断规则` : `${conditions.length} RULE${conditions.length > 1 ? 'S' : ''}`}</span>
           </span>
           <span className="text-slate-400 dark:text-slate-500 font-sans">
-            {branches.length} Branches
+            {isZh ? `${branches.length} 个分支` : `${branches.length} Branches`}
           </span>
         </div>
 
