@@ -1,0 +1,306 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      width: 1020px;
+      height: 380px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .card {
+      position: relative;
+      width: 996px;
+      height: 356px;
+      background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+      border: 1.5px solid #cbd5e1;
+      border-radius: 20px;
+      box-shadow: 0 12px 30px -6px rgba(15, 23, 42, 0.08), 0 6px 12px -4px rgba(15, 23, 42, 0.04);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 20px 24px;
+      overflow: hidden;
+    }
+
+    /* Watermark Logo */
+    .watermark-container {
+      position: absolute;
+      top: 52%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 360px;
+      height: 360px;
+      opacity: 0.055;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .watermark-container svg {
+      width: 100%;
+      height: 100%;
+      fill: #1e3a8a;
+    }
+
+    /* Header */
+    .header-bar {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 2;
+      border-bottom: 1.5px dashed #e2e8f0;
+      padding-bottom: 8px;
+    }
+    .brand-tag {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #2563eb;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+    .brand-tag svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+    .roadmap-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #0369a1;
+      background: #f0f9ff;
+      border: 1.5px solid #bae6fd;
+      padding: 4px 14px;
+      border-radius: 9999px;
+    }
+
+    /* Phases Container */
+    .phases-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 2;
+      margin: 10px 0;
+    }
+    .phase-card {
+      width: 216px;
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 14px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .phase-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 6px;
+      gap: 6px;
+    }
+    .phase-num {
+      font-size: 13px;
+      font-weight: 800;
+      color: #0f172a;
+      white-space: nowrap;
+    }
+    .status-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .status-done {
+      color: #047857;
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+    }
+    .status-planned {
+      color: #b45309;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+    }
+
+    .phase-items {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .phase-item {
+      font-size: 12.5px;
+      color: #334155;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .phase-item .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #3b82f6;
+      flex-shrink: 0;
+    }
+
+    /* Colors */
+    .p1 { border-color: #93c5fd; }
+    .p1 .dot { background: #3b82f6; }
+    .p2 { border-color: #a7f3d0; }
+    .p2 .dot { background: #10b981; }
+    .p3 { border-color: #c084fc; }
+    .p3 .dot { background: #a855f7; }
+    .p4 { border-color: #fed7aa; }
+    .p4 .dot { background: #f97316; }
+
+    /* Arrow */
+    .arrow-next {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+    }
+    .arrow-next svg {
+      width: 20px;
+      height: 20px;
+      fill: #94a3b8;
+    }
+
+    /* Footer */
+    .footer-bar {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 2;
+      border-top: 1px dashed #e2e8f0;
+      padding-top: 8px;
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .footer-highlight {
+      color: #059669;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="watermark-container">
+      <svg viewBox="0 0 1024 1024" fill-rule="evenodd">
+        <path d="M 815.0 155.0 L 773.0 460.0 L 818.0 594.0 L 516.0 879.0 L 216.0 594.0 L 261.0 460.0 L 218.0 156.0 L 401.0 318.0 L 614.0 318.0 L 579.0 350.0 L 387.0 350.0 L 264.0 241.0 L 290.0 424.0 L 353.0 371.0 L 294.0 463.0 L 254.0 582.0 L 254.0 585.0 L 292.0 620.0 L 330.0 588.0 L 314.0 541.0 L 329.0 502.0 L 456.0 484.0 Z M 769.0 242.0 L 742.0 436.0 L 713.0 520.0 L 743.0 477.0 L 779.0 584.0 L 598.0 755.0 L 531.0 729.0 L 531.0 698.0 L 566.0 668.0 L 569.0 657.0 L 465.0 657.0 L 467.0 667.0 L 502.0 697.0 L 503.0 729.0 L 436.0 755.0 L 317.0 642.0 L 349.0 615.0 L 438.0 624.0 L 477.0 583.0 L 480.0 507.0 Z M 515.0 754.0 L 574.0 776.0 L 517.0 832.0 L 459.0 777.0 Z" />
+      </svg>
+    </div>
+
+    <!-- Header -->
+    <div class="header-bar">
+      <div class="brand-tag">
+        <svg viewBox="0 0 1024 1024" fill-rule="evenodd">
+          <path d="M 815.0 155.0 L 773.0 460.0 L 818.0 594.0 L 516.0 879.0 L 216.0 594.0 L 261.0 460.0 L 218.0 156.0 L 401.0 318.0 L 614.0 318.0 L 579.0 350.0 L 387.0 350.0 L 264.0 241.0 L 290.0 424.0 L 353.0 371.0 L 294.0 463.0 L 254.0 582.0 L 254.0 585.0 L 292.0 620.0 L 330.0 588.0 L 314.0 541.0 L 329.0 502.0 L 456.0 484.0 Z M 769.0 242.0 L 742.0 436.0 L 713.0 520.0 L 743.0 477.0 L 779.0 584.0 L 598.0 755.0 L 531.0 729.0 L 531.0 698.0 L 566.0 668.0 L 569.0 657.0 L 465.0 657.0 L 467.0 667.0 L 502.0 697.0 L 503.0 729.0 L 436.0 755.0 L 317.0 642.0 L 349.0 615.0 L 438.0 624.0 L 477.0 583.0 L 480.0 507.0 Z M 515.0 754.0 L 574.0 776.0 L 517.0 832.0 L 459.0 777.0 Z" />
+        </svg>
+        <span>PatchCat Architecture</span>
+      </div>
+      <div class="roadmap-badge">
+        <span>🗺️ Product Evolution Architecture Roadmap</span>
+      </div>
+    </div>
+
+    <!-- Phases -->
+    <div class="phases-row">
+      <!-- Phase 1 -->
+      <div class="phase-card p1">
+        <div class="phase-header">
+          <span class="phase-num">Phase 1: Core MVP</span>
+          <span class="status-pill status-done">✔ Delivered</span>
+        </div>
+        <div class="phase-items">
+          <span class="phase-item"><span class="dot"></span>Kahn DAG Scheduler</span>
+          <span class="phase-item"><span class="dot"></span>React Flow 12 Canvas</span>
+          <span class="phase-item"><span class="dot"></span>5 Core Node Types</span>
+          <span class="phase-item"><span class="dot"></span>Client-Only BYOK</span>
+        </div>
+      </div>
+
+      <div class="arrow-next">
+        <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+      </div>
+
+      <!-- Phase 2 -->
+      <div class="phase-card p2">
+        <div class="phase-header">
+          <span class="phase-num">Phase 2: Store & RAG</span>
+          <span class="status-pill status-done">✔ Delivered</span>
+        </div>
+        <div class="phase-items">
+          <span class="phase-item"><span class="dot"></span>Dual-Mode Storage</span>
+          <span class="phase-item"><span class="dot"></span>FastAPI Backend</span>
+          <span class="phase-item"><span class="dot"></span>RAG Knowledge Base</span>
+          <span class="phase-item"><span class="dot"></span>Canvas Retrieval Node</span>
+        </div>
+      </div>
+
+      <div class="arrow-next">
+        <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+      </div>
+
+      <!-- Phase 3 -->
+      <div class="phase-card p3">
+        <div class="phase-header">
+          <span class="phase-num">Phase 3: Logic & API</span>
+          <span class="status-pill status-done">✔ Delivered</span>
+        </div>
+        <div class="phase-items">
+          <span class="phase-item"><span class="dot"></span>IF/ELSE Branching</span>
+          <span class="phase-item"><span class="dot"></span>HTTP Request Node</span>
+          <span class="phase-item"><span class="dot"></span>Interactive Chat Debug</span>
+          <span class="phase-item"><span class="dot"></span>1-Click API Publishing</span>
+        </div>
+      </div>
+
+      <div class="arrow-next">
+        <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+      </div>
+
+      <!-- Phase 4 -->
+      <div class="phase-card p4">
+        <div class="phase-header">
+          <span class="phase-num">Phase 4: Enterprise</span>
+          <span class="status-pill status-planned">⏳ Planned</span>
+        </div>
+        <div class="phase-items">
+          <span class="phase-item"><span class="dot"></span>Docker Deployment</span>
+          <span class="phase-item"><span class="dot"></span>Multi-tenant Collab</span>
+          <span class="phase-item"><span class="dot"></span>Granular RBAC</span>
+          <span class="phase-item"><span class="dot"></span>LangFuse Observability</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-bar">
+      <span>Evolution: Client-Only Canvas ➔ Dual-Mode Agent Platform ➔ Enterprise Collaboration Hub</span>
+      <span class="footer-highlight">Current Release: v0.3.0 (Phase 3 Complete)</span>
+    </div>
+  </div>
+</body>
+</html>

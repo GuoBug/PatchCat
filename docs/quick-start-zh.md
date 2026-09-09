@@ -64,7 +64,7 @@ npm run dev
 PatchCat 采用 **100% 纯前端安全隐私架构**：您的 API Key 仅保存在当前浏览器的 `LocalStorage` 中，发起请求时直连模型服务商官方 API，**绝不会经过任何第三方中间服务器**。
 
 <p align="center">
-  <img src="./assets/privacy-architecture-zh.png" width="760" alt="PatchCat 客户端纯前端隐私直连架构" />
+  <img src="./assets/privacy-architecture-zh.png" width="880" style="max-width: 100%;" alt="PatchCat 客户端纯前端隐私直连架构" />
 </p>
 
 
@@ -87,22 +87,9 @@ PatchCat 采用 **100% 纯前端安全隐私架构**：您的 API Key 仅保存�
 ### 了解工作流拓扑结构
 该工作流由 5 个经典节点组成：
 
-```
-┌────────────────────────┐       ┌────────────────────────┐       ┌────────────────────────┐
-│    用户工单入参        │ ────> │   意图分析提示词       │ ────> │   意图识别大模型       │
-│ (input_user_query)     │       │ (prompt_classification)│       │ (llm_classifier)       │
-│ - user_message (生鲜延误)│     │ - {{input.user_message}}│      │ - gemini-2.5-flash     │
-│ - user_tier: VIP2      │       │ - 结构化 JSON 提示词   │       │ - Temperature: 0.2     │
-└────────────────────────┘       └────────────────────────┘       └───────────┬────────────┘
-                                                                              │
-                                                                              ▼
-┌────────────────────────┐       ┌────────────────────────┐       ┌────────────────────────┐
-│   最终工单路由分派     │ <──── │   输出适配与渲染       │ <──── │   路由决策脚本沙箱     │
-│ (output_dispatch)      │       │ (output_renderer)      │       │ (code_router_logic)    │
-│ - 派发: 物流专线 VIP   │       │ - dispatch_result      │       │ - JavaScript 规则引擎  │
-│ - SLA: 15分钟极速响应  │       │ - 渲染时间戳           │       │ - 自动剥除 Markdown    │
-└────────────────────────┘       └────────────────────────┘       └────────────────────────┘
-```
+<p align="center">
+  <img src="./assets/workflow-topology-zh.png" width="940" style="max-width: 100%;" alt="PatchCat 智能客服工单路由工作流拓扑" />
+</p>
 
 ### 执行工作流
 1. 点击右上角蓝色的 **`▶ Run Workflow`** 按钮。

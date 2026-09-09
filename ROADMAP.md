@@ -13,15 +13,10 @@
 
 ### 🧭 Version Evolution Overview
 
-```
-v0.1.0 (Done ✅)              v0.2.0 (Done ✅)                 v0.3.0 (Released ✅)            v1.0.0 (Production Ready)
-┌──────────────────┐        ┌──────────────────┐        ┌──────────────────┐        ┌──────────────────┐
-│ • Kahn DAG Engine│  ───▶  │ • Dual-Mode Store│  ───▶  │ • IF/ELSE Branch │  ───▶  │ • Docker Deploy  │
-│ • React Flow 12  │        │ • RAG Knowledge  │        │ • HTTP Request   │        │ • Team Collab    │
-│ • Dark Canvas    │        │ • Canvas RAG Node│        │ • Chat Debug     │        │ • RBAC & Auth    │
-│ • 5 Core Nodes   │        │ • FastAPI Backend│        │ • API Publishing │        │ • LangFuse Trace │
-└──────────────────┘        └──────────────────┘        └──────────────────┘        └──────────────────┘
-```
+<p align="center">
+  <img src="./docs/assets/roadmap-en.png" width="960" style="max-width: 100%;" alt="PatchCat Product Evolution Roadmap" />
+</p>
+
 
 ---
 
@@ -69,15 +64,10 @@ v0.1.0 (Done ✅)              v0.2.0 (Done ✅)                 v0.3.0 (Release
 
 ### 🧭 版本演进路线总览
 
-```
-v0.1.0 (已达成 ✅)            v0.2.0 (已达成 ✅)               v0.3.0 (当前发版 ✅)            v1.0.0 (生产就绪)
-┌──────────────────┐        ┌──────────────────┐        ┌──────────────────┐        ┌──────────────────┐
-│ • Kahn DAG 调度  │  ───▶  │ • 双模存储与后端  │  ───▶  │ • IF/ELSE 条件分支│  ───▶  │ • Docker 交付    │
-│ • React Flow 12  │        │ • RAG 知识库体系  │        │ • HTTP 请求节点   │        │ • 团队协同分享   │
-│ • 暗黑画布       │        │ • 画布检索节点    │        │ • Chat 调试面板   │        │ • 权限与认证     │
-│ • 5 种核心节点   │        │ • FastAPI 后端    │        │ • API 一键发布    │        │ • LangFuse 链路  │
-└──────────────────┘        └──────────────────┘        └──────────────────┘        └──────────────────┘
-```
+<p align="center">
+  <img src="./docs/assets/roadmap-zh.png" width="960" style="max-width: 100%;" alt="PatchCat 产品演进全景路线图" />
+</p>
+
 
 ---
 

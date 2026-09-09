@@ -45,18 +45,10 @@
 
 With **zero mandatory backend setup** (Client-Only BYOK Mode) and direct connectivity to **Google Gemini, DeepSeek, OpenAI, SiliconFlow, and local Ollama**, PatchCat delivers high-performance prompt engineering right inside your browser with enterprise-grade telemetry and zero data leakage.
 
-```
-       ┌────────────────┐       ┌────────────────────────┐       ┌───────────────────────┐
-       │   User Input   │ ────> │  Prompt Template Slot  │ ────> │  LLM Classifier Node  │
-       │ (Ticket / Raw) │       │   ({{input.query}})    │       │ (Gemini / DeepSeek)   │
-       └────────────────┘       └────────────────────────┘       └───────────────────────┘
-                                                                             │
-                                                                             ▼
-       ┌────────────────────────┐       ┌────────────────────────┐       ┌───────────────────────┐
-       │  Final Dispatch Queue  │ <──── │  Output Adapter Node   │ <──── │  Code Router Sandbox  │
-       │ (VIP Logistics / SLA)  │       │ (Rendered JSON / Text) │       │ (JavaScript Decision) │
-       └────────────────────────┘       └────────────────────────┘       └───────────────────────┘
-```
+<p align="center">
+  <img src="./docs/assets/workflow-topology-en.png" width="940" style="max-width: 100%;" alt="PatchCat Customer Support Routing Workflow Topology" />
+</p>
+
 
 ---
 

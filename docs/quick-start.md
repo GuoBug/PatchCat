@@ -64,7 +64,7 @@ Open your browser and navigate to **`http://localhost:5173`**. You will see the 
 PatchCat operates with a **100% Client-Only Privacy Architecture**: your API Keys are stored exclusively in your browser's `LocalStorage` and connect directly to model providers. They are **never** transmitted to any intermediary backend.
 
 <p align="center">
-  <img src="./assets/privacy-architecture-en.png" width="760" alt="PatchCat Client-Only Privacy Architecture" />
+  <img src="./assets/privacy-architecture-en.png" width="880" style="max-width: 100%;" alt="PatchCat Client-Only Privacy Architecture" />
 </p>
 
 
@@ -82,27 +82,15 @@ PatchCat operates with a **100% Client-Only Privacy Architecture**: your API Key
 
 ## 🎯 Step 3: Run Your First Workflow
 
-PatchCat automatically loads the **`Customer Support Routing (智能客服工单路由)`** preset on initial launch.
+Upon initial launch, PatchCat pre-loads the **`Customer Support Routing`** workflow template.
 
 ### Understanding the Pipeline Topology
-The workflow consists of 5 connected nodes:
+This workflow consists of 5 canonical nodes:
 
-```
-┌────────────────────────┐       ┌────────────────────────┐       ┌────────────────────────┐
-│    用户工单入参        │ ────> │   意图分析提示词       │ ────> │   意图识别大模型       │
-│ (input_user_query)     │       │ (prompt_classification)│       │ (llm_classifier)       │
-│ - user_message         │       │ - {{input.user_message}}│      │ - gemini-2.5-flash     │
-│ - user_tier: VIP2      │       │ - JSON Schema template │       │ - Temperature: 0.2     │
-└────────────────────────┘       └────────────────────────┘       └───────────┬────────────┘
-                                                                              │
-                                                                              ▼
-┌────────────────────────┐       ┌────────────────────────┐       ┌────────────────────────┐
-│   最终工单路由分派     │ <──── │   输出适配与渲染       │ <──── │   路由决策脚本沙箱     │
-│ (output_dispatch)      │       │ (output_renderer)      │       │ (code_router_logic)    │
-│ - Target: Logistics VIP│       │ - dispatch_result      │       │ - JS Rule Engine       │
-│ - SLA: 15-min Urgent   │       │ - renderedAt Timestamp │       │ - Auto JSON parsing    │
-└────────────────────────┘       └────────────────────────┘       └────────────────────────┘
-```
+<p align="center">
+  <img src="./assets/workflow-topology-en.png" width="940" style="max-width: 100%;" alt="PatchCat Customer Support Routing Workflow Topology" />
+</p>
+
 
 ### Executing the Workflow
 1. Click the blue **`▶ Run Workflow`** button in the top right corner.
