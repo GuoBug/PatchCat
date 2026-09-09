@@ -14,13 +14,13 @@
   </p>
 
   <p>
-    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/github/v/release/GuoBug/PatchCat?color=blue&label=版本" alt="Release" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/版本-v0.3.0-blue.svg" alt="Release: v0.3.0" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/开源协议-MIT-emerald.svg" alt="License: MIT" /></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.8%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=black" alt="React 19" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/单元测试-77%2F77%20通过-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/自动化测试-94前端%20%7C%2021后端%20全通-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
@@ -80,10 +80,9 @@
 ## 🚀 核心特性
 
 ### 1. 🎨 可视化 DAG 画布与 Kahn 拓扑调度器
-- **拖拽式工作流画布**：基于 `@xyflow/react`（React Flow v12）打造，包含定制的 5 大核心节点（`Input 输入`, `Prompt 提示词`, `LLM 大模型`, `Code 脚本`, `Output 输出`）。
-- **Kahn 拓扑分层算法**：全自动计算节点上下游依赖，将无依赖的同层节点划分为并行波次（`Promise.all`）并发加速。
-- **实时环路检测与安全告警**：画布编辑时毫秒级检测拓扑死锁与循环依赖，提供醒目的顶部告警横幅并拦截执行。
-- **随时中断支持**：基于 `AbortController` 实现优雅的主动取消与流式中断。
+- **拖拽式工作流画布**：基于 `@xyflow/react`（React Flow v12）打造，包含 9 大专业节点组件（`输入`, `提示词`, `大模型`, `脚本代码`, `输出`, `知识库`, `条件分支`, `变量聚合器`, `HTTP请求`）。
+- **多路条件分支路由与动态跳过**：支持 IF/ELSE 规则求值、未命中下游分支动态跳过（`NODE_SKIPPED`）与聚合器汇聚收拢。
+- **交互式 Chat 调试抽屉与一键 API 发布**：全局快捷键 `Ctrl+Shift+D` 呼出实时对话调试抽屉；支持一键生成 FastAPI REST API 端点与 Key 鉴权。
 
 ### 2. ⚡ 多大模型服务商集成与动态模型发现
 - **主流云端与本地大模型直连**：

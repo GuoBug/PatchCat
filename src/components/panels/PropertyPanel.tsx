@@ -21,6 +21,9 @@ import {
   Loader2,
   RefreshCw,
   Database,
+  GitBranch,
+  GitMerge,
+  Globe,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import { useSettingsStore } from '../../stores/settings-store.ts';
@@ -131,6 +134,7 @@ export const PropertyPanel: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [showReasoning, setShowReasoning] = useState(true);
   const [isRefreshingModels, setIsRefreshingModels] = useState(false);
+  const [httpTab, setHttpTab] = useState<'params' | 'headers' | 'body' | 'auth' | 'settings'>('params');
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
@@ -610,6 +614,602 @@ export const PropertyPanel: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* ── Type Specific: Condition Node (IF / ELSE) ── */}
+        {type === 'condition' && (() => {
+          const conditionConfig = (config || {}) as {
+            conditions?: Array<{
+              id?: string;
+              variable?: string;
+              operator?: string;
+              value?: string | number;
+              targetHandle?: string;
+            }>;
+            logicalOperator?: 'AND' | 'OR';
+            defaultBranch?: string;
+          };
+          const conditions = conditionConfig.conditions || [
+            { id: 'rule_1', variable: '', operator: 'equals', value: '', targetHandle: 'if_true' },
+          ];
+          const defaultBranch = conditionConfig.defaultBranch || 'else';
+
+          const handleAddRule = () => {
+            const nextIdx = conditions.length + 1;
+            const newConditions = [
+              ...conditions,
+              {
+                id: `rule_${Date.now()}`,
+                variable: '',
+                operator: 'equals',
+                value: '',
+                targetHandle: `branch_${nextIdx}`,
+              },
+            ];
+            updateNodeConfig(id, { conditions: newConditions });
+          };
+
+          const handleUpdateRule = (index: number, patch: Partial<(typeof conditions)[0]>) => {
+            const updated = [...conditions];
+            updated[index] = { ...updated[index], ...patch };
+            updateNodeConfig(id, { conditions: updated });
+          };
+
+          const handleDeleteRule = (index: number) => {
+            if (conditions.length <= 1) return;
+            const updated = conditions.filter((_, i) => i !== index);
+            updateNodeConfig(id, { conditions: updated });
+          };
+
+          return (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <GitBranch className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  <span>Condition Routing Rules ({conditions.length})</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAddRule}
+                  className="flex items-center gap-1 text-[10px] font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 px-2 py-1 rounded bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 transition-all cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Add Rule</span>
+                </button>
+              </div>
+
+              {/* Rules List */}
+              <div className="space-y-3">
+                {conditions.map((rule, idx) => (
+                  <div
+                    key={rule.id || idx}
+                    className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2 text-xs"
+                  >
+                    <div className="flex items-center justify-between font-mono text-[10px]">
+                      <span className="font-bold text-amber-700 dark:text-amber-300">
+                        RULE #{idx + 1}
+                      </span>
+                      {conditions.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteRule(idx)}
+                          className="text-slate-400 hover:text-rose-500 p-0.5 rounded cursor-pointer"
+                          title="Delete rule"
+                        >
+                          <Trash className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Variable Reference */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block uppercase">
+                        Variable:
+                      </label>
+                      <input
+                        type="text"
+                        value={rule.variable || ''}
+                        onChange={(e) => handleUpdateRule(idx, { variable: e.target.value })}
+                        placeholder="{{llm_1.response}} or category"
+                        className="w-full px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+
+                    {/* Operator & Value */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block uppercase">
+                          Operator:
+                        </label>
+                        <select
+                          value={rule.operator || 'equals'}
+                          onChange={(e) => handleUpdateRule(idx, { operator: e.target.value })}
+                          className="w-full px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500 cursor-pointer"
+                        >
+                          <option value="equals">equals (==)</option>
+                          <option value="not_equals">not equals (!=)</option>
+                          <option value="contains">contains</option>
+                          <option value="not_contains">not contains</option>
+                          <option value="greater_than">greater than (&gt;)</option>
+                          <option value="less_than">less than (&lt;)</option>
+                          <option value="is_empty">is empty</option>
+                          <option value="is_not_empty">is not empty</option>
+                          <option value="regex_match">regex match</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block uppercase">
+                          Compare Value:
+                        </label>
+                        <input
+                          type="text"
+                          value={rule.value !== undefined ? String(rule.value) : ''}
+                          onChange={(e) => handleUpdateRule(idx, { value: e.target.value })}
+                          placeholder="value or text"
+                          className="w-full px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Target Handle Output Port */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block uppercase">
+                        Active Branch Handle:
+                      </label>
+                      <input
+                        type="text"
+                        value={rule.targetHandle || ''}
+                        onChange={(e) => handleUpdateRule(idx, { targetHandle: e.target.value })}
+                        placeholder="if_true / technical"
+                        className="w-full px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-amber-700 dark:text-amber-400 font-semibold focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Fallback Branch */}
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block uppercase">
+                  Fallback / Else Branch:
+                </label>
+                <input
+                  type="text"
+                  value={defaultBranch}
+                  onChange={(e) => updateNodeConfig(id, { defaultBranch: e.target.value })}
+                  placeholder="else"
+                  className="w-full px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-amber-700 dark:text-amber-400 font-semibold focus:outline-none focus:border-amber-500"
+                />
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
+                  Activated if none of the above conditions evaluate to true.
+                </span>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── Type Specific: Aggregator Node ── */}
+        {type === 'aggregator' && (() => {
+          const aggConfig = (config || {}) as { mode?: string; outputKey?: string };
+          const mode = aggConfig.mode || 'first_available';
+          const outputKey = aggConfig.outputKey || 'result';
+
+          return (
+            <div className="space-y-4">
+              <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <GitMerge className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                <span>Variable Reconvergence Mode</span>
+              </label>
+
+              {/* Mode Selectors */}
+              <div className="space-y-2">
+                {[
+                  {
+                    key: 'first_available',
+                    label: 'First Available',
+                    desc: 'Takes the output of whichever upstream branch actually executed and was not skipped.',
+                  },
+                  {
+                    key: 'merge_all',
+                    label: 'Merge All Active',
+                    desc: 'Combines all executed upstream branch outputs into an object keyed by source node ID.',
+                  },
+                  {
+                    key: 'wait_all',
+                    label: 'Wait All (Preserve Skipped)',
+                    desc: 'Waits for all connected branches, setting skipped branch results to null.',
+                  },
+                ].map((m) => (
+                  <button
+                    key={m.key}
+                    type="button"
+                    onClick={() => updateNodeConfig(id, { mode: m.key })}
+                    className={`w-full text-left p-2.5 rounded-xl border transition-all cursor-pointer ${
+                      mode === m.key
+                        ? 'bg-purple-50 dark:bg-purple-950/30 border-purple-300 dark:border-purple-500/50 shadow-xs'
+                        : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                        {m.label}
+                      </span>
+                      {mode === m.key && (
+                        <span className="w-2 h-2 rounded-full bg-purple-600 dark:bg-purple-400" />
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                      {m.desc}
+                    </p>
+                  </button>
+                ))}
+              </div>
+
+              {/* Output Key */}
+              <div className="space-y-1.5 pt-1">
+                <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                  Output Variable Key:
+                </label>
+                <input
+                  type="text"
+                  value={outputKey}
+                  onChange={(e) => updateNodeConfig(id, { outputKey: e.target.value })}
+                  placeholder="result"
+                  className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-purple-700 dark:text-purple-300 font-semibold focus:outline-none focus:border-purple-500"
+                />
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
+                  Downstream nodes can reference this via <code className="text-purple-600 dark:text-purple-400">{`{{${id}.${outputKey}}}`}</code>.
+                </span>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── Type Specific: HTTP Request Node ── */}
+        {type === 'http' && (() => {
+          const httpConfig = (config || {}) as {
+            method?: string;
+            url?: string;
+            queryParams?: Record<string, string>;
+            headers?: Record<string, string>;
+            bodyType?: string;
+            bodyContent?: string;
+            timeout?: number;
+            retryConfig?: { maxRetries: number; retryDelayMs: number };
+            authType?: string;
+            authConfig?: { token?: string; username?: string; password?: string; keyName?: string; keyValue?: string; addTo?: string };
+          };
+
+          const method = (httpConfig.method || 'GET').toUpperCase();
+          const url = httpConfig.url || '';
+          const queryParams = httpConfig.queryParams || {};
+          const headers = httpConfig.headers || {};
+          const bodyType = httpConfig.bodyType || 'none';
+          const bodyContent = httpConfig.bodyContent || '';
+          const timeout = httpConfig.timeout || 30000;
+          const maxRetries = httpConfig.retryConfig?.maxRetries ?? 1;
+          const retryDelayMs = httpConfig.retryConfig?.retryDelayMs ?? 1000;
+          const authType = httpConfig.authType || 'none';
+          const authConfig = httpConfig.authConfig || {};
+
+          return (
+            <div className="space-y-4">
+              <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                <span>REST API Request Configuration</span>
+              </label>
+
+              {/* Method & URL Row */}
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <select
+                    value={method}
+                    onChange={(e) => updateNodeConfig(id, { method: e.target.value })}
+                    className="px-2.5 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold font-mono focus:outline-none focus:border-teal-500 cursor-pointer shrink-0"
+                  >
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="PATCH">PATCH</option>
+                    <option value="DELETE">DELETE</option>
+                  </select>
+
+                  <input
+                    type="text"
+                    value={url}
+                    onChange={(e) => updateNodeConfig(id, { url: e.target.value })}
+                    placeholder="https://api.example.com/v1/data"
+                    className="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
+                  Supports template interpolation like <code className="text-teal-600 dark:text-teal-400">{"{{input_1.city}}"}</code> in URL or params.
+                </span>
+              </div>
+
+              {/* Tabs Bar */}
+              <div className="flex items-center border-b border-slate-200 dark:border-slate-800 text-xs font-medium">
+                {(['params', 'headers', 'body', 'auth', 'settings'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setHttpTab(tab)}
+                    className={`px-3 py-1.5 border-b-2 capitalize transition-colors cursor-pointer ${
+                      httpTab === tab
+                        ? 'border-teal-600 text-teal-600 dark:border-teal-400 dark:text-teal-400 font-semibold'
+                        : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {/* Active Tab Content */}
+              {httpTab === 'params' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">Query Parameters</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = { ...queryParams, [`param_${Object.keys(queryParams).length + 1}`]: '' };
+                        updateNodeConfig(id, { queryParams: next });
+                      }}
+                      className="text-[10px] text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" /> Add Param
+                    </button>
+                  </div>
+                  {Object.entries(queryParams).map(([k, v], idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={k}
+                        onChange={(e) => {
+                          const next = { ...queryParams };
+                          delete next[k];
+                          next[e.target.value] = v;
+                          updateNodeConfig(id, { queryParams: next });
+                        }}
+                        placeholder="key"
+                        className="w-1/3 px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                      />
+                      <input
+                        type="text"
+                        value={v}
+                        onChange={(e) => {
+                          updateNodeConfig(id, { queryParams: { ...queryParams, [k]: e.target.value } });
+                        }}
+                        placeholder="value or {{var}}"
+                        className="flex-1 px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = { ...queryParams };
+                          delete next[k];
+                          updateNodeConfig(id, { queryParams: next });
+                        }}
+                        className="text-slate-400 hover:text-rose-500 cursor-pointer"
+                      >
+                        <Trash className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {Object.keys(queryParams).length === 0 && (
+                    <p className="text-[11px] text-slate-400 italic py-1">No query parameters configured.</p>
+                  )}
+                </div>
+              )}
+
+              {httpTab === 'headers' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">HTTP Headers</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = { ...headers, [`Header-${Object.keys(headers).length + 1}`]: '' };
+                        updateNodeConfig(id, { headers: next });
+                      }}
+                      className="text-[10px] text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" /> Add Header
+                    </button>
+                  </div>
+                  {Object.entries(headers).map(([k, v], idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={k}
+                        onChange={(e) => {
+                          const next = { ...headers };
+                          delete next[k];
+                          next[e.target.value] = v;
+                          updateNodeConfig(id, { headers: next });
+                        }}
+                        placeholder="Header-Name"
+                        className="w-1/3 px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                      />
+                      <input
+                        type="text"
+                        value={v}
+                        onChange={(e) => {
+                          updateNodeConfig(id, { headers: { ...headers, [k]: e.target.value } });
+                        }}
+                        placeholder="value"
+                        className="flex-1 px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = { ...headers };
+                          delete next[k];
+                          updateNodeConfig(id, { headers: next });
+                        }}
+                        className="text-slate-400 hover:text-rose-500 cursor-pointer"
+                      >
+                        <Trash className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {Object.keys(headers).length === 0 && (
+                    <p className="text-[11px] text-slate-400 italic py-1">Using default Content-Type: application/json.</p>
+                  )}
+                </div>
+              )}
+
+              {httpTab === 'body' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-mono text-slate-400 uppercase">Body Format</label>
+                    <select
+                      value={bodyType}
+                      onChange={(e) => updateNodeConfig(id, { bodyType: e.target.value })}
+                      className="px-2 py-1 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono cursor-pointer"
+                    >
+                      <option value="none">None</option>
+                      <option value="json">JSON</option>
+                      <option value="raw">Raw Text</option>
+                    </select>
+                  </div>
+                  {bodyType !== 'none' && (
+                    <textarea
+                      rows={5}
+                      value={bodyContent}
+                      onChange={(e) => updateNodeConfig(id, { bodyContent: e.target.value })}
+                      placeholder={'{\n  "query": "{{input_1.query}}"\n}'}
+                      className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-teal-500 resize-y"
+                    />
+                  )}
+                </div>
+              )}
+
+              {httpTab === 'auth' && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono text-slate-400 uppercase block">Authentication Type</label>
+                    <select
+                      value={authType}
+                      onChange={(e) => updateNodeConfig(id, { authType: e.target.value })}
+                      className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono cursor-pointer"
+                    >
+                      <option value="none">None</option>
+                      <option value="bearer">Bearer Token</option>
+                      <option value="basic">Basic Auth (Username / Password)</option>
+                      <option value="api-key">API Key</option>
+                    </select>
+                  </div>
+
+                  {authType === 'bearer' && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-400 uppercase block">Bearer Token</label>
+                      <input
+                        type="password"
+                        value={authConfig.token || ''}
+                        onChange={(e) => updateNodeConfig(id, { authConfig: { ...authConfig, token: e.target.value } })}
+                        placeholder="ey..."
+                        className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                      />
+                    </div>
+                  )}
+
+                  {authType === 'basic' && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-slate-400 uppercase block">Username</label>
+                        <input
+                          type="text"
+                          value={authConfig.username || ''}
+                          onChange={(e) => updateNodeConfig(id, { authConfig: { ...authConfig, username: e.target.value } })}
+                          className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-slate-400 uppercase block">Password</label>
+                        <input
+                          type="password"
+                          value={authConfig.password || ''}
+                          onChange={(e) => updateNodeConfig(id, { authConfig: { ...authConfig, password: e.target.value } })}
+                          className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {authType === 'api-key' && (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          value={authConfig.keyName || ''}
+                          onChange={(e) => updateNodeConfig(id, { authConfig: { ...authConfig, keyName: e.target.value } })}
+                          placeholder="Header/Query Name (e.g. X-API-Key)"
+                          className="px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                        />
+                        <input
+                          type="password"
+                          value={authConfig.keyValue || ''}
+                          onChange={(e) => updateNodeConfig(id, { authConfig: { ...authConfig, keyValue: e.target.value } })}
+                          placeholder="API Key Value"
+                          className="px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                        />
+                      </div>
+                      <div className="flex items-center gap-3 text-xs">
+                        <label className="flex items-center gap-1 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="addTo"
+                            checked={authConfig.addTo !== 'query'}
+                            onChange={() => updateNodeConfig(id, { authConfig: { ...authConfig, addTo: 'header' } })}
+                          />
+                          <span>Send in Header</span>
+                        </label>
+                        <label className="flex items-center gap-1 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="addTo"
+                            checked={authConfig.addTo === 'query'}
+                            onChange={() => updateNodeConfig(id, { authConfig: { ...authConfig, addTo: 'query' } })}
+                          />
+                          <span>Send in Query Param</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {httpTab === 'settings' && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-400 uppercase block">Timeout (ms)</label>
+                      <input
+                        type="number"
+                        value={timeout}
+                        onChange={(e) => updateNodeConfig(id, { timeout: parseInt(e.target.value, 10) || 30000 })}
+                        className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-400 uppercase block">Max Retries</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="5"
+                        value={maxRetries}
+                        onChange={(e) => updateNodeConfig(id, { retryConfig: { maxRetries: parseInt(e.target.value, 10) || 0, retryDelayMs } })}
+                        className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* ── UNIVERSAL EXECUTION OUTPUT VIEWER IN DRAWER ── */}
         <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800/80">

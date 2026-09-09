@@ -37,6 +37,8 @@ export interface SavedWorkflow {
   createdAt: number;
   updatedAt: number;
   isPreset?: boolean;
+  api_enabled?: boolean;
+  api_key?: string;
 }
 
 export interface ProjectStoreState {
@@ -57,6 +59,7 @@ export interface ProjectStoreState {
   loadWorkflow: (id: string) => Promise<void>;
   saveCurrentWorkflow: (id?: string) => void;
   renameWorkflow: (id: string, name: string) => void;
+  updateWorkflow: (id: string, updates: Partial<SavedWorkflow>) => void;
   duplicateWorkflow: (id: string) => string;
   deleteWorkflow: (id: string) => void;
   moveWorkflow: (workflowId: string, targetFolderId: string) => void;
@@ -476,6 +479,24 @@ export const useProjectStore = create<ProjectStoreState>()(
           .saveWorkflow(id, { name: cleanName })
           .catch((e) => {
             console.warn('[ProjectStore] Failed to rename workflow on backend:', e);
+          });
+      },
+
+      updateWorkflow: (id, updates) => {
+        set((state) => {
+          const wf = state.workflows.find((w) => w.id === id);
+          if (wf) {
+            Object.assign(wf, updates);
+            wf.updatedAt = Date.now();
+          }
+        });
+
+        persistToLocalStorage(get().folders, get().workflows, get().activeWorkflowId);
+
+        getActiveAdapter()
+          .saveWorkflow(id, updates as any)
+          .catch((e) => {
+            console.warn('[ProjectStore] Failed to update workflow on backend:', e);
           });
       },
 

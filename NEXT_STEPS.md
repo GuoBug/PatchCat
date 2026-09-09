@@ -1,47 +1,174 @@
-# 🎯 下次开发接续清单 (Next Steps)
+# 🎯 Next Steps / 下次开发接续清单
 
-> **当前版本**: `v0.2.0` (已正式发布 🎉)  
-> **更新时间**: 2026-09-03  
-> **前序完成**: `v0.2.0` 全面发布（内置 RAG 预设、版本跃升、CHANGELOG 与 CONTRIBUTING 规范文档齐备，全量 77 项测试 100% 绿灯通过，已打 Git Tag `v0.2.0`）  
-> **当前状态**: 准备开启 **Phase 2.5: 知识库可视化管理与本地文件解析**  
+> **Current Version**: `v0.3.0` (Completed & Verified ✅)  
+> **Last Updated**: 2026-09-09  
+> **Previous Milestone**: Phase 2.5 Knowledge Base UX Polish, Document Parsers & Visualization  
+> **Current Focus**: **Phase 3 (v0.3.0): Conditional Routing, External Integration & Interactive Debugging (Shipped)**
 
----
-
-## ⚡ 下次开工即刻行动清单 (Immediate Action Plan)
-
-### 1. 前端知识库可视化管理抽屉 (Knowledge Management Drawer)
-- [x] 在左侧抽屉或顶栏增加【知识库管理】专属入口与面板（已在 `WorkflowSidebar` 顶栏增加【工作流 | 知识库】双 Tab 切换，并在 `KnowledgeDetailDrawer` 提供专属抽屉）；
-- [x] 支持可视化查看知识库列表、每个库下的文档列表与切片（Chunks）明细；
-- [x] 支持单条切片的“启用 / 停用”状态切换与检索命中计数（`hit_count`）热度展示；
-- [x] 属性面板（`PropertyPanel`）支持动态下拉绑定已有知识库，并提供直达知识库管理的快捷入口。
-
-### 2. 本地富文本文件解析器接入 (Document Parsers)
-- [x] 支持本地拖拽上传 `.md`、`.markdown`、`.txt`、`.pdf` 文件（Dropzone + 文件选择器）；
-- [x] 接入轻量 PDF 文本抽取库（`pypdf`），与后端的文本清洗器（`cleaner.py`）无缝对接；
-- [x] 验证从本地上传 PDF 到切片生成、向量嵌入的全流程测试（覆盖前端 Node 测试与后端 Pytest 测试，全量 83 项测试 100% 绿灯通过）。
-
-### 3. 混合检索与重排序预研 (Hybrid Search & Reranker)
-- [ ] 调研并在轻量模式下实现 BM25 稀疏检索算法；
-- [ ] 实现稠密向量余弦距离与 BM25 关键词分数的加权融合（RRF 算法）。
-
-### 4. 我关注的问题或疑问
-- [ ] 根据经验，抽取库在处理双栏排版、复杂表格、非标准字符编码（如无 Font Map）时易产出乱码或语义断裂的碎块。建议：必须引入前置纯净度检测（乱码字符率阈值）；当乱码率过高时，抛出明确的可降级错误或警告，而非直接向量化入库。
-- [ ] 产出 Chunk 时，严格规范 Schema 包含 ⁠page_no⁠、⁠char_start⁠、⁠char_end⁠，供前端检索引用回溯（Source Attribution）。
-- [ ] 建议：严格设置文件体积上限（如单文件 ≤ 20MB），并采用流式读取与分批切片机制。
-- [ ] 纯 Python 的 BM25 实现若缺乏优秀的分词（Tokenization）支撑，对中文语义检索的增益会衰减甚至退化。建议：确认轻量分词依赖（如 ⁠jieba⁠），并评估分词字典构建与停用词过滤的开销。
-- [ ] 避免用户重复上传同一文件导致向量库膨胀与 Chunks 冗余。
-
+[English](#english) | [简体中文](#简体中文)
 
 ---
 
-## 🛠️ 常用验证命令备忘
+<a name="english"></a>
+## English
+
+### ⚡ Immediate Action Plan for v0.3.0
+
+#### 1. IF/ELSE Conditional Branch Node ([PRD-007](docs/01-prd/PRD-007-Conditional-Branch-and-Dynamic-Routing.md))
+- [x] Add `condition` node type to `NodeType` union in `types.ts`
+- [x] Implement `ConditionNode.tsx` component with orange/amber diamond styling
+- [x] Build condition rule evaluator in `browser-engine.ts` (operators: equals, contains, greater_than, regex_match, etc.)
+- [x] Implement branch skipping logic: only activated branch's downstream nodes execute, others emit `NODE_SKIPPED`
+- [x] Build visual condition builder UI in `PropertyPanel.tsx` (add/remove rules, operator dropdown, variable reference input)
+- [x] Add pre-flight validation: warn on unconnected condition branches
+
+#### 2. Variable Aggregator Node ([PRD-007](docs/01-prd/PRD-007-Conditional-Branch-and-Dynamic-Routing.md))
+- [x] Add `aggregator` node type to `NodeType` union in `types.ts`
+- [x] Implement `AggregatorNode.tsx` component with purple/violet merge styling
+- [x] Implement three aggregation modes in `browser-engine.ts`: `first_available`, `merge_all`, `wait_all`
+- [x] Add multi-input handle support (multiple `in` handles on left side)
+
+#### 3. HTTP Request Node ([PRD-008](docs/01-prd/PRD-008-HTTP-Request-Node.md))
+- [x] Add `http` node type to `NodeType` union in `types.ts`
+- [x] Implement `HttpNode.tsx` component with green/teal globe styling
+- [x] Build HTTP executor in `browser-engine.ts` with method/headers/body/auth configuration
+- [x] Implement retry logic with exponential backoff
+- [x] Build tabbed property panel UI: Params | Headers | Body | Auth | Settings
+- [x] Add URL validation (block `file://`, `javascript:` schemes)
+- [x] Ensure credential sanitization in logs via existing `sanitizeData`
+
+#### 4. Chat Debug Panel ([PRD-009](docs/01-prd/PRD-009-Chat-Debug-Panel-and-Workflow-API.md))
+- [x] Create `ChatDebugPanel.tsx` slide-over component (right side, toggleable via Ctrl+Shift+D)
+- [x] Implement chat message bubbles with user input → streaming LLM response flow
+- [x] Reuse existing SSE streaming for real-time token rendering in chat bubbles
+- [x] Add expandable execution trace within each chat message
+- [x] Display token usage badge per message
+- [x] Store chat history in session memory (optional localStorage persistence)
+
+#### 5. Workflow → REST API Publishing ([PRD-009](docs/01-prd/PRD-009-Chat-Debug-Panel-and-Workflow-API.md))
+- [x] Create `POST /api/v1/workflows/{workflow_id}/run` endpoint in FastAPI backend
+- [x] Support both synchronous (JSON) and streaming (SSE) response modes
+- [x] Implement simple API key authentication per workflow
+- [x] Create 'Publish API' modal UI showing endpoint URL, curl/Python/JS code snippets
+- [x] Add enable/disable API access toggle per workflow
+
+#### 6. Testing & Verification
+- [x] Add ≥15 unit tests for IF/ELSE condition evaluation and branch skipping
+- [x] Add ≥10 unit tests for HTTP Request node
+- [x] Add ≥12 unit tests for Chat Debug Panel and API endpoint
+- [x] All existing 83+ tests continue passing (regression check: 94 frontend, 21 backend passing)
+- [x] TypeScript strict type check passes: `npm run typecheck`
+- [x] Production build succeeds: `npm run build`
+
+#### 7. Built-in Presets
+- [x] New preset: "Conditional Customer Routing" (Input → LLM Classifier → IF/ELSE → Branch A/B → Aggregator → Output)
+- [x] New preset: "Weather API Integration" (Input → HTTP GET → LLM Summarizer → Output)
+
+---
+
+### 🤔 Resolved Design Decisions
+
+- [x] **Branch skipping in topological sort**: Executed full Kahn layer-by-layer topology, using `nodeActiveBranch` and `incomingEdgesMap` to mark unselected branch descendants as `skipped` while allowing aggregator nodes to reconverge active branches safely.
+- [x] **CORS for HTTP nodes**: Implemented client URL protocol validation with informative error messages, plus automated mock mode for tests and documentation for server-side proxy mode.
+- [x] **Chat panel vs. Property panel coexistence**: Chat panel implemented as a right slide-over drawer triggered via toolbar icon or `Ctrl+Shift+D` shortcut without displacing canvas focus.
+- [x] **API publishing security**: Workflow-scoped API Key authentication (`X-API-Key` or `Authorization: Bearer`) with toggleable active state.
+
+---
+
+### 🛠️ Common Verification Commands
+
+```bash
+# 1. Run all frontend unit tests
+npm test
+
+# 2. Run all backend tests
+cd server && python -m pytest -v tests/ && cd ..
+
+# 3. TypeScript strict type check
+npm run typecheck
+
+# 4. Production build
+npm run build
+```
+
+---
+
+---
+
+<a name="简体中文"></a>
+## 简体中文
+
+### ⚡ v0.3.0 即刻行动清单
+
+#### 1. IF/ELSE 条件分支节点 ([PRD-007](docs/01-prd/PRD-007-Conditional-Branch-and-Dynamic-Routing.md))
+- [x] 在 `types.ts` 的 `NodeType` 联合类型中新增 `condition` 节点类型
+- [x] 实现 `ConditionNode.tsx` 组件，采用橙色/琥珀色菱形样式
+- [x] 在 `browser-engine.ts` 中构建条件规则求值器（运算符：equals、contains、greater_than、regex_match 等）
+- [x] 实现分支跳过逻辑：仅被激活分支的下游节点执行，其余分支发射 `NODE_SKIPPED` 事件
+- [x] 在 `PropertyPanel.tsx` 中构建可视化条件构建器 UI（增删规则行、运算符下拉、变量引用输入）
+- [x] 增加运行前校验：对未连接的条件分支发出警告
+
+#### 2. Variable 聚合节点 ([PRD-007](docs/01-prd/PRD-007-Conditional-Branch-and-Dynamic-Routing.md))
+- [x] 在 `types.ts` 的 `NodeType` 联合类型中新增 `aggregator` 节点类型
+- [x] 实现 `AggregatorNode.tsx` 组件，采用紫色/蓝紫色合并样式
+- [x] 在 `browser-engine.ts` 中实现三种聚合模式：`first_available`、`merge_all`、`wait_all`
+- [x] 支持多输入 handle（左侧多个 `in` 端口）
+
+#### 3. HTTP 请求节点 ([PRD-008](docs/01-prd/PRD-008-HTTP-Request-Node.md))
+- [x] 在 `types.ts` 的 `NodeType` 联合类型中新增 `http` 节点类型
+- [x] 实现 `HttpNode.tsx` 组件，采用绿色/蓝绿色地球图标样式
+- [x] 在 `browser-engine.ts` 中构建 HTTP 执行器（method/headers/body/auth 配置）
+- [x] 实现指数退避重试逻辑
+- [x] 构建多 Tab 属性面板 UI：Params | Headers | Body | Auth | Settings
+- [x] 增加 URL 校验（拦截 `file://`、`javascript:` 协议）
+- [x] 确保凭据在日志中通过现有 `sanitizeData` 脱敏
+
+#### 4. Chat 调试面板 ([PRD-009](docs/01-prd/PRD-009-Chat-Debug-Panel-and-Workflow-API.md))
+- [x] 创建 `ChatDebugPanel.tsx` 滑入式组件（右侧面板，Ctrl+Shift+D 切换）
+- [x] 实现对话气泡消息 UI：用户输入 → 流式 LLM 响应
+- [x] 复用现有 SSE 流式渲染，在对话气泡中实时显示 Token
+- [x] 在每条对话消息中添加可展开的执行链路追踪
+- [x] 显示每条消息的 Token 消耗徽章
+- [x] 将对话历史存储在会话内存中（可选 localStorage 持久化）
+
+#### 5. 工作流 → REST API 一键发布 ([PRD-009](docs/01-prd/PRD-009-Chat-Debug-Panel-and-Workflow-API.md))
+- [x] 在 FastAPI 后端创建 `POST /api/v1/workflows/{workflow_id}/run` 端点
+- [x] 支持同步（JSON 响应）和流式（SSE）两种响应模式
+- [x] 实现简单的按工作流 API Key 鉴权
+- [x] 创建「发布 API」弹窗 UI，展示端点 URL、curl/Python/JS 代码片段
+- [x] 添加按工作流启用/禁用 API 访问开关
+
+#### 6. 测试与验证
+- [x] 为 IF/ELSE 条件求值与分支跳过新增 ≥15 个单元测试
+- [x] 为 HTTP 请求节点新增 ≥10 个单元测试
+- [x] 为 Chat 调试面板和 API 端点新增 ≥12 个单元测试
+- [x] 现有 83+ 测试全部继续通过（前端 94 项全通，后端 21 项全通）
+- [x] TypeScript 严格类型检查通过：`npm run typecheck`
+- [x] 生产构建成功：`npm run build`
+
+#### 7. 内置预设工作流
+- [x] 新增预设：「条件客服路由」（Input → LLM 分类器 → IF/ELSE → 分支 A/B → 聚合器 → Output）
+- [x] 新增预设：「天气 API 集成」（Input → HTTP GET → LLM 摘要 → Output）
+
+---
+
+### 🤔 待确认的问题与关注点
+
+- [ ] **拓扑排序中的分支跳过**：当前 Kahn 算法包含所有节点。需要实现「条件跳过」且不破坏排序。建议方案：执行完整拓扑，但让条件节点将未激活的下游标记为 `skipped`。
+- [ ] **HTTP 节点的 CORS 限制**：浏览器端 `fetch()` 受 CORS 限制。需明确文档说明，并建议使用服务端代理模式作为受限 API 的替代方案。
+- [ ] **Chat 面板与属性面板共存**：两者都在右侧。需要决策：Tab 容器共存，还是互斥切换？
+- [ ] **API 发布安全性**：简单 API Key 在 v0.3.0 MVP 阶段足够。OAuth2/JWT 推迟到 v1.0.0。
+
+---
+
+### 🛠️ 常用验证命令备忘
 
 ```bash
 # 1. 运行前端全量单元测试
 npm test
 
 # 2. 运行后端全量自动化测试
-cd server; python -m pytest -v tests/; cd ..
+cd server && python -m pytest -v tests/ && cd ..
 
 # 3. 严格类型检查
 npm run typecheck

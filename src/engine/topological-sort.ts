@@ -118,9 +118,39 @@ export function validateGraphTopology(graph: GraphInput): GraphValidationResult 
     }
   }
 
+  // Check for unconnected condition node branches (pre-flight validation warning)
+  const warnings: string[] = [];
+  for (const node of graph.nodes) {
+    if (node.data?.type === 'condition' || node.type === 'condition') {
+      const config = (node.data?.config || {}) as { conditions?: Array<{ targetHandle?: string }>; defaultBranch?: string };
+      const expectedBranches = new Set<string>();
+      for (const rule of config.conditions || []) {
+        if (rule.targetHandle) expectedBranches.add(rule.targetHandle);
+      }
+      if (config.defaultBranch) expectedBranches.add(config.defaultBranch);
+      if (expectedBranches.size === 0) {
+        expectedBranches.add('if_true');
+        expectedBranches.add('else');
+      }
+
+      const connectedHandles = new Set(
+        graph.edges
+          .filter(e => e.source === node.id && e.sourceHandle)
+          .map(e => e.sourceHandle as string)
+      );
+
+      for (const branch of expectedBranches) {
+        if (!connectedHandles.has(branch)) {
+          warnings.push(`Condition node "${node.data?.label || node.id}" has an unconnected branch: "${branch}"`);
+        }
+      }
+    }
+  }
+
   return {
     valid: errors.length === 0,
     errors,
+    warnings: warnings.length > 0 ? warnings : undefined,
     cycleNodes: hasCycle ? cycleNodeIds : undefined,
     executionLayers: hasCycle ? undefined : executionLayers,
   };

@@ -47,6 +47,8 @@ class WorkflowORM(Base, TimestampMixin):
     )
 
     is_preset: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    api_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    api_key: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
 
     # Relationships
     folder: Mapped[Optional["FolderORM"]] = relationship(

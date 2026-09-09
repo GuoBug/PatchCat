@@ -1,0 +1,130 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "id": "f1a2b3c4-0002-4000-a000-000000000001",
+    "name": "Weather API Integration",
+    "description": "External API Integration workflow: takes a city name, calls Open-Meteo REST API, formats the forecast with a Prompt node, and generates an output.",
+    "author": "PatchCat Team",
+    "tags": [
+      "HTTP",
+      "Integration",
+      "Weather",
+      "API"
+    ],
+    "createdAt": "2026-09-09T00:00:00Z",
+    "updatedAt": "2026-09-09T00:00:00Z"
+  },
+  "viewport": {
+    "x": 50,
+    "y": 150,
+    "zoom": 0.85
+  },
+  "nodes": [
+    {
+      "id": "input_city",
+      "type": "input",
+      "position": {
+        "x": 50,
+        "y": 250
+      },
+      "data": {
+        "label": "City Input",
+        "description": "City and coordinates for weather query",
+        "inputs": {
+          "city": "Tokyo",
+          "latitude": "35.6762",
+          "longitude": "139.6503"
+        }
+      }
+    },
+    {
+      "id": "http_weather",
+      "type": "http",
+      "position": {
+        "x": 380,
+        "y": 250
+      },
+      "data": {
+        "label": "Open-Meteo API",
+        "description": "Fetch live temperature and weather code",
+        "config": {
+          "method": "GET",
+          "url": "https://api.open-meteo.com/v1/forecast",
+          "queryParams": [
+            {
+              "key": "latitude",
+              "value": "{{input_city.latitude}}"
+            },
+            {
+              "key": "longitude",
+              "value": "{{input_city.longitude}}"
+            },
+            {
+              "key": "current_weather",
+              "value": "true"
+            }
+          ],
+          "headers": [],
+          "timeout": 10000,
+          "retry": {
+            "maxRetries": 2,
+            "retryInterval": 1000,
+            "backoffFactor": 2
+          }
+        },
+        "inputs": {
+          "latitude": "{{input_city.latitude}}",
+          "longitude": "{{input_city.longitude}}"
+        }
+      }
+    },
+    {
+      "id": "prompt_summary",
+      "type": "prompt",
+      "position": {
+        "x": 720,
+        "y": 250
+      },
+      "data": {
+        "label": "Weather Report Prompt",
+        "description": "Assembles weather advisory from HTTP response",
+        "inputs": {
+          "template": "You are a cheerful weather broadcaster. The weather in {{input_city.city}} is currently: status={{http_weather.status}}, data={{http_weather.body}}. Write a concise, helpful 2-sentence morning greeting and clothing recommendation."
+        }
+      }
+    },
+    {
+      "id": "output_forecast",
+      "type": "output",
+      "position": {
+        "x": 1060,
+        "y": 250
+      },
+      "data": {
+        "label": "Forecast Output",
+        "description": "Generated weather advisory summary",
+        "inputs": {
+          "report_prompt": "{{prompt_summary.promptText}}",
+          "http_status": "{{http_weather.status}}"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "input_city",
+      "target": "http_weather"
+    },
+    {
+      "id": "e2",
+      "source": "http_weather",
+      "target": "prompt_summary"
+    },
+    {
+      "id": "e3",
+      "source": "prompt_summary",
+      "target": "output_forecast"
+    }
+  ]
+}

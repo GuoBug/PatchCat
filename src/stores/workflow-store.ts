@@ -156,6 +156,9 @@ const nodeCounters: Record<NodeType, number> = {
   code: 0,
   output: 0,
   knowledge: 0,
+  condition: 0,
+  aggregator: 0,
+  http: 0,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

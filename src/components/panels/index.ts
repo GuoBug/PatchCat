@@ -12,3 +12,5 @@ export { Footer } from './Footer';
 export { HelpModal } from './HelpModal';
 export { WorkflowSidebar } from './WorkflowSidebar';
 export { KnowledgeDetailDrawer } from './KnowledgeDetailDrawer';
+export { ChatDebugPanel } from './ChatDebugPanel';
+export { PublishApiModal } from './PublishApiModal';

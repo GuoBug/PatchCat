@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2026-09-09
+
+### Added
+- **IF/ELSE Conditional Branch Node (`ConditionNode.tsx`, PRD-007)**:
+  - Multi-branch condition evaluation with 9 operators: `equals`, `not_equals`, `contains`, `not_contains`, `greater_than`, `less_than`, `is_empty`, `is_not_empty`, and `regex_match`.
+  - Dynamic branch skipping: unactivated branch descendants are marked as `skipped` with `NODE_SKIPPED` events without disrupting topological Kahn scheduling.
+  - Visual condition rule builder in `PropertyPanel.tsx` with dynamic add/remove cases and pre-flight unconnected branch validation warnings.
+- **Variable Aggregator Node (`AggregatorNode.tsx`, PRD-007)**:
+  - Variable reconvergence across multiple upstream branches with 3 modes: `first_available` (extracts first non-skipped output), `merge_all` (combines active outputs into an object), and `wait_all`.
+- **HTTP Request Node (`HttpNode.tsx`, PRD-008)**:
+  - Supports all HTTP methods (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`), custom headers, query parameters, body payloads, and auth (`bearer`, `basic`, `api-key`).
+  - Robust exponential backoff retries on transient 5xx server errors (500, 502, 503, 504).
+  - Security validation blocking dangerous URL protocols (`file://`, `javascript:`, `data:`).
+  - Five-tab configuration inspector (Params | Headers | Body | Auth | Settings).
+- **Interactive Chat Debug Drawer (`ChatDebugPanel.tsx`, PRD-009)**:
+  - Slide-over drawer accessible via header or global `Ctrl+Shift+D` shortcut.
+  - Live SSE streaming with typewriter bubble rendering, per-node trace latency breakdowns, and token badges.
+  - Conversation session management with Markdown/JSON trace export.
+- **Workflow → REST API One-Click Publishing (`PublishApiModal.tsx`, PRD-009)**:
+  - Backend execution endpoint `POST /api/v1/workflows/{workflow_id}/run` supporting both synchronous JSON response and streaming SSE.
+  - Workflow API Key authentication with enable/disable switch, key regeneration, and ready-to-run curl, Python, and JavaScript snippets.
+- **Built-in Official Presets (EN & ZH)**:
+  - Added "Conditional Customer Routing" (`conditional-routing`) and "Weather API Integration" (`weather-api`).
+- **Comprehensive Test Suite Upgrades**:
+  - Reached 94 frontend automated unit tests and 21 backend pytest integration tests (115 total tests passing at 100%).
+
+---
+
 ## [0.2.0] - 2026-09-03
 
 ### Added

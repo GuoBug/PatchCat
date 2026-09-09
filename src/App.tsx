@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import {
   ControlHeader,
@@ -7,6 +7,8 @@ import {
   Footer,
   WorkflowSidebar,
   KnowledgeDetailDrawer,
+  ChatDebugPanel,
+  PublishApiModal,
 } from './components/panels';
 import { WorkflowCanvas } from './components/canvas';
 import { useWorkflowStore } from './stores/workflow-store.ts';
@@ -26,6 +28,9 @@ export const App: React.FC = () => {
   const seedPresetsIfEmpty = useProjectStore((s) => s.seedPresetsIfEmpty);
   const syncStorageMode = useKnowledgeStore((s) => s.syncStorageMode);
 
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+
   const initialLoadedRef = useRef(false);
 
   // Sync theme class to <html> element
@@ -41,6 +46,18 @@ export const App: React.FC = () => {
   useEffect(() => {
     syncStorageMode(storageMode, serverBaseUrl);
   }, [storageMode, serverBaseUrl, syncStorageMode]);
+
+  // Global Ctrl+Shift+D shortcut for toggling Chat Debug Panel
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
+        e.preventDefault();
+        setIsChatOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Seed / load initial workflow from project store on mount
   useEffect(() => {
@@ -69,7 +86,11 @@ export const App: React.FC = () => {
         {currentView === 'canvas' ? (
           <>
             {/* Top Navigation & Controls */}
-            <ControlHeader />
+            <ControlHeader
+              onToggleChat={() => setIsChatOpen((prev) => !prev)}
+              isChatOpen={isChatOpen}
+              onOpenPublishApi={() => setIsPublishModalOpen(true)}
+            />
 
             {/* Main Layout: Left Workflow Drawer | Canvas | Property Panel */}
             <main className="flex-1 flex w-full min-h-0 overflow-hidden relative">
@@ -83,6 +104,12 @@ export const App: React.FC = () => {
 
               {/* Right Property Inspector Drawer */}
               <PropertyPanel />
+
+              {/* Interactive Chat Debug Slide-over Drawer */}
+              <ChatDebugPanel
+                isOpen={isChatOpen}
+                onClose={() => setIsChatOpen(false)}
+              />
             </main>
 
             {/* Bottom Status / Links Footer */}
@@ -100,6 +127,12 @@ export const App: React.FC = () => {
 
         {/* Global Knowledge Base & Chunks Management Drawer */}
         <KnowledgeDetailDrawer />
+
+        {/* Publish Workflow as REST API Modal */}
+        <PublishApiModal
+          isOpen={isPublishModalOpen}
+          onClose={() => setIsPublishModalOpen(false)}
+        />
       </div>
     </ReactFlowProvider>
   );

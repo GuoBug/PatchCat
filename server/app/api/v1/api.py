@@ -3,7 +3,7 @@ API v1 Router Aggregator
 """
 
 from fastapi import APIRouter
-from .endpoints import health, folders, workflows, knowledge, documents
+from .endpoints import health, folders, workflows, knowledge, documents, workflow_run
 
 api_router = APIRouter()
 
@@ -15,6 +15,7 @@ api_router.include_router(folders.router, prefix="/folders", tags=["Folders"])
 
 # Workflows & Graphs
 api_router.include_router(workflows.router, prefix="/workflows", tags=["Workflows"])
+api_router.include_router(workflow_run.router, prefix="/workflows", tags=["Workflow Execution"])
 
 # Knowledge Base & RAG
 api_router.include_router(knowledge.router, prefix="/knowledge-bases", tags=["Knowledge Bases"])

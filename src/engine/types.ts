@@ -27,14 +27,26 @@ import type { Node, Edge } from '@xyflow/react';
  *
  * | Kind     | Responsibility                                           |
  * | -------- | -------------------------------------------------------- |
- * | `input`  | Captures workflow-level user parameters                   |
- * | `prompt` | Assembles a prompt template with dynamic variable slots   |
- * | `llm`    | Calls a large language model (cloud or local)             |
- * | `code`   | Runs a lightweight JS / Python transformation             |
- * | `output`    | Aggregates and renders the final workflow response        |
- * | `knowledge` | Retrieves semantic context from knowledge base (RAG)      |
+ * | `input`      | Captures workflow-level user parameters                   |
+ * | `prompt`     | Assembles a prompt template with dynamic variable slots   |
+ * | `llm`        | Calls a large language model (cloud or local)             |
+ * | `code`       | Runs a lightweight JS / Python transformation             |
+ * | `output`     | Aggregates and renders the final workflow response        |
+ * | `knowledge`  | Retrieves semantic context from knowledge base (RAG)      |
+ * | `condition`  | Evaluates conditional branch rules and routes execution   |
+ * | `aggregator` | Merges outputs from multiple branches back into single path|
+ * | `http`       | Invokes external REST APIs and Webhooks                   |
  */
-export type NodeType = 'input' | 'prompt' | 'llm' | 'code' | 'output' | 'knowledge';
+export type NodeType =
+  | 'input'
+  | 'prompt'
+  | 'llm'
+  | 'code'
+  | 'output'
+  | 'knowledge'
+  | 'condition'
+  | 'aggregator'
+  | 'http';
 
 /**
  * Execution lifecycle status for an individual node.
@@ -42,11 +54,11 @@ export type NodeType = 'input' | 'prompt' | 'llm' | 'code' | 'output' | 'knowled
  * State transitions:
  * ```
  *   idle ──▶ queued ──▶ running ──▶ success
- *                   │            └──▶ error
- *                   └──▶ (skipped via conditional route)
+ *                   │            ├──▶ error
+ *                   │            └──▶ skipped
  * ```
  */
-export type NodeStatus = 'idle' | 'queued' | 'running' | 'success' | 'error';
+export type NodeStatus = 'idle' | 'queued' | 'running' | 'success' | 'error' | 'skipped';
 
 /**
  * Runtime engine mode that determines *how* each node is executed.
@@ -286,6 +298,8 @@ export interface GraphValidationResult {
   valid: boolean;
   /** Human-readable error descriptions (empty when `valid` is `true`). */
   errors: string[];
+  /** Non-fatal pre-flight warnings (e.g. unconnected condition branches). */
+  warnings?: string[];
   /** Node IDs involved in a cycle (only populated when a cycle exists). */
   cycleNodes?: string[];
   /** Layer-by-layer execution plan (only populated when `valid` is `true`). */
@@ -315,7 +329,77 @@ export interface WorkflowRunOptions {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 9. Node Default Config Factories
+// 9. Condition, Aggregator & HTTP Configuration Interfaces
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type ConditionOperator =
+  | 'equals'
+  | 'not_equals'
+  | 'contains'
+  | 'not_contains'
+  | 'greater_than'
+  | 'less_than'
+  | 'is_empty'
+  | 'is_not_empty'
+  | 'regex_match';
+
+export interface ConditionRule {
+  id?: string;
+  variable: string;
+  operator: ConditionOperator;
+  value: string | number;
+  targetHandle: string;
+}
+
+export interface ConditionNodeConfig {
+  conditions: ConditionRule[];
+  logicalOperator?: 'AND' | 'OR';
+  defaultBranch?: string;
+}
+
+export type AggregatorMode = 'first_available' | 'merge_all' | 'wait_all';
+
+export interface AggregatorNodeConfig {
+  mode: AggregatorMode;
+  outputKey?: string;
+}
+
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+export type HttpBodyType = 'none' | 'json' | 'form-data' | 'x-www-form-urlencoded' | 'raw';
+export type HttpAuthType = 'none' | 'bearer' | 'basic' | 'api-key';
+export type HttpResponseType = 'json' | 'text' | 'auto';
+
+export interface HttpRetryConfig {
+  maxRetries: number;
+  retryDelayMs: number;
+  retryOn?: number[];
+}
+
+export interface HttpAuthConfig {
+  token?: string;
+  username?: string;
+  password?: string;
+  keyName?: string;
+  keyValue?: string;
+  addTo?: 'header' | 'query';
+}
+
+export interface HttpNodeConfig {
+  method: HttpMethod;
+  url: string;
+  headers?: Record<string, string>;
+  queryParams?: Record<string, string>;
+  bodyType?: HttpBodyType;
+  bodyContent?: string;
+  timeout?: number;
+  retryConfig?: HttpRetryConfig;
+  responseType?: HttpResponseType;
+  authType?: HttpAuthType;
+  authConfig?: HttpAuthConfig;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 10. Node Default Config Factories
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -336,6 +420,43 @@ export function getDefaultNodeConfig(type: NodeType): Record<string, unknown> {
       return { format: 'markdown' };
     case 'knowledge':
       return { knowledgeBaseId: '', query: '', topK: 3, scoreThreshold: 0.0 };
+    case 'condition':
+      return {
+        conditions: [
+          {
+            id: 'rule_1',
+            variable: '',
+            operator: 'equals',
+            value: '',
+            targetHandle: 'if_true',
+          },
+        ],
+        logicalOperator: 'AND',
+        defaultBranch: 'else',
+      };
+    case 'aggregator':
+      return {
+        mode: 'first_available',
+        outputKey: 'result',
+      };
+    case 'http':
+      return {
+        method: 'GET',
+        url: '',
+        headers: {},
+        queryParams: {},
+        bodyType: 'none',
+        bodyContent: '',
+        timeout: 30000,
+        retryConfig: {
+          maxRetries: 1,
+          retryDelayMs: 1000,
+          retryOn: [500, 502, 503, 504],
+        },
+        responseType: 'json',
+        authType: 'none',
+        authConfig: {},
+      };
   }
 }
 
@@ -344,12 +465,15 @@ export function getDefaultNodeConfig(type: NodeType): Record<string, unknown> {
  */
 export function getDefaultNodeLabel(type: NodeType): string {
   const labels: Record<NodeType, string> = {
-    input:     'Input',
-    prompt:    'Prompt Template',
-    llm:       'LLM Call',
-    code:      'Code Transform',
-    output:    'Output',
-    knowledge: 'Knowledge Retrieval',
+    input:      'Input',
+    prompt:     'Prompt Template',
+    llm:        'LLM Call',
+    code:       'Code Transform',
+    output:     'Output',
+    knowledge:  'Knowledge Retrieval',
+    condition:  'IF / ELSE Condition',
+    aggregator: 'Variable Aggregator',
+    http:       'HTTP Request',
   };
   return labels[type];
 }

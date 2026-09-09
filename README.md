@@ -14,13 +14,13 @@
   </p>
 
   <p>
-    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/github/v/release/GuoBug/PatchCat?color=blue&label=version" alt="Release" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/version-v0.3.0-blue.svg" alt="Release: v0.3.0" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-emerald.svg" alt="License: MIT" /></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.8%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=black" alt="React 19" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-77%2F77%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-94%20Frontend%20%7C%2021%20Backend%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
@@ -80,10 +80,9 @@ Why choose **PatchCat** over heavyweight orchestration tools?
 ## 🚀 Key Features
 
 ### 1. 🎨 Visual DAG Canvas & Topology Scheduler
-- **Drag-and-Drop Workflow Builder**: Built on `@xyflow/react` (React Flow v12) with custom node components (`Input`, `Prompt`, `LLM`, `Code`, `Output`).
-- **Kahn's Topological Algorithm**: Automatically partitions nodes into optimal parallel execution layers.
-- **Cycle Detection & Safety Warnings**: Real-time cycle detection with visual warning badges and pre-flight validation.
-- **In-flight Abort Support**: Cooperatively cancel running workflows at any moment via `AbortController`.
+- **Drag-and-Drop Workflow Builder**: Built on `@xyflow/react` (React Flow v12) with 9 specialized node components (`Input`, `Prompt`, `LLM`, `Code`, `Output`, `Knowledge`, `Condition`, `Aggregator`, `HTTP`).
+- **Dynamic Conditional Routing & Skipping**: IF/ELSE multi-branch evaluation with dynamic downstream skipping and variable aggregation.
+- **Interactive Chat Debug & API Publishing**: Slide-over Chat panel (`Ctrl+Shift+D`) and instant FastAPI REST endpoint generation with API Key auth.
 
 ### 2. ⚡ Multi-Vendor Model Hub & Dynamic Discovery
 - **Direct Cloud & Local LLM Connectivity**:

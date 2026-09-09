@@ -18,6 +18,7 @@ import {
   KeyRound,
   Settings,
   ShieldAlert,
+  MessageSquare,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import { useSettingsStore } from '../../stores/settings-store.ts';
@@ -36,7 +37,17 @@ export interface AlertNotification {
   cycleNodes?: string[];
 }
 
-export const ControlHeader: React.FC = () => {
+export interface ControlHeaderProps {
+  onToggleChat?: () => void;
+  isChatOpen?: boolean;
+  onOpenPublishApi?: () => void;
+}
+
+export const ControlHeader: React.FC<ControlHeaderProps> = ({
+  onToggleChat,
+  isChatOpen,
+  onOpenPublishApi,
+}) => {
   const { t, language } = useTranslation();
 
   const nodes = useWorkflowStore((s) => s.nodes);
@@ -324,6 +335,24 @@ export const ControlHeader: React.FC = () => {
       desc: t.nodeTypes.knowledgeDesc,
       color: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30',
     },
+    {
+      type: 'condition',
+      label: 'IF / ELSE Condition',
+      desc: 'Evaluate comparison rules & route branches',
+      color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
+    },
+    {
+      type: 'aggregator',
+      label: 'Variable Aggregator',
+      desc: 'Reconverge multiple paths into single flow',
+      color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30',
+    },
+    {
+      type: 'http',
+      label: 'HTTP Request',
+      desc: 'Call external REST APIs, webhooks, and services',
+      color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/30',
+    },
   ];
 
   return (
@@ -447,6 +476,34 @@ export const ControlHeader: React.FC = () => {
               }`}
             />
           </button>
+
+          {/* Publish API Button */}
+          {onOpenPublishApi && (
+            <button
+              onClick={onOpenPublishApi}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-sky-500/10 dark:hover:bg-sky-500/20 text-blue-600 dark:text-sky-400 border border-blue-200 dark:border-sky-500/30 text-xs font-medium transition-all shadow-xs cursor-pointer"
+              title="Publish Workflow as REST API"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Publish API</span>
+            </button>
+          )}
+
+          {/* Interactive Chat Debug Panel Button */}
+          {onToggleChat && (
+            <button
+              onClick={onToggleChat}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all shadow-xs cursor-pointer ${
+                isChatOpen
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
+                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800'
+              }`}
+              title="Chat Debug Panel (Ctrl+Shift+D)"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Chat</span>
+            </button>
+          )}
 
           {/* Settings Page Navigation Button */}
           <button

@@ -107,6 +107,8 @@ async def create_workflow(wf_in: WorkflowCreate, db: AsyncSession = Depends(get_
         nodes=wf_in.nodes,
         edges=wf_in.edges,
         global_inputs=wf_in.global_inputs,
+        api_enabled=wf_in.api_enabled,
+        api_key=wf_in.api_key,
         is_preset=False,
     )
     db.add(wf)
@@ -143,6 +145,10 @@ async def update_workflow(
         wf.edges = wf_in.edges
     if wf_in.global_inputs is not None:
         wf.global_inputs = wf_in.global_inputs
+    if wf_in.api_enabled is not None:
+        wf.api_enabled = wf_in.api_enabled
+    if wf_in.api_key is not None:
+        wf.api_key = wf_in.api_key
 
     await db.commit()
     await db.refresh(wf)

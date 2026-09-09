@@ -1,0 +1,210 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "id": "f1a2b3c4-0001-4000-a000-000000000002",
+    "name": "智能客服多分支条件路由与聚合",
+    "description": "多路条件分支客服系统：根据问题分类动态分发至技术、财务账单或通用客服提示词分支，未命中分支自动跳过，最后由聚合器汇聚结果。",
+    "author": "PatchCat Team",
+    "tags": [
+      "条件分支",
+      "路由",
+      "聚合器",
+      "智能客服"
+    ],
+    "createdAt": "2026-09-09T00:00:00Z",
+    "updatedAt": "2026-09-09T00:00:00Z"
+  },
+  "viewport": {
+    "x": 50,
+    "y": 150,
+    "zoom": 0.85
+  },
+  "nodes": [
+    {
+      "id": "input_ticket",
+      "type": "input",
+      "position": {
+        "x": 50,
+        "y": 250
+      },
+      "data": {
+        "label": "工单输入参数",
+        "description": "客户问题内容与分类标签",
+        "inputs": {
+          "category": "technical",
+          "query": "数据库连接每5分钟中断一次，报错 504 Gateway Timeout。"
+        }
+      }
+    },
+    {
+      "id": "cond_router",
+      "type": "condition",
+      "position": {
+        "x": 350,
+        "y": 250
+      },
+      "data": {
+        "label": "工单分类路由器",
+        "description": "根据工单类别动态命中对应分支，跳过无关处理路径",
+        "config": {
+          "cases": [
+            {
+              "id": "case_tech",
+              "label": "技术排障",
+              "conditions": [
+                {
+                  "variable": "input_ticket.category",
+                  "operator": "equals",
+                  "value": "technical"
+                }
+              ],
+              "logicalOperator": "and"
+            },
+            {
+              "id": "case_billing",
+              "label": "账单计费",
+              "conditions": [
+                {
+                  "variable": "input_ticket.category",
+                  "operator": "equals",
+                  "value": "billing"
+                }
+              ],
+              "logicalOperator": "and"
+            }
+          ],
+          "defaultBranchLabel": "通用咨询"
+        },
+        "inputs": {
+          "category": "{{input_ticket.category}}"
+        }
+      }
+    },
+    {
+      "id": "prompt_tech",
+      "type": "prompt",
+      "position": {
+        "x": 700,
+        "y": 100
+      },
+      "data": {
+        "label": "技术排障提示词",
+        "description": "DevOps & 架构专家排障策略",
+        "inputs": {
+          "template": "你是一名资深 DevOps 与后端架构师。请针对以下异常提供排查步骤：{{input_ticket.query}}"
+        }
+      }
+    },
+    {
+      "id": "prompt_billing",
+      "type": "prompt",
+      "position": {
+        "x": 700,
+        "y": 250
+      },
+      "data": {
+        "label": "财务账单提示词",
+        "description": "发票与退款指引提示词",
+        "inputs": {
+          "template": "你是一名财务客服专家。请针对客户的账单与付款疑问提供权威回复：{{input_ticket.query}}"
+        }
+      }
+    },
+    {
+      "id": "prompt_general",
+      "type": "prompt",
+      "position": {
+        "x": 700,
+        "y": 400
+      },
+      "data": {
+        "label": "通用咨询提示词",
+        "description": "通用客服接待提示词",
+        "inputs": {
+          "template": "你是一名耐心热情的智能客服代表。请回复用户的通用咨询：{{input_ticket.query}}"
+        }
+      }
+    },
+    {
+      "id": "aggregator_response",
+      "type": "aggregator",
+      "position": {
+        "x": 1050,
+        "y": 250
+      },
+      "data": {
+        "label": "分支聚合收拢器",
+        "description": "采用 first_available 模式提取有效命中分支的输出",
+        "config": {
+          "mode": "first_available",
+          "outputKey": "selected_prompt"
+        },
+        "inputs": {
+          "tech": "{{prompt_tech.promptText}}",
+          "billing": "{{prompt_billing.promptText}}",
+          "general": "{{prompt_general.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "output_result",
+      "type": "output",
+      "position": {
+        "x": 1350,
+        "y": 250
+      },
+      "data": {
+        "label": "最终流转结果",
+        "description": "展示经路由决策并汇聚收拢后的生成提示词",
+        "inputs": {
+          "result": "{{aggregator_response.selected_prompt}}"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "input_ticket",
+      "target": "cond_router"
+    },
+    {
+      "id": "e2",
+      "source": "cond_router",
+      "sourceHandle": "case_tech",
+      "target": "prompt_tech"
+    },
+    {
+      "id": "e3",
+      "source": "cond_router",
+      "sourceHandle": "case_billing",
+      "target": "prompt_billing"
+    },
+    {
+      "id": "e4",
+      "source": "cond_router",
+      "sourceHandle": "default",
+      "target": "prompt_general"
+    },
+    {
+      "id": "e5",
+      "source": "prompt_tech",
+      "target": "aggregator_response"
+    },
+    {
+      "id": "e6",
+      "source": "prompt_billing",
+      "target": "aggregator_response"
+    },
+    {
+      "id": "e7",
+      "source": "prompt_general",
+      "target": "aggregator_response"
+    },
+    {
+      "id": "e8",
+      "source": "aggregator_response",
+      "target": "output_result"
+    }
+  ]
+}

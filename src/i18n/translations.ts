@@ -59,12 +59,18 @@ export interface Translations {
     code: string;
     output: string;
     knowledge: string;
+    condition: string;
+    aggregator: string;
+    http: string;
     inputDesc: string;
     promptDesc: string;
     llmDesc: string;
     codeDesc: string;
     outputDesc: string;
     knowledgeDesc: string;
+    conditionDesc: string;
+    aggregatorDesc: string;
+    httpDesc: string;
   };
   propertyPanel: {
     title: string;
@@ -336,12 +342,18 @@ export const translations: Record<Language, Translations> = {
       code: 'Code Node',
       output: 'Output Node',
       knowledge: 'Knowledge Retrieval',
+      condition: 'Conditional Branch',
+      aggregator: 'Variable Aggregator',
+      http: 'HTTP Request',
       inputDesc: 'Inject entry parameters into workflow',
       promptDesc: 'Dynamic prompt template assembly',
       llmDesc: 'Execute LLM inference call',
       codeDesc: 'Execute JavaScript code transformation',
       outputDesc: 'Format and display final outputs',
       knowledgeDesc: 'Semantic retrieval from knowledge base (RAG)',
+      conditionDesc: 'Multi-branch conditional routing with dynamic skipping',
+      aggregatorDesc: 'Reconverge multiple branches and aggregate values',
+      httpDesc: 'Send external HTTP API requests with auth & retries',
     },
     propertyPanel: {
       title: 'Node Properties',
@@ -611,12 +623,18 @@ export const translations: Record<Language, Translations> = {
       code: '代码转换',
       output: '输出节点',
       knowledge: '知识库检索',
+      condition: '条件分支',
+      aggregator: '变量聚合器',
+      http: 'HTTP 请求',
       inputDesc: '向工作流注入入参变量',
       promptDesc: '动态组装提示词模板',
       llmDesc: '执行大模型推理调用',
       codeDesc: '运行 JavaScript 数据处理与路由',
       outputDesc: '汇总并展示最终生成结果',
       knowledgeDesc: '从私有知识库中语义召回相关切片 (RAG)',
+      conditionDesc: '多路条件分支路由，动态跳过未命中下游分支',
+      aggregatorDesc: '汇聚收拢多路分支变量并按模式聚合输出',
+      httpDesc: '调用外部三方 REST API 接口，支持重试与鉴权',
     },
     propertyPanel: {
       title: '节点属性配置',

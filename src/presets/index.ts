@@ -3,12 +3,16 @@ import reportCriticEn from './en/report-generation-critic.json' with { type: 'js
 import modelArenaEn from './en/model-arena-eval.json' with { type: 'json' };
 import ragKnowledgeQaEn from './en/rag-knowledge-qa.json' with { type: 'json' };
 import ragAgenticAuditorEn from './en/rag-agentic-auditor.json' with { type: 'json' };
+import conditionalRoutingEn from './en/conditional-customer-routing.json' with { type: 'json' };
+import weatherApiEn from './en/weather-api-integration.json' with { type: 'json' };
 
 import customerSupportZh from './zh/customer-support-routing.json' with { type: 'json' };
 import reportCriticZh from './zh/report-generation-critic.json' with { type: 'json' };
 import modelArenaZh from './zh/model-arena-eval.json' with { type: 'json' };
 import ragKnowledgeQaZh from './zh/rag-knowledge-qa.json' with { type: 'json' };
 import ragAgenticAuditorZh from './zh/rag-agentic-auditor.json' with { type: 'json' };
+import conditionalRoutingZh from './zh/conditional-customer-routing.json' with { type: 'json' };
+import weatherApiZh from './zh/weather-api-integration.json' with { type: 'json' };
 
 import type { WorkflowGraph } from '../engine/types.ts';
 import type { Language } from '../i18n/translations.ts';
@@ -52,6 +56,18 @@ export const PRESETS_DATA: Record<Language, Record<string, PresetItem>> = {
       desc: 'Dual-Stage Agentic RAG with Grounded Fact-Checking',
       data: ragAgenticAuditorEn as unknown as WorkflowGraph,
     },
+    'conditional-routing': {
+      key: 'conditional-routing',
+      name: 'Conditional Customer Routing',
+      desc: 'IF/ELSE Branch Routing & Aggregation',
+      data: conditionalRoutingEn as unknown as WorkflowGraph,
+    },
+    'weather-api': {
+      key: 'weather-api',
+      name: 'Weather API Integration',
+      desc: 'External HTTP Request & Advisory Summary',
+      data: weatherApiEn as unknown as WorkflowGraph,
+    },
   },
   zh: {
     'customer-support': {
@@ -84,6 +100,18 @@ export const PRESETS_DATA: Record<Language, Record<string, PresetItem>> = {
       desc: '切片召回 ➔ 方案生成 ➔ 知识库基准质检 ➔ 终审定稿',
       data: ragAgenticAuditorZh as unknown as WorkflowGraph,
     },
+    'conditional-routing': {
+      key: 'conditional-routing',
+      name: '智能客服多分支条件路由与聚合',
+      desc: '多路分支动态跳过与结果汇聚',
+      data: conditionalRoutingZh as unknown as WorkflowGraph,
+    },
+    'weather-api': {
+      key: 'weather-api',
+      name: '外部实时天气 API 调度与总结',
+      desc: '三方 HTTP 接口请求与早报播报',
+      data: weatherApiZh as unknown as WorkflowGraph,
+    },
   },
 };
 
@@ -93,9 +121,13 @@ export {
   modelArenaEn,
   ragKnowledgeQaEn,
   ragAgenticAuditorEn,
+  conditionalRoutingEn,
+  weatherApiEn,
   customerSupportZh,
   reportCriticZh,
   modelArenaZh,
   ragKnowledgeQaZh,
   ragAgenticAuditorZh,
+  conditionalRoutingZh,
+  weatherApiZh,
 };

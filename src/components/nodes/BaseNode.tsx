@@ -11,7 +11,11 @@ import {
   AlertTriangle,
   Loader2,
   Check,
-  Database
+  Database,
+  GitBranch,
+  GitMerge,
+  Globe,
+  MinusCircle,
 } from 'lucide-react';
 import type { NodeType, NodeStatus, NodeExecutionResult } from '../../engine/types.ts';
 
@@ -66,6 +70,24 @@ const typeConfig: Record<NodeType, { icon: React.ComponentType<{ className?: str
     handleColor: '#06B6D4',
     badge: 'RAG',
   },
+  condition: {
+    icon: GitBranch,
+    color: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30',
+    handleColor: '#F59E0B',
+    badge: 'IF/ELSE',
+  },
+  aggregator: {
+    icon: GitMerge,
+    color: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/30',
+    handleColor: '#A855F7',
+    badge: 'MERGE',
+  },
+  http: {
+    icon: Globe,
+    color: 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-500/10 dark:text-teal-400 dark:border-teal-500/30',
+    handleColor: '#14B8A6',
+    badge: 'HTTP',
+  },
 };
 
 const statusStyles: Record<NodeStatus, { border: string; badge: string; icon: ReactNode }> = {
@@ -93,6 +115,11 @@ const statusStyles: Record<NodeStatus, { border: string; badge: string; icon: Re
     border: 'border-rose-500 bg-rose-50/20 dark:bg-slate-900/95 shadow-md shadow-rose-500/20 ring-1 ring-rose-500',
     badge: 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30',
     icon: <AlertTriangle className="w-3 h-3 text-rose-600 dark:text-rose-400" />,
+  },
+  skipped: {
+    border: 'border-slate-300 dark:border-slate-800/80 border-dashed opacity-50 bg-slate-50/50 dark:bg-slate-950/40',
+    badge: 'bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700/50',
+    icon: <MinusCircle className="w-3 h-3 text-slate-400" />,
   },
 };
 

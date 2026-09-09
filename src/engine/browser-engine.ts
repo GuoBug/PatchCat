@@ -20,6 +20,11 @@ import type {
   GraphValidationResult,
   EngineMode,
   NodeType,
+  ConditionRule,
+  ConditionNodeConfig,
+  AggregatorNodeConfig,
+  HttpNodeConfig,
+  HttpMethod,
 } from './types';
 import { topologicalSort, validateGraphTopology } from './topological-sort.ts';
 import { resolveObjectVariables } from './variable-resolver.ts';
@@ -30,8 +35,51 @@ import { useKnowledgeStore } from '../stores/knowledge-store.ts';
 import { logger } from './logger.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Internal Types
+// Internal Types & Evaluators
 // ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Evaluates a single ConditionRule against an actual value.
+ */
+export function evaluateCondition(
+  rule: ConditionRule,
+  actualValue: unknown,
+): boolean {
+  const op = rule.operator;
+  const targetVal = rule.value;
+
+  const strVal = actualValue === null || actualValue === undefined ? '' : String(actualValue);
+  const numVal = typeof actualValue === 'number' ? actualValue : parseFloat(strVal);
+  const targetNum = typeof targetVal === 'number' ? targetVal : parseFloat(String(targetVal));
+
+  switch (op) {
+    case 'equals':
+      return strVal.trim().toLowerCase() === String(targetVal ?? '').trim().toLowerCase();
+    case 'not_equals':
+      return strVal.trim().toLowerCase() !== String(targetVal ?? '').trim().toLowerCase();
+    case 'contains':
+      return strVal.toLowerCase().includes(String(targetVal ?? '').toLowerCase());
+    case 'not_contains':
+      return !strVal.toLowerCase().includes(String(targetVal ?? '').toLowerCase());
+    case 'greater_than':
+      return !isNaN(numVal) && !isNaN(targetNum) && numVal > targetNum;
+    case 'less_than':
+      return !isNaN(numVal) && !isNaN(targetNum) && numVal < targetNum;
+    case 'is_empty':
+      return actualValue === null || actualValue === undefined || strVal.trim() === '';
+    case 'is_not_empty':
+      return actualValue !== null && actualValue !== undefined && strVal.trim() !== '';
+    case 'regex_match':
+      try {
+        const regex = new RegExp(String(targetVal), 'i');
+        return regex.test(strVal);
+      } catch {
+        return false;
+      }
+    default:
+      return false;
+  }
+}
 
 interface InternalNodeResult {
   nodeId: string;
@@ -173,6 +221,21 @@ export class BrowserWorkflowEngine {
     const { executionLayers } = topologicalSort(graph);
     const nodeMap = new Map(graph.nodes.map((n) => [n.id, n]));
 
+    // Graph topology adjacency for dynamic conditional routing & skipping
+    const incomingEdgesMap = new Map<string, WorkflowEdge[]>();
+    const outgoingEdgesMap = new Map<string, WorkflowEdge[]>();
+    for (const node of graph.nodes) {
+      incomingEdgesMap.set(node.id, []);
+      outgoingEdgesMap.set(node.id, []);
+    }
+    for (const edge of graph.edges) {
+      incomingEdgesMap.get(edge.target)?.push(edge);
+      outgoingEdgesMap.get(edge.source)?.push(edge);
+    }
+
+    const skippedNodes = new Set<string>();
+    const nodeActiveBranch = new Map<string, string>(); // conditionNodeId -> activeBranch handle
+
     // Execution context: maps nodeId → resolved output bag
     const context: Record<string, Record<string, unknown>> = {};
     if (options.inputs) {
@@ -216,6 +279,71 @@ export class BrowserWorkflowEngine {
             .map((nodeId) => nodeMap.get(nodeId))
             .filter((n): n is WorkflowNode => n !== undefined)
             .map(async (node) => {
+              // ── Dynamic Branch Skipping Evaluation ────────────────────────
+              const incoming = incomingEdgesMap.get(node.id) || [];
+              let shouldSkip = skippedNodes.has(node.id);
+
+              if (!shouldSkip && incoming.length > 0) {
+                if (node.data.type === 'aggregator') {
+                  // Aggregator node runs if at least one incoming edge is NOT skipped
+                  const hasActiveIncoming = incoming.some((edge) => {
+                    if (skippedNodes.has(edge.source)) return false;
+                    const srcNode = nodeMap.get(edge.source);
+                    if (srcNode && (srcNode.data.type === 'condition' || srcNode.type === 'condition')) {
+                      const activeBranch = nodeActiveBranch.get(edge.source);
+                      if (activeBranch && edge.sourceHandle && edge.sourceHandle !== activeBranch) {
+                        return false;
+                      }
+                    }
+                    return true;
+                  });
+                  if (!hasActiveIncoming) {
+                    shouldSkip = true;
+                  }
+                } else {
+                  // Normal node: if any incoming edge is inactive or comes from a skipped node, skip it
+                  const isAnyIncomingInactive = incoming.some((edge) => {
+                    if (skippedNodes.has(edge.source)) return true;
+                    const srcNode = nodeMap.get(edge.source);
+                    if (srcNode && (srcNode.data.type === 'condition' || srcNode.type === 'condition')) {
+                      const activeBranch = nodeActiveBranch.get(edge.source);
+                      if (activeBranch && edge.sourceHandle && edge.sourceHandle !== activeBranch) {
+                        return true;
+                      }
+                    }
+                    return false;
+                  });
+                  if (isAnyIncomingInactive) {
+                    shouldSkip = true;
+                  }
+                }
+              }
+
+              if (shouldSkip) {
+                skippedNodes.add(node.id);
+                logger.detailed(
+                  'WorkflowEngine',
+                  `节点 [${node.id}] (${node.data.label}) 分支未满足条件，跳过执行`,
+                  { nodeType: node.data.type },
+                  node.id,
+                );
+
+                eventQueue.push({
+                  type: 'NODE_SKIPPED',
+                  payload: {
+                    nodeId: node.id,
+                    reason: 'Condition branch not matched or upstream node was skipped',
+                  },
+                });
+
+                return {
+                  nodeId: node.id,
+                  status: 'success' as const,
+                  output: {},
+                  durationMs: 0,
+                };
+              }
+
               logger.detailed(
                 'WorkflowEngine',
                 `节点 [${node.id}] (${node.data.label}) 开始运行`,
@@ -258,6 +386,8 @@ export class BrowserWorkflowEngine {
                   });
                 },
                 options,
+                incoming,
+                skippedNodes,
               );
 
               if (result.status === 'error') {
@@ -279,6 +409,18 @@ export class BrowserWorkflowEngine {
                 });
               } else {
                 context[result.nodeId] = result.output;
+
+                // If condition node, record active branch handle
+                if (node.data.type === 'condition' || node.type === 'condition') {
+                  const activeBranch = (result.output['activeBranch'] as string) || 'else';
+                  nodeActiveBranch.set(node.id, activeBranch);
+                  logger.detailed(
+                    'WorkflowEngine',
+                    `条件分支节点 [${node.id}] 激活分支: "${activeBranch}"`,
+                    { activeBranch, result: result.output },
+                    node.id,
+                  );
+                }
 
                 logger.summary(
                   'WorkflowEngine',
@@ -381,6 +523,8 @@ export class BrowserWorkflowEngine {
       fullReasoning?: string;
     }) => void,
     options?: WorkflowRunOptions,
+    incomingEdges: WorkflowEdge[] = [],
+    skippedNodes: Set<string> = new Set(),
   ): Promise<InternalNodeResult> {
     const start = Date.now();
 
@@ -689,6 +833,244 @@ export class BrowserWorkflowEngine {
           output = {
             finalResult: resolvedInputs,
             renderedAt: new Date().toISOString(),
+          };
+          break;
+        }
+
+        case 'condition': {
+          const config = (node.data.config || {}) as unknown as ConditionNodeConfig;
+          const conditions = config.conditions || [];
+          const defaultBranch = config.defaultBranch || 'else';
+          let matchedBranch = defaultBranch;
+          let matchedRule: ConditionRule | null = null;
+          const evaluatedConditions: Array<{ rule: ConditionRule; matched: boolean; actualValue: unknown }> = [];
+
+          for (const rule of conditions) {
+            let val: unknown = undefined;
+            if (rule.variable) {
+              const trimmedVar = rule.variable.trim();
+              if (trimmedVar.startsWith('{{') && trimmedVar.endsWith('}}')) {
+                const resolved = resolveObjectVariables({ v: trimmedVar }, context);
+                val = resolved['v'];
+              } else {
+                val = resolvedInputs[trimmedVar] ?? context[trimmedVar];
+              }
+            } else {
+              const firstKey = Object.keys(resolvedInputs)[0];
+              if (firstKey) val = resolvedInputs[firstKey];
+            }
+
+            const isMatch = evaluateCondition(rule, val);
+            evaluatedConditions.push({ rule, matched: isMatch, actualValue: val });
+            if (isMatch && !matchedRule) {
+              matchedRule = rule;
+              matchedBranch = rule.targetHandle || 'if_true';
+              break;
+            }
+          }
+
+          output = {
+            activeBranch: matchedBranch,
+            matchedRule: matchedRule ?? null,
+            evaluatedConditions,
+            output: { activeBranch: matchedBranch },
+          };
+          break;
+        }
+
+        case 'aggregator': {
+          const config = (node.data.config || {}) as unknown as AggregatorNodeConfig;
+          const mode = config.mode || 'first_available';
+          const outputKey = config.outputKey || 'result';
+
+          let aggregatedValue: unknown = null;
+
+          if (mode === 'first_available') {
+            for (const edge of incomingEdges) {
+              if (!skippedNodes.has(edge.source) && context[edge.source]) {
+                const srcOut = context[edge.source]!;
+                aggregatedValue =
+                  srcOut['promptText'] ??
+                  srcOut['output'] ??
+                  srcOut['result'] ??
+                  srcOut['response'] ??
+                  srcOut['finalResult'] ??
+                  srcOut;
+                break;
+              }
+            }
+          } else if (mode === 'merge_all') {
+            const merged: Record<string, unknown> = {};
+            for (const edge of incomingEdges) {
+              if (!skippedNodes.has(edge.source) && context[edge.source]) {
+                const srcOut = context[edge.source]!;
+                merged[edge.source] =
+                  srcOut['promptText'] ??
+                  srcOut['output'] ??
+                  srcOut['result'] ??
+                  srcOut['response'] ??
+                  srcOut;
+              }
+            }
+            aggregatedValue = merged;
+          } else if (mode === 'wait_all') {
+            const merged: Record<string, unknown> = {};
+            for (const edge of incomingEdges) {
+              if (skippedNodes.has(edge.source)) {
+                merged[edge.source] = null;
+              } else {
+                const srcOut = context[edge.source] || {};
+                merged[edge.source] = srcOut['output'] ?? srcOut['result'] ?? srcOut['response'] ?? srcOut;
+              }
+            }
+            aggregatedValue = merged;
+          }
+
+          output = {
+            [outputKey]: aggregatedValue,
+            result: aggregatedValue,
+            output: aggregatedValue,
+            mode,
+          };
+          break;
+        }
+
+        case 'http': {
+          const config = (node.data.config || {}) as unknown as HttpNodeConfig;
+          let rawUrl = String(resolvedInputs['url'] || config.url || '').trim();
+
+          if (!rawUrl) {
+            throw new Error(`HTTP Node "${node.data.label || node.id}" requires a valid URL.`);
+          }
+
+          if (rawUrl.startsWith('file:') || rawUrl.startsWith('javascript:') || rawUrl.startsWith('data:')) {
+            throw new Error(`Security Exception: Forbidden or unsafe URL protocol "${rawUrl}"`);
+          }
+
+          if (!rawUrl.includes('://')) {
+            rawUrl = `https://${rawUrl}`;
+          }
+
+          const urlObj = new URL(rawUrl);
+          const queryParams = { ...(config.queryParams || {}) };
+          for (const [k, v] of Object.entries(queryParams)) {
+            if (v) urlObj.searchParams.set(k, String(v));
+          }
+          const targetUrl = urlObj.toString();
+
+          const reqHeaders: Record<string, string> = {
+            'Content-Type': 'application/json',
+            ...(config.headers || {}),
+          };
+
+          const authType = config.authType || 'none';
+          const authConfig = config.authConfig || {};
+          if (authType === 'bearer' && authConfig.token) {
+            reqHeaders['Authorization'] = `Bearer ${authConfig.token}`;
+          } else if (authType === 'basic' && (authConfig.username || authConfig.password)) {
+            const creds = btoa(`${authConfig.username || ''}:${authConfig.password || ''}`);
+            reqHeaders['Authorization'] = `Basic ${creds}`;
+          } else if (authType === 'api-key' && authConfig.keyName && authConfig.keyValue) {
+            if (authConfig.addTo === 'query') {
+              urlObj.searchParams.set(authConfig.keyName, authConfig.keyValue);
+            } else {
+              reqHeaders[authConfig.keyName] = authConfig.keyValue;
+            }
+          }
+
+          const method = (config.method || 'GET').toUpperCase() as HttpMethod;
+          let body: BodyInit | undefined = undefined;
+          if (['POST', 'PUT', 'PATCH'].includes(method)) {
+            const bodyContent = config.bodyContent ?? resolvedInputs['body'] ?? resolvedInputs['bodyContent'];
+            if (typeof bodyContent === 'object') {
+              body = JSON.stringify(bodyContent);
+            } else if (typeof bodyContent === 'string' && bodyContent.trim()) {
+              body = bodyContent;
+            }
+          }
+
+          const timeoutMs = config.timeout || 30000;
+          const retryConfig = config.retryConfig || { maxRetries: 0, retryDelayMs: 1000, retryOn: [500, 502, 503, 504] };
+          const retryOn = retryConfig.retryOn || [500, 502, 503, 504];
+
+          let attempt = 0;
+          let lastError: unknown = null;
+          let responseData: unknown = null;
+          let respStatus = 200;
+          let respStatusText = 'OK';
+          const respHeaders: Record<string, string> = {};
+          const httpStartTime = Date.now();
+
+          // Mock bypass for offline test mode or skipLLM
+          if (options?.skipLLM && (targetUrl.includes('example.com') || targetUrl.includes('weather') || targetUrl.includes('api.mock'))) {
+            responseData = { mock: true, weather: 'Sunny', temperature: '22C', url: targetUrl };
+            respStatus = 200;
+            respStatusText = 'OK (Mock)';
+          } else {
+            while (attempt <= retryConfig.maxRetries) {
+              if (signal.aborted) {
+                throw new Error('Workflow execution aborted by user.');
+              }
+
+              try {
+                const timeoutCtrl = new AbortController();
+                const timeoutId = setTimeout(() => timeoutCtrl.abort(), timeoutMs);
+
+                const res = await fetch(targetUrl, {
+                  method,
+                  headers: reqHeaders,
+                  body: ['GET', 'HEAD'].includes(method) ? undefined : body,
+                  signal: signal,
+                });
+                clearTimeout(timeoutId);
+
+                respStatus = res.status;
+                respStatusText = res.statusText;
+                res.headers.forEach((v, k) => {
+                  respHeaders[k] = v;
+                });
+
+                if (!res.ok && retryOn.includes(res.status) && attempt < retryConfig.maxRetries) {
+                  attempt++;
+                  const delay = retryConfig.retryDelayMs * Math.pow(2, attempt - 1);
+                  await new Promise((r) => setTimeout(r, delay));
+                  continue;
+                }
+
+                const contentType = res.headers.get('content-type') || '';
+                if (contentType.includes('application/json') || config.responseType === 'json') {
+                  responseData = await res.json().catch(() => res.text());
+                } else {
+                  responseData = await res.text();
+                }
+                lastError = null;
+                break;
+              } catch (err: unknown) {
+                lastError = err;
+                if (attempt < retryConfig.maxRetries) {
+                  attempt++;
+                  const delay = retryConfig.retryDelayMs * Math.pow(2, attempt - 1);
+                  await new Promise((r) => setTimeout(r, delay));
+                } else {
+                  break;
+                }
+              }
+            }
+
+            if (lastError) {
+              throw new Error(`HTTP Request Failed: ${lastError instanceof Error ? lastError.message : String(lastError)}`);
+            }
+          }
+
+          const latencyMs = Date.now() - httpStartTime;
+          output = {
+            status: respStatus,
+            statusText: respStatusText,
+            headers: respHeaders,
+            data: responseData,
+            latencyMs,
+            response: typeof responseData === 'string' ? responseData : JSON.stringify(responseData),
+            output: responseData,
           };
           break;
         }

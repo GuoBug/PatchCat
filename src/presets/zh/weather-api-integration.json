@@ -1,0 +1,130 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "id": "f1a2b3c4-0002-4000-a000-000000000002",
+    "name": "外部实时天气 API 调度与总结",
+    "description": "外部三方 API 集成工作流：输入城市经纬度，调用 Open-Meteo 免费开放气象 REST 接口，动态组装播报提示词并输出结果。",
+    "author": "PatchCat Team",
+    "tags": [
+      "HTTP",
+      "接口集成",
+      "天气播报",
+      "REST API"
+    ],
+    "createdAt": "2026-09-09T00:00:00Z",
+    "updatedAt": "2026-09-09T00:00:00Z"
+  },
+  "viewport": {
+    "x": 50,
+    "y": 150,
+    "zoom": 0.85
+  },
+  "nodes": [
+    {
+      "id": "input_city",
+      "type": "input",
+      "position": {
+        "x": 50,
+        "y": 250
+      },
+      "data": {
+        "label": "目标城市参数",
+        "description": "目标城市名称与经纬度坐标",
+        "inputs": {
+          "city": "北京",
+          "latitude": "39.9042",
+          "longitude": "116.4074"
+        }
+      }
+    },
+    {
+      "id": "http_weather",
+      "type": "http",
+      "position": {
+        "x": 380,
+        "y": 250
+      },
+      "data": {
+        "label": "Open-Meteo 气象接口",
+        "description": "发起 GET 请求获取城市实时天气与气温数据",
+        "config": {
+          "method": "GET",
+          "url": "https://api.open-meteo.com/v1/forecast",
+          "queryParams": [
+            {
+              "key": "latitude",
+              "value": "{{input_city.latitude}}"
+            },
+            {
+              "key": "longitude",
+              "value": "{{input_city.longitude}}"
+            },
+            {
+              "key": "current_weather",
+              "value": "true"
+            }
+          ],
+          "headers": [],
+          "timeout": 10000,
+          "retry": {
+            "maxRetries": 2,
+            "retryInterval": 1000,
+            "backoffFactor": 2
+          }
+        },
+        "inputs": {
+          "latitude": "{{input_city.latitude}}",
+          "longitude": "{{input_city.longitude}}"
+        }
+      }
+    },
+    {
+      "id": "prompt_summary",
+      "type": "prompt",
+      "position": {
+        "x": 720,
+        "y": 250
+      },
+      "data": {
+        "label": "天气早报播报提示词",
+        "description": "基于三方 API 返回的数据组装播报与出行建议",
+        "inputs": {
+          "template": "你是一位热情专业的天气早报主播。当前城市 {{input_city.city}} 的实时气象数据为：HTTP状态={{http_weather.status}}，数据详情={{http_weather.body}}。请生成一段两句话的温馨早间出行与穿衣建议。"
+        }
+      }
+    },
+    {
+      "id": "output_forecast",
+      "type": "output",
+      "position": {
+        "x": 1060,
+        "y": 250
+      },
+      "data": {
+        "label": "播报最终输出",
+        "description": "输出组装完成的早报内容与接口响应码",
+        "inputs": {
+          "report_prompt": "{{prompt_summary.promptText}}",
+          "http_status": "{{http_weather.status}}"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "input_city",
+      "target": "http_weather"
+    },
+    {
+      "id": "e2",
+      "source": "http_weather",
+      "target": "prompt_summary"
+    },
+    {
+      "id": "e3",
+      "source": "prompt_summary",
+      "target": "output_forecast"
+    }
+  ]
+}

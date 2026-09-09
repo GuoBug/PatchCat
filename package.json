@@ -1,7 +1,7 @@
 {
   "name": "patchcat",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "PatchCat: The open-source prompt orchestration engine designed for AI builders. Precision prompts. Seamless workflows.",
   "homepage": "https://GuoBug.github.io/PatchCat/",
@@ -18,7 +18,7 @@
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/engine.node.test.ts tests/settings.node.test.ts tests/llm-client.node.test.ts tests/logger.node.test.ts tests/project-store.node.test.ts tests/knowledge-node.node.test.ts tests/knowledge-store.node.test.ts",
+    "test": "node --test tests/engine.node.test.ts tests/settings.node.test.ts tests/llm-client.node.test.ts tests/logger.node.test.ts tests/project-store.node.test.ts tests/knowledge-node.node.test.ts tests/knowledge-store.node.test.ts tests/condition-aggregator.node.test.ts tests/http-node.node.test.ts tests/chat-and-api.node.test.ts",
     "demo": "node scripts/demo-run.ts"
   },
   "dependencies": {

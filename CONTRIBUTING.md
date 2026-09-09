@@ -3,6 +3,8 @@
 Thank you for your interest in contributing to **PatchCat**!  
 We welcome all kinds of contributions: bug reports, documentation enhancements, feature proposals, and pull requests.
 
+> 📖 **中文版**: [CONTRIBUTING_CN.md](CONTRIBUTING_CN.md)
+
 ---
 
 ## 🌟 Code of Conduct & Core Philosophy
