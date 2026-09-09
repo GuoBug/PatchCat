@@ -63,16 +63,10 @@ Open your browser and navigate to **`http://localhost:5173`**. You will see the 
 
 PatchCat operates with a **100% Client-Only Privacy Architecture**: your API Keys are stored exclusively in your browser's `LocalStorage` and connect directly to model providers. They are **never** transmitted to any intermediary backend.
 
-```
-       ┌────────────────────────┐
-       │   Browser LocalStorage │ (Encrypted in browser session)
-       └───────────┬────────────┘
-                   │ Direct HTTPS Call (No middleman)
-                   ▼
-       ┌────────────────────────────────────────────────────────┐
-       │  Google Gemini / DeepSeek / OpenAI / Ollama Endpoints   │
-       └────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="./assets/privacy-architecture-en.png" width="760" alt="PatchCat Client-Only Privacy Architecture" />
+</p>
+
 
 1. In the top navigation bar, click the **`API Key`** button (or the key icon).
 2. Select your preferred provider from the left sidebar (e.g., **Google Gemini**).
