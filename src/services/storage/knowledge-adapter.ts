@@ -127,12 +127,13 @@ function getSeedData() {
   const seedKb: KnowledgeBaseSummary = {
     id: SEED_KB_ID,
     name: 'PatchCat Architecture Whitepaper',
-    description: 'PatchCat 系统核心架构白皮书：涵盖 Kahn 算法拓扑调度、死锁检测机制、React Flow 性能优化规范及双模存储架构。',
+    description:
+      'PatchCat 反应式同构 DAG 编排引擎工业级技术白皮书 (RFC-101)：涵盖 Kahn 拓扑调度、死锁收敛判定、分层波次并发、React Flow 细粒度渲染隔离与 Web Worker 沙箱安全。',
     embedding_provider: 'local',
     embedding_model: 'deterministic',
     embedding_dimension: 64,
     document_count: 1,
-    total_chunks: 5,
+    total_chunks: 7,
     created_at: Date.now() - 86400000 * 2,
     updated_at: Date.now() - 86400000,
   };
@@ -142,9 +143,9 @@ function getSeedData() {
     kb_id: SEED_KB_ID,
     name: 'patchcat-architecture.md',
     file_extension: 'md',
-    file_size: 3840,
-    char_count: 1860,
-    chunk_count: 5,
+    file_size: 6144,
+    char_count: 2980,
+    chunk_count: 7,
     status: 'completed',
     chunk_size: 500,
     chunk_overlap: 50,
@@ -158,9 +159,9 @@ function getSeedData() {
       doc_id: SEED_DOC_ID,
       position: 1,
       content:
-        '【第1章 核心调度算法与拓扑排序】：\nPatchCat 核心图调度引擎采用经典 Kahn 拓扑排序算法（Kahn\'s Algorithm）管理有向无环图（DAG）的执行流程。\n工作流启动时，调度引擎首先静态遍历图中的全部节点（Nodes）与边（Edges），构建出全局节点的入度映射表（In-Degree Map）。\n随后，引擎将所有入度为 0 的起始节点（如 Input 入参节点、Knowledge 知识检索等初始数据源）推进并发执行队列。\n在每个节点执行成功的回调中，调度器原子化移除该节点的所有出边，并对应递减其所有下游节点的入度计数；一旦下游节点的入度归零，即判定该节点所有前置依赖已就绪，立即将其投递至调度就绪队列，实现完全事件驱动的高性能拓扑排序调度。',
-      token_count: 128,
-      hit_count: 24,
+        '【RFC-101 规范标准 | 第1章 系统全景架构与工业设计原则 (Architecture Overview & Design Invariants)】\nPatchCat 是专为复杂 Agentic AI 工作流设计的高响应性、端云同构有向无环图（DAG）编排系统。在系统架构设计上深度参考业界成熟工业标杆（Apache Airflow 任务调度、Dify 画布与变量安全总线、LangGraph 状态图模型、Temporal 确定性回放及 Ink & Switch 本地优先架构）。系统确立四大核心架构不变量：\n1. 端云同构执行协议（Isomorphic Execution Runtime）：调度核心与底层运行环境解耦，浏览器引擎与服务端引擎完全共享一致的图元数据规范（Graph Schema）与事件流生命周期协议（NODE_START、NODE_CHUNK、NODE_COMPLETE、WORKFLOW_COMPLETE）；\n2. 客户端零存储信任模型（Local-First & BYOK）：API Key 与敏感密钥仅在客户端本地沙盒与内存流转，绝不隐式上传，从根源规避中心化数据泄露风险；\n3. 分层分波异步并发（Topological Wave Concurrency）：无直接依赖的多分支节点由事件驱动波次并发调度，整体吞吐量对齐关键路径最短耗时；\n4. 沙箱物理隔离与看门狗韧性（Hard Sandboxing & Watchdog Circuit Breaker）：动态代码运行于独立线程沙箱并施加 5000ms 强制看门狗熔断。',
+      token_count: 245,
+      hit_count: 28,
       is_active: true,
       created_at: Date.now() - 86400000 * 2,
     },
@@ -170,9 +171,9 @@ function getSeedData() {
       doc_id: SEED_DOC_ID,
       position: 2,
       content:
-        '【第2章 环路死锁实时检测与防御机制】：\n为了防止团队配置工作流时由于错误连线导致死循环死锁（Cycle Deadlock），PatchCat 在预检（Pre-flight）与运行时实施了双重阻断：\n1. Kahn 算法收敛性判定：当调度就绪队列为空时，引擎比对“已成功访问的节点总数”与“画布节点总数”。若二者不相等，在数学图论上严格证明图谱中存在闭合有向环；\n2. 环路节点精准定位：系统提取未完成收敛的所有节点集合（cycleNodes），准确定位构成循环的闭合回路；\n3. 画布联动告警：引擎在触发执行前立即拦截请求，对涉环节点标红高亮并抛出 NODE_ERROR 状态提示，彻底阻断死循环对浏览器主线程或服务器计算资源的无谓耗尽。',
-      token_count: 142,
-      hit_count: 31,
+        '【RFC-101 规范标准 | 第2章 核心图调度算法与 Kahn 拓扑排序机制 (DAG Scheduling & Kahn\'s Algorithm)】\n为保障大规模复杂工作流调度的确定性与高吞吐，PatchCat 调度内核严格采用经典的 Kahn 拓扑排序算法（Kahn\'s Algorithm, 1962），调度时间复杂度为严谨的线性阶 O(|V| + |E|)，空间复杂度 O(|V|)。算法调度生命周期分为三个原子阶段：\n1. 静态入度矩阵构建：引擎在初始化阶段遍历节点全集 V 与有向边集 E，计算各节点的静态入度映射表 I(v) = |{u ∈ V | (u, v) ∈ E}|；\n2. 零入度就绪队列初始化：调度器将全部入度为 0 的起始节点（如 User Input 入参源、Knowledge 知识库检索等无前驱节点）压入就绪队列 Q_0 = {v ∈ V | I(v) = 0}；\n3. 动态原子剪枝与事件驱动推进：当节点 u 执行完成（NODE_COMPLETE）后，调度器触发拓扑出边剪枝操作 E ← E \\ {(u, v)}，原子递减所有后继下游节点的入度计数：I(v) ← I(v) - 1。一旦某个下游节点入度归零（I(v) == 0），即表明该节点的所有前置输入与上下文均已就绪，立即推入调度就绪波次，实现完全非轮询、零阻塞的纯事件驱动执行流。',
+      token_count: 260,
+      hit_count: 35,
       is_active: true,
       created_at: Date.now() - 86400000 * 2,
     },
@@ -182,9 +183,9 @@ function getSeedData() {
       doc_id: SEED_DOC_ID,
       position: 3,
       content:
-        '【第3章 异步分层并发与数据流穿透】：\nPatchCat 调度器将 DAG 结构自动划分为若干相互独立的拓扑分层（Topological Layers）。\n同一层级中互不依赖的多分支节点（例如平行的多模型盲测 LLM 节点或多源知识检索节点）由 Promise.all 真正并发调度，执行总耗时取决于最慢单节点的 max(T_i)，而非串行耗时的累加 sum(T_i)。\n在数据传递层面，系统内置安全的变量解析器（Variable Resolver），支持 {{nodeId.fieldName}} 表达式深度递归穿透，并全面实施原型污染防御（严格过滤 __proto__ 与 constructor 属性）。',
-      token_count: 115,
-      hit_count: 16,
+        '【RFC-101 规范标准 | 第3章 拓扑环路死循环死锁检测与防御机制 (Cycle Deadlock Pre-flight Interception)】\n在工作流配置过程中，若由于人工误连线或多分支交叉回环形成有向环（Cycle，如 A→B→C→A），环内所有节点的入度将永不归零（I(v) ≥ 1），从而导致就绪队列过早耗尽且未达终止态，引发调度引擎永久挂死（Deadlock）。PatchCat 对标 Apache Airflow DAG.validate() 构建了预检（Pre-flight）与运行时双重阻断体系：\n1. Kahn 数学收敛性不变式判定：在正式派发任何大模型调用或网络请求前，调度器在只读内存中执行拓扑遍历预检。根据图论充要条件，当且仅当拓扑遍历的节点总数 |V_visited| 等于画布节点总数 |V| 时，该图为严格有向无环图（DAG）。若 |V_visited| < |V|，在数学图论上严格证明图谱中存在闭合死循环回路；\n2. 最小闭环节点集合提取（Cycle Nodes Isolation）：引擎逆向计算未收敛节点差集 V_cycle = V \\ V_visited，精准圈定构成死锁闭环的所有节点清单；\n3. 前端画布联动熔断告警：预检失败时，引擎硬性拦截执行并抛出包含涉环节点明细的 DAG_CYCLE_DETECTED 异常，同时驱动画布将涉环节点与连接边渲染为琥珀红高亮警示，从根源杜绝死循环对主线程与服务器计算资源的无效耗尽。',
+      token_count: 280,
+      hit_count: 42,
       is_active: true,
       created_at: Date.now() - 86400000 * 2,
     },
@@ -194,9 +195,9 @@ function getSeedData() {
       doc_id: SEED_DOC_ID,
       position: 4,
       content:
-        '【第4章 画布大批量节点拖拽性能优化与渲染防护】：\n针对 100+ 节点大型复杂工作流拖拽易卡顿、掉帧的工程痛点，PatchCat 基于 React Flow 12 与 Zustand 实现精细化状态切片（Fine-Grained State Slicing）：\n1. 单一节点局部重绘：每个节点组件仅订阅自身的位置、数据和执行状态切片，拖拽单个节点不会引发全局整画布的脏重绘；\n2. 视口裁剪（Viewport Culling）：视口外部不可见的复杂节点不参与高开销 DOM 树计算；\n3. 事件调度节流：对高频鼠标移动与连线吸附事件实施微任务节流，保障百级节点画布拖拽在各类显示设备上稳定维持 60 FPS 丝滑帧率。',
-      token_count: 122,
-      hit_count: 19,
+        '【RFC-101 规范标准 | 第4章 分层分波并发调度与安全数据穿透总线 (Wave Concurrency & Variable Resolver)】\nPatchCat 调度器在拓扑排序基础上实现了离散波次并发模型（Topological Wave Concurrency）与安全变量穿透机制：\n1. 波次并发执行模型：引擎按拓扑图深度将节点划分为波次序列 W_0, W_1, ..., W_k。同一波次内互无依赖的分支节点（例如并行的多模型盲测评测节点、多源知识检索节点）由 Promise.all 实行微任务真并发并行调度。系统整体端到端时延收敛至各波次关键路径最大耗时：T_total = ∑ max_{v ∈ W_k} T(v)，吞吐量显著超越传统串行累加模型 ∑ T(v)；\n2. 变量解析总线（Variable Bus）：深度对齐 Dify 的上下文选择器规范，支持 {{nodeId.outputKey}} 嵌套点语法与深层数组取值表达式，在节点装载阶段执行无缝穿透解析；\n3. 原型污染防御盾（Prototype Pollution Shielding）：在变量递归解析与深层对象赋值中，内置安全解析器对对象键名实施严格白名单过滤，硬性拦截并剔除 __proto__、constructor、prototype 等特权属性注入，彻底防范恶意输入篡改 JavaScript 全局原型链。',
+      token_count: 255,
+      hit_count: 21,
       is_active: true,
       created_at: Date.now() - 86400000 * 2,
     },
@@ -206,9 +207,33 @@ function getSeedData() {
       doc_id: SEED_DOC_ID,
       position: 5,
       content:
-        '【第5章 双模存储与 Web Worker 沙箱安全隔离】：\n1. 零门槛双模存储：系统默认采用浏览器纯本地 LocalStorage 存储（Local-First），无需配置服务端或外部数据库即可完整运行；需要团队协作时可平滑切换为 FastAPI + SQLite/PostgreSQL 服务端模式；\n2. Worker 沙箱与看门狗：代码执行节点（Code Node）在主线程外的独立 Web Worker 沙箱中运行，屏蔽 localStorage、cookies 及网络外联能力以防凭据失窃；同时配置 5 秒看门狗定时器，任何 while(true) 等死循环代码将在 5000ms 被强制销毁并优雅报错。',
-      token_count: 130,
-      hit_count: 14,
+        '【RFC-101 规范标准 | 第5章 画布百级节点渲染性能规范与切片隔离 (Canvas Virtualization & State Slicing)】\n大型复杂工作流普遍包含 100+ 节点与数百条复杂连线，常规 React 状态提升会在节点拖拽与数据更新时触发整画布 O(N) 脏重绘（Dirty Canvas Re-render），引发严重掉帧与主线程卡死。PatchCat 对标 React Flow 12 (xyflow) 与 Figma 渲染架构，确立三层性能优化规范：\n1. 原子化细粒度选择器切片（Atomic Selector Slicing）：基于 Zustand 全局状态树，每个节点组件严格通过 useWorkflowStore(useShallow(selector)) 仅订阅自身 node.id 的位置坐标、输入输出与执行状态切片。单个节点的拖拽与状态流转被严格物理隔离在其局部组件内，其余 99% 的画布节点实现零重绘消耗；\n2. 视口虚拟化与几何裁剪（Viewport Culling & Virtualization）：对视口范围外的不可见节点与折线跳过高开销 DOM 树合成与重排计算，大幅降低 GPU 图层合成开销；\n3. 微任务高频事件节流（Microtask Event Throttling）：对鼠标移动、网格吸附及连线对齐等高频事件施加微任务节流与 RequestAnimationFrame 垂直同步对齐，实测在 150+ 节点大型拓扑图下稳定维持 60 FPS 丝滑拖拽。',
+      token_count: 265,
+      hit_count: 26,
+      is_active: true,
+      created_at: Date.now() - 86400000 * 2,
+    },
+    {
+      id: 'chunk_arch_06',
+      kb_id: SEED_KB_ID,
+      doc_id: SEED_DOC_ID,
+      position: 6,
+      content:
+        '【RFC-101 规范标准 | 第6章 Web Worker 物理沙箱隔离与看门狗熔断 (Sandbox Security & Watchdog Circuit Breaker)】\n为保障自定义动态脚本节点（Code Node / Python / JavaScript 转换器）的安全执行与宿主稳定性，PatchCat 对齐 Dify Sandbox 与 Node.js isolated-vm 规范，实现基于 Web Worker 的分层安全架构：\n1. 物理线程隔离与 UI 防假死：所有不可信代码完全移出浏览器渲染主线程，投递至专用的独立 Web Worker 子线程中执行。即使脚本执行高负载密集计算，浏览器主界面交互与动画依然丝滑无阻；\n2. 特权降级与环境净化：Worker 沙箱初始化时，环境内主动封闭并剔除 window、document、localStorage、sessionStorage、indexedDB、cookies 及 fetch/XHR 等网络外联能力，彻底斩断恶意工作流窥探与窃取用户本地 API Key 的攻击面；\n3. 5000ms 硬超时看门狗（Watchdog Circuit Breaker）：沙箱宿主主控维持硬件级倒计时看门狗定时器。一旦用户代码出现死循环（如 while(true)）或不可恢复的长耗时阻塞，看门狗在达到 5000ms 阈值瞬间立即执行 worker.terminate() 物理强杀 Worker 线程，回收内存并由引擎优雅发射 EXECUTION_TIMEOUT 异常。',
+      token_count: 270,
+      hit_count: 18,
+      is_active: true,
+      created_at: Date.now() - 86400000 * 2,
+    },
+    {
+      id: 'chunk_arch_07',
+      kb_id: SEED_KB_ID,
+      doc_id: SEED_DOC_ID,
+      position: 7,
+      content:
+        '【RFC-101 规范标准 | 第7章 知识库 RAG 混合检索与双模存储架构 (Hybrid RAG Retrieval & Dual-Mode Storage)】\nPatchCat 内置高性能、隐私优先的端侧与云端双模知识库 RAG 引擎，满足从极客单机开发到企业团队级协同的多样化场景：\n1. 端侧 RAG 检索模型与指纹匹配：在纯客户端模式下，调度引擎依托确定性词法哈希结合向量大纲指纹检索算法，根据查询词与切片内容的倒排词频与向量上下文计算综合相似度（0.0 ~ 1.0），支持 Top-K 动态截断与命中频次（hit_count）热度自增追踪；\n2. 纯净度检测与乱码防御：内置 document-parser 解析器全面兼容 PDF（基于 unpdf 核心）、HTML、Markdown 及纯文本。针对 PDF 容器二进制数据流（如 %PDF-1.7 原始流）及控制符乱码实施强制纯度检验，乱码占比 >15% 时自动熔断拦截；\n3. 双模持久化抽象协议（IKnowledgeAdapter）：定义标准的 CRUD 与检索契约。本地开发采用 LocalKnowledgeAdapter（零依赖纯浏览器 LocalStorage / IndexedDB）；企业协同一键无缝切换至 ServerKnowledgeAdapter（FastAPI + PostgreSQL pgvector / SQLite 引擎），业务层代码 100% 零改动。',
+      token_count: 260,
+      hit_count: 23,
       is_active: true,
       created_at: Date.now() - 86400000 * 2,
     },
@@ -236,7 +261,11 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
         const parsed: KnowledgeBaseSummary[] = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const archKb = parsed.find((k) => k.id === SEED_KB_ID);
-          if (archKb && archKb.total_chunks < seedKb.total_chunks) {
+          if (
+            archKb &&
+            (archKb.total_chunks < seedKb.total_chunks ||
+              !archKb.description?.includes('RFC-101'))
+          ) {
             archKb.total_chunks = seedKb.total_chunks;
             archKb.description = seedKb.description;
             this.setStoredKBs(parsed);
@@ -273,9 +302,14 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
         const parsed: DocumentItem[] = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const archDoc = parsed.find((d) => d.id === SEED_DOC_ID);
-          if (archDoc && archDoc.chunk_count < seedDoc.chunk_count) {
+          if (
+            archDoc &&
+            (archDoc.chunk_count < seedDoc.chunk_count ||
+              archDoc.char_count < seedDoc.char_count)
+          ) {
             archDoc.chunk_count = seedDoc.chunk_count;
             archDoc.char_count = seedDoc.char_count;
+            archDoc.file_size = seedDoc.file_size;
             this.setStoredDocs(parsed);
           }
           return parsed;
@@ -312,7 +346,8 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
           const arch01 = parsed.find((c) => c.id === 'chunk_arch_01');
           if (
             !arch01 ||
-            arch01.content.length < 200 ||
+            !arch01.content.includes('RFC-101') ||
+            arch01.content.length < 300 ||
             parsed.filter((c) => c.kb_id === SEED_KB_ID).length < seedChunks.length
           ) {
             const nonArchChunks = parsed.filter((c) => c.kb_id !== SEED_KB_ID);

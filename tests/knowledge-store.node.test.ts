@@ -176,4 +176,39 @@ describe('LocalKnowledgeAdapter & Knowledge Management', () => {
 
     await adapter.deleteKnowledgeBase(kb.id);
   });
+
+  it('should retrieve RFC-101 industrial whitepaper chunks for cycle deadlock & Kahn algorithm queries with high similarity', async () => {
+    const adapter = new LocalKnowledgeAdapter();
+    const kbs = await adapter.getKnowledgeBases();
+    const archKb = kbs.find((k) => k.id === 'kb_patchcat_arch')!;
+    assert.ok(archKb, 'Should have kb_patchcat_arch');
+
+    // Test user question: "PatchCat 是如何防止拓扑图死循环死锁的？它使用了什么算法？"
+    const query = 'PatchCat 是如何防止拓扑图死循环死锁的？它使用了什么算法？';
+    const result = await adapter.retrieve(archKb.id, query, 3, 0.4);
+
+    assert.ok(result.chunks.length >= 1, 'Should match at least 1 chunk');
+    assert.ok(result.context.includes('Kahn'));
+    assert.ok(result.context.includes('RFC-101'));
+    assert.ok(
+      result.context.includes('死循环') ||
+        result.context.includes('死锁') ||
+        result.context.includes('拓扑排序')
+    );
+
+    // Verify top chunk similarity is authoritative (> 0.65)
+    assert.ok(
+      result.chunks[0].similarity >= 0.65,
+      `Expected similarity >= 0.65, got ${result.chunks[0].similarity}`
+    );
+
+    // Verify chunk content explicitly contains the mathematical invariant and cycle detection
+    const hasCycleOrKahn = result.chunks.some(
+      (c) =>
+        c.content.includes("Kahn") &&
+        (c.content.includes("收敛") || c.content.includes("入度") || c.content.includes("DAG_CYCLE_DETECTED"))
+    );
+    assert.ok(hasCycleOrKahn, 'Result chunks should contain formal Kahn convergence and cycle detection');
+  });
 });
+
