@@ -1,9 +1,9 @@
 # 🎯 Next Steps / 下次开发接续清单
 
 > **Current Version**: `v0.3.0` (Completed & Verified ✅)  
-> **Last Updated**: 2026-09-09  
-> **Previous Milestone**: Phase 2.5 Knowledge Base UX Polish, Document Parsers & Visualization  
-> **Current Focus**: **Phase 3 (v0.3.0): Conditional Routing, External Integration & Interactive Debugging (Shipped)**
+> **Last Updated**: 2026-09-11  
+> **Previous Milestone**: Phase 3 Conditional Routing, External Integration & Interactive Debugging (Shipped ✅)  
+> **Current Focus**: **Research & Architectural Design for P0-1: Multi-Turn Conversation Memory**
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -12,7 +12,24 @@
 <a name="english"></a>
 ## English
 
-### ⚡ Immediate Action Plan for v0.3.0
+### 🔬 Current In-Depth Research: P0-1 Multi-Turn Conversation Memory in DAG Workflows
+
+- [ ] **1. Architecture & Injection Strategy (Node-based vs. Engine-level)**:
+  - **Option A (Engine-level Implicit Context)**: Add an `Enable Conversation Memory` toggle (`maxHistoryRounds: number`) to the LLM Node configuration. When enabled, the DAG scheduler automatically injects sliding-window messages from the current conversation session into the LLM payload before invoking the model.
+  - **Option B (Node-based Explicit Graph Wire)**: Introduce a dedicated `Memory` node on the canvas (`memory.buffer` or `memory.summary`) that connects directly to the LLM node's context handle.
+  - *Trade-off analysis required*: Ease-of-use for prompt builders (Option A) vs. explicit topology and multi-branch isolation (Option B).
+- [ ] **2. Memory Truncation & Budgeting Strategies**:
+  - **Buffer Window Memory**: Retain the latest $K$ rounds of dialogue (low overhead, easy to reason about).
+  - **Token-Budgeted Memory**: Dynamically prune older messages according to model context limits (`maxTokenLimit`).
+  - **Summarized Memory**: Rolling LLM-powered background summarization of older dialogue rounds to preserve critical intent with minimal token consumption.
+- [ ] **3. Session & Multi-LLM Disambiguation**:
+  - **Multi-LLM scoping**: Clarify memory assignment when a workflow contains multiple LLM nodes (e.g., intent classifier LLM vs. answer responder LLM).
+  - **Client-side session isolation**: Namespace memory by `workflowId` with clear/reset controls in `ChatDebugPanel`.
+  - **REST API session continuity**: Support a `session_id` parameter in `POST /api/v1/workflows/{id}/run` to maintain multi-turn memory on the server side.
+
+---
+
+### ⚡ Completed Action Plan for v0.3.0
 
 #### 1. IF/ELSE Conditional Branch Node ([PRD-007](docs/01-prd/PRD-007-Conditional-Branch-and-Dynamic-Routing.md))
 - [x] Add `condition` node type to `NodeType` union in `types.ts`
@@ -98,7 +115,24 @@ npm run build
 <a name="简体中文"></a>
 ## 简体中文
 
-### ⚡ v0.3.0 即刻行动清单
+### 🔬 当前重点研究专题：P0-1 DAG 工作流中的多轮会话记忆 (Conversation Memory)
+
+- [ ] **1. 记忆架构与注入机制方案权衡 (节点显式连线 vs. 引擎隐式上下文)**：
+  - **方案 A（引擎隐式上下文 / 配置开关）**：在 LLM 节点的属性面板中提供「开启会话记忆」开关（可配置 `保留历史轮数 maxHistoryRounds`）。开启后，调度引擎在调用模型前，自动将当前 Session 中滑动窗口内的历史对话合并进 `messages` 数组。
+  - **方案 B（画布显式节点连线）**：在画布中引入专门的 `Memory`（记忆）节点（如 `memory.buffer` 或 `memory.summary`），将其输出端连线至 LLM 节点的上下文端口。
+  - *需重点权衡*：Prompt 编排者的开箱即用体验（方案 A）对比多分支复杂隔离场景下的拓扑自由度（方案 B）。
+- [ ] **2. 记忆窗口裁剪与 Token 预算策略**：
+  - **滑动窗口记忆 (Buffer Window Memory)**：保留最近 $K$ 轮会话，实现轻量、易于排查和预测。
+  - **Token 预算裁剪 (Token-Budgeted Memory)**：根据目标模型的上下文上限（`maxTokenLimit`）动态倒序淘汰最久远的历史消息。
+  - **滚动摘要记忆 (Summarized Memory)**：利用后台 LLM 对超出轮数的历史对话进行滚动作摘要提炼，以最少 Token 消耗保留核心上下文语义。
+- [ ] **3. 会话隔离与多模型归属裁决**：
+  - **多 LLM 节点歧义**：明确当单一工作流中包含多个 LLM 节点（如意图分类模型 + 客服解答模型）时，记忆应精准绑定给哪个节点，避免无关上下文污染。
+  - **前端会话隔离**：基于 `workflowId` 在浏览器端划分独立存储命名空间，并在 `ChatDebugPanel` 提供一键清空/重置。
+  - **REST API 会话连贯性**：在 `POST /api/v1/workflows/{id}/run` 接口中支持透传 `session_id`，实现服务端跨请求的多轮记忆持久化与复用。
+
+---
+
+### ⚡ v0.3.0 已交付行动清单
 
 #### 1. IF/ELSE 条件分支节点 ([PRD-007](docs/01-prd/PRD-007-Conditional-Branch-and-Dynamic-Routing.md))
 - [x] 在 `types.ts` 的 `NodeType` 联合类型中新增 `condition` 节点类型
@@ -130,6 +164,8 @@ npm run build
 - [x] 在每条对话消息中添加可展开的执行链路追踪
 - [x] 显示每条消息的 Token 消耗徽章
 - [x] 将对话历史存储在会话内存中（可选 localStorage 持久化）
+- [x] 修复长文本与 JSON 溢出问题，增加代码卡片与一键复制
+- [x] 自动发现 Input 节点多参数，增加动态参数调试表单与标签回显
 
 #### 5. 工作流 → REST API 一键发布 ([PRD-009](docs/01-prd/PRD-009-Chat-Debug-Panel-and-Workflow-API.md))
 - [x] 在 FastAPI 后端创建 `POST /api/v1/workflows/{workflow_id}/run` 端点
@@ -142,7 +178,8 @@ npm run build
 - [x] 为 IF/ELSE 条件求值与分支跳过新增 ≥15 个单元测试
 - [x] 为 HTTP 请求节点新增 ≥10 个单元测试
 - [x] 为 Chat 调试面板和 API 端点新增 ≥12 个单元测试
-- [x] 现有 83+ 测试全部继续通过（前端 94 项全通，后端 21 项全通）
+- [x] 为动态多参数注入与路由跳转新增针对性测试用例
+- [x] 现有 162 项测试全部通过（通过率 100%）
 - [x] TypeScript 严格类型检查通过：`npm run typecheck`
 - [x] 生产构建成功：`npm run build`
 
@@ -152,12 +189,13 @@ npm run build
 
 ---
 
-### 🤔 待确认的问题与关注点
+### 🤔 已解决的设计决策与技术落地
 
-- [ ] **拓扑排序中的分支跳过**：当前 Kahn 算法包含所有节点。需要实现「条件跳过」且不破坏排序。建议方案：执行完整拓扑，但让条件节点将未激活的下游标记为 `skipped`。
-- [ ] **HTTP 节点的 CORS 限制**：浏览器端 `fetch()` 受 CORS 限制。需明确文档说明，并建议使用服务端代理模式作为受限 API 的替代方案。
-- [ ] **Chat 面板与属性面板共存**：两者都在右侧。需要决策：Tab 容器共存，还是互斥切换？
-- [ ] **API 发布安全性**：简单 API Key 在 v0.3.0 MVP 阶段足够。OAuth2/JWT 推迟到 v1.0.0。
+- [x] **拓扑排序中的分支跳过**：执行完整 Kahn 拓扑调度，基于 `nodeActiveBranch` 和 `incomingEdgesMap` 动态将未激活下游标记为 `skipped`，聚合节点支持按模式重聚。
+- [x] **HTTP 节点的 CORS 与安全防护**：前端对 URL 协议进行严格白名单过滤，提示 CORS 原理，支持 Mock 模式并引导配合后端代理使用。
+- [x] **Chat 调试面板与属性面板的优雅共存**：Chat 面板作为右侧轻量浮动滑层（支持 `Ctrl+Shift+D` 快捷键切换），不打乱画布焦点。
+- [x] **API 发布与鉴权机制**：按工作流级别生成独立 API Key，支持 Bearer Token / X-API-Key 鉴权与一键启停。
+- [x] **多参数动态注入与防溢出**：动态提取画布所有 Input 节点参数并提炼调试表单，气泡全面采用 `wrap-anywhere` 与代码卡片安全保护。
 
 ---
 
