@@ -51,6 +51,10 @@ export interface WorkflowStoreState {
   edges: WorkflowEdge[];
   /** ID of the node whose property panel is currently open, or `null`. */
   selectedNodeId: string | null;
+  /** Whether the right property panel drawer is open / expanded. */
+  isPropertyPanelOpen: boolean;
+  togglePropertyPanel: () => void;
+  setPropertyPanelOpen: (open: boolean) => void;
   /** UI Theme mode ('light' for Modern Slate/Indigo or 'dark' for Cyberpunk/Dark Slate). */
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
@@ -161,6 +165,20 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
     nodes: [],
     edges: [],
     selectedNodeId: null,
+    isPropertyPanelOpen: typeof window !== 'undefined' ? window.innerWidth >= 1024 : true,
+
+    togglePropertyPanel: () => {
+      set((state) => {
+        state.isPropertyPanelOpen = !state.isPropertyPanelOpen;
+      });
+    },
+
+    setPropertyPanelOpen: (open) => {
+      set((state) => {
+        state.isPropertyPanelOpen = open;
+      });
+    },
+
     theme:
       typeof window !== 'undefined' && localStorage.getItem('patchcat-theme') === 'dark'
         ? 'dark'
@@ -324,6 +342,9 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
     setSelectedNodeId: (nodeId) => {
       set((state) => {
         state.selectedNodeId = nodeId;
+        if (nodeId) {
+          state.isPropertyPanelOpen = true;
+        }
       });
     },
 

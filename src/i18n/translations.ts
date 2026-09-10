@@ -78,6 +78,9 @@ export interface Translations {
     title: string;
     noNodeSelected: string;
     noNodeSelectedDesc: string;
+    collapsePanel: string;
+    expandPanel: string;
+    closePanel: string;
     deleteNode: string;
     nodeLabel: string;
     nodeDescription: string;
@@ -465,6 +468,9 @@ export const translations: Record<Language, Translations> = {
       noNodeSelected: 'No Node Selected',
       noNodeSelectedDesc:
         'Click any node on the canvas to inspect its configuration and view live execution outputs.',
+      collapsePanel: 'Collapse Property Panel',
+      expandPanel: 'Open Property Panel',
+      closePanel: 'Close Drawer',
       deleteNode: 'Delete Node',
       nodeLabel: 'Node Name',
       nodeDescription: 'Description',
@@ -858,6 +864,9 @@ export const translations: Record<Language, Translations> = {
       title: '节点属性配置',
       noNodeSelected: '未选择节点',
       noNodeSelectedDesc: '在左侧画布中点击任意节点以检查其属性配置并查看实时运行输出。',
+      collapsePanel: '折叠属性面板',
+      expandPanel: '展开属性面板',
+      closePanel: '关闭抽屉',
       deleteNode: '删除此节点',
       nodeLabel: '节点名称',
       nodeDescription: '功能描述',

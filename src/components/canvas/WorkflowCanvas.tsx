@@ -43,6 +43,9 @@ export const WorkflowCanvas: React.FC = () => {
 
   const handlePaneClick = useCallback(() => {
     setSelectedNodeId(null);
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      useWorkflowStore.getState().setPropertyPanelOpen(false);
+    }
   }, [setSelectedNodeId]);
 
   // Node color helper for MiniMap
