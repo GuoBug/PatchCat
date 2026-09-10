@@ -9,7 +9,7 @@ uvicorn[standard]>=0.30.0
 sqlalchemy>=2.0.30
 asyncpg>=0.29.0
 pgvector>=0.3.0
-alembic>=1.13.0
+alembic>=1.19.2
 
 # Data Validation & Settings
 pydantic>=2.7.0
