@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   MessageSquare,
   X,
@@ -16,11 +16,131 @@ import {
   CheckCircle2,
   MinusCircle,
   Sparkles,
+  SlidersHorizontal,
+  RotateCcw,
+  Tag,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import { BrowserWorkflowEngine } from '../../engine/browser-engine.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
 import { nanoid } from 'nanoid';
+
+/**
+ * Recursively parses and cleans stringified nested JSON for formatted viewing.
+ */
+function formatSmartContent(content: string): { isJson: boolean; formatted: string; raw: string } {
+  const trimmed = content.trim();
+  if (
+    (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+    (trimmed.startsWith('[') && trimmed.endsWith(']'))
+  ) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      const deepClean = (val: unknown): unknown => {
+        if (typeof val === 'string') {
+          const sTrim = val.trim();
+          if (
+            (sTrim.startsWith('{') && sTrim.endsWith('}')) ||
+            (sTrim.startsWith('[') && sTrim.endsWith(']'))
+          ) {
+            try {
+              return deepClean(JSON.parse(sTrim));
+            } catch {
+              return val;
+            }
+          }
+          return val;
+        }
+        if (Array.isArray(val)) {
+          return val.map(deepClean);
+        }
+        if (val !== null && typeof val === 'object') {
+          const res: Record<string, unknown> = {};
+          for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+            res[k] = deepClean(v);
+          }
+          return res;
+        }
+        return val;
+      };
+
+      const cleaned = deepClean(parsed);
+      return {
+        isJson: true,
+        formatted: JSON.stringify(cleaned, null, 2),
+        raw: content,
+      };
+    } catch {
+      return { isJson: false, formatted: content, raw: content };
+    }
+  }
+  return { isJson: false, formatted: content, raw: content };
+}
+
+/**
+ * Safe code / text display card with copy capability and horizontal scrolling protection.
+ */
+const AssistantContentCard: React.FC<{ content: string; isError?: boolean }> = ({
+  content,
+  isError,
+}) => {
+  const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+  const smart = useMemo(() => formatSmartContent(content), [content]);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(smart.formatted || content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (!smart.isJson) {
+    return (
+      <div
+        className={`p-3 rounded-2xl rounded-tl-xs max-w-[92%] text-xs leading-relaxed shadow-xs min-w-0 break-words break-all [overflow-wrap:anywhere] overflow-hidden whitespace-pre-wrap ${
+          isError
+            ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 border border-rose-200 dark:border-rose-500/30'
+            : 'bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700/60'
+        }`}
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl rounded-tl-xs max-w-[95%] w-full text-xs shadow-xs min-w-0 border border-slate-200 dark:border-slate-800 bg-slate-100/90 dark:bg-slate-900/90 overflow-hidden flex flex-col">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-slate-200/60 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[10px] font-mono text-slate-500 dark:text-slate-400">
+        <span className="font-semibold text-blue-600 dark:text-sky-400 flex items-center gap-1">
+          <Sparkles className="w-3 h-3" />
+          {t.chatDebug.viewJson}
+        </span>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-slate-300/50 dark:hover:bg-slate-700/50 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
+        >
+          {copied ? (
+            <>
+              <Check className="w-3 h-3 text-emerald-500" />
+              <span className="text-emerald-500 font-medium">{t.chatDebug.copied}</span>
+            </>
+          ) : (
+            <>
+              <Copy className="w-3 h-3" />
+              <span>{t.chatDebug.copyContent}</span>
+            </>
+          )}
+        </button>
+      </div>
+      <pre className="p-3 text-[11px] font-mono leading-relaxed overflow-x-auto text-slate-800 dark:text-slate-200 max-h-72 overflow-y-auto whitespace-pre">
+        <code>{smart.formatted}</code>
+      </pre>
+    </div>
+  );
+};
 
 export interface ChatNodeTrace {
   nodeId: string;
@@ -85,8 +205,58 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, activeStreamingText]);
 
-  // Find input fields from graph Input nodes
-  const inputNodes = nodes.filter((n) => n.data.type === 'input' || n.type === 'input');
+  // Find all Input nodes on the canvas
+  const inputNodes = useMemo(
+    () => nodes.filter((n) => n.data.type === 'input' || n.type === 'input'),
+    [nodes],
+  );
+
+  // Discover all defined parameters across all input nodes
+  const discoveredParams = useMemo(() => {
+    const params: Record<string, { defaultValue: string; nodeId: string; nodeLabel: string }> = {};
+    inputNodes.forEach((node) => {
+      const inputs = (node.data.inputs || {}) as Record<string, unknown>;
+      Object.entries(inputs).forEach(([k, v]) => {
+        params[k] = {
+          defaultValue: typeof v === 'string' ? v : JSON.stringify(v),
+          nodeId: node.id,
+          nodeLabel: node.data.label || node.id,
+        };
+      });
+    });
+    return params;
+  }, [inputNodes]);
+
+  // Distinguish between main query (tied to textarea) and auxiliary parameters
+  const paramKeys = useMemo(() => Object.keys(discoveredParams), [discoveredParams]);
+
+  const mainQueryKey = useMemo(() => {
+    const queryAliases = ['query', 'user_query', 'input', 'message', 'prompt', 'question', 'text'];
+    const matched = paramKeys.find((k) => queryAliases.includes(k.toLowerCase()));
+    if (matched) return matched;
+    return paramKeys.length === 1 ? paramKeys[0] : 'query';
+  }, [paramKeys]);
+
+  const auxiliaryParamKeys = useMemo(
+    () => paramKeys.filter((k) => k !== mainQueryKey),
+    [paramKeys, mainQueryKey],
+  );
+
+  // Runtime parameter tuning state
+  const [runtimeParams, setRuntimeParams] = useState<Record<string, string>>({});
+
+  // Sync default parameters when discoveredParams changes
+  useEffect(() => {
+    setRuntimeParams((prev) => {
+      const updated = { ...prev };
+      Object.entries(discoveredParams).forEach(([k, meta]) => {
+        if (updated[k] === undefined) {
+          updated[k] = meta.defaultValue;
+        }
+      });
+      return updated;
+    });
+  }, [discoveredParams]);
 
   const handleClearHistory = () => {
     setMessages([]);
@@ -129,38 +299,37 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
     const userMsgId = nanoid();
     const assistantMsgId = nanoid();
 
+    // Assemble runtime inputs bag
+    const inputsBag: Record<string, unknown> = {
+      ...runtimeParams,
+      query,
+      user_query: query,
+      input: query,
+    };
+    if (mainQueryKey) {
+      inputsBag[mainQueryKey] = query;
+    }
+
+    // Capture non-empty auxiliary parameters used for this round
+    const usedParams: Record<string, string> = {};
+    auxiliaryParamKeys.forEach((k) => {
+      if (runtimeParams[k] !== undefined && runtimeParams[k].trim() !== '') {
+        usedParams[k] = runtimeParams[k];
+      }
+    });
+
     // 1. Append User Message
     const userMsg: ChatMessageItem = {
       id: userMsgId,
       timestamp: Date.now(),
       role: 'user',
       content: query,
+      rawInputs: usedParams,
     };
 
     setMessages((prev) => [...prev, userMsg]);
     setIsRunning(true);
     setActiveStreamingText('');
-
-    // Prepare inputs bag
-    const inputsBag: Record<string, unknown> = {
-      query,
-      user_query: query,
-      input: query,
-    };
-
-    // If input node defines default values or keys, populate
-    inputNodes.forEach((node) => {
-      const defaultVals = (node.data.config?.['defaultValues'] || {}) as Record<string, unknown>;
-      Object.entries(defaultVals).forEach(([k, v]) => {
-        if (!inputsBag[k]) inputsBag[k] = v;
-      });
-      // also set first input parameter key if any
-      const inputKeys = Object.keys(node.data.inputs || {});
-      const firstKey = inputKeys[0];
-      if (firstKey && !inputsBag[firstKey]) {
-        inputsBag[firstKey] = query;
-      }
-    });
 
     const traces: Map<string, ChatNodeTrace> = new Map();
     nodes.forEach((n) => {
@@ -194,10 +363,10 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
             tr.durationMs = event.payload.durationMs;
             tr.output = event.payload.output;
           }
-          // If this is an output node or llm node, capture content
+          // Capture content if output node or llm node
           const n = nodes.find((item) => item.id === event.payload.nodeId);
           if (n?.data.type === 'output' || n?.type === 'output') {
-            const outBag = event.payload.output;
+            const outBag = event.payload.output as Record<string, unknown>;
             const finalVal = outBag['finalResult'] ?? outBag['output'] ?? outBag;
             if (typeof finalVal === 'string') {
               assistantContent = finalVal;
@@ -266,31 +435,31 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
   if (!isOpen) return null;
 
   return (
-    <aside className="fixed top-12 right-0 bottom-7 w-96 md:w-[420px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col shadow-2xl z-40 animate-in slide-in-from-right duration-200">
+    <aside className="fixed top-12 right-0 bottom-7 w-96 md:w-[440px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col shadow-2xl z-40 animate-in slide-in-from-right duration-200 min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600 dark:bg-sky-500/10 dark:text-sky-400 border border-blue-200 dark:border-sky-500/30">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600 dark:bg-sky-500/10 dark:text-sky-400 border border-blue-200 dark:border-sky-500/30 shrink-0">
             <MessageSquare className="w-4 h-4" />
           </div>
-          <div>
-            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-              <span>{t.chatDebug.title}</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+          <div className="min-w-0">
+            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 truncate">
+              <span className="truncate">{t.chatDebug.title}</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0">
                 Ctrl+Shift+D
               </span>
             </h3>
-            <span className="text-[10px] text-slate-400 block">{t.chatDebug.subtitle}</span>
+            <span className="text-[10px] text-slate-400 block truncate">{t.chatDebug.subtitle}</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0 ml-2">
           {messages.length > 0 && (
             <>
               <button
                 type="button"
                 onClick={() => handleExportHistory('markdown')}
-                className="p-1.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 title={t.chatDebug.exportHistory}
               >
                 <Download className="w-3.5 h-3.5" />
@@ -298,7 +467,7 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
               <button
                 type="button"
                 onClick={handleClearHistory}
-                className="p-1.5 rounded text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 title={t.chatDebug.clearHistory}
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -308,7 +477,7 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             title={t.chatDebug.closePanel}
           >
             <X className="w-4 h-4" />
@@ -317,7 +486,7 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
       </div>
 
       {/* Messages List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 font-sans text-xs">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 font-sans text-xs min-w-0">
         {messages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400">
             <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-slate-800/60 border border-blue-100 dark:border-slate-700 flex items-center justify-center mb-3 text-blue-500">
@@ -333,7 +502,7 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex flex-col space-y-1.5 ${
+            className={`flex flex-col space-y-1.5 min-w-0 ${
               msg.role === 'user' ? 'items-end' : 'items-start'
             }`}
           >
@@ -363,22 +532,33 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
               )}
             </div>
 
-            {/* Bubble */}
-            <div
-              className={`p-3 rounded-2xl max-w-[90%] text-xs leading-relaxed whitespace-pre-wrap shadow-xs ${
-                msg.role === 'user'
-                  ? 'bg-blue-600 text-white rounded-tr-xs'
-                  : msg.error
-                    ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 border border-rose-200 dark:border-rose-500/30 rounded-tl-xs'
-                    : 'bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700/60 rounded-tl-xs'
-              }`}
-            >
-              {msg.content}
-            </div>
+            {/* Bubble rendering */}
+            {msg.role === 'user' ? (
+              <div className="p-3 rounded-2xl rounded-tr-xs bg-blue-600 text-white max-w-[92%] text-xs leading-relaxed shadow-xs min-w-0 break-words break-all [overflow-wrap:anywhere] overflow-hidden">
+                {/* If auxiliary parameters exist, show parameter badges */}
+                {msg.rawInputs && Object.keys(msg.rawInputs).length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-2 pb-1.5 border-b border-blue-400/40 text-[10px] font-mono">
+                    {Object.entries(msg.rawInputs).map(([k, v]) => (
+                      <span
+                        key={k}
+                        className="px-1.5 py-0.5 rounded bg-blue-700/80 text-blue-100 border border-blue-400/40 flex items-center gap-1"
+                      >
+                        <Tag className="w-2.5 h-2.5 opacity-80" />
+                        <span className="opacity-90">{k}:</span>
+                        <span className="font-semibold text-white">{String(v)}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="whitespace-pre-wrap">{msg.content}</div>
+              </div>
+            ) : (
+              <AssistantContentCard content={msg.content} isError={Boolean(msg.error)} />
+            )}
 
             {/* Collapsible Execution Trace (Assistant Only) */}
             {msg.role === 'assistant' && msg.trace && msg.trace.length > 0 && (
-              <div className="w-full max-w-[95%] mt-1">
+              <div className="w-full max-w-[95%] mt-1 min-w-0">
                 <button
                   type="button"
                   onClick={() => setExpandedTraceId(expandedTraceId === msg.id ? null : msg.id)}
@@ -399,9 +579,9 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
                     {msg.trace.map((tr) => (
                       <div
                         key={tr.nodeId}
-                        className="flex items-center justify-between p-1.5 rounded bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800"
+                        className="flex items-center justify-between p-1.5 rounded bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 min-w-0"
                       >
-                        <div className="flex items-center gap-1.5 truncate">
+                        <div className="flex items-center gap-1.5 truncate min-w-0">
                           {tr.status === 'success' && (
                             <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
                           )}
@@ -417,7 +597,7 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
                           <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
                             {tr.nodeLabel}
                           </span>
-                          <span className="text-[9px] text-slate-400 uppercase">
+                          <span className="text-[9px] text-slate-400 uppercase shrink-0">
                             ({tr.nodeType})
                           </span>
                         </div>
@@ -435,12 +615,12 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
 
         {/* Live Streaming Bubble */}
         {isRunning && (
-          <div className="flex flex-col space-y-1.5 items-start">
+          <div className="flex flex-col space-y-1.5 items-start max-w-full min-w-0">
             <div className="flex items-center gap-1 text-[10px] font-mono text-blue-500 px-1">
               <Loader2 className="w-3 h-3 animate-spin" />
               <span>{t.chatDebug.streamingResponse}</span>
             </div>
-            <div className="p-3 rounded-2xl rounded-tl-xs bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 border border-blue-300 dark:border-sky-500/40 max-w-[90%] text-xs leading-relaxed whitespace-pre-wrap">
+            <div className="p-3 rounded-2xl rounded-tl-xs bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 border border-blue-300 dark:border-sky-500/40 max-w-[92%] text-xs leading-relaxed whitespace-pre-wrap min-w-0 break-words break-all [overflow-wrap:anywhere] overflow-hidden">
               {activeStreamingText || (
                 <span className="text-slate-400 italic">{t.chatDebug.thinking}</span>
               )}
@@ -452,16 +632,71 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Form Bar */}
-      <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-        <div className="relative rounded-xl border border-slate-200 dark:border-slate-800 focus-within:border-blue-500 bg-slate-50 dark:bg-slate-900 transition-colors p-2 flex flex-col gap-2">
+      {/* Input & Parameters Bar */}
+      <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shrink-0 min-w-0">
+        {/* Dynamic Auxiliary Parameters Configuration Card */}
+        {auxiliaryParamKeys.length > 0 && (
+          <div className="mb-2.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
+            <div className="flex items-center justify-between mb-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-1.5 font-medium">
+                <SlidersHorizontal className="w-3 h-3 text-blue-500" />
+                <span>{t.chatDebug.parametersTitle}</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-[10px] font-mono">
+                  {auxiliaryParamKeys.length}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const reset: Record<string, string> = {};
+                  auxiliaryParamKeys.forEach((k) => {
+                    reset[k] = discoveredParams[k]?.defaultValue ?? '';
+                  });
+                  setRuntimeParams((prev) => ({ ...prev, ...reset }));
+                }}
+                className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors"
+                title={t.chatDebug.resetParams}
+              >
+                <RotateCcw className="w-2.5 h-2.5" />
+                <span>{t.chatDebug.resetParams}</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {auxiliaryParamKeys.map((paramKey) => (
+                <div key={paramKey} className="flex flex-col gap-0.5">
+                  <label className="text-[10px] font-mono text-slate-500 dark:text-slate-400 flex items-center gap-1 truncate">
+                    <Tag className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                    <span className="truncate">{paramKey}:</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={runtimeParams[paramKey] ?? ''}
+                    onChange={(e) =>
+                      setRuntimeParams((prev) => ({ ...prev, [paramKey]: e.target.value }))
+                    }
+                    className="w-full px-2 py-1 text-xs rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500 font-mono shadow-2xs"
+                    placeholder={discoveredParams[paramKey]?.defaultValue || paramKey}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Query Input Box */}
+        <div className="relative rounded-xl border border-slate-200 dark:border-slate-800 focus-within:border-blue-500 bg-slate-50 dark:bg-slate-900 transition-colors p-2 flex flex-col gap-2 min-w-0">
           <textarea
             rows={3}
             value={inputQuery}
             onChange={(e) => setInputQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={isRunning}
-            placeholder={t.chatDebug.inputPlaceholder}
+            placeholder={
+              mainQueryKey && mainQueryKey !== 'query'
+                ? `${t.chatDebug.inputPlaceholder} (${mainQueryKey})`
+                : t.chatDebug.inputPlaceholder
+            }
             className="w-full bg-transparent text-xs text-slate-800 dark:text-slate-100 focus:outline-none resize-none leading-relaxed"
           />
 

@@ -367,6 +367,13 @@ export interface Translations {
     exportMarkdown: string;
     nodesUnit: string;
     emptyResponse: string;
+    parametersTitle: string;
+    parametersHint: string;
+    resetParams: string;
+    copyContent: string;
+    copied: string;
+    viewJson: string;
+    viewRaw: string;
   };
   publishApi: {
     title: string;
@@ -767,6 +774,13 @@ export const translations: Record<Language, Translations> = {
       exportMarkdown: 'Export Markdown',
       nodesUnit: 'nodes',
       emptyResponse: 'Completed with no textual output.',
+      parametersTitle: 'Input Parameters',
+      parametersHint: 'Tune input parameters to test dynamic branches',
+      resetParams: 'Reset',
+      copyContent: 'Copy',
+      copied: 'Copied!',
+      viewJson: 'JSON',
+      viewRaw: 'Raw',
     },
     publishApi: {
       title: 'Publish Workflow as REST API',
@@ -1157,6 +1171,13 @@ export const translations: Record<Language, Translations> = {
       exportMarkdown: '导出 Markdown',
       nodesUnit: '个节点',
       emptyResponse: '执行完成，无文本内容输出。',
+      parametersTitle: '运行参数',
+      parametersHint: '配置输入参数以测试不同分支路由',
+      resetParams: '重置',
+      copyContent: '复制',
+      copied: '已复制！',
+      viewJson: '结构化 JSON',
+      viewRaw: '原始文本',
     },
     publishApi: {
       title: '发布工作流为 REST API',
