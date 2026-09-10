@@ -25,9 +25,7 @@ export const CatLogo: React.FC<CatLogoProps> = ({
       className={`inline-block shrink-0 flex-shrink-0 ${className}`}
       {...props}
     >
-      {withBackground && (
-        <rect width="1024" height="1024" fill={backgroundColor} rx="160" />
-      )}
+      {withBackground && <rect width="1024" height="1024" fill={backgroundColor} rx="160" />}
 
       {/* Official PatchCat Geometric Silhouette (EvenOdd Vector) */}
       <path

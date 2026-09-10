@@ -41,10 +41,7 @@ import { logger } from './logger.ts';
 /**
  * Evaluates a single ConditionRule against an actual value.
  */
-export function evaluateCondition(
-  rule: ConditionRule,
-  actualValue: unknown,
-): boolean {
+export function evaluateCondition(rule: ConditionRule, actualValue: unknown): boolean {
   const op = rule.operator;
   const targetVal = rule.value;
 
@@ -54,9 +51,19 @@ export function evaluateCondition(
 
   switch (op) {
     case 'equals':
-      return strVal.trim().toLowerCase() === String(targetVal ?? '').trim().toLowerCase();
+      return (
+        strVal.trim().toLowerCase() ===
+        String(targetVal ?? '')
+          .trim()
+          .toLowerCase()
+      );
     case 'not_equals':
-      return strVal.trim().toLowerCase() !== String(targetVal ?? '').trim().toLowerCase();
+      return (
+        strVal.trim().toLowerCase() !==
+        String(targetVal ?? '')
+          .trim()
+          .toLowerCase()
+      );
     case 'contains':
       return strVal.toLowerCase().includes(String(targetVal ?? '').toLowerCase());
     case 'not_contains':
@@ -130,7 +137,11 @@ export function resolveTargetModel(
   }
   // 3. OpenAI requires gpt-*, o1-*, o3-*, text-* models
   if (providerId === 'openai') {
-    if (clean.startsWith('gemini-') || clean.startsWith('claude-') || clean.startsWith('deepseek-')) {
+    if (
+      clean.startsWith('gemini-') ||
+      clean.startsWith('claude-') ||
+      clean.startsWith('deepseek-')
+    ) {
       return defaultModel;
     }
   }
@@ -289,7 +300,10 @@ export class BrowserWorkflowEngine {
                   const hasActiveIncoming = incoming.some((edge) => {
                     if (skippedNodes.has(edge.source)) return false;
                     const srcNode = nodeMap.get(edge.source);
-                    if (srcNode && (srcNode.data.type === 'condition' || srcNode.type === 'condition')) {
+                    if (
+                      srcNode &&
+                      (srcNode.data.type === 'condition' || srcNode.type === 'condition')
+                    ) {
                       const activeBranch = nodeActiveBranch.get(edge.source);
                       if (activeBranch && edge.sourceHandle && edge.sourceHandle !== activeBranch) {
                         return false;
@@ -305,7 +319,10 @@ export class BrowserWorkflowEngine {
                   const isAnyIncomingInactive = incoming.some((edge) => {
                     if (skippedNodes.has(edge.source)) return true;
                     const srcNode = nodeMap.get(edge.source);
-                    if (srcNode && (srcNode.data.type === 'condition' || srcNode.type === 'condition')) {
+                    if (
+                      srcNode &&
+                      (srcNode.data.type === 'condition' || srcNode.type === 'condition')
+                    ) {
                       const activeBranch = nodeActiveBranch.get(edge.source);
                       if (activeBranch && edge.sourceHandle && edge.sourceHandle !== activeBranch) {
                         return true;
@@ -479,11 +496,9 @@ export class BrowserWorkflowEngine {
 
       const totalDuration = Date.now() - startTime;
 
-      logger.summary(
-        'WorkflowEngine',
-        `工作流全部执行成功 [总耗时 ${totalDuration}ms]`,
-        { totalDurationMs: totalDuration },
-      );
+      logger.summary('WorkflowEngine', `工作流全部执行成功 [总耗时 ${totalDuration}ms]`, {
+        totalDurationMs: totalDuration,
+      });
 
       // 3. Workflow Success
       yield {
@@ -562,10 +577,7 @@ export class BrowserWorkflowEngine {
         case 'prompt': {
           const template = resolvedInputs['template'];
           output = {
-            promptText:
-              typeof template === 'string'
-                ? template
-                : JSON.stringify(resolvedInputs),
+            promptText: typeof template === 'string' ? template : JSON.stringify(resolvedInputs),
           };
           break;
         }
@@ -576,10 +588,10 @@ export class BrowserWorkflowEngine {
             typeof resolvedInputs['prompt'] === 'string'
               ? (resolvedInputs['prompt'] as string)
               : typeof resolvedInputs['promptText'] === 'string'
-              ? (resolvedInputs['promptText'] as string)
-              : typeof resolvedInputs['template'] === 'string'
-              ? (resolvedInputs['template'] as string)
-              : JSON.stringify(resolvedInputs);
+                ? (resolvedInputs['promptText'] as string)
+                : typeof resolvedInputs['template'] === 'string'
+                  ? (resolvedInputs['template'] as string)
+                  : JSON.stringify(resolvedInputs);
 
           const systemPrompt =
             typeof node.data.config?.['systemPrompt'] === 'string' &&
@@ -697,8 +709,7 @@ export class BrowserWorkflowEngine {
 
         case 'code': {
           const rawScript =
-            (node.data.config?.['script'] as string) ||
-            (node.data.config?.['code'] as string);
+            (node.data.config?.['script'] as string) || (node.data.config?.['code'] as string);
 
           let result: unknown = null;
           let stdout = '';
@@ -731,8 +742,8 @@ export class BrowserWorkflowEngine {
             typeof resolvedInputs['query'] === 'string' && resolvedInputs['query'].trim()
               ? (resolvedInputs['query'] as string)
               : typeof node.data.config?.['query'] === 'string'
-              ? (node.data.config['query'] as string)
-              : '';
+                ? (node.data.config['query'] as string)
+                : '';
 
           const kbId = (node.data.config?.['knowledgeBaseId'] as string) || '';
           const topK =
@@ -786,12 +797,7 @@ export class BrowserWorkflowEngine {
             if (!contextStr) {
               try {
                 const knowledgeStore = useKnowledgeStore.getState();
-                const retrieved = await knowledgeStore.retrieve(
-                  kbId,
-                  query,
-                  topK,
-                  scoreThreshold
-                );
+                const retrieved = await knowledgeStore.retrieve(kbId, query, topK, scoreThreshold);
                 if (retrieved && retrieved.context) {
                   contextStr = retrieved.context;
                   recalledChunks = retrieved.chunks;
@@ -843,7 +849,11 @@ export class BrowserWorkflowEngine {
           const defaultBranch = config.defaultBranch || 'else';
           let matchedBranch = defaultBranch;
           let matchedRule: ConditionRule | null = null;
-          const evaluatedConditions: Array<{ rule: ConditionRule; matched: boolean; actualValue: unknown }> = [];
+          const evaluatedConditions: Array<{
+            rule: ConditionRule;
+            matched: boolean;
+            actualValue: unknown;
+          }> = [];
 
           for (const rule of conditions) {
             let val: unknown = undefined;
@@ -920,7 +930,8 @@ export class BrowserWorkflowEngine {
                 merged[edge.source] = null;
               } else {
                 const srcOut = context[edge.source] || {};
-                merged[edge.source] = srcOut['output'] ?? srcOut['result'] ?? srcOut['response'] ?? srcOut;
+                merged[edge.source] =
+                  srcOut['output'] ?? srcOut['result'] ?? srcOut['response'] ?? srcOut;
               }
             }
             aggregatedValue = merged;
@@ -943,7 +954,11 @@ export class BrowserWorkflowEngine {
             throw new Error(`HTTP Node "${node.data.label || node.id}" requires a valid URL.`);
           }
 
-          if (rawUrl.startsWith('file:') || rawUrl.startsWith('javascript:') || rawUrl.startsWith('data:')) {
+          if (
+            rawUrl.startsWith('file:') ||
+            rawUrl.startsWith('javascript:') ||
+            rawUrl.startsWith('data:')
+          ) {
             throw new Error(`Security Exception: Forbidden or unsafe URL protocol "${rawUrl}"`);
           }
 
@@ -981,7 +996,8 @@ export class BrowserWorkflowEngine {
           const method = (config.method || 'GET').toUpperCase() as HttpMethod;
           let body: BodyInit | undefined = undefined;
           if (['POST', 'PUT', 'PATCH'].includes(method)) {
-            const bodyContent = config.bodyContent ?? resolvedInputs['body'] ?? resolvedInputs['bodyContent'];
+            const bodyContent =
+              config.bodyContent ?? resolvedInputs['body'] ?? resolvedInputs['bodyContent'];
             if (typeof bodyContent === 'object') {
               body = JSON.stringify(bodyContent);
             } else if (typeof bodyContent === 'string' && bodyContent.trim()) {
@@ -990,7 +1006,11 @@ export class BrowserWorkflowEngine {
           }
 
           const timeoutMs = config.timeout || 30000;
-          const retryConfig = config.retryConfig || { maxRetries: 0, retryDelayMs: 1000, retryOn: [500, 502, 503, 504] };
+          const retryConfig = config.retryConfig || {
+            maxRetries: 0,
+            retryDelayMs: 1000,
+            retryOn: [500, 502, 503, 504],
+          };
           const retryOn = retryConfig.retryOn || [500, 502, 503, 504];
 
           let attempt = 0;
@@ -1002,7 +1022,12 @@ export class BrowserWorkflowEngine {
           const httpStartTime = Date.now();
 
           // Mock bypass for offline test mode or skipLLM
-          if (options?.skipLLM && (targetUrl.includes('example.com') || targetUrl.includes('weather') || targetUrl.includes('api.mock'))) {
+          if (
+            options?.skipLLM &&
+            (targetUrl.includes('example.com') ||
+              targetUrl.includes('weather') ||
+              targetUrl.includes('api.mock'))
+          ) {
             responseData = { mock: true, weather: 'Sunny', temperature: '22C', url: targetUrl };
             respStatus = 200;
             respStatusText = 'OK (Mock)';
@@ -1058,7 +1083,9 @@ export class BrowserWorkflowEngine {
             }
 
             if (lastError) {
-              throw new Error(`HTTP Request Failed: ${lastError instanceof Error ? lastError.message : String(lastError)}`);
+              throw new Error(
+                `HTTP Request Failed: ${lastError instanceof Error ? lastError.message : String(lastError)}`,
+              );
             }
           }
 
@@ -1069,7 +1096,8 @@ export class BrowserWorkflowEngine {
             headers: respHeaders,
             data: responseData,
             latencyMs,
-            response: typeof responseData === 'string' ? responseData : JSON.stringify(responseData),
+            response:
+              typeof responseData === 'string' ? responseData : JSON.stringify(responseData),
             output: responseData,
           };
           break;

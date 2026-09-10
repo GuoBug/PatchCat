@@ -202,7 +202,10 @@ function loadInitialState(): {
   return { language, activeProvider, providers, storageMode, serverBaseUrl };
 }
 
-function saveState(state: { activeProvider: ProviderId; providers: Record<ProviderId, ProviderConfig> }) {
+function saveState(state: {
+  activeProvider: ProviderId;
+  providers: Record<ProviderId, ProviderConfig>;
+}) {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(
@@ -210,7 +213,7 @@ function saveState(state: { activeProvider: ProviderId; providers: Record<Provid
       JSON.stringify({
         activeProvider: state.activeProvider,
         providers: state.providers,
-      })
+      }),
     );
   } catch (e) {
     console.error('[SettingsStore] Failed to save settings to localStorage:', e);
@@ -226,7 +229,9 @@ export function parseFetchedModelList(data: unknown): string[] {
   // Format 1: OpenAI, Google Gemini OpenAI compat, DeepSeek, SiliconFlow ({ data: [ { id: 'gemini-2.5-flash' } ] })
   if (Array.isArray(obj.data)) {
     rawList = obj.data
-      .map((item) => (typeof item === 'object' && item !== null && 'id' in item ? String(item.id) : ''))
+      .map((item) =>
+        typeof item === 'object' && item !== null && 'id' in item ? String(item.id) : '',
+      )
       .filter(Boolean);
   }
   // Format 2: Google Native or Ollama ({ models: [ { name: 'models/gemini-2.5-flash' } ] })
@@ -249,7 +254,7 @@ export function parseFetchedModelList(data: unknown): string[] {
   // Filter out non-chat models (embeddings, tts, whisper, audio, moderation)
   const nonChatKeywords = ['embedding', 'whisper', 'tts', 'dall-e', 'moderation', 'bge-', 'rerank'];
   const chatModels = normalized.filter(
-    (m) => !nonChatKeywords.some((k) => m.toLowerCase().includes(k))
+    (m) => !nonChatKeywords.some((k) => m.toLowerCase().includes(k)),
   );
 
   const finalModels = chatModels.length > 0 ? chatModels : normalized;
@@ -379,7 +384,10 @@ export const useSettingsStore = create<SettingsStoreState>()(
           const result: ConnectionTestResult = {
             status: 'error',
             latencyMs,
-            message: err.name === 'TimeoutError' ? 'Connection timed out (5s)' : err.message || 'Connection failed',
+            message:
+              err.name === 'TimeoutError'
+                ? 'Connection timed out (5s)'
+                : err.message || 'Connection failed',
           };
           set((state) => {
             state.serverTestResult = result;
@@ -453,9 +461,10 @@ export const useSettingsStore = create<SettingsStoreState>()(
           return config.availableModels;
         }
 
-        const modelsUrl = cleanBaseUrl.endsWith('/v1') || cleanBaseUrl.endsWith('/v1beta/openai')
-          ? `${cleanBaseUrl}/models`
-          : `${cleanBaseUrl}/v1/models`;
+        const modelsUrl =
+          cleanBaseUrl.endsWith('/v1') || cleanBaseUrl.endsWith('/v1beta/openai')
+            ? `${cleanBaseUrl}/models`
+            : `${cleanBaseUrl}/v1/models`;
 
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
@@ -517,9 +526,10 @@ export const useSettingsStore = create<SettingsStoreState>()(
 
         try {
           // Normalize endpoint: some providers require /v1/models or /models
-          const modelsUrl = cleanBaseUrl.endsWith('/v1') || cleanBaseUrl.endsWith('/v1beta/openai')
-            ? `${cleanBaseUrl}/models` 
-            : `${cleanBaseUrl}/v1/models`;
+          const modelsUrl =
+            cleanBaseUrl.endsWith('/v1') || cleanBaseUrl.endsWith('/v1beta/openai')
+              ? `${cleanBaseUrl}/models`
+              : `${cleanBaseUrl}/v1/models`;
 
           const headers: Record<string, string> = {
             'Content-Type': 'application/json',
@@ -554,10 +564,16 @@ export const useSettingsStore = create<SettingsStoreState>()(
               saveState({ activeProvider: get().activeProvider, providers: get().providers });
             }
 
-            const modelCount = fetched.length > 0 ? fetched.length : (Array.isArray(data?.data) ? data.data.length : null);
-            const msg = modelCount !== null 
-              ? `Connected successfully (${modelCount} models available)` 
-              : 'Connected successfully (Endpoint reachable)';
+            const modelCount =
+              fetched.length > 0
+                ? fetched.length
+                : Array.isArray(data?.data)
+                  ? data.data.length
+                  : null;
+            const msg =
+              modelCount !== null
+                ? `Connected successfully (${modelCount} models available)`
+                : 'Connected successfully (Endpoint reachable)';
 
             const result: ConnectionTestResult = {
               status: 'success',
@@ -596,9 +612,11 @@ export const useSettingsStore = create<SettingsStoreState>()(
           clearTimeout(timeout);
           const latencyMs = Date.now() - startTime;
           const isAbort = err instanceof Error && err.name === 'AbortError';
-          const errMsg = isAbort 
-            ? 'Connection timed out (>8s)' 
-            : err instanceof Error ? err.message : String(err);
+          const errMsg = isAbort
+            ? 'Connection timed out (>8s)'
+            : err instanceof Error
+              ? err.message
+              : String(err);
 
           const result: ConnectionTestResult = {
             status: 'error',
@@ -612,5 +630,5 @@ export const useSettingsStore = create<SettingsStoreState>()(
         }
       },
     };
-  })
+  }),
 );

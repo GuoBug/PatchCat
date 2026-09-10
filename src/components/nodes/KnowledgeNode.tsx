@@ -6,8 +6,11 @@ import { Database, Search } from 'lucide-react';
 
 export const KnowledgeNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, selected }) => {
   const kbId = (data.config?.['knowledgeBaseId'] as string) || '';
-  const kbName = (data.config?.['knowledgeBaseName'] as string) || (kbId ? `KB: ${kbId.slice(0, 8)}...` : 'Default Knowledge Base');
-  const query = (data.inputs?.['query'] as string) || (data.config?.['query'] as string) || '{{input_1.query}}';
+  const kbName =
+    (data.config?.['knowledgeBaseName'] as string) ||
+    (kbId ? `KB: ${kbId.slice(0, 8)}...` : 'Default Knowledge Base');
+  const query =
+    (data.inputs?.['query'] as string) || (data.config?.['query'] as string) || '{{input_1.query}}';
   const topK = typeof data.config?.['topK'] === 'number' ? (data.config['topK'] as number) : 3;
 
   return (

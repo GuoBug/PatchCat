@@ -119,7 +119,8 @@ export const SettingsPage: React.FC = () => {
     }
   }, [logs, autoScroll]);
 
-  const currentProviderConfig = providers[selectedProviderTab] || DEFAULT_PROVIDERS[selectedProviderTab];
+  const currentProviderConfig =
+    providers[selectedProviderTab] || DEFAULT_PROVIDERS[selectedProviderTab];
   const currentTest = testResults[selectedProviderTab] || { status: 'idle' };
   const isOllama = selectedProviderTab === 'ollama';
   const isSelectedProviderActive = activeProvider === selectedProviderTab;
@@ -199,7 +200,11 @@ export const SettingsPage: React.FC = () => {
             className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 transition-all shadow-xs"
             title={theme === 'dark' ? t.header.themeTooltipLight : t.header.themeTooltipDark}
           >
-            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+            {theme === 'dark' ? (
+              <Sun className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Moon className="w-4 h-4 text-slate-700" />
+            )}
           </button>
         </div>
       </header>
@@ -259,7 +264,9 @@ export const SettingsPage: React.FC = () => {
               {logs.length > 0 && (
                 <span
                   className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                    settingsTab === 'logs' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                    settingsTab === 'logs'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
                   }`}
                 >
                   {logs.length}
@@ -310,7 +317,9 @@ export const SettingsPage: React.FC = () => {
                       <div className="font-bold text-sm">English</div>
                       <div className="text-xs opacity-75 mt-0.5">United States (Default)</div>
                     </div>
-                    {language === 'en' && <CheckCircle className="w-5 h-5 text-blue-600 dark:text-sky-400" />}
+                    {language === 'en' && (
+                      <CheckCircle className="w-5 h-5 text-blue-600 dark:text-sky-400" />
+                    )}
                   </button>
 
                   <button
@@ -325,7 +334,9 @@ export const SettingsPage: React.FC = () => {
                       <div className="font-bold text-sm">简体中文</div>
                       <div className="text-xs opacity-75 mt-0.5">Simplified Chinese</div>
                     </div>
-                    {language === 'zh' && <CheckCircle className="w-5 h-5 text-blue-600 dark:text-sky-400" />}
+                    {language === 'zh' && (
+                      <CheckCircle className="w-5 h-5 text-blue-600 dark:text-sky-400" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -402,9 +413,13 @@ export const SettingsPage: React.FC = () => {
                   >
                     <div className="flex items-center justify-between">
                       <div className="font-bold text-sm">{t.settings.engineBrowser}</div>
-                      {engineMode === 'byok_browser' && <CheckCircle className="w-4 h-4 text-blue-600 dark:text-sky-400" />}
+                      {engineMode === 'byok_browser' && (
+                        <CheckCircle className="w-4 h-4 text-blue-600 dark:text-sky-400" />
+                      )}
                     </div>
-                    <div className="text-xs opacity-75 mt-1 leading-relaxed">{t.settings.engineBrowserDesc}</div>
+                    <div className="text-xs opacity-75 mt-1 leading-relaxed">
+                      {t.settings.engineBrowserDesc}
+                    </div>
                   </button>
 
                   <button
@@ -417,9 +432,13 @@ export const SettingsPage: React.FC = () => {
                   >
                     <div className="flex items-center justify-between">
                       <div className="font-bold text-sm">{t.settings.engineMock}</div>
-                      {engineMode === 'mock' && <CheckCircle className="w-4 h-4 text-blue-600 dark:text-sky-400" />}
+                      {engineMode === 'mock' && (
+                        <CheckCircle className="w-4 h-4 text-blue-600 dark:text-sky-400" />
+                      )}
                     </div>
-                    <div className="text-xs opacity-75 mt-1 leading-relaxed">{t.settings.engineMockDesc}</div>
+                    <div className="text-xs opacity-75 mt-1 leading-relaxed">
+                      {t.settings.engineMockDesc}
+                    </div>
                   </button>
                 </div>
               </div>
@@ -453,9 +472,13 @@ export const SettingsPage: React.FC = () => {
                   >
                     <div className="flex items-center justify-between">
                       <div className="font-bold text-sm">{t.settings.storageLocal}</div>
-                      {storageMode === 'local' && <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
+                      {storageMode === 'local' && (
+                        <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      )}
                     </div>
-                    <div className="text-xs opacity-75 mt-1 leading-relaxed">{t.settings.storageLocalDesc}</div>
+                    <div className="text-xs opacity-75 mt-1 leading-relaxed">
+                      {t.settings.storageLocalDesc}
+                    </div>
                   </button>
 
                   {/* Server Mode */}
@@ -473,9 +496,13 @@ export const SettingsPage: React.FC = () => {
                   >
                     <div className="flex items-center justify-between">
                       <div className="font-bold text-sm">{t.settings.storageServer}</div>
-                      {storageMode === 'server' && <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
+                      {storageMode === 'server' && (
+                        <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      )}
                     </div>
-                    <div className="text-xs opacity-75 mt-1 leading-relaxed">{t.settings.storageServerDesc}</div>
+                    <div className="text-xs opacity-75 mt-1 leading-relaxed">
+                      {t.settings.storageServerDesc}
+                    </div>
                   </button>
                 </div>
 
@@ -524,8 +551,8 @@ export const SettingsPage: React.FC = () => {
                           serverTestResult.status === 'success'
                             ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60'
                             : serverTestResult.status === 'error'
-                            ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60'
-                            : 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60'
+                              ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60'
+                              : 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60'
                         }`}
                       >
                         <div className="flex items-center gap-2">
@@ -609,7 +636,10 @@ export const SettingsPage: React.FC = () => {
                             </span>
                           )}
                           {hasKey && !isPActive && (
-                            <span className="w-2 h-2 rounded-full bg-emerald-500" title={t.header.apiKeyConfigured} />
+                            <span
+                              className="w-2 h-2 rounded-full bg-emerald-500"
+                              title={t.header.apiKeyConfigured}
+                            />
                           )}
                         </div>
                       </button>
@@ -624,7 +654,9 @@ export const SettingsPage: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <div
                         className={`w-3.5 h-3.5 rounded-full ${
-                          isSelectedProviderActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-700'
+                          isSelectedProviderActive
+                            ? 'bg-emerald-500 animate-pulse'
+                            : 'bg-slate-300 dark:bg-slate-700'
                         }`}
                       />
                       <div>
@@ -724,7 +756,11 @@ export const SettingsPage: React.FC = () => {
                           onClick={() => setShowApiKey(!showApiKey)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
                         >
-                          {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          {showApiKey ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
                         </button>
                       )}
                     </div>
@@ -736,11 +772,13 @@ export const SettingsPage: React.FC = () => {
                       <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                         <Cpu className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" />
                         <span>{t.settings.defaultModel}</span>
-                        {currentProviderConfig.availableModels && currentProviderConfig.availableModels.length > 0 && (
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30 font-mono">
-                            {currentProviderConfig.availableModels.length} {t.settings.availableCount}
-                          </span>
-                        )}
+                        {currentProviderConfig.availableModels &&
+                          currentProviderConfig.availableModels.length > 0 && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30 font-mono">
+                              {currentProviderConfig.availableModels.length}{' '}
+                              {t.settings.availableCount}
+                            </span>
+                          )}
                       </label>
 
                       <button
@@ -750,21 +788,30 @@ export const SettingsPage: React.FC = () => {
                           await fetchAvailableModels(selectedProviderTab);
                           setIsRefreshingModels(false);
                         }}
-                        disabled={isRefreshingModels || (!isOllama && !currentProviderConfig.apiKey.trim())}
+                        disabled={
+                          isRefreshingModels || (!isOllama && !currentProviderConfig.apiKey.trim())
+                        }
                         className="text-[11px] text-blue-600 dark:text-sky-400 hover:text-blue-700 dark:hover:text-sky-300 disabled:opacity-40 flex items-center gap-1 transition-colors"
                         title={t.settings.fetchModels}
                       >
-                        <RefreshCw className={`w-3 h-3 ${isRefreshingModels ? 'animate-spin' : ''}`} />
-                        <span>{isRefreshingModels ? t.propertyPanel.refreshing : t.settings.fetchModels}</span>
+                        <RefreshCw
+                          className={`w-3 h-3 ${isRefreshingModels ? 'animate-spin' : ''}`}
+                        />
+                        <span>
+                          {isRefreshingModels ? t.propertyPanel.refreshing : t.settings.fetchModels}
+                        </span>
                       </button>
                     </div>
 
-                    {currentProviderConfig.availableModels && currentProviderConfig.availableModels.length > 0 ? (
+                    {currentProviderConfig.availableModels &&
+                    currentProviderConfig.availableModels.length > 0 ? (
                       <div className="space-y-2">
                         <select
                           value={currentProviderConfig.defaultModel}
                           onChange={(e) =>
-                            updateProviderConfig(selectedProviderTab, { defaultModel: e.target.value })
+                            updateProviderConfig(selectedProviderTab, {
+                              defaultModel: e.target.value,
+                            })
                           }
                           className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
                         >
@@ -780,7 +827,9 @@ export const SettingsPage: React.FC = () => {
                             type="text"
                             value={currentProviderConfig.defaultModel}
                             onChange={(e) =>
-                              updateProviderConfig(selectedProviderTab, { defaultModel: e.target.value })
+                              updateProviderConfig(selectedProviderTab, {
+                                defaultModel: e.target.value,
+                              })
                             }
                             placeholder={t.settings.orCustomModel}
                             className="flex-1 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500"
@@ -792,7 +841,9 @@ export const SettingsPage: React.FC = () => {
                         type="text"
                         value={currentProviderConfig.defaultModel}
                         onChange={(e) =>
-                          updateProviderConfig(selectedProviderTab, { defaultModel: e.target.value })
+                          updateProviderConfig(selectedProviderTab, {
+                            defaultModel: e.target.value,
+                          })
                         }
                         placeholder="gpt-4o-mini"
                         className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
@@ -813,7 +864,11 @@ export const SettingsPage: React.FC = () => {
                         ) : (
                           <Zap className="w-4 h-4 text-amber-400" />
                         )}
-                        <span>{currentTest.status === 'testing' ? t.settings.testingConnection : t.settings.testConnection}</span>
+                        <span>
+                          {currentTest.status === 'testing'
+                            ? t.settings.testingConnection
+                            : t.settings.testConnection}
+                        </span>
                       </button>
 
                       <button
@@ -831,17 +886,30 @@ export const SettingsPage: React.FC = () => {
                           currentTest.status === 'testing'
                             ? 'bg-blue-50 dark:bg-sky-500/10 border-blue-200 dark:border-sky-500/30 text-blue-700 dark:text-sky-300'
                             : currentTest.status === 'success'
-                            ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
-                            : 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300'
+                              ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                              : 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300'
                         }`}
                       >
-                        {currentTest.status === 'testing' && <Loader2 className="w-4 h-4 animate-spin shrink-0 mt-0.5" />}
-                        {currentTest.status === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />}
-                        {currentTest.status === 'error' && <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />}
+                        {currentTest.status === 'testing' && (
+                          <Loader2 className="w-4 h-4 animate-spin shrink-0 mt-0.5" />
+                        )}
+                        {currentTest.status === 'success' && (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                        )}
+                        {currentTest.status === 'error' && (
+                          <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                        )}
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold">{currentTest.message || (currentTest.status === 'testing' ? t.settings.testingConnection : '')}</p>
+                          <p className="font-semibold">
+                            {currentTest.message ||
+                              (currentTest.status === 'testing'
+                                ? t.settings.testingConnection
+                                : '')}
+                          </p>
                           {currentTest.latencyMs !== undefined && (
-                            <span className="text-[10px] opacity-80 block mt-0.5">Latency: {currentTest.latencyMs}ms</span>
+                            <span className="text-[10px] opacity-80 block mt-0.5">
+                              Latency: {currentTest.latencyMs}ms
+                            </span>
                           )}
                         </div>
                       </div>
@@ -874,7 +942,9 @@ export const SettingsPage: React.FC = () => {
 
                 {/* Log Level Selector */}
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="text-slate-500 dark:text-slate-400 font-medium">{t.settings.logLevel}</span>
+                  <span className="text-slate-500 dark:text-slate-400 font-medium">
+                    {t.settings.logLevel}
+                  </span>
                   <select
                     value={logLevel}
                     onChange={(e) => setLogLevel(e.target.value as LogLevel)}
@@ -1026,7 +1096,9 @@ export const SettingsPage: React.FC = () => {
                       const TypeIcon = typeConf.icon;
                       const timeStr = new Date(log.timestamp).toISOString().slice(11, 23);
                       const isExpanded = expandedLogId === log.id;
-                      const hasPayload = Boolean(log.data?.inputs || log.data?.outputs || log.metadata);
+                      const hasPayload = Boolean(
+                        log.data?.inputs || log.data?.outputs || log.metadata,
+                      );
 
                       return (
                         <div
@@ -1035,8 +1107,8 @@ export const SettingsPage: React.FC = () => {
                             log.type === 'error'
                               ? 'bg-rose-950/30 border-rose-900/50 text-rose-300'
                               : log.level === 'dev'
-                              ? 'bg-slate-900/80 border-slate-800 hover:bg-slate-850 text-slate-200'
-                              : 'bg-transparent border-transparent hover:bg-slate-900/50 text-slate-300'
+                                ? 'bg-slate-900/80 border-slate-800 hover:bg-slate-850 text-slate-200'
+                                : 'bg-transparent border-transparent hover:bg-slate-900/50 text-slate-300'
                           }`}
                         >
                           <div className="flex items-start gap-2.5 leading-relaxed">
@@ -1076,7 +1148,9 @@ export const SettingsPage: React.FC = () => {
                                 className="text-[10px] text-blue-400 hover:text-blue-300 flex items-center gap-1 px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-750 transition-colors shrink-0"
                               >
                                 <Code className="w-3 h-3" />
-                                <span>{isExpanded ? t.settings.hideDetails : t.settings.showDetails}</span>
+                                <span>
+                                  {isExpanded ? t.settings.hideDetails : t.settings.showDetails}
+                                </span>
                               </button>
                             )}
                           </div>
@@ -1090,7 +1164,11 @@ export const SettingsPage: React.FC = () => {
                                   onClick={() =>
                                     handleCopyPayload(
                                       log.id,
-                                      JSON.stringify({ metadata: log.metadata, data: log.data }, null, 2)
+                                      JSON.stringify(
+                                        { metadata: log.metadata, data: log.data },
+                                        null,
+                                        2,
+                                      ),
                                     )
                                   }
                                   className="flex items-center gap-1 text-slate-400 hover:text-slate-200"
@@ -1111,7 +1189,9 @@ export const SettingsPage: React.FC = () => {
 
                               {log.metadata && (
                                 <div>
-                                  <div className="text-[10px] font-semibold text-slate-400 mb-0.5">Metadata:</div>
+                                  <div className="text-[10px] font-semibold text-slate-400 mb-0.5">
+                                    Metadata:
+                                  </div>
                                   <pre className="p-2.5 rounded-lg bg-slate-900 text-amber-300 overflow-x-auto max-h-40 whitespace-pre-wrap">
                                     {JSON.stringify(log.metadata, null, 2)}
                                   </pre>
@@ -1120,7 +1200,9 @@ export const SettingsPage: React.FC = () => {
 
                               {log.data?.inputs !== undefined && (
                                 <div>
-                                  <div className="text-[10px] font-semibold text-sky-400 mb-0.5">Inputs:</div>
+                                  <div className="text-[10px] font-semibold text-sky-400 mb-0.5">
+                                    Inputs:
+                                  </div>
                                   <pre className="p-2.5 rounded-lg bg-slate-900 text-sky-200 overflow-x-auto max-h-48 whitespace-pre-wrap">
                                     {JSON.stringify(log.data.inputs, null, 2)}
                                   </pre>
@@ -1129,7 +1211,9 @@ export const SettingsPage: React.FC = () => {
 
                               {log.data?.outputs !== undefined && (
                                 <div>
-                                  <div className="text-[10px] font-semibold text-emerald-400 mb-0.5">Outputs:</div>
+                                  <div className="text-[10px] font-semibold text-emerald-400 mb-0.5">
+                                    Outputs:
+                                  </div>
                                   <pre className="p-2.5 rounded-lg bg-slate-900 text-emerald-200 overflow-x-auto max-h-48 whitespace-pre-wrap">
                                     {JSON.stringify(log.data.outputs, null, 2)}
                                   </pre>

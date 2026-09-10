@@ -141,7 +141,10 @@ export const SettingsModal: React.FC = () => {
                       </span>
                     )}
                     {hasKey && !isPActive && (
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" title="Key configured" />
+                      <span
+                        className="w-2 h-2 rounded-full bg-emerald-500"
+                        title="Key configured"
+                      />
                     )}
                   </div>
                 </button>
@@ -207,9 +210,7 @@ export const SettingsModal: React.FC = () => {
               <input
                 type="text"
                 value={currentConfig.baseUrl}
-                onChange={(e) =>
-                  updateProviderConfig(selectedTab, { baseUrl: e.target.value })
-                }
+                onChange={(e) => updateProviderConfig(selectedTab, { baseUrl: e.target.value })}
                 placeholder="https://api.openai.com/v1"
                 className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
               />
@@ -240,9 +241,7 @@ export const SettingsModal: React.FC = () => {
                   type={showApiKey || isOllama ? 'text' : 'password'}
                   disabled={isOllama}
                   value={currentConfig.apiKey}
-                  onChange={(e) =>
-                    updateProviderConfig(selectedTab, { apiKey: e.target.value })
-                  }
+                  onChange={(e) => updateProviderConfig(selectedTab, { apiKey: e.target.value })}
                   placeholder={
                     isOllama ? 'ollama (built-in default)' : 'sk-xxxxxxxxxxxxxxxxxxxxxxxx'
                   }
@@ -254,7 +253,11 @@ export const SettingsModal: React.FC = () => {
                     onClick={() => setShowApiKey(!showApiKey)}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
                   >
-                    {showApiKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    {showApiKey ? (
+                      <EyeOff className="w-3.5 h-3.5" />
+                    ) : (
+                      <Eye className="w-3.5 h-3.5" />
+                    )}
                   </button>
                 )}
               </div>
@@ -343,7 +346,11 @@ export const SettingsModal: React.FC = () => {
                   ) : (
                     <Zap className="w-3.5 h-3.5 text-amber-400" />
                   )}
-                  <span>{currentTest.status === 'testing' ? '正在连接...' : '测试连通性 (Test Connection)'}</span>
+                  <span>
+                    {currentTest.status === 'testing'
+                      ? '正在连接...'
+                      : '测试连通性 (Test Connection)'}
+                  </span>
                 </button>
 
                 <button
@@ -361,17 +368,28 @@ export const SettingsModal: React.FC = () => {
                     currentTest.status === 'testing'
                       ? 'bg-blue-50 dark:bg-sky-500/10 border-blue-200 dark:border-sky-500/30 text-blue-700 dark:text-sky-300'
                       : currentTest.status === 'success'
-                      ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
-                      : 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300'
+                        ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                        : 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300'
                   }`}
                 >
-                  {currentTest.status === 'testing' && <Loader2 className="w-4 h-4 animate-spin shrink-0 mt-0.5" />}
-                  {currentTest.status === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />}
-                  {currentTest.status === 'error' && <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />}
+                  {currentTest.status === 'testing' && (
+                    <Loader2 className="w-4 h-4 animate-spin shrink-0 mt-0.5" />
+                  )}
+                  {currentTest.status === 'success' && (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                  )}
+                  {currentTest.status === 'error' && (
+                    <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                  )}
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold">{currentTest.message || (currentTest.status === 'testing' ? '正在发送探测请求...' : '')}</p>
+                    <p className="font-semibold">
+                      {currentTest.message ||
+                        (currentTest.status === 'testing' ? '正在发送探测请求...' : '')}
+                    </p>
                     {currentTest.latencyMs !== undefined && (
-                      <span className="text-[10px] opacity-80 block mt-0.5">响应耗时: {currentTest.latencyMs}ms</span>
+                      <span className="text-[10px] opacity-80 block mt-0.5">
+                        响应耗时: {currentTest.latencyMs}ms
+                      </span>
                     )}
                   </div>
                 </div>
@@ -397,9 +415,21 @@ export const SettingsModal: React.FC = () => {
 
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { level: 'summary', title: '概要 (Summary)', desc: '记录系统启停、拓扑调度、请求状态码与耗时、异常报错' },
-                  { level: 'detailed', title: '详细 (Detailed)', desc: '包含概要，补充节点ID、模型参数、依赖波次流转' },
-                  { level: 'dev', title: '开发 (Development)', desc: '包含详细，捕获输入输出全文 (密钥已脱敏过滤)' },
+                  {
+                    level: 'summary',
+                    title: '概要 (Summary)',
+                    desc: '记录系统启停、拓扑调度、请求状态码与耗时、异常报错',
+                  },
+                  {
+                    level: 'detailed',
+                    title: '详细 (Detailed)',
+                    desc: '包含概要，补充节点ID、模型参数、依赖波次流转',
+                  },
+                  {
+                    level: 'dev',
+                    title: '开发 (Development)',
+                    desc: '包含详细，捕获输入输出全文 (密钥已脱敏过滤)',
+                  },
                 ].map((item) => (
                   <button
                     key={item.level}
@@ -413,7 +443,9 @@ export const SettingsModal: React.FC = () => {
                   >
                     <div className="font-semibold text-xs flex items-center justify-between">
                       <span>{item.title}</span>
-                      {logLevel === item.level && <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
+                      {logLevel === item.level && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      )}
                     </div>
                     <div className="text-[10px] opacity-75 mt-1 leading-tight">{item.desc}</div>
                   </button>
@@ -427,7 +459,9 @@ export const SettingsModal: React.FC = () => {
         <div className="px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
             <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <span>所有 API Key 仅保存在浏览器 LocalStorage，直连大模型服务商，绝不经由第三方服务器。</span>
+            <span>
+              所有 API Key 仅保存在浏览器 LocalStorage，直连大模型服务商，绝不经由第三方服务器。
+            </span>
           </div>
 
           <button

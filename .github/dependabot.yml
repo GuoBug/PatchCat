@@ -1,0 +1,60 @@
+# For more information, see:
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # Frontend npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "frontend"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react*"
+      xyflow:
+        patterns:
+          - "@xyflow/*"
+      vite:
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+      dev-tools:
+        patterns:
+          - "typescript"
+          - "tailwindcss"
+          - "autoprefixer"
+          - "postcss"
+
+  # Backend pip dependencies
+  - package-ecosystem: "pip"
+    directory: "/server"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "backend"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci)"

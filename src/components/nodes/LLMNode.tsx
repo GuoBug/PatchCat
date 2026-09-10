@@ -6,7 +6,8 @@ import { Cpu, Thermometer, CheckCircle2 } from 'lucide-react';
 
 export const LLMNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, selected }) => {
   const model = (data.config?.['model'] as string) || 'gpt-4o-mini';
-  const temperature = typeof data.config?.['temperature'] === 'number' ? data.config['temperature'] : 0.7;
+  const temperature =
+    typeof data.config?.['temperature'] === 'number' ? data.config['temperature'] : 0.7;
   const outputs = data.outputs || {};
   const hasResponse = Boolean(outputs['response']);
 

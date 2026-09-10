@@ -68,7 +68,7 @@ export function extractVariableReferences(template: string): VariableReference[]
  */
 export function resolveTemplateVariables(
   template: string,
-  context: Record<string, Record<string, unknown>>
+  context: Record<string, Record<string, unknown>>,
 ): string {
   if (!template || typeof template !== 'string') {
     return template;
@@ -104,14 +104,14 @@ export function resolveTemplateVariables(
  */
 export function resolveObjectVariables<T>(
   data: T,
-  context: Record<string, Record<string, unknown>>
+  context: Record<string, Record<string, unknown>>,
 ): T {
   if (typeof data === 'string') {
     return resolveTemplateVariables(data, context) as unknown as T;
   }
 
   if (Array.isArray(data)) {
-    return data.map(item => resolveObjectVariables(item, context)) as unknown as T;
+    return data.map((item) => resolveObjectVariables(item, context)) as unknown as T;
   }
 
   if (data !== null && typeof data === 'object') {

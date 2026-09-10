@@ -45,7 +45,7 @@ interface KnowledgeState {
   uploadDocument: (
     kbId: string,
     file: File | { name: string; content: string; extension?: string; size?: number },
-    options?: ChunkOptions
+    options?: ChunkOptions,
   ) => Promise<DocumentItem>;
   deleteDocument: (docId: string) => Promise<void>;
   toggleChunk: (chunkId: string, isActive?: boolean) => Promise<void>;
@@ -54,7 +54,7 @@ interface KnowledgeState {
     kbId: string,
     query: string,
     topK?: number,
-    scoreThreshold?: number
+    scoreThreshold?: number,
   ) => Promise<KnowledgeRetrievalResult>;
   setSearchQuery: (query: string) => void;
   openDetail: (kbId?: string) => void;

@@ -1,10 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Github,
-  BookOpen,
-  ExternalLink,
-  User,
-} from 'lucide-react';
+import { Github, BookOpen, ExternalLink, User } from 'lucide-react';
 import { CatLogo } from '../icons/CatLogo.tsx';
 import { HelpModal } from './HelpModal.tsx';
 import { useTranslation } from '../../i18n/useTranslation.ts';

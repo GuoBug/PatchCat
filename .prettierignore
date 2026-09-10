@@ -1,0 +1,8 @@
+dist
+node_modules
+server
+*.md
+*.json
+*.yaml
+*.yml
+patchcat.db

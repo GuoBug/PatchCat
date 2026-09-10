@@ -1,0 +1,76 @@
+name: "💡 Feature Request"
+description: Suggest a new feature or improvement for PatchCat
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! 🐱✨
+        We'd love to hear your ideas for making PatchCat better.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Motivation
+      description: What problem does this feature solve? Is it related to a frustration?
+      placeholder: "I'm always frustrated when I need to manually test workflows by clicking 'Run' repeatedly..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the feature you'd like to see. How should it work?
+      placeholder: "A chat-style debug panel on the right side of the canvas where I can iteratively test workflows..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds?
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Feature Area
+      description: Which area of PatchCat does this relate to?
+      options:
+        - Canvas & Nodes
+        - DAG Execution Engine
+        - LLM Provider Integration
+        - RAG / Knowledge Base
+        - UI / UX
+        - API & Backend
+        - Documentation
+        - Testing & CI
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Importance to You
+      description: How important is this feature for your use case?
+      options:
+        - Nice to have
+        - Important — affects my workflow
+        - Critical — blocking my use case
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Add any mockups, screenshots, links to similar features in other tools, or other context.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have searched existing issues and discussions to ensure this feature has not been requested before.
+          required: true

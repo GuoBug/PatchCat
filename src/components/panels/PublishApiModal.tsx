@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Share2,
-  X,
-  Copy,
-  Check,
-  RefreshCw,
-} from 'lucide-react';
+import { Share2, X, Copy, Check, RefreshCw } from 'lucide-react';
 import { useProjectStore } from '../../stores/project-store.ts';
 import { useSettingsStore } from '../../stores/settings-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
@@ -141,7 +135,9 @@ console.log(data);`;
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <div className="space-y-0.5">
               <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                <span className={`w-2.5 h-2.5 rounded-full ${isEnabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`} />
+                <span
+                  className={`w-2.5 h-2.5 rounded-full ${isEnabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}
+                />
                 <span>{isEnabled ? t.publishApi.statusActive : t.publishApi.statusDisabled}</span>
               </span>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -174,7 +170,11 @@ console.log(data);`;
                 onClick={() => handleCopy(endpointUrl, 'snippet')}
                 className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1 font-medium transition-colors"
               >
-                {copiedSnippet ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedSnippet ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
                 <span>{t.publishApi.copyUrl}</span>
               </button>
             </div>
@@ -194,7 +194,11 @@ console.log(data);`;
                   onClick={() => handleCopy(currentKey, 'key')}
                   className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1 font-medium transition-colors"
                 >
-                  {copiedKey ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedKey ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
                   <span>{t.publishApi.copyKey}</span>
                 </button>
                 <button

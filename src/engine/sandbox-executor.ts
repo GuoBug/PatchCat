@@ -24,7 +24,7 @@ export interface SandboxExecutionResult {
 export async function runSandboxedScript(
   rawScript: string,
   inputs: Record<string, unknown>,
-  options: SandboxExecutionOptions = {}
+  options: SandboxExecutionOptions = {},
 ): Promise<SandboxExecutionResult> {
   const timeoutMs = options.timeoutMs ?? 5000;
 
@@ -52,7 +52,7 @@ export async function runSandboxedScript(
 function runInBrowserWorker(
   rawScript: string,
   inputs: Record<string, unknown>,
-  timeoutMs: number
+  timeoutMs: number,
 ): Promise<SandboxExecutionResult> {
   return new Promise((resolve, reject) => {
     // Construct self-contained worker source code with network blocking
@@ -144,7 +144,11 @@ function runInBrowserWorker(
 
       timerId = setTimeout(() => {
         cleanup();
-        reject(new Error(`[沙箱执行超时] 代码执行时间超过安全阈值 (${timeoutMs}ms)，已由看门狗强行终止。`));
+        reject(
+          new Error(
+            `[沙箱执行超时] 代码执行时间超过安全阈值 (${timeoutMs}ms)，已由看门狗强行终止。`,
+          ),
+        );
       }, timeoutMs);
 
       worker.onmessage = (e: MessageEvent) => {
@@ -182,15 +186,24 @@ function runInBrowserWorker(
 async function runInNodeVm(
   rawScript: string,
   inputs: Record<string, unknown>,
-  timeoutMs: number
+  timeoutMs: number,
 ): Promise<SandboxExecutionResult> {
   const logs: string[] = [];
   const customConsole = {
     log: (...args: unknown[]) => {
-      logs.push(args.map((a) => (typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a))).join(' '));
+      logs.push(
+        args
+          .map((a) => (typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)))
+          .join(' '),
+      );
     },
     error: (...args: unknown[]) => {
-      logs.push('[Error] ' + args.map((a) => (typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a))).join(' '));
+      logs.push(
+        '[Error] ' +
+          args
+            .map((a) => (typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)))
+            .join(' '),
+      );
     },
   };
 

@@ -111,7 +111,7 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
     // 1. Topology validation check
     if (!topologyValidation.valid) {
       const cycleNodes = topologyValidation.cycleNodes || [];
-      
+
       // Highlight all cyclic nodes with error status
       nodes.forEach((n) => {
         if (cycleNodes.includes(n.id)) {
@@ -180,7 +180,7 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
 
       for await (const event of engine.executeWorkflow(
         { nodes: store.nodes, edges: store.edges },
-        { inputs: store.globalInputs, skipLLM: runOptions?.skipLLM }
+        { inputs: store.globalInputs, skipLLM: runOptions?.skipLLM },
       )) {
         switch (event.type) {
           case 'NODE_START':
@@ -190,7 +190,7 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
             store.updateNodeStreamingOutput(
               event.payload.nodeId,
               event.payload.fullContent,
-              event.payload.fullReasoning
+              event.payload.fullReasoning,
             );
             break;
           case 'NODE_COMPLETE': {
@@ -275,9 +275,7 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
     const hasRunning = currentNodes.some((n) => n.data.status === 'running');
     if (hasRunning) {
       const resetNodes = currentNodes.map((n) =>
-        n.data.status === 'running'
-          ? { ...n, data: { ...n.data, status: 'idle' as const } }
-          : n
+        n.data.status === 'running' ? { ...n, data: { ...n.data, status: 'idle' as const } } : n,
       );
       useWorkflowStore.setState({ nodes: resetNodes });
     }
@@ -364,7 +362,9 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
             <CatLogo className="w-7 h-7 shrink-0" />
             <div className="flex flex-col shrink-0">
               <span className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white font-mono uppercase whitespace-nowrap leading-none flex items-center gap-1.5">
-                <span>PATCH<span className="text-blue-600 dark:text-sky-400">CAT</span></span>
+                <span>
+                  PATCH<span className="text-blue-600 dark:text-sky-400">CAT</span>
+                </span>
                 <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-50 dark:bg-sky-500/10 text-blue-600 dark:text-sky-400 border border-blue-200 dark:border-sky-500/30 tracking-normal normal-case">
                   v{PROJECT_VERSION}
                 </span>
@@ -397,7 +397,9 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
                       onClick={() => handleQuickAdd(item.type)}
                       className="w-full p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/80 flex items-start gap-2.5 text-left transition-colors cursor-pointer"
                     >
-                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase font-bold border shrink-0 ${item.color}`}>
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase font-bold border shrink-0 ${item.color}`}
+                      >
                         {item.type}
                       </span>
                       <div className="flex-1 min-w-0">
@@ -418,10 +420,14 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
           {/* Realtime Graph Metrics */}
           <div className="hidden lg:flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-900/60 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800">
             <Layers className="w-3.5 h-3.5 text-slate-400" />
-            <span>{nodes.length} {t.common.nodes}</span>
+            <span>
+              {nodes.length} {t.common.nodes}
+            </span>
             <span className="text-slate-300 dark:text-slate-700">/</span>
             <Share2 className="w-3.5 h-3.5 text-slate-400" />
-            <span>{edges.length} {t.common.edges}</span>
+            <span>
+              {edges.length} {t.common.edges}
+            </span>
           </div>
 
           {/* Live Topological Cycle Warning Chip */}
@@ -446,7 +452,11 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
             className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer truncate min-w-0 w-full"
           >
             {Object.entries(currentPresets).map(([key, item]) => (
-              <option key={key} value={key} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+              <option
+                key={key}
+                value={key}
+                className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200"
+              >
                 {item.name}
               </option>
             ))}
@@ -524,7 +534,11 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
             className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
             title={theme === 'dark' ? t.header.themeTooltipLight : t.header.themeTooltipDark}
           >
-            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+            {theme === 'dark' ? (
+              <Sun className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Moon className="w-4 h-4 text-slate-600" />
+            )}
           </button>
 
           {/* Real-time execution timer badge */}
@@ -589,7 +603,9 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
                   </h3>
                   <span className="text-[11px] text-amber-700 dark:text-amber-400 font-mono flex items-center gap-1 mt-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                    <span>{activeConfig?.name || 'LLM'} · {t.header.unconfiguredBadge}</span>
+                    <span>
+                      {activeConfig?.name || 'LLM'} · {t.header.unconfiguredBadge}
+                    </span>
                   </span>
                 </div>
               </div>
@@ -603,9 +619,7 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
 
             {/* Modal Content */}
             <div className="p-6 space-y-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              <p>
-                {t.header.unconfiguredModalDesc}
-              </p>
+              <p>{t.header.unconfiguredModalDesc}</p>
 
               <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] font-mono">
                 <span className="text-slate-500 dark:text-slate-400">Target Provider:</span>

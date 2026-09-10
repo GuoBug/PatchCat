@@ -22,7 +22,9 @@ interface HelpModalProps {
 
 export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
   const { t, language } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'quickstart' | 'nodes' | 'shortcuts' | 'docs'>('quickstart');
+  const [activeTab, setActiveTab] = useState<'quickstart' | 'nodes' | 'shortcuts' | 'docs'>(
+    'quickstart',
+  );
 
   if (!isOpen) return null;
 
@@ -47,9 +49,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   v{PROJECT_LINKS.version}
                 </span>
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {t.help.subtitle}
-              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{t.help.subtitle}</p>
             </div>
           </div>
 
@@ -118,7 +118,11 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               <div className="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 space-y-1.5">
                 <div className="font-semibold text-blue-900 dark:text-sky-300 flex items-center gap-1.5 text-sm">
                   <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-sky-400" />
-                  <span>{isEn ? 'Start your first AI workflow in 30 seconds' : '30秒开启您的第一个 AI 流水线'}</span>
+                  <span>
+                    {isEn
+                      ? 'Start your first AI workflow in 30 seconds'
+                      : '30秒开启您的第一个 AI 流水线'}
+                  </span>
                 </div>
                 <p className="text-slate-600 dark:text-slate-300">
                   {isEn
@@ -130,7 +134,9 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-2">
                   <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-mono">1</span>
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-mono">
+                      1
+                    </span>
                     <span>{isEn ? 'Configure API Key' : '配置 API Key'}</span>
                   </div>
                   <p className="text-slate-500 dark:text-slate-400">
@@ -142,7 +148,9 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
 
                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-2">
                   <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-mono">2</span>
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-mono">
+                      2
+                    </span>
                     <span>{isEn ? 'Choose a Preset' : '选择预置模板'}</span>
                   </div>
                   <p className="text-slate-500 dark:text-slate-400">
@@ -154,7 +162,9 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
 
                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-2">
                   <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-mono">3</span>
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-mono">
+                      3
+                    </span>
                     <span>{isEn ? 'Click Run Workflow' : '点击 Run 运行'}</span>
                   </div>
                   <p className="text-slate-500 dark:text-slate-400">
@@ -173,7 +183,9 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex items-start gap-3">
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
                 <div className="space-y-1">
-                  <div className="font-bold text-slate-900 dark:text-white font-mono">{t.nodeTypes.input}</div>
+                  <div className="font-bold text-slate-900 dark:text-white font-mono">
+                    {t.nodeTypes.input}
+                  </div>
                   <p className="text-slate-500 dark:text-slate-400">
                     {isEn
                       ? 'Defines entry parameters for the workflow (e.g., customer queries, metadata, variables). Downstream nodes reference them via variable tags.'
@@ -185,7 +197,9 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex items-start gap-3">
                 <div className="w-2.5 h-2.5 rounded-full bg-purple-500 mt-1.5 shrink-0" />
                 <div className="space-y-1">
-                  <div className="font-bold text-slate-900 dark:text-white font-mono">{t.nodeTypes.prompt}</div>
+                  <div className="font-bold text-slate-900 dark:text-white font-mono">
+                    {t.nodeTypes.prompt}
+                  </div>
                   <p className="text-slate-500 dark:text-slate-400">
                     {isEn
                       ? 'Assemble dynamic prompt templates using Mustache variable placeholders (e.g., {{inputs.user_message}} or {{llm_node.response}}).'
@@ -197,7 +211,9 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex items-start gap-3">
                 <div className="w-2.5 h-2.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
                 <div className="space-y-1">
-                  <div className="font-bold text-slate-900 dark:text-white font-mono">{t.nodeTypes.llm}</div>
+                  <div className="font-bold text-slate-900 dark:text-white font-mono">
+                    {t.nodeTypes.llm}
+                  </div>
                   <p className="text-slate-500 dark:text-slate-400">
                     {isEn
                       ? 'Calls configured LLM providers with streaming token output, DeepSeek R1 reasoning chain extraction, and temperature controls.'
@@ -209,7 +225,9 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex items-start gap-3">
                 <div className="w-2.5 h-2.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
                 <div className="space-y-1">
-                  <div className="font-bold text-slate-900 dark:text-white font-mono">{t.nodeTypes.code}</div>
+                  <div className="font-bold text-slate-900 dark:text-white font-mono">
+                    {t.nodeTypes.code}
+                  </div>
                   <p className="text-slate-500 dark:text-slate-400">
                     {isEn
                       ? 'Lightweight JavaScript sandbox for JSON parsing, conditional routing, data transformation, and calculations.'
@@ -221,7 +239,9 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex items-start gap-3">
                 <div className="w-2.5 h-2.5 rounded-full bg-rose-500 mt-1.5 shrink-0" />
                 <div className="space-y-1">
-                  <div className="font-bold text-slate-900 dark:text-white font-mono">{t.nodeTypes.output}</div>
+                  <div className="font-bold text-slate-900 dark:text-white font-mono">
+                    {t.nodeTypes.output}
+                  </div>
                   <p className="text-slate-500 dark:text-slate-400">
                     {isEn
                       ? 'Aggregates final results and formats them in markdown or structured view for downstream consumption.'
@@ -237,42 +257,54 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             <div className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                  <span className="text-slate-700 dark:text-slate-300">{isEn ? 'Zoom Canvas' : '缩放画布'}</span>
+                  <span className="text-slate-700 dark:text-slate-300">
+                    {isEn ? 'Zoom Canvas' : '缩放画布'}
+                  </span>
                   <kbd className="px-2 py-1 rounded bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-mono text-[11px]">
                     {isEn ? 'Mouse Wheel / Pinch' : '鼠标滚轮 / 触控板双指'}
                   </kbd>
                 </div>
 
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                  <span className="text-slate-700 dark:text-slate-300">{isEn ? 'Pan Canvas' : '平移画布'}</span>
+                  <span className="text-slate-700 dark:text-slate-300">
+                    {isEn ? 'Pan Canvas' : '平移画布'}
+                  </span>
                   <kbd className="px-2 py-1 rounded bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-mono text-[11px]">
                     {isEn ? 'Left/Middle Click Drag' : '按住鼠标左键/中键拖拽'}
                   </kbd>
                 </div>
 
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                  <span className="text-slate-700 dark:text-slate-300">{isEn ? 'Delete Node / Edge' : '删除节点 / 连线'}</span>
+                  <span className="text-slate-700 dark:text-slate-300">
+                    {isEn ? 'Delete Node / Edge' : '删除节点 / 连线'}
+                  </span>
                   <kbd className="px-2 py-1 rounded bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-mono text-[11px]">
                     Backspace / Delete / Edge ×
                   </kbd>
                 </div>
 
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                  <span className="text-slate-700 dark:text-slate-300">{isEn ? 'Inspect Properties' : '打开属性检查抽屉'}</span>
+                  <span className="text-slate-700 dark:text-slate-300">
+                    {isEn ? 'Inspect Properties' : '打开属性检查抽屉'}
+                  </span>
                   <kbd className="px-2 py-1 rounded bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-mono text-[11px]">
                     {isEn ? 'Click Node' : '单击任意节点'}
                   </kbd>
                 </div>
 
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                  <span className="text-slate-700 dark:text-slate-300">{isEn ? 'Open Settings Page' : '打开设置页面'}</span>
+                  <span className="text-slate-700 dark:text-slate-300">
+                    {isEn ? 'Open Settings Page' : '打开设置页面'}
+                  </span>
                   <kbd className="px-2 py-1 rounded bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-mono text-[11px]">
                     {isEn ? 'Header "Settings" button' : '右上角 “设置” 按钮'}
                   </kbd>
                 </div>
 
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                  <span className="text-slate-700 dark:text-slate-300">{isEn ? 'Toggle Theme' : '切换深色 / 浅色模式'}</span>
+                  <span className="text-slate-700 dark:text-slate-300">
+                    {isEn ? 'Toggle Theme' : '切换深色 / 浅色模式'}
+                  </span>
                   <kbd className="px-2 py-1 rounded bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-mono text-[11px]">
                     ☀️ / 🌙
                   </kbd>
@@ -297,7 +329,9 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                       <span>GitHub Open Source Repository</span>
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {isEn ? 'View source code, star the project, or contribute PRs.' : '查看源代码、Star 项目、提交 Pull Request 或报告 Bug'}
+                      {isEn
+                        ? 'View source code, star the project, or contribute PRs.'
+                        : '查看源代码、Star 项目、提交 Pull Request 或报告 Bug'}
                     </div>
                   </div>
                 </div>
@@ -317,7 +351,9 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                       <span>{isEn ? 'Quick Start Guide (English)' : '快速入门指南'}</span>
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {isEn ? '5-minute setup tutorial, model integration, and advanced DAG scheduling tips.' : '详细的 5 分钟上手教程、模型对接指南与高级调试技巧'}
+                      {isEn
+                        ? '5-minute setup tutorial, model integration, and advanced DAG scheduling tips.'
+                        : '详细的 5 分钟上手教程、模型对接指南与高级调试技巧'}
                     </div>
                   </div>
                 </div>
@@ -337,7 +373,9 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                       <span>Issues & Discussions</span>
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {isEn ? 'Submit feature requests, report bugs, or engage in discussions.' : '提出新功能需求、报告运行异常或与开发者交流'}
+                      {isEn
+                        ? 'Submit feature requests, report bugs, or engage in discussions.'
+                        : '提出新功能需求、报告运行异常或与开发者交流'}
                     </div>
                   </div>
                 </div>

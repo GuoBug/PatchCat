@@ -61,17 +61,26 @@ export function sanitizeData(value: unknown, seen = new WeakSet()): unknown {
   if (typeof value === 'string') {
     let sanitized = value;
     // Mask sk-*** keys
-    sanitized = sanitized.replace(/(sk-[a-zA-Z0-9_\-]{4})[a-zA-Z0-9_\-]+([a-zA-Z0-9_\-]{4})/g, '$1***[MASKED]***$2');
+    sanitized = sanitized.replace(
+      /(sk-[a-zA-Z0-9_\-]{4})[a-zA-Z0-9_\-]+([a-zA-Z0-9_\-]{4})/g,
+      '$1***[MASKED]***$2',
+    );
     // Mask AIzaSy*** keys
-    sanitized = sanitized.replace(/(AIzaSy[a-zA-Z0-9_\-]{4})[a-zA-Z0-9_\-]+([a-zA-Z0-9_\-]{4})/g, '$1***[MASKED]***$2');
+    sanitized = sanitized.replace(
+      /(AIzaSy[a-zA-Z0-9_\-]{4})[a-zA-Z0-9_\-]+([a-zA-Z0-9_\-]{4})/g,
+      '$1***[MASKED]***$2',
+    );
     // Mask Bearer tokens
     sanitized = sanitized.replace(/(Bearer\s+)[a-zA-Z0-9._\-]{10,}/gi, '$1***[MASKED]***');
     // Mask AWS access key IDs
-    sanitized = sanitized.replace(/(AKIA[0-9A-Z]{4})[0-9A-Z]{8,}([0-9A-Z]{4})/g, '$1***[MASKED]***$2');
+    sanitized = sanitized.replace(
+      /(AKIA[0-9A-Z]{4})[0-9A-Z]{8,}([0-9A-Z]{4})/g,
+      '$1***[MASKED]***$2',
+    );
     // Mask explicit key assignments in config/error strings (e.g. api_key="xxx")
     sanitized = sanitized.replace(
       /((?:api[_-]?key|secret[_-]?key|access[_-]?token)["']?\s*[:=]\s*["']?)([a-zA-Z0-9_\-]{8,})(["']?)/gi,
-      '$1***[MASKED]***$3'
+      '$1***[MASKED]***$3',
     );
     return sanitized;
   }
@@ -95,7 +104,8 @@ export function sanitizeData(value: unknown, seen = new WeakSet()): unknown {
       const isSensitiveKey = SENSITIVE_KEY_PATTERNS.some((pattern) => pattern.test(k));
       if (isSensitiveKey) {
         if (typeof v === 'string' && v.length > 0) {
-          sanitizedObj[k] = v.length > 8 ? `${v.slice(0, 3)}***[MASKED]***${v.slice(-3)}` : '***[MASKED]***';
+          sanitizedObj[k] =
+            v.length > 8 ? `${v.slice(0, 3)}***[MASKED]***${v.slice(-3)}` : '***[MASKED]***';
         } else {
           sanitizedObj[k] = '***[MASKED]***';
         }
@@ -254,7 +264,10 @@ export class LoggerEngine {
     metadata?: Record<string, unknown>,
     nodeId?: string,
   ): void {
-    const errorDetails = err instanceof Error ? { name: err.name, message: err.message, stack: err.stack } : { raw: String(err) };
+    const errorDetails =
+      err instanceof Error
+        ? { name: err.name, message: err.message, stack: err.stack }
+        : { raw: String(err) };
     const entry: LogEntry = {
       id: `log_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       timestamp: Date.now(),

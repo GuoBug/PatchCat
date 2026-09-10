@@ -98,7 +98,7 @@ export interface IKnowledgeAdapter {
   uploadDocument(
     kbId: string,
     file: File | { name: string; content: string; extension?: string; size?: number },
-    options?: ChunkOptions
+    options?: ChunkOptions,
   ): Promise<DocumentItem>;
   deleteDocument(docId: string): Promise<void>;
   getDocumentChunks(docId: string): Promise<DocumentChunkItem[]>;
@@ -108,7 +108,7 @@ export interface IKnowledgeAdapter {
     kbId: string,
     query: string,
     topK?: number,
-    scoreThreshold?: number
+    scoreThreshold?: number,
   ): Promise<KnowledgeRetrievalResult>;
 }
 
@@ -171,7 +171,7 @@ function getSeedData() {
       doc_id: SEED_DOC_ID,
       position: 2,
       content:
-        '【RFC-101 规范标准 | 第2章 核心图调度算法与 Kahn 拓扑排序机制 (DAG Scheduling & Kahn\'s Algorithm)】\n为保障大规模复杂工作流调度的确定性与高吞吐，PatchCat 调度内核严格采用经典的 Kahn 拓扑排序算法（Kahn\'s Algorithm, 1962），调度时间复杂度为严谨的线性阶 O(|V| + |E|)，空间复杂度 O(|V|)。算法调度生命周期分为三个原子阶段：\n1. 静态入度矩阵构建：引擎在初始化阶段遍历节点全集 V 与有向边集 E，计算各节点的静态入度映射表 I(v) = |{u ∈ V | (u, v) ∈ E}|；\n2. 零入度就绪队列初始化：调度器将全部入度为 0 的起始节点（如 User Input 入参源、Knowledge 知识库检索等无前驱节点）压入就绪队列 Q_0 = {v ∈ V | I(v) = 0}；\n3. 动态原子剪枝与事件驱动推进：当节点 u 执行完成（NODE_COMPLETE）后，调度器触发拓扑出边剪枝操作 E ← E \\ {(u, v)}，原子递减所有后继下游节点的入度计数：I(v) ← I(v) - 1。一旦某个下游节点入度归零（I(v) == 0），即表明该节点的所有前置输入与上下文均已就绪，立即推入调度就绪波次，实现完全非轮询、零阻塞的纯事件驱动执行流。',
+        "【RFC-101 规范标准 | 第2章 核心图调度算法与 Kahn 拓扑排序机制 (DAG Scheduling & Kahn's Algorithm)】\n为保障大规模复杂工作流调度的确定性与高吞吐，PatchCat 调度内核严格采用经典的 Kahn 拓扑排序算法（Kahn's Algorithm, 1962），调度时间复杂度为严谨的线性阶 O(|V| + |E|)，空间复杂度 O(|V|)。算法调度生命周期分为三个原子阶段：\n1. 静态入度矩阵构建：引擎在初始化阶段遍历节点全集 V 与有向边集 E，计算各节点的静态入度映射表 I(v) = |{u ∈ V | (u, v) ∈ E}|；\n2. 零入度就绪队列初始化：调度器将全部入度为 0 的起始节点（如 User Input 入参源、Knowledge 知识库检索等无前驱节点）压入就绪队列 Q_0 = {v ∈ V | I(v) = 0}；\n3. 动态原子剪枝与事件驱动推进：当节点 u 执行完成（NODE_COMPLETE）后，调度器触发拓扑出边剪枝操作 E ← E \\ {(u, v)}，原子递减所有后继下游节点的入度计数：I(v) ← I(v) - 1。一旦某个下游节点入度归零（I(v) == 0），即表明该节点的所有前置输入与上下文均已就绪，立即推入调度就绪波次，实现完全非轮询、零阻塞的纯事件驱动执行流。",
       token_count: 260,
       hit_count: 35,
       is_active: true,
@@ -263,8 +263,7 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
           const archKb = parsed.find((k) => k.id === SEED_KB_ID);
           if (
             archKb &&
-            (archKb.total_chunks < seedKb.total_chunks ||
-              !archKb.description?.includes('RFC-101'))
+            (archKb.total_chunks < seedKb.total_chunks || !archKb.description?.includes('RFC-101'))
           ) {
             archKb.total_chunks = seedKb.total_chunks;
             archKb.description = seedKb.description;
@@ -304,8 +303,7 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
           const archDoc = parsed.find((d) => d.id === SEED_DOC_ID);
           if (
             archDoc &&
-            (archDoc.chunk_count < seedDoc.chunk_count ||
-              archDoc.char_count < seedDoc.char_count)
+            (archDoc.chunk_count < seedDoc.chunk_count || archDoc.char_count < seedDoc.char_count)
           ) {
             archDoc.chunk_count = seedDoc.chunk_count;
             archDoc.char_count = seedDoc.char_count;
@@ -380,7 +378,7 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       kbs = kbs.filter(
         (kb) =>
           kb.name.toLowerCase().includes(s) ||
-          (kb.description && kb.description.toLowerCase().includes(s))
+          (kb.description && kb.description.toLowerCase().includes(s)),
       );
     }
     return kbs;
@@ -429,7 +427,7 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
   async uploadDocument(
     kbId: string,
     fileInput: File | { name: string; content: string; extension?: string; size?: number },
-    options?: ChunkOptions
+    options?: ChunkOptions,
   ): Promise<DocumentItem> {
     let filename = '';
     let text = '';
@@ -446,7 +444,12 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       const parsed = await parseDocumentFile(fileInput);
       text = parsed.text;
     } else {
-      const customFile = fileInput as { name: string; content: string; extension?: string; size?: number };
+      const customFile = fileInput as {
+        name: string;
+        content: string;
+        extension?: string;
+        size?: number;
+      };
       filename = customFile.name;
       extension = customFile.extension || filename.split('.').pop()?.toLowerCase() || 'txt';
       size = customFile.size || customFile.content.length;
@@ -630,15 +633,13 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
     kbId: string,
     query: string,
     topK = 3,
-    scoreThreshold = 0.0
+    scoreThreshold = 0.0,
   ): Promise<KnowledgeRetrievalResult> {
     const docs = this.getStoredDocs().filter((d) => d.kb_id === kbId);
     const docMap = new Map<string, string>();
     docs.forEach((d) => docMap.set(d.id, d.name));
 
-    const chunks = this.getStoredChunks().filter(
-      (c) => c.kb_id === kbId && c.is_active !== false
-    );
+    const chunks = this.getStoredChunks().filter((c) => c.kb_id === kbId && c.is_active !== false);
 
     if (chunks.length === 0) {
       return { context: '', chunks: [] };
@@ -656,10 +657,31 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
     chineseWords.forEach((w) => terms.add(w));
 
     const keyVocabulary = [
-      '拓扑', '算法', '死锁', '死循环', 'kahn', 'dag', '调度',
-      '并发', 'promise', '性能', '卡顿', 'react flow', '拖拽',
-      '优化', '沙箱', 'worker', '看门狗', '存储', '双模', '白皮书',
-      '重绘', '切片', '架构', '入度', '环路'
+      '拓扑',
+      '算法',
+      '死锁',
+      '死循环',
+      'kahn',
+      'dag',
+      '调度',
+      '并发',
+      'promise',
+      '性能',
+      '卡顿',
+      'react flow',
+      '拖拽',
+      '优化',
+      '沙箱',
+      'worker',
+      '看门狗',
+      '存储',
+      '双模',
+      '白皮书',
+      '重绘',
+      '切片',
+      '架构',
+      '入度',
+      '环路',
     ];
     keyVocabulary.forEach((kv) => {
       if (q.includes(kv)) terms.add(kv);
@@ -722,7 +744,7 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
 
     const contextParts = formattedChunks.map(
       (c) =>
-        `### [Document: ${c.doc_name} (Position #${c.position} - Similarity: ${c.similarity.toFixed(2)})]\n${c.content}`
+        `### [Document: ${c.doc_name} (Position #${c.position} - Similarity: ${c.similarity.toFixed(2)})]\n${c.content}`,
     );
 
     return {
@@ -798,7 +820,7 @@ export class ServerKnowledgeAdapter implements IKnowledgeAdapter {
   async uploadDocument(
     kbId: string,
     fileInput: File | { name: string; content: string; extension?: string; size?: number },
-    options?: ChunkOptions
+    options?: ChunkOptions,
   ): Promise<DocumentItem> {
     const chunkSize = options?.chunkSize || 500;
     const chunkOverlap = options?.chunkOverlap || 50;
@@ -821,7 +843,12 @@ export class ServerKnowledgeAdapter implements IKnowledgeAdapter {
       return res.json();
     } else {
       // JSON content creation
-      const customFile = fileInput as { name: string; content: string; extension?: string; size?: number };
+      const customFile = fileInput as {
+        name: string;
+        content: string;
+        extension?: string;
+        size?: number;
+      };
       const res = await fetch(`${this.baseUrl}/api/v1/knowledge-bases/${kbId}/documents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -892,7 +919,7 @@ export class ServerKnowledgeAdapter implements IKnowledgeAdapter {
     kbId: string,
     query: string,
     topK = 3,
-    scoreThreshold = 0.0
+    scoreThreshold = 0.0,
   ): Promise<KnowledgeRetrievalResult> {
     const res = await fetch(`${this.baseUrl}/api/v1/knowledge-bases/${kbId}/retrieve`, {
       method: 'POST',

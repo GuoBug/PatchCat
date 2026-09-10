@@ -45,7 +45,11 @@ export const ConditionNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data
         <div className="flex items-center justify-between text-[10px] font-mono text-amber-700 dark:text-amber-300">
           <span className="flex items-center gap-1 font-semibold">
             <GitBranch className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-            <span>{isZh ? `${conditions.length} 条判断规则` : `${conditions.length} RULE${conditions.length > 1 ? 'S' : ''}`}</span>
+            <span>
+              {isZh
+                ? `${conditions.length} 条判断规则`
+                : `${conditions.length} RULE${conditions.length > 1 ? 'S' : ''}`}
+            </span>
           </span>
           <span className="text-slate-400 dark:text-slate-500 font-sans">
             {isZh ? `${branches.length} 个分支` : `${branches.length} Branches`}

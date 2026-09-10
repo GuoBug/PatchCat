@@ -427,11 +427,13 @@ export const translations: Record<Language, Translations> = {
       stopWorkflow: 'Stop',
       cycleDetected: 'Cycle Detected',
       cycleAlertTitle: 'Workflow Validation Failed: Cycle Detected',
-      cycleAlertMsg: 'A closed dependency loop was detected. Unable to determine execution order. Please remove feedback edges and retry.',
+      cycleAlertMsg:
+        'A closed dependency loop was detected. Unable to determine execution order. Please remove feedback edges and retry.',
       cycleNodesLabel: 'Involved cyclic nodes:',
       unknownEngineError: 'Execution Engine encountered an error',
       unconfiguredModalTitle: 'LLM Model API Key Not Configured',
-      unconfiguredModalDesc: 'The current workflow contains LLM inference nodes, but the active provider has no verified API Key configured. You can bind your API Key now, or run a flow validation that skips model calls and verifies data routing.',
+      unconfiguredModalDesc:
+        'The current workflow contains LLM inference nodes, but the active provider has no verified API Key configured. You can bind your API Key now, or run a flow validation that skips model calls and verifies data routing.',
       bindApiKeyBtn: 'Configure API Key',
       validateFlowOnlyBtn: 'Validate Flow Only (Skip LLM)',
       unconfiguredBadge: 'No API Key Set',
@@ -461,7 +463,8 @@ export const translations: Record<Language, Translations> = {
     propertyPanel: {
       title: 'Node Properties',
       noNodeSelected: 'No Node Selected',
-      noNodeSelectedDesc: 'Click any node on the canvas to inspect its configuration and view live execution outputs.',
+      noNodeSelectedDesc:
+        'Click any node on the canvas to inspect its configuration and view live execution outputs.',
       deleteNode: 'Delete Node',
       nodeLabel: 'Node Name',
       nodeDescription: 'Description',
@@ -533,9 +536,11 @@ export const translations: Record<Language, Translations> = {
       // Aggregator Node
       aggregatorModeTitle: 'Variable Reconvergence Mode',
       aggFirstAvailableLabel: 'First Available',
-      aggFirstAvailableDesc: 'Takes the output of whichever upstream branch actually executed and was not skipped.',
+      aggFirstAvailableDesc:
+        'Takes the output of whichever upstream branch actually executed and was not skipped.',
       aggMergeAllLabel: 'Merge All Active',
-      aggMergeAllDesc: 'Combines all executed upstream branch outputs into an object keyed by source node ID.',
+      aggMergeAllDesc:
+        'Combines all executed upstream branch outputs into an object keyed by source node ID.',
       aggWaitAllLabel: 'Wait All (Preserve Skipped)',
       aggWaitAllDesc: 'Waits for all connected branches, setting skipped branch results to null.',
       aggOutputKeyLabel: 'Output Variable Key:',
@@ -593,14 +598,17 @@ export const translations: Record<Language, Translations> = {
       engineMock: 'Mock Execution Engine',
       engineMockDesc: 'Simulate workflow runs locally with mock responses for instant testing.',
       engineBrowser: 'Browser BYOK Mode (Recommended)',
-      engineBrowserDesc: 'Direct client-side connection using your own API keys with zero backend latency.',
+      engineBrowserDesc:
+        'Direct client-side connection using your own API keys with zero backend latency.',
       // Storage Mode Section
       storageSection: 'Storage & Backend Mode',
       storageSectionDesc: 'Choose where workflows and project directories are saved.',
       storageLocal: 'Browser Local Storage (BYOK)',
-      storageLocalDesc: 'Store workflows completely in your browser localStorage. 100% private with zero backend setup.',
+      storageLocalDesc:
+        'Store workflows completely in your browser localStorage. 100% private with zero backend setup.',
       storageServer: 'FastAPI Backend Server (PostgreSQL / SQLite)',
-      storageServerDesc: 'Persist workflows and project directories to your FastAPI backend server with database synchronization.',
+      storageServerDesc:
+        'Persist workflows and project directories to your FastAPI backend server with database synchronization.',
       serverUrlLabel: 'Backend API URL',
       testServerBtn: 'Test Connection',
       testingServerBtn: 'Testing...',
@@ -610,7 +618,8 @@ export const translations: Record<Language, Translations> = {
       serverTestFailed: 'Unable to connect to backend server. Please check if FastAPI is running.',
       // Providers Tab
       providersTitle: 'LLM Providers & API Keys',
-      providersSubtitle: 'Configure model endpoints and API credentials (BYOK). Pure client-side direct connection.',
+      providersSubtitle:
+        'Configure model endpoints and API credentials (BYOK). Pure client-side direct connection.',
       setAsActive: 'Set as Active',
       currentActive: 'Current Active Provider',
       apiBaseUrl: 'API Base URL',
@@ -625,7 +634,8 @@ export const translations: Record<Language, Translations> = {
       testConnection: 'Test Connection',
       testingConnection: 'Connecting...',
       resetProvider: 'Reset Provider',
-      privacyNotice: 'All API keys are securely stored only in your browser LocalStorage and sent directly to LLM providers.',
+      privacyNotice:
+        'All API keys are securely stored only in your browser LocalStorage and sent directly to LLM providers.',
       // Logs Tab
       logsTitle: 'Workflow Execution Logs',
       logsSubtitle: 'Real-time telemetry, request payloads, token counts, and error tracking.',
@@ -633,9 +643,11 @@ export const translations: Record<Language, Translations> = {
       levelSummary: 'Summary',
       levelSummaryDesc: 'System start/stop, DAG scheduling, HTTP status, latency, and errors.',
       levelDetailed: 'Detailed',
-      levelDetailedDesc: 'Includes Summary + Node IDs, model parameters, and dependency resolution.',
+      levelDetailedDesc:
+        'Includes Summary + Node IDs, model parameters, and dependency resolution.',
       levelDev: 'Development',
-      levelDevDesc: 'Includes Detailed + Full Prompt inputs and output responses (strictly sanitized).',
+      levelDevDesc:
+        'Includes Detailed + Full Prompt inputs and output responses (strictly sanitized).',
       secretMaskedNotice: 'API Keys Auto-Masked',
       searchLogsPlaceholder: 'Search logs (keywords, node ID)...',
       autoScroll: 'Auto Scroll',
@@ -733,7 +745,8 @@ export const translations: Record<Language, Translations> = {
       title: 'Chat Debug Panel (Ctrl+Shift+D)',
       subtitle: 'Run graph & inspect streaming trace',
       emptyTitle: 'Start Conversation Debugging',
-      emptyDesc: 'Type a prompt below to run your workflow graph and inspect streaming LLM output with per-node execution trace.',
+      emptyDesc:
+        'Type a prompt below to run your workflow graph and inspect streaming LLM output with per-node execution trace.',
       userRole: 'You',
       assistantRole: 'Assistant',
       executionTrace: 'Execution Trace',
@@ -813,7 +826,8 @@ export const translations: Record<Language, Translations> = {
       cycleNodesLabel: '涉及成环节点:',
       unknownEngineError: '执行引擎发生未知错误',
       unconfiguredModalTitle: '未配置大模型 API Key 凭证',
-      unconfiguredModalDesc: '当前工作流包含 LLM 推理节点，但所选的大模型服务商尚未配置或绑定有效 API Key。您可以前往设置页面绑定 Key，或仅执行工作流流程校验（自动跳过模型调用，校验数据流转）。',
+      unconfiguredModalDesc:
+        '当前工作流包含 LLM 推理节点，但所选的大模型服务商尚未配置或绑定有效 API Key。您可以前往设置页面绑定 Key，或仅执行工作流流程校验（自动跳过模型调用，校验数据流转）。',
       bindApiKeyBtn: '去配置绑定 API Key',
       validateFlowOnlyBtn: '仅进行流程校验 (跳过模型)',
       unconfiguredBadge: '未配置 API Key',
@@ -867,7 +881,8 @@ export const translations: Record<Language, Translations> = {
       knowledgeQueryPlaceholder: '输入搜索内容，支持 {{input_1.query}} 动态变量...',
       topK: 'Top-K 召回数量',
       scoreThreshold: '相似度过滤阈值',
-      knowledgeAttributionHint: '输出 {{result}} (标准 Markdown 上下文) 与 {{chunks}} (结构化切片数组)。',
+      knowledgeAttributionHint:
+        '输出 {{result}} (标准 Markdown 上下文) 与 {{chunks}} (结构化切片数组)。',
       modelConfig: '模型与推理配置',
       provider: '模型服务商',
       model: '推理模型',
@@ -980,7 +995,8 @@ export const translations: Record<Language, Translations> = {
       storageSection: '存储与后端服务模式',
       storageSectionDesc: '选择工作流和项目目录的保存位置与同步方式。',
       storageLocal: '浏览器本地存储 (BYOK 模式)',
-      storageLocalDesc: '工作流完全保存在浏览器 LocalStorage 中，无需后端数据库，零配置且完全私密。',
+      storageLocalDesc:
+        '工作流完全保存在浏览器 LocalStorage 中，无需后端数据库，零配置且完全私密。',
       storageServer: 'FastAPI 后端服务 (PostgreSQL / SQLite)',
       storageServerDesc: '持久化存储至 FastAPI 后端数据库，支持多端数据同步与知识库向量检索。',
       serverUrlLabel: '后端服务地址 (API Base URL)',
@@ -1007,7 +1023,8 @@ export const translations: Record<Language, Translations> = {
       testConnection: '测试连通性 (Test Connection)',
       testingConnection: '正在连接...',
       resetProvider: '重置该 Provider',
-      privacyNotice: '所有 API Key 仅保存在浏览器 LocalStorage，直连大模型服务商，绝不经由第三方服务器。',
+      privacyNotice:
+        '所有 API Key 仅保存在浏览器 LocalStorage，直连大模型服务商，绝不经由第三方服务器。',
       // Logs Tab
       logsTitle: '工作流运行日志控制台',
       logsSubtitle: '全链路遥测日志、API 请求响应 Payload 检查与报错追踪。',
@@ -1115,7 +1132,8 @@ export const translations: Record<Language, Translations> = {
       title: '交互式多轮对话调试 (Ctrl+Shift+D)',
       subtitle: '运行工作流图谱并观察逐节点遥测',
       emptyTitle: '开启对话联调',
-      emptyDesc: '在下方输入内容即可触发工作流运行，实时查看流式输出并检查每一步节点的执行轨迹与状态。',
+      emptyDesc:
+        '在下方输入内容即可触发工作流运行，实时查看流式输出并检查每一步节点的执行轨迹与状态。',
       userRole: '用户',
       assistantRole: '助手',
       executionTrace: '节点执行轨迹',

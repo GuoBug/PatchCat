@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/GuoBug/PatchCat/discussions
+    about: Ask questions, share ideas, or discuss features with the community
+  - name: 📖 Documentation
+    url: https://github.com/GuoBug/PatchCat/tree/main/docs
+    about: Check out the project documentation before filing an issue

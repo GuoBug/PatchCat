@@ -46,6 +46,14 @@
 系统原生支持**零后端依赖模式（Client-Only BYOK）**，所有数据与 API Key 均仅保存在浏览器本地，直连 **Google Gemini、DeepSeek、OpenAI、SiliconFlow（硅基流动）以及本地 Ollama**，在浏览器端即可获得极致低延迟的实时流式体验与严密的隐私安全保障。
 
 <p align="center">
+  <img src="./assets/screenshot-hero.png" width="940" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" alt="PatchCat 可视化 DAG 画布 — 拖拽式 AI 工作流编排器，支持实时 LLM 流式输出" />
+</p>
+
+<p align="center">
+  <em>PatchCat 可视化 DAG 画布 — 拖拽式工作流编排器，支持实时 LLM Token 流式渲染</em>
+</p>
+
+<p align="center">
   <img src="./docs/assets/workflow-topology-zh.png" width="940" style="max-width: 100%;" alt="PatchCat 智能客服工单路由工作流拓扑" />
 </p>
 

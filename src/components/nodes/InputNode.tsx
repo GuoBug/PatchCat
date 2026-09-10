@@ -24,7 +24,9 @@ export const InputNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, se
       <div className="space-y-1.5">
         <div className="text-[10px] uppercase font-mono text-slate-500 dark:text-slate-400 font-semibold flex items-center justify-between">
           <span>Parameters</span>
-          <span className="text-emerald-600 dark:text-emerald-400 font-normal">{inputEntries.length} field(s)</span>
+          <span className="text-emerald-600 dark:text-emerald-400 font-normal">
+            {inputEntries.length} field(s)
+          </span>
         </div>
 
         {inputEntries.length === 0 ? (
@@ -39,7 +41,9 @@ export const InputNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, se
                 className="px-2.5 py-1.5 rounded-lg bg-emerald-50/70 dark:bg-slate-950/80 border border-emerald-200/80 dark:border-emerald-500/20 font-mono text-[11px] text-emerald-800 dark:text-emerald-400 flex items-center justify-between shadow-xs"
               >
                 <span className="font-semibold truncate">{key}</span>
-                <span className="text-[9px] text-emerald-600/70 dark:text-emerald-500/60 font-mono uppercase">param</span>
+                <span className="text-[9px] text-emerald-600/70 dark:text-emerald-500/60 font-mono uppercase">
+                  param
+                </span>
               </div>
             ))}
 

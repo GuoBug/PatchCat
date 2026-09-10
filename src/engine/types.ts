@@ -257,14 +257,29 @@ export type ExecutionEventType =
 
 /** Type-safe payload map keyed by {@link ExecutionEventType}. */
 export interface ExecutionEventPayloadMap {
-  WORKFLOW_START:    { graphId: string; timestamp: number; totalNodes: number };
-  NODE_START:        { nodeId: string; nodeType: NodeType; timestamp: number; inputs: Record<string, unknown> };
-  NODE_CHUNK:        { nodeId: string; delta: string; fullContent: string; reasoningDelta?: string; fullReasoning?: string };
-  NODE_COMPLETE:     { nodeId: string; output: Record<string, unknown>; durationMs: number };
-  NODE_ERROR:        { nodeId: string; error: string; durationMs: number };
-  NODE_SKIPPED:      { nodeId: string; reason: string };
-  WORKFLOW_COMPLETE: { outputs: Record<string, unknown>; totalDurationMs: number; timestamp: number };
-  WORKFLOW_ERROR:    { error: string; failedNodeId?: string; timestamp: number };
+  WORKFLOW_START: { graphId: string; timestamp: number; totalNodes: number };
+  NODE_START: {
+    nodeId: string;
+    nodeType: NodeType;
+    timestamp: number;
+    inputs: Record<string, unknown>;
+  };
+  NODE_CHUNK: {
+    nodeId: string;
+    delta: string;
+    fullContent: string;
+    reasoningDelta?: string;
+    fullReasoning?: string;
+  };
+  NODE_COMPLETE: { nodeId: string; output: Record<string, unknown>; durationMs: number };
+  NODE_ERROR: { nodeId: string; error: string; durationMs: number };
+  NODE_SKIPPED: { nodeId: string; reason: string };
+  WORKFLOW_COMPLETE: {
+    outputs: Record<string, unknown>;
+    totalDurationMs: number;
+    timestamp: number;
+  };
+  WORKFLOW_ERROR: { error: string; failedNodeId?: string; timestamp: number };
 }
 
 /**
@@ -465,15 +480,15 @@ export function getDefaultNodeConfig(type: NodeType): Record<string, unknown> {
  */
 export function getDefaultNodeLabel(type: NodeType): string {
   const labels: Record<NodeType, string> = {
-    input:      'Input',
-    prompt:     'Prompt Template',
-    llm:        'LLM Call',
-    code:       'Code Transform',
-    output:     'Output',
-    knowledge:  'Knowledge Retrieval',
-    condition:  'IF / ELSE Condition',
+    input: 'Input',
+    prompt: 'Prompt Template',
+    llm: 'LLM Call',
+    code: 'Code Transform',
+    output: 'Output',
+    knowledge: 'Knowledge Retrieval',
+    condition: 'IF / ELSE Condition',
     aggregator: 'Variable Aggregator',
-    http:       'HTTP Request',
+    http: 'HTTP Request',
   };
   return labels[type];
 }

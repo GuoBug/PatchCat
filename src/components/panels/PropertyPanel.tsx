@@ -1,14 +1,14 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { 
-  X, 
-  Trash2, 
-  Settings2, 
-  Sparkles, 
-  Plus, 
-  Trash, 
-  Sliders, 
-  Terminal, 
-  CheckCircle2, 
+import {
+  X,
+  Trash2,
+  Settings2,
+  Sparkles,
+  Plus,
+  Trash,
+  Sliders,
+  Terminal,
+  CheckCircle2,
   Copy,
   Check,
   Bot,
@@ -134,7 +134,9 @@ export const PropertyPanel: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [showReasoning, setShowReasoning] = useState(true);
   const [isRefreshingModels, setIsRefreshingModels] = useState(false);
-  const [httpTab, setHttpTab] = useState<'params' | 'headers' | 'body' | 'auth' | 'settings'>('params');
+  const [httpTab, setHttpTab] = useState<'params' | 'headers' | 'body' | 'auth' | 'settings'>(
+    'params',
+  );
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
@@ -142,7 +144,9 @@ export const PropertyPanel: React.FC = () => {
     if (!selectedNodeId) return;
     const store = useWorkflowStore.getState();
     store.setNodes(store.nodes.filter((n) => n.id !== selectedNodeId));
-    store.setEdges(store.edges.filter((e) => e.source !== selectedNodeId && e.target !== selectedNodeId));
+    store.setEdges(
+      store.edges.filter((e) => e.source !== selectedNodeId && e.target !== selectedNodeId),
+    );
     setSelectedNodeId(null);
   }, [selectedNodeId, setSelectedNodeId]);
 
@@ -222,9 +226,9 @@ export const PropertyPanel: React.FC = () => {
   // Determine what output content to show in the drawer
   const hasOutputs = Object.keys(outputs).length > 0;
   const outputString = hasOutputs
-    ? (typeof outputs['response'] === 'string'
-        ? outputs['response']
-        : JSON.stringify(outputs, null, 2))
+    ? typeof outputs['response'] === 'string'
+      ? outputs['response']
+      : JSON.stringify(outputs, null, 2)
     : '';
 
   return (
@@ -320,7 +324,14 @@ export const PropertyPanel: React.FC = () => {
                 placeholder={t.propertyPanel.promptPlaceholder}
               />
               <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
-                Use <code className="text-violet-600 dark:text-purple-400">{"{{nodeId.outputKey}}"}</code> or <code className="text-violet-600 dark:text-purple-400">{"{{nodeId.val | 'fallback'}}"}</code>
+                Use{' '}
+                <code className="text-violet-600 dark:text-purple-400">
+                  {'{{nodeId.outputKey}}'}
+                </code>{' '}
+                or{' '}
+                <code className="text-violet-600 dark:text-purple-400">
+                  {"{{nodeId.val | 'fallback'}}"}
+                </code>
               </span>
             </div>
 
@@ -336,8 +347,13 @@ export const PropertyPanel: React.FC = () => {
               ) : (
                 <div className="space-y-1.5">
                   {extractedSlots.map((slot, i) => (
-                    <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-violet-50 dark:bg-slate-950 border border-violet-200 dark:border-purple-500/30 text-xs font-mono">
-                      <span className="text-violet-800 dark:text-purple-300 font-medium truncate">{slot.raw}</span>
+                    <div
+                      key={i}
+                      className="flex items-center justify-between p-2 rounded-lg bg-violet-50 dark:bg-slate-950 border border-violet-200 dark:border-purple-500/30 text-xs font-mono"
+                    >
+                      <span className="text-violet-800 dark:text-purple-300 font-medium truncate">
+                        {slot.raw}
+                      </span>
                       {slot.defaultValue && (
                         <span className="text-[10px] text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-transparent">
                           Fallback: {slot.defaultValue}
@@ -352,132 +368,152 @@ export const PropertyPanel: React.FC = () => {
         )}
 
         {/* ── Type Specific: LLM Node ── */}
-        {type === 'llm' && (() => {
-          const currentProvider = providers[activeProvider];
-          const hasKey = activeProvider === 'ollama' ? true : Boolean(currentProvider?.apiKey?.trim());
-          const availableModels = currentProvider?.availableModels || [];
+        {type === 'llm' &&
+          (() => {
+            const currentProvider = providers[activeProvider];
+            const hasKey =
+              activeProvider === 'ollama' ? true : Boolean(currentProvider?.apiKey?.trim());
+            const availableModels = currentProvider?.availableModels || [];
 
-          return (
-            <div className="space-y-4">
-              {/* Active Provider Banner */}
-              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`w-2 h-2 rounded-full shrink-0 ${
-                      hasKey ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'
-                    }`}
-                  />
-                  <div>
-                    <span className="text-[10px] font-mono uppercase text-slate-400 block">{t.propertyPanel.provider}</span>
-                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                      {currentProvider?.name || 'OpenAI'}
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => {
-                    setSettingsTab('providers');
-                    setCurrentView('settings');
-                  }}
-                  className="flex items-center gap-1 text-[11px] font-medium text-blue-600 dark:text-sky-400 hover:text-blue-700 dark:hover:text-sky-300 px-2 py-1 rounded bg-blue-50 dark:bg-sky-500/10 hover:bg-blue-100 dark:hover:bg-sky-500/20 border border-blue-200 dark:border-sky-500/30 transition-all shadow-xs cursor-pointer"
-                >
-                  <KeyRound className="w-3 h-3" />
-                  <span>{hasKey ? t.common.settings : t.settings.apiKeyLabel}</span>
-                </button>
-              </div>
-
-              {/* Model Selector */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <span>{t.propertyPanel.model}</span>
-                    {availableModels.length > 0 && (
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                        ({availableModels.length})
+            return (
+              <div className="space-y-4">
+                {/* Active Provider Banner */}
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`w-2 h-2 rounded-full shrink-0 ${
+                        hasKey ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'
+                      }`}
+                    />
+                    <div>
+                      <span className="text-[10px] font-mono uppercase text-slate-400 block">
+                        {t.propertyPanel.provider}
                       </span>
-                    )}
-                  </label>
+                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                        {currentProvider?.name || 'OpenAI'}
+                      </span>
+                    </div>
+                  </div>
+
                   <button
-                    type="button"
-                    onClick={async () => {
-                      setIsRefreshingModels(true);
-                      await fetchAvailableModels(activeProvider);
-                      setIsRefreshingModels(false);
+                    onClick={() => {
+                      setSettingsTab('providers');
+                      setCurrentView('settings');
                     }}
-                    disabled={isRefreshingModels || !hasKey}
-                    className="text-[10px] text-blue-600 dark:text-sky-400 hover:text-blue-700 dark:hover:text-sky-300 disabled:opacity-40 flex items-center gap-1 transition-colors"
-                    title={t.propertyPanel.refreshModels}
+                    className="flex items-center gap-1 text-[11px] font-medium text-blue-600 dark:text-sky-400 hover:text-blue-700 dark:hover:text-sky-300 px-2 py-1 rounded bg-blue-50 dark:bg-sky-500/10 hover:bg-blue-100 dark:hover:bg-sky-500/20 border border-blue-200 dark:border-sky-500/30 transition-all shadow-xs cursor-pointer"
                   >
-                    <RefreshCw className={`w-3 h-3 ${isRefreshingModels ? 'animate-spin' : ''}`} />
-                    <span>{isRefreshingModels ? t.propertyPanel.refreshing : t.propertyPanel.refreshModels}</span>
+                    <KeyRound className="w-3 h-3" />
+                    <span>{hasKey ? t.common.settings : t.settings.apiKeyLabel}</span>
                   </button>
                 </div>
-                {availableModels.length > 0 ? (
-                  <select
-                    value={
-                      availableModels.includes((config['model'] as string) || '')
-                        ? (config['model'] as string)
-                        : currentProvider?.defaultModel || availableModels[0]
-                    }
-                    onChange={(e) => updateNodeConfig(id, { model: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono cursor-pointer"
-                  >
-                    {availableModels.map((m) => (
-                      <option key={m} value={m} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-200">
-                        {m}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    value={(config['model'] as string) || currentProvider?.defaultModel || 'gpt-4o-mini'}
-                    onChange={(e) => updateNodeConfig(id, { model: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
-                    placeholder={t.propertyPanel.customModelPlaceholder}
-                  />
-                )}
-              </div>
 
-              {/* Temperature Slider */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                    <Sliders className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-                    <span>{t.propertyPanel.temperature}</span>
-                  </span>
-                  <span className="text-amber-600 dark:text-amber-400 font-bold">
-                    {typeof config['temperature'] === 'number' ? config['temperature'] : 0.7}
-                  </span>
+                {/* Model Selector */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <span>{t.propertyPanel.model}</span>
+                      {availableModels.length > 0 && (
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                          ({availableModels.length})
+                        </span>
+                      )}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setIsRefreshingModels(true);
+                        await fetchAvailableModels(activeProvider);
+                        setIsRefreshingModels(false);
+                      }}
+                      disabled={isRefreshingModels || !hasKey}
+                      className="text-[10px] text-blue-600 dark:text-sky-400 hover:text-blue-700 dark:hover:text-sky-300 disabled:opacity-40 flex items-center gap-1 transition-colors"
+                      title={t.propertyPanel.refreshModels}
+                    >
+                      <RefreshCw
+                        className={`w-3 h-3 ${isRefreshingModels ? 'animate-spin' : ''}`}
+                      />
+                      <span>
+                        {isRefreshingModels
+                          ? t.propertyPanel.refreshing
+                          : t.propertyPanel.refreshModels}
+                      </span>
+                    </button>
+                  </div>
+                  {availableModels.length > 0 ? (
+                    <select
+                      value={
+                        availableModels.includes((config['model'] as string) || '')
+                          ? (config['model'] as string)
+                          : currentProvider?.defaultModel || availableModels[0]
+                      }
+                      onChange={(e) => updateNodeConfig(id, { model: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono cursor-pointer"
+                    >
+                      {availableModels.map((m) => (
+                        <option
+                          key={m}
+                          value={m}
+                          className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-200"
+                        >
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={
+                        (config['model'] as string) ||
+                        currentProvider?.defaultModel ||
+                        'gpt-4o-mini'
+                      }
+                      onChange={(e) => updateNodeConfig(id, { model: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
+                      placeholder={t.propertyPanel.customModelPlaceholder}
+                    />
+                  )}
                 </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={2}
-                  step={0.1}
-                  value={typeof config['temperature'] === 'number' ? config['temperature'] : 0.7}
-                  onChange={(e) => updateNodeConfig(id, { temperature: parseFloat(e.target.value) })}
-                  className="w-full accent-blue-600 dark:accent-sky-400 bg-slate-200 dark:bg-slate-950 cursor-pointer"
-                />
-              </div>
 
-              {/* System Prompt */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                  System Prompt (Optional)
-                </label>
-                <textarea
-                  rows={3}
-                  value={(config['systemPrompt'] as string) || ''}
-                  onChange={(e) => updateNodeConfig(id, { systemPrompt: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-y"
-                  placeholder="You are an expert AI assistant..."
-                />
+                {/* Temperature Slider */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs font-mono">
+                    <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                      <Sliders className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
+                      <span>{t.propertyPanel.temperature}</span>
+                    </span>
+                    <span className="text-amber-600 dark:text-amber-400 font-bold">
+                      {typeof config['temperature'] === 'number' ? config['temperature'] : 0.7}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={2}
+                    step={0.1}
+                    value={typeof config['temperature'] === 'number' ? config['temperature'] : 0.7}
+                    onChange={(e) =>
+                      updateNodeConfig(id, { temperature: parseFloat(e.target.value) })
+                    }
+                    className="w-full accent-blue-600 dark:accent-sky-400 bg-slate-200 dark:bg-slate-950 cursor-pointer"
+                  />
+                </div>
+
+                {/* System Prompt */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                    System Prompt (Optional)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={(config['systemPrompt'] as string) || ''}
+                    onChange={(e) => updateNodeConfig(id, { systemPrompt: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-y"
+                    placeholder="You are an expert AI assistant..."
+                  />
+                </div>
               </div>
-            </div>
-          );
-        })()}
+            );
+          })()}
 
         {/* ── Type Specific: Code Node ── */}
         {type === 'code' && (
@@ -489,7 +525,11 @@ export const PropertyPanel: React.FC = () => {
               </label>
               <textarea
                 rows={8}
-                value={(config['script'] as string) || (config['code'] as string) || '// Transformation function\nreturn inputs;'}
+                value={
+                  (config['script'] as string) ||
+                  (config['code'] as string) ||
+                  '// Transformation function\nreturn inputs;'
+                }
                 onChange={(e) => updateNodeConfig(id, { script: e.target.value })}
                 className="w-full px-3 py-2.5 rounded-lg bg-slate-900 text-amber-300 font-mono text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 resize-y border border-slate-800 shadow-inner"
                 placeholder="return inputs;"
@@ -515,7 +555,9 @@ export const PropertyPanel: React.FC = () => {
                   </label>
                   <button
                     type="button"
-                    onClick={() => openKnowledgeDetail((config['knowledgeBaseId'] as string) || undefined)}
+                    onClick={() =>
+                      openKnowledgeDetail((config['knowledgeBaseId'] as string) || undefined)
+                    }
                     className="text-[11px] font-medium text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer"
                   >
                     {t.knowledge.manageKb} &rarr;
@@ -532,11 +574,12 @@ export const PropertyPanel: React.FC = () => {
                       {kb.name} ({kb.document_count || 0} {t.knowledge.documentsCount})
                     </option>
                   ))}
-                  {Boolean(config['knowledgeBaseId']) && !knowledgeBases.some((k) => k.id === config['knowledgeBaseId']) && (
-                    <option value={config['knowledgeBaseId'] as string}>
-                      {config['knowledgeBaseId'] as string}
-                    </option>
-                  )}
+                  {Boolean(config['knowledgeBaseId']) &&
+                    !knowledgeBases.some((k) => k.id === config['knowledgeBaseId']) && (
+                      <option value={config['knowledgeBaseId'] as string}>
+                        {config['knowledgeBaseId'] as string}
+                      </option>
+                    )}
                 </select>
                 {knowledgeBases.length === 0 && (
                   <p className="text-[11px] text-amber-600 dark:text-amber-400">
@@ -552,7 +595,11 @@ export const PropertyPanel: React.FC = () => {
                 </label>
                 <textarea
                   rows={3}
-                  value={typeof inputs['query'] === 'string' ? (inputs['query'] as string) : ((config['query'] as string) || '')}
+                  value={
+                    typeof inputs['query'] === 'string'
+                      ? (inputs['query'] as string)
+                      : (config['query'] as string) || ''
+                  }
                   onChange={(e) => {
                     updateNodeConfig(id, { query: e.target.value });
                     updateNodeData(id, { inputs: { ...inputs, query: e.target.value } });
@@ -561,7 +608,9 @@ export const PropertyPanel: React.FC = () => {
                   className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
                 />
                 <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
-                  Tip: Use <code className="text-cyan-600 dark:text-cyan-400">{"{{input_1.query}}"}</code> to search user question dynamically.
+                  Tip: Use{' '}
+                  <code className="text-cyan-600 dark:text-cyan-400">{'{{input_1.query}}'}</code> to
+                  search user question dynamically.
                 </span>
               </div>
 
@@ -601,8 +650,12 @@ export const PropertyPanel: React.FC = () => {
                   min="0.0"
                   max="1.0"
                   step="0.05"
-                  value={typeof config['scoreThreshold'] === 'number' ? config['scoreThreshold'] : 0.0}
-                  onChange={(e) => updateNodeConfig(id, { scoreThreshold: parseFloat(e.target.value) })}
+                  value={
+                    typeof config['scoreThreshold'] === 'number' ? config['scoreThreshold'] : 0.0
+                  }
+                  onChange={(e) =>
+                    updateNodeConfig(id, { scoreThreshold: parseFloat(e.target.value) })
+                  }
                   className="w-full accent-cyan-600 dark:accent-cyan-400 bg-slate-200 dark:bg-slate-950 cursor-pointer"
                 />
               </div>
@@ -616,612 +669,711 @@ export const PropertyPanel: React.FC = () => {
         )}
 
         {/* ── Type Specific: Condition Node (IF / ELSE) ── */}
-        {type === 'condition' && (() => {
-          const conditionConfig = (config || {}) as {
-            conditions?: Array<{
-              id?: string;
-              variable?: string;
-              operator?: string;
-              value?: string | number;
-              targetHandle?: string;
-            }>;
-            logicalOperator?: 'AND' | 'OR';
-            defaultBranch?: string;
-          };
-          const conditions = conditionConfig.conditions || [
-            { id: 'rule_1', variable: '', operator: 'equals', value: '', targetHandle: 'if_true' },
-          ];
-          const defaultBranch = conditionConfig.defaultBranch || 'else';
-
-          const handleAddRule = () => {
-            const nextIdx = conditions.length + 1;
-            const newConditions = [
-              ...conditions,
+        {type === 'condition' &&
+          (() => {
+            const conditionConfig = (config || {}) as {
+              conditions?: Array<{
+                id?: string;
+                variable?: string;
+                operator?: string;
+                value?: string | number;
+                targetHandle?: string;
+              }>;
+              logicalOperator?: 'AND' | 'OR';
+              defaultBranch?: string;
+            };
+            const conditions = conditionConfig.conditions || [
               {
-                id: `rule_${Date.now()}`,
+                id: 'rule_1',
                 variable: '',
                 operator: 'equals',
                 value: '',
-                targetHandle: `branch_${nextIdx}`,
+                targetHandle: 'if_true',
               },
             ];
-            updateNodeConfig(id, { conditions: newConditions });
-          };
+            const defaultBranch = conditionConfig.defaultBranch || 'else';
 
-          const handleUpdateRule = (index: number, patch: Partial<(typeof conditions)[0]>) => {
-            const updated = [...conditions];
-            updated[index] = { ...updated[index], ...patch };
-            updateNodeConfig(id, { conditions: updated });
-          };
+            const handleAddRule = () => {
+              const nextIdx = conditions.length + 1;
+              const newConditions = [
+                ...conditions,
+                {
+                  id: `rule_${Date.now()}`,
+                  variable: '',
+                  operator: 'equals',
+                  value: '',
+                  targetHandle: `branch_${nextIdx}`,
+                },
+              ];
+              updateNodeConfig(id, { conditions: newConditions });
+            };
 
-          const handleDeleteRule = (index: number) => {
-            if (conditions.length <= 1) return;
-            const updated = conditions.filter((_, i) => i !== index);
-            updateNodeConfig(id, { conditions: updated });
-          };
+            const handleUpdateRule = (index: number, patch: Partial<(typeof conditions)[0]>) => {
+              const updated = [...conditions];
+              updated[index] = { ...updated[index], ...patch };
+              updateNodeConfig(id, { conditions: updated });
+            };
 
-          return (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <GitBranch className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                  <span>{t.propertyPanel.conditionRulesTitle} ({conditions.length})</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={handleAddRule}
-                  className="flex items-center gap-1 text-[10px] font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 px-2 py-1 rounded bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 transition-all cursor-pointer"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>{t.propertyPanel.addRule}</span>
-                </button>
-              </div>
+            const handleDeleteRule = (index: number) => {
+              if (conditions.length <= 1) return;
+              const updated = conditions.filter((_, i) => i !== index);
+              updateNodeConfig(id, { conditions: updated });
+            };
 
-              {/* Rules List */}
-              <div className="space-y-3">
-                {conditions.map((rule, idx) => (
-                  <div
-                    key={rule.id || idx}
-                    className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2 text-xs"
+            return (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <GitBranch className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>
+                      {t.propertyPanel.conditionRulesTitle} ({conditions.length})
+                    </span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAddRule}
+                    className="flex items-center gap-1 text-[10px] font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 px-2 py-1 rounded bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 transition-all cursor-pointer"
                   >
-                    <div className="flex items-center justify-between font-mono text-[10px]">
-                      <span className="font-bold text-amber-700 dark:text-amber-300">
-                        {t.propertyPanel.ruleIndex} #{idx + 1}
-                      </span>
-                      {conditions.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteRule(idx)}
-                          className="text-slate-400 hover:text-rose-500 p-0.5 rounded cursor-pointer"
-                          title={t.propertyPanel.deleteRule}
-                        >
-                          <Trash className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
+                    <Plus className="w-3 h-3" />
+                    <span>{t.propertyPanel.addRule}</span>
+                  </button>
+                </div>
 
-                    {/* Variable Reference */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block uppercase">
-                        {t.propertyPanel.variableLabel}
-                      </label>
-                      <input
-                        type="text"
-                        value={rule.variable || ''}
-                        onChange={(e) => handleUpdateRule(idx, { variable: e.target.value })}
-                        placeholder={t.propertyPanel.variablePlaceholder}
-                        className="w-full px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500"
-                      />
-                    </div>
-
-                    {/* Operator & Value */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block uppercase">
-                          {t.propertyPanel.operatorLabel}
-                        </label>
-                        <select
-                          value={rule.operator || 'equals'}
-                          onChange={(e) => handleUpdateRule(idx, { operator: e.target.value })}
-                          className="w-full px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500 cursor-pointer"
-                        >
-                          <option value="equals">{t.propertyPanel.operatorEquals}</option>
-                          <option value="not_equals">{t.propertyPanel.operatorNotEquals}</option>
-                          <option value="contains">{t.propertyPanel.operatorContains}</option>
-                          <option value="not_contains">{t.propertyPanel.operatorNotContains}</option>
-                          <option value="greater_than">{t.propertyPanel.operatorGreaterThan}</option>
-                          <option value="less_than">{t.propertyPanel.operatorLessThan}</option>
-                          <option value="is_empty">{t.propertyPanel.operatorIsEmpty}</option>
-                          <option value="is_not_empty">{t.propertyPanel.operatorIsNotEmpty}</option>
-                          <option value="regex_match">{t.propertyPanel.operatorRegexMatch}</option>
-                        </select>
+                {/* Rules List */}
+                <div className="space-y-3">
+                  {conditions.map((rule, idx) => (
+                    <div
+                      key={rule.id || idx}
+                      className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2 text-xs"
+                    >
+                      <div className="flex items-center justify-between font-mono text-[10px]">
+                        <span className="font-bold text-amber-700 dark:text-amber-300">
+                          {t.propertyPanel.ruleIndex} #{idx + 1}
+                        </span>
+                        {conditions.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteRule(idx)}
+                            className="text-slate-400 hover:text-rose-500 p-0.5 rounded cursor-pointer"
+                            title={t.propertyPanel.deleteRule}
+                          >
+                            <Trash className="w-3 h-3" />
+                          </button>
+                        )}
                       </div>
 
+                      {/* Variable Reference */}
                       <div className="space-y-1">
                         <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block uppercase">
-                          {t.propertyPanel.compareValueLabel}
+                          {t.propertyPanel.variableLabel}
                         </label>
                         <input
                           type="text"
-                          value={rule.value !== undefined ? String(rule.value) : ''}
-                          onChange={(e) => handleUpdateRule(idx, { value: e.target.value })}
-                          placeholder={t.propertyPanel.compareValuePlaceholder}
+                          value={rule.variable || ''}
+                          onChange={(e) => handleUpdateRule(idx, { variable: e.target.value })}
+                          placeholder={t.propertyPanel.variablePlaceholder}
                           className="w-full px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500"
                         />
                       </div>
+
+                      {/* Operator & Value */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block uppercase">
+                            {t.propertyPanel.operatorLabel}
+                          </label>
+                          <select
+                            value={rule.operator || 'equals'}
+                            onChange={(e) => handleUpdateRule(idx, { operator: e.target.value })}
+                            className="w-full px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500 cursor-pointer"
+                          >
+                            <option value="equals">{t.propertyPanel.operatorEquals}</option>
+                            <option value="not_equals">{t.propertyPanel.operatorNotEquals}</option>
+                            <option value="contains">{t.propertyPanel.operatorContains}</option>
+                            <option value="not_contains">
+                              {t.propertyPanel.operatorNotContains}
+                            </option>
+                            <option value="greater_than">
+                              {t.propertyPanel.operatorGreaterThan}
+                            </option>
+                            <option value="less_than">{t.propertyPanel.operatorLessThan}</option>
+                            <option value="is_empty">{t.propertyPanel.operatorIsEmpty}</option>
+                            <option value="is_not_empty">
+                              {t.propertyPanel.operatorIsNotEmpty}
+                            </option>
+                            <option value="regex_match">
+                              {t.propertyPanel.operatorRegexMatch}
+                            </option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block uppercase">
+                            {t.propertyPanel.compareValueLabel}
+                          </label>
+                          <input
+                            type="text"
+                            value={rule.value !== undefined ? String(rule.value) : ''}
+                            onChange={(e) => handleUpdateRule(idx, { value: e.target.value })}
+                            placeholder={t.propertyPanel.compareValuePlaceholder}
+                            className="w-full px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Target Handle Output Port */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block uppercase">
+                          {t.propertyPanel.targetHandleLabel}
+                        </label>
+                        <input
+                          type="text"
+                          value={rule.targetHandle || ''}
+                          onChange={(e) => handleUpdateRule(idx, { targetHandle: e.target.value })}
+                          placeholder="if_true / technical"
+                          className="w-full px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-amber-700 dark:text-amber-400 font-semibold focus:outline-none focus:border-amber-500"
+                        />
+                      </div>
                     </div>
+                  ))}
+                </div>
 
-                    {/* Target Handle Output Port */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block uppercase">
-                        {t.propertyPanel.targetHandleLabel}
-                      </label>
-                      <input
-                        type="text"
-                        value={rule.targetHandle || ''}
-                        onChange={(e) => handleUpdateRule(idx, { targetHandle: e.target.value })}
-                        placeholder="if_true / technical"
-                        className="w-full px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-amber-700 dark:text-amber-400 font-semibold focus:outline-none focus:border-amber-500"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Fallback Branch */}
-              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block uppercase">
-                  {t.propertyPanel.fallbackBranchTitle}
-                </label>
-                <input
-                  type="text"
-                  value={defaultBranch}
-                  onChange={(e) => updateNodeConfig(id, { defaultBranch: e.target.value })}
-                  placeholder={t.propertyPanel.fallbackBranchPlaceholder}
-                  className="w-full px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-amber-700 dark:text-amber-400 font-semibold focus:outline-none focus:border-amber-500"
-                />
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
-                  {t.propertyPanel.fallbackBranchHint}
-                </span>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* ── Type Specific: Aggregator Node ── */}
-        {type === 'aggregator' && (() => {
-          const aggConfig = (config || {}) as { mode?: string; outputKey?: string };
-          const mode = aggConfig.mode || 'first_available';
-          const outputKey = aggConfig.outputKey || 'result';
-
-          return (
-            <div className="space-y-4">
-              <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <GitMerge className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                <span>{t.propertyPanel.aggregatorModeTitle}</span>
-              </label>
-
-              {/* Mode Selectors */}
-              <div className="space-y-2">
-                {[
-                  {
-                    key: 'first_available',
-                    label: t.propertyPanel.aggFirstAvailableLabel,
-                    desc: t.propertyPanel.aggFirstAvailableDesc,
-                  },
-                  {
-                    key: 'merge_all',
-                    label: t.propertyPanel.aggMergeAllLabel,
-                    desc: t.propertyPanel.aggMergeAllDesc,
-                  },
-                  {
-                    key: 'wait_all',
-                    label: t.propertyPanel.aggWaitAllLabel,
-                    desc: t.propertyPanel.aggWaitAllDesc,
-                  },
-                ].map((m) => (
-                  <button
-                    key={m.key}
-                    type="button"
-                    onClick={() => updateNodeConfig(id, { mode: m.key })}
-                    className={`w-full text-left p-2.5 rounded-xl border transition-all cursor-pointer ${
-                      mode === m.key
-                        ? 'bg-purple-50 dark:bg-purple-950/30 border-purple-300 dark:border-purple-500/50 shadow-xs'
-                        : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                        {m.label}
-                      </span>
-                      {mode === m.key && (
-                        <span className="w-2 h-2 rounded-full bg-purple-600 dark:bg-purple-400" />
-                      )}
-                    </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                      {m.desc}
-                    </p>
-                  </button>
-                ))}
-              </div>
-
-              {/* Output Key */}
-              <div className="space-y-1.5 pt-1">
-                <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                  {t.propertyPanel.aggOutputKeyLabel}
-                </label>
-                <input
-                  type="text"
-                  value={outputKey}
-                  onChange={(e) => updateNodeConfig(id, { outputKey: e.target.value })}
-                  placeholder="result"
-                  className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-purple-700 dark:text-purple-300 font-semibold focus:outline-none focus:border-purple-500"
-                />
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
-                  {t.propertyPanel.aggOutputKeyHint} <code className="text-purple-600 dark:text-purple-400">{`{{${id}.${outputKey}}}`}</code>.
-                </span>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* ── Type Specific: HTTP Request Node ── */}
-        {type === 'http' && (() => {
-          const httpConfig = (config || {}) as {
-            method?: string;
-            url?: string;
-            queryParams?: Record<string, string>;
-            headers?: Record<string, string>;
-            bodyType?: string;
-            bodyContent?: string;
-            timeout?: number;
-            retryConfig?: { maxRetries: number; retryDelayMs: number };
-            authType?: string;
-            authConfig?: { token?: string; username?: string; password?: string; keyName?: string; keyValue?: string; addTo?: string };
-          };
-
-          const method = (httpConfig.method || 'GET').toUpperCase();
-          const url = httpConfig.url || '';
-          const queryParams = httpConfig.queryParams || {};
-          const headers = httpConfig.headers || {};
-          const bodyType = httpConfig.bodyType || 'none';
-          const bodyContent = httpConfig.bodyContent || '';
-          const timeout = httpConfig.timeout || 30000;
-          const maxRetries = httpConfig.retryConfig?.maxRetries ?? 1;
-          const retryDelayMs = httpConfig.retryConfig?.retryDelayMs ?? 1000;
-          const authType = httpConfig.authType || 'none';
-          const authConfig = httpConfig.authConfig || {};
-
-          return (
-            <div className="space-y-4">
-              <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-                <span>{t.propertyPanel.httpConfigTitle}</span>
-              </label>
-
-              {/* Method & URL Row */}
-              <div className="space-y-2">
-                <div className="flex gap-2">
-                  <select
-                    value={method}
-                    onChange={(e) => updateNodeConfig(id, { method: e.target.value })}
-                    className="px-2.5 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold font-mono focus:outline-none focus:border-teal-500 cursor-pointer shrink-0"
-                  >
-                    <option value="GET">GET</option>
-                    <option value="POST">POST</option>
-                    <option value="PUT">PUT</option>
-                    <option value="PATCH">PATCH</option>
-                    <option value="DELETE">DELETE</option>
-                  </select>
-
+                {/* Fallback Branch */}
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block uppercase">
+                    {t.propertyPanel.fallbackBranchTitle}
+                  </label>
                   <input
                     type="text"
-                    value={url}
-                    onChange={(e) => updateNodeConfig(id, { url: e.target.value })}
-                    placeholder={t.propertyPanel.httpUrlPlaceholder}
-                    className="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-teal-500"
+                    value={defaultBranch}
+                    onChange={(e) => updateNodeConfig(id, { defaultBranch: e.target.value })}
+                    placeholder={t.propertyPanel.fallbackBranchPlaceholder}
+                    className="w-full px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-amber-700 dark:text-amber-400 font-semibold focus:outline-none focus:border-amber-500"
                   />
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
+                    {t.propertyPanel.fallbackBranchHint}
+                  </span>
                 </div>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
-                  {t.propertyPanel.httpUrlHint}
-                </span>
               </div>
+            );
+          })()}
 
-              {/* Tabs Bar */}
-              <div className="flex items-center border-b border-slate-200 dark:border-slate-800 text-xs font-medium">
-                {[
-                  { id: 'params', label: t.propertyPanel.httpTabParams },
-                  { id: 'headers', label: t.propertyPanel.httpTabHeaders },
-                  { id: 'body', label: t.propertyPanel.httpTabBody },
-                  { id: 'auth', label: t.propertyPanel.httpTabAuth },
-                  { id: 'settings', label: t.propertyPanel.httpTabSettings },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setHttpTab(tab.id as any)}
-                    className={`px-3 py-1.5 border-b-2 capitalize transition-colors cursor-pointer ${
-                      httpTab === tab.id
-                        ? 'border-teal-600 text-teal-600 dark:border-teal-400 dark:text-teal-400 font-semibold'
-                        : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+        {/* ── Type Specific: Aggregator Node ── */}
+        {type === 'aggregator' &&
+          (() => {
+            const aggConfig = (config || {}) as { mode?: string; outputKey?: string };
+            const mode = aggConfig.mode || 'first_available';
+            const outputKey = aggConfig.outputKey || 'result';
+
+            return (
+              <div className="space-y-4">
+                <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <GitMerge className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  <span>{t.propertyPanel.aggregatorModeTitle}</span>
+                </label>
+
+                {/* Mode Selectors */}
+                <div className="space-y-2">
+                  {[
+                    {
+                      key: 'first_available',
+                      label: t.propertyPanel.aggFirstAvailableLabel,
+                      desc: t.propertyPanel.aggFirstAvailableDesc,
+                    },
+                    {
+                      key: 'merge_all',
+                      label: t.propertyPanel.aggMergeAllLabel,
+                      desc: t.propertyPanel.aggMergeAllDesc,
+                    },
+                    {
+                      key: 'wait_all',
+                      label: t.propertyPanel.aggWaitAllLabel,
+                      desc: t.propertyPanel.aggWaitAllDesc,
+                    },
+                  ].map((m) => (
+                    <button
+                      key={m.key}
+                      type="button"
+                      onClick={() => updateNodeConfig(id, { mode: m.key })}
+                      className={`w-full text-left p-2.5 rounded-xl border transition-all cursor-pointer ${
+                        mode === m.key
+                          ? 'bg-purple-50 dark:bg-purple-950/30 border-purple-300 dark:border-purple-500/50 shadow-xs'
+                          : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                          {m.label}
+                        </span>
+                        {mode === m.key && (
+                          <span className="w-2 h-2 rounded-full bg-purple-600 dark:bg-purple-400" />
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                        {m.desc}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Output Key */}
+                <div className="space-y-1.5 pt-1">
+                  <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                    {t.propertyPanel.aggOutputKeyLabel}
+                  </label>
+                  <input
+                    type="text"
+                    value={outputKey}
+                    onChange={(e) => updateNodeConfig(id, { outputKey: e.target.value })}
+                    placeholder="result"
+                    className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-purple-700 dark:text-purple-300 font-semibold focus:outline-none focus:border-purple-500"
+                  />
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
+                    {t.propertyPanel.aggOutputKeyHint}{' '}
+                    <code className="text-purple-600 dark:text-purple-400">{`{{${id}.${outputKey}}}`}</code>
+                    .
+                  </span>
+                </div>
               </div>
+            );
+          })()}
 
-              {/* Active Tab Content */}
-              {httpTab === 'params' && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono text-slate-400 uppercase">{t.propertyPanel.httpQueryParamsTitle}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = { ...queryParams, [`param_${Object.keys(queryParams).length + 1}`]: '' };
-                        updateNodeConfig(id, { queryParams: next });
-                      }}
-                      className="text-[10px] text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-0.5 cursor-pointer"
-                    >
-                      <Plus className="w-3 h-3" /> {t.propertyPanel.httpAddParam}
-                    </button>
-                  </div>
-                  {Object.entries(queryParams).map(([k, v], idx) => (
-                    <div key={idx} className="flex gap-2 items-center">
-                      <input
-                        type="text"
-                        value={k}
-                        onChange={(e) => {
-                          const next = { ...queryParams };
-                          delete next[k];
-                          next[e.target.value] = v;
-                          updateNodeConfig(id, { queryParams: next });
-                        }}
-                        placeholder="key"
-                        className="w-1/3 px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
-                      />
-                      <input
-                        type="text"
-                        value={v}
-                        onChange={(e) => {
-                          updateNodeConfig(id, { queryParams: { ...queryParams, [k]: e.target.value } });
-                        }}
-                        placeholder="value or {{var}}"
-                        className="flex-1 px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const next = { ...queryParams };
-                          delete next[k];
-                          updateNodeConfig(id, { queryParams: next });
-                        }}
-                        className="text-slate-400 hover:text-rose-500 cursor-pointer"
-                      >
-                        <Trash className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                  {Object.keys(queryParams).length === 0 && (
-                    <p className="text-[11px] text-slate-400 italic py-1">{t.propertyPanel.httpNoQueryParams}</p>
-                  )}
-                </div>
-              )}
+        {/* ── Type Specific: HTTP Request Node ── */}
+        {type === 'http' &&
+          (() => {
+            const httpConfig = (config || {}) as {
+              method?: string;
+              url?: string;
+              queryParams?: Record<string, string>;
+              headers?: Record<string, string>;
+              bodyType?: string;
+              bodyContent?: string;
+              timeout?: number;
+              retryConfig?: { maxRetries: number; retryDelayMs: number };
+              authType?: string;
+              authConfig?: {
+                token?: string;
+                username?: string;
+                password?: string;
+                keyName?: string;
+                keyValue?: string;
+                addTo?: string;
+              };
+            };
 
-              {httpTab === 'headers' && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono text-slate-400 uppercase">{t.propertyPanel.httpHeadersTitle}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = { ...headers, [`Header-${Object.keys(headers).length + 1}`]: '' };
-                        updateNodeConfig(id, { headers: next });
-                      }}
-                      className="text-[10px] text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-0.5 cursor-pointer"
-                    >
-                      <Plus className="w-3 h-3" /> {t.propertyPanel.httpAddHeader}
-                    </button>
-                  </div>
-                  {Object.entries(headers).map(([k, v], idx) => (
-                    <div key={idx} className="flex gap-2 items-center">
-                      <input
-                        type="text"
-                        value={k}
-                        onChange={(e) => {
-                          const next = { ...headers };
-                          delete next[k];
-                          next[e.target.value] = v;
-                          updateNodeConfig(id, { headers: next });
-                        }}
-                        placeholder="Header-Name"
-                        className="w-1/3 px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
-                      />
-                      <input
-                        type="text"
-                        value={v}
-                        onChange={(e) => {
-                          updateNodeConfig(id, { headers: { ...headers, [k]: e.target.value } });
-                        }}
-                        placeholder="value"
-                        className="flex-1 px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const next = { ...headers };
-                          delete next[k];
-                          updateNodeConfig(id, { headers: next });
-                        }}
-                        className="text-slate-400 hover:text-rose-500 cursor-pointer"
-                      >
-                        <Trash className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                  {Object.keys(headers).length === 0 && (
-                    <p className="text-[11px] text-slate-400 italic py-1">{t.propertyPanel.httpDefaultHeadersHint}</p>
-                  )}
-                </div>
-              )}
+            const method = (httpConfig.method || 'GET').toUpperCase();
+            const url = httpConfig.url || '';
+            const queryParams = httpConfig.queryParams || {};
+            const headers = httpConfig.headers || {};
+            const bodyType = httpConfig.bodyType || 'none';
+            const bodyContent = httpConfig.bodyContent || '';
+            const timeout = httpConfig.timeout || 30000;
+            const maxRetries = httpConfig.retryConfig?.maxRetries ?? 1;
+            const retryDelayMs = httpConfig.retryConfig?.retryDelayMs ?? 1000;
+            const authType = httpConfig.authType || 'none';
+            const authConfig = httpConfig.authConfig || {};
 
-              {httpTab === 'body' && (
+            return (
+              <div className="space-y-4">
+                <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                  <span>{t.propertyPanel.httpConfigTitle}</span>
+                </label>
+
+                {/* Method & URL Row */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-mono text-slate-400 uppercase">{t.propertyPanel.httpBodyFormat}</label>
+                  <div className="flex gap-2">
                     <select
-                      value={bodyType}
-                      onChange={(e) => updateNodeConfig(id, { bodyType: e.target.value })}
-                      className="px-2 py-1 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono cursor-pointer"
+                      value={method}
+                      onChange={(e) => updateNodeConfig(id, { method: e.target.value })}
+                      className="px-2.5 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold font-mono focus:outline-none focus:border-teal-500 cursor-pointer shrink-0"
                     >
-                      <option value="none">None</option>
-                      <option value="json">JSON</option>
-                      <option value="raw">Raw Text</option>
+                      <option value="GET">GET</option>
+                      <option value="POST">POST</option>
+                      <option value="PUT">PUT</option>
+                      <option value="PATCH">PATCH</option>
+                      <option value="DELETE">DELETE</option>
                     </select>
-                  </div>
-                  {bodyType !== 'none' && (
-                    <textarea
-                      rows={5}
-                      value={bodyContent}
-                      onChange={(e) => updateNodeConfig(id, { bodyContent: e.target.value })}
-                      placeholder={'{\n  "query": "{{input_1.query}}"\n}'}
-                      className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-teal-500 resize-y"
+
+                    <input
+                      type="text"
+                      value={url}
+                      onChange={(e) => updateNodeConfig(id, { url: e.target.value })}
+                      placeholder={t.propertyPanel.httpUrlPlaceholder}
+                      className="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-teal-500"
                     />
-                  )}
-                </div>
-              )}
-
-              {httpTab === 'auth' && (
-                <div className="space-y-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-mono text-slate-400 uppercase block">{t.propertyPanel.httpAuthType}</label>
-                    <select
-                      value={authType}
-                      onChange={(e) => updateNodeConfig(id, { authType: e.target.value })}
-                      className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono cursor-pointer"
-                    >
-                      <option value="none">{t.propertyPanel.httpAuthNone}</option>
-                      <option value="bearer">{t.propertyPanel.httpAuthBearer}</option>
-                      <option value="basic">{t.propertyPanel.httpAuthBasic}</option>
-                      <option value="api-key">{t.propertyPanel.httpAuthApiKey}</option>
-                    </select>
                   </div>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
+                    {t.propertyPanel.httpUrlHint}
+                  </span>
+                </div>
 
-                  {authType === 'bearer' && (
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-slate-400 uppercase block">{t.propertyPanel.httpBearerTokenLabel}</label>
-                      <input
-                        type="password"
-                        value={authConfig.token || ''}
-                        onChange={(e) => updateNodeConfig(id, { authConfig: { ...authConfig, token: e.target.value } })}
-                        placeholder="ey..."
-                        className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
-                      />
+                {/* Tabs Bar */}
+                <div className="flex items-center border-b border-slate-200 dark:border-slate-800 text-xs font-medium">
+                  {[
+                    { id: 'params', label: t.propertyPanel.httpTabParams },
+                    { id: 'headers', label: t.propertyPanel.httpTabHeaders },
+                    { id: 'body', label: t.propertyPanel.httpTabBody },
+                    { id: 'auth', label: t.propertyPanel.httpTabAuth },
+                    { id: 'settings', label: t.propertyPanel.httpTabSettings },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setHttpTab(tab.id as any)}
+                      className={`px-3 py-1.5 border-b-2 capitalize transition-colors cursor-pointer ${
+                        httpTab === tab.id
+                          ? 'border-teal-600 text-teal-600 dark:border-teal-400 dark:text-teal-400 font-semibold'
+                          : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Active Tab Content */}
+                {httpTab === 'params' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase">
+                        {t.propertyPanel.httpQueryParamsTitle}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = {
+                            ...queryParams,
+                            [`param_${Object.keys(queryParams).length + 1}`]: '',
+                          };
+                          updateNodeConfig(id, { queryParams: next });
+                        }}
+                        className="text-[10px] text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" /> {t.propertyPanel.httpAddParam}
+                      </button>
                     </div>
-                  )}
+                    {Object.entries(queryParams).map(([k, v], idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          value={k}
+                          onChange={(e) => {
+                            const next = { ...queryParams };
+                            delete next[k];
+                            next[e.target.value] = v;
+                            updateNodeConfig(id, { queryParams: next });
+                          }}
+                          placeholder="key"
+                          className="w-1/3 px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                        />
+                        <input
+                          type="text"
+                          value={v}
+                          onChange={(e) => {
+                            updateNodeConfig(id, {
+                              queryParams: { ...queryParams, [k]: e.target.value },
+                            });
+                          }}
+                          placeholder="value or {{var}}"
+                          className="flex-1 px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = { ...queryParams };
+                            delete next[k];
+                            updateNodeConfig(id, { queryParams: next });
+                          }}
+                          className="text-slate-400 hover:text-rose-500 cursor-pointer"
+                        >
+                          <Trash className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    {Object.keys(queryParams).length === 0 && (
+                      <p className="text-[11px] text-slate-400 italic py-1">
+                        {t.propertyPanel.httpNoQueryParams}
+                      </p>
+                    )}
+                  </div>
+                )}
 
-                  {authType === 'basic' && (
+                {httpTab === 'headers' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase">
+                        {t.propertyPanel.httpHeadersTitle}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = {
+                            ...headers,
+                            [`Header-${Object.keys(headers).length + 1}`]: '',
+                          };
+                          updateNodeConfig(id, { headers: next });
+                        }}
+                        className="text-[10px] text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" /> {t.propertyPanel.httpAddHeader}
+                      </button>
+                    </div>
+                    {Object.entries(headers).map(([k, v], idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          value={k}
+                          onChange={(e) => {
+                            const next = { ...headers };
+                            delete next[k];
+                            next[e.target.value] = v;
+                            updateNodeConfig(id, { headers: next });
+                          }}
+                          placeholder="Header-Name"
+                          className="w-1/3 px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                        />
+                        <input
+                          type="text"
+                          value={v}
+                          onChange={(e) => {
+                            updateNodeConfig(id, { headers: { ...headers, [k]: e.target.value } });
+                          }}
+                          placeholder="value"
+                          className="flex-1 px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = { ...headers };
+                            delete next[k];
+                            updateNodeConfig(id, { headers: next });
+                          }}
+                          className="text-slate-400 hover:text-rose-500 cursor-pointer"
+                        >
+                          <Trash className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    {Object.keys(headers).length === 0 && (
+                      <p className="text-[11px] text-slate-400 italic py-1">
+                        {t.propertyPanel.httpDefaultHeadersHint}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {httpTab === 'body' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-mono text-slate-400 uppercase">
+                        {t.propertyPanel.httpBodyFormat}
+                      </label>
+                      <select
+                        value={bodyType}
+                        onChange={(e) => updateNodeConfig(id, { bodyType: e.target.value })}
+                        className="px-2 py-1 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono cursor-pointer"
+                      >
+                        <option value="none">None</option>
+                        <option value="json">JSON</option>
+                        <option value="raw">Raw Text</option>
+                      </select>
+                    </div>
+                    {bodyType !== 'none' && (
+                      <textarea
+                        rows={5}
+                        value={bodyContent}
+                        onChange={(e) => updateNodeConfig(id, { bodyContent: e.target.value })}
+                        placeholder={'{\n  "query": "{{input_1.query}}"\n}'}
+                        className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-teal-500 resize-y"
+                      />
+                    )}
+                  </div>
+                )}
+
+                {httpTab === 'auth' && (
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-mono text-slate-400 uppercase block">
+                        {t.propertyPanel.httpAuthType}
+                      </label>
+                      <select
+                        value={authType}
+                        onChange={(e) => updateNodeConfig(id, { authType: e.target.value })}
+                        className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono cursor-pointer"
+                      >
+                        <option value="none">{t.propertyPanel.httpAuthNone}</option>
+                        <option value="bearer">{t.propertyPanel.httpAuthBearer}</option>
+                        <option value="basic">{t.propertyPanel.httpAuthBasic}</option>
+                        <option value="api-key">{t.propertyPanel.httpAuthApiKey}</option>
+                      </select>
+                    </div>
+
+                    {authType === 'bearer' && (
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-slate-400 uppercase block">
+                          {t.propertyPanel.httpBearerTokenLabel}
+                        </label>
+                        <input
+                          type="password"
+                          value={authConfig.token || ''}
+                          onChange={(e) =>
+                            updateNodeConfig(id, {
+                              authConfig: { ...authConfig, token: e.target.value },
+                            })
+                          }
+                          placeholder="ey..."
+                          className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                        />
+                      </div>
+                    )}
+
+                    {authType === 'basic' && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="text-[10px] text-slate-400 uppercase block">
+                            {t.propertyPanel.httpUsernameLabel}
+                          </label>
+                          <input
+                            type="text"
+                            value={authConfig.username || ''}
+                            onChange={(e) =>
+                              updateNodeConfig(id, {
+                                authConfig: { ...authConfig, username: e.target.value },
+                              })
+                            }
+                            className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] text-slate-400 uppercase block">
+                            {t.propertyPanel.httpPasswordLabel}
+                          </label>
+                          <input
+                            type="password"
+                            value={authConfig.password || ''}
+                            onChange={(e) =>
+                              updateNodeConfig(id, {
+                                authConfig: { ...authConfig, password: e.target.value },
+                              })
+                            }
+                            className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {authType === 'api-key' && (
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            value={authConfig.keyName || ''}
+                            onChange={(e) =>
+                              updateNodeConfig(id, {
+                                authConfig: { ...authConfig, keyName: e.target.value },
+                              })
+                            }
+                            placeholder={t.propertyPanel.httpKeyNamePlaceholder}
+                            className="px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                          />
+                          <input
+                            type="password"
+                            value={authConfig.keyValue || ''}
+                            onChange={(e) =>
+                              updateNodeConfig(id, {
+                                authConfig: { ...authConfig, keyValue: e.target.value },
+                              })
+                            }
+                            placeholder={t.propertyPanel.httpKeyValuePlaceholder}
+                            className="px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                          />
+                        </div>
+                        <div className="flex items-center gap-3 text-xs">
+                          <label className="flex items-center gap-1 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="addTo"
+                              checked={authConfig.addTo !== 'query'}
+                              onChange={() =>
+                                updateNodeConfig(id, {
+                                  authConfig: { ...authConfig, addTo: 'header' },
+                                })
+                              }
+                            />
+                            <span>{t.propertyPanel.httpSendInHeader}</span>
+                          </label>
+                          <label className="flex items-center gap-1 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="addTo"
+                              checked={authConfig.addTo === 'query'}
+                              onChange={() =>
+                                updateNodeConfig(id, {
+                                  authConfig: { ...authConfig, addTo: 'query' },
+                                })
+                              }
+                            />
+                            <span>{t.propertyPanel.httpSendInQuery}</span>
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {httpTab === 'settings' && (
+                  <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
-                        <label className="text-[10px] text-slate-400 uppercase block">{t.propertyPanel.httpUsernameLabel}</label>
+                        <label className="text-[10px] text-slate-400 uppercase block">
+                          {t.propertyPanel.httpTimeoutLabel}
+                        </label>
                         <input
-                          type="text"
-                          value={authConfig.username || ''}
-                          onChange={(e) => updateNodeConfig(id, { authConfig: { ...authConfig, username: e.target.value } })}
+                          type="number"
+                          value={timeout}
+                          onChange={(e) =>
+                            updateNodeConfig(id, { timeout: parseInt(e.target.value, 10) || 30000 })
+                          }
                           className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] text-slate-400 uppercase block">{t.propertyPanel.httpPasswordLabel}</label>
+                        <label className="text-[10px] text-slate-400 uppercase block">
+                          {t.propertyPanel.httpMaxRetriesLabel}
+                        </label>
                         <input
-                          type="password"
-                          value={authConfig.password || ''}
-                          onChange={(e) => updateNodeConfig(id, { authConfig: { ...authConfig, password: e.target.value } })}
+                          type="number"
+                          min="0"
+                          max="5"
+                          value={maxRetries}
+                          onChange={(e) =>
+                            updateNodeConfig(id, {
+                              retryConfig: {
+                                maxRetries: parseInt(e.target.value, 10) || 0,
+                                retryDelayMs,
+                              },
+                            })
+                          }
                           className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
                         />
                       </div>
                     </div>
-                  )}
-
-                  {authType === 'api-key' && (
-                    <div className="space-y-2">
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="text"
-                          value={authConfig.keyName || ''}
-                          onChange={(e) => updateNodeConfig(id, { authConfig: { ...authConfig, keyName: e.target.value } })}
-                          placeholder={t.propertyPanel.httpKeyNamePlaceholder}
-                          className="px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
-                        />
-                        <input
-                          type="password"
-                          value={authConfig.keyValue || ''}
-                          onChange={(e) => updateNodeConfig(id, { authConfig: { ...authConfig, keyValue: e.target.value } })}
-                          placeholder={t.propertyPanel.httpKeyValuePlaceholder}
-                          className="px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
-                        />
-                      </div>
-                      <div className="flex items-center gap-3 text-xs">
-                        <label className="flex items-center gap-1 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="addTo"
-                            checked={authConfig.addTo !== 'query'}
-                            onChange={() => updateNodeConfig(id, { authConfig: { ...authConfig, addTo: 'header' } })}
-                          />
-                          <span>{t.propertyPanel.httpSendInHeader}</span>
-                        </label>
-                        <label className="flex items-center gap-1 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="addTo"
-                            checked={authConfig.addTo === 'query'}
-                            onChange={() => updateNodeConfig(id, { authConfig: { ...authConfig, addTo: 'query' } })}
-                          />
-                          <span>{t.propertyPanel.httpSendInQuery}</span>
-                        </label>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {httpTab === 'settings' && (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-slate-400 uppercase block">{t.propertyPanel.httpTimeoutLabel}</label>
-                      <input
-                        type="number"
-                        value={timeout}
-                        onChange={(e) => updateNodeConfig(id, { timeout: parseInt(e.target.value, 10) || 30000 })}
-                        className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-slate-400 uppercase block">{t.propertyPanel.httpMaxRetriesLabel}</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="5"
-                        value={maxRetries}
-                        onChange={(e) => updateNodeConfig(id, { retryConfig: { maxRetries: parseInt(e.target.value, 10) || 0, retryDelayMs } })}
-                        className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono"
-                      />
-                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          );
-        })()}
+                )}
+              </div>
+            );
+          })()}
 
         {/* ── UNIVERSAL EXECUTION OUTPUT VIEWER IN DRAWER ── */}
         <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800/80">
           <div className="flex items-center justify-between">
             <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              {type === 'llm' ? <Bot className="w-3.5 h-3.5 text-blue-600 dark:text-sky-400" /> : <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
+              {type === 'llm' ? (
+                <Bot className="w-3.5 h-3.5 text-blue-600 dark:text-sky-400" />
+              ) : (
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              )}
               <span>{t.propertyPanel.finalOutput}</span>
             </label>
             {hasOutputs && (
@@ -1229,7 +1381,11 @@ export const PropertyPanel: React.FC = () => {
                 onClick={() => handleCopyText(outputString)}
                 className="flex items-center gap-1 text-[10px] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-xs cursor-pointer"
               >
-                {copied ? <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                {copied ? (
+                  <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                ) : (
+                  <Copy className="w-3 h-3" />
+                )}
                 <span>{copied ? t.common.copied : t.common.copy}</span>
               </button>
             )}
@@ -1266,12 +1422,21 @@ export const PropertyPanel: React.FC = () => {
                     <Brain className="w-3.5 h-3.5 text-violet-600 dark:text-purple-400" />
                     <span>{t.propertyPanel.reasoningThought}</span>
                   </div>
-                  {showReasoning ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                  {showReasoning ? (
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  ) : (
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  )}
                 </button>
                 {showReasoning && (
                   <div className="p-3 text-[11px] font-mono text-violet-900 dark:text-purple-200/90 whitespace-pre-wrap leading-relaxed border-t border-violet-200/60 dark:border-purple-500/20 max-h-48 overflow-y-auto bg-white/40 dark:bg-black/20">
                     {outputs['reasoning']}
-                    {data.status === 'running' && <span className="animate-pulse font-bold text-violet-600 dark:text-purple-400"> ▌</span>}
+                    {data.status === 'running' && (
+                      <span className="animate-pulse font-bold text-violet-600 dark:text-purple-400">
+                        {' '}
+                        ▌
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -1282,7 +1447,9 @@ export const PropertyPanel: React.FC = () => {
               {hasOutputs ? (
                 <>
                   {outputString}
-                  {data.status === 'running' && <span className="animate-pulse font-bold text-blue-500"> ▌</span>}
+                  {data.status === 'running' && (
+                    <span className="animate-pulse font-bold text-blue-500"> ▌</span>
+                  )}
                 </>
               ) : data.status === 'running' ? (
                 <div className="flex items-center justify-center gap-2 py-4 text-blue-600 dark:text-sky-400">
@@ -1309,9 +1476,7 @@ export const PropertyPanel: React.FC = () => {
           <span>{t.propertyPanel.deleteNode}</span>
         </button>
 
-        <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
-          ID: {id}
-        </span>
+        <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">ID: {id}</span>
       </div>
     </aside>
   );

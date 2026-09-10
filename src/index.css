@@ -10,7 +10,9 @@
   body {
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans',
+      'Droid Sans', 'Helvetica Neue', sans-serif;
   }
 }
 
@@ -53,52 +55,52 @@ html.dark .react-flow__background,
 html.dark .react-flow,
 .dark .react-flow__background,
 .dark .react-flow {
-  background-color: #0B0F17 !important;
+  background-color: #0b0f17 !important;
 }
 
 html:not(.dark) .react-flow__background,
 html:not(.dark) .react-flow {
-  background-color: #F8FAFC !important;
+  background-color: #f8fafc !important;
 }
 
 html.dark .react-flow__controls button,
 .dark .react-flow__controls button {
-  background-color: #1E293B !important;
-  color: #94A3B8 !important;
+  background-color: #1e293b !important;
+  color: #94a3b8 !important;
   border-bottom: 1px solid #334155 !important;
-  fill: #94A3B8 !important;
+  fill: #94a3b8 !important;
 }
 
 html.dark .react-flow__controls button:hover,
 .dark .react-flow__controls button:hover {
   background-color: #334155 !important;
-  color: #F8FAFC !important;
-  fill: #F8FAFC !important;
+  color: #f8fafc !important;
+  fill: #f8fafc !important;
 }
 
 html:not(.dark) .react-flow__controls button {
-  background-color: #FFFFFF !important;
-  color: #64748B !important;
-  border-bottom: 1px solid #E2E8F0 !important;
-  fill: #64748B !important;
+  background-color: #ffffff !important;
+  color: #64748b !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  fill: #64748b !important;
 }
 
 html:not(.dark) .react-flow__controls button:hover {
-  background-color: #F1F5F9 !important;
-  color: #0F172A !important;
-  fill: #0F172A !important;
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  fill: #0f172a !important;
 }
 
 html.dark .react-flow__minimap,
 .dark .react-flow__minimap {
-  background-color: #0F172A !important;
+  background-color: #0f172a !important;
   border: 1px solid #334155 !important;
   border-radius: 8px !important;
 }
 
 html:not(.dark) .react-flow__minimap {
-  background-color: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
   border-radius: 8px !important;
 }
 

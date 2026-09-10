@@ -144,7 +144,9 @@ function loadInitialWorkflows(lang: 'en' | 'zh' = 'en'): SavedWorkflow[] {
       folderId: 'default',
       nodes: customerSupport.data.nodes,
       edges: customerSupport.data.edges,
-      globalInputs: (customerSupport.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs || {},
+      globalInputs:
+        (customerSupport.data as unknown as { globalInputs?: Record<string, unknown> })
+          .globalInputs || {},
       createdAt: now - 3600000 * 5,
       updatedAt: now - 3600000 * 5,
       isPreset: true,
@@ -158,7 +160,9 @@ function loadInitialWorkflows(lang: 'en' | 'zh' = 'en'): SavedWorkflow[] {
       folderId: 'presets',
       nodes: reportCritic.data.nodes,
       edges: reportCritic.data.edges,
-      globalInputs: (reportCritic.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs || {},
+      globalInputs:
+        (reportCritic.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs ||
+        {},
       createdAt: now - 86400000 * 2,
       updatedAt: now - 86400000 * 2,
       isPreset: true,
@@ -172,7 +176,9 @@ function loadInitialWorkflows(lang: 'en' | 'zh' = 'en'): SavedWorkflow[] {
       folderId: 'presets',
       nodes: modelArena.data.nodes,
       edges: modelArena.data.edges,
-      globalInputs: (modelArena.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs || {},
+      globalInputs:
+        (modelArena.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs ||
+        {},
       createdAt: now - 86400000 * 4,
       updatedAt: now - 86400000 * 4,
       isPreset: true,
@@ -187,7 +193,8 @@ function loadInitialWorkflows(lang: 'en' | 'zh' = 'en'): SavedWorkflow[] {
       folderId: 'presets',
       nodes: ragQa.data.nodes,
       edges: ragQa.data.edges,
-      globalInputs: (ragQa.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs || {},
+      globalInputs:
+        (ragQa.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs || {},
       createdAt: now - 86400000 * 5,
       updatedAt: now - 86400000 * 5,
       isPreset: true,
@@ -202,7 +209,9 @@ function loadInitialWorkflows(lang: 'en' | 'zh' = 'en'): SavedWorkflow[] {
       folderId: 'presets',
       nodes: ragAuditor.data.nodes,
       edges: ragAuditor.data.edges,
-      globalInputs: (ragAuditor.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs || {},
+      globalInputs:
+        (ragAuditor.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs ||
+        {},
       createdAt: now - 86400000 * 6,
       updatedAt: now - 86400000 * 6,
       isPreset: true,
@@ -212,7 +221,11 @@ function loadInitialWorkflows(lang: 'en' | 'zh' = 'en'): SavedWorkflow[] {
   return initialList;
 }
 
-function persistToLocalStorage(folders: Folder[], workflows: SavedWorkflow[], activeId: string | null) {
+function persistToLocalStorage(
+  folders: Folder[],
+  workflows: SavedWorkflow[],
+  activeId: string | null,
+) {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(STORAGE_KEY_FOLDERS, JSON.stringify(folders));
@@ -238,7 +251,8 @@ export const useProjectStore = create<ProjectStoreState>()(
   immer((set, get) => {
     const initialFolders = loadInitialFolders();
     const initialWorkflows = loadInitialWorkflows();
-    const savedActiveId = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_ACTIVE) : null;
+    const savedActiveId =
+      typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_ACTIVE) : null;
     const initialActiveId =
       savedActiveId && initialWorkflows.some((w) => w.id === savedActiveId)
         ? savedActiveId
@@ -741,5 +755,5 @@ export const useProjectStore = create<ProjectStoreState>()(
         }
       },
     };
-  })
+  }),
 );

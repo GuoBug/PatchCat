@@ -34,24 +34,24 @@ import {
 import { useLogStore } from '../../stores/log-store.ts';
 import type { LogLevel, LogType } from '../../engine/logger.ts';
 
-const LEVEL_CONFIG: Record<
-  LogLevel,
-  { label: string; desc: string; badgeClass: string }
-> = {
+const LEVEL_CONFIG: Record<LogLevel, { label: string; desc: string; badgeClass: string }> = {
   summary: {
     label: '概要 (Summary)',
     desc: '记录系统启停、拓扑调度、API 请求概况（状态码/耗时/Token）与异常错误',
-    badgeClass: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700',
+    badgeClass:
+      'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700',
   },
   detailed: {
     label: '详细 (Detailed)',
     desc: '在概要基础上，记录节点 ID、模型参数 (model/temp)、依赖解析与流转元数据',
-    badgeClass: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700',
+    badgeClass:
+      'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700',
   },
   dev: {
     label: '开发 (Development)',
     desc: '在详细基础上，捕获完整节点输入 (Prompt) 与输出响应 (已严格脱敏密钥)',
-    badgeClass: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700',
+    badgeClass:
+      'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700',
   },
 };
 
@@ -304,7 +304,11 @@ export const LogConsole: React.FC = () => {
                 className="p-1.5 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
                 title={isMaximized ? '还原高度' : '全屏展开'}
               >
-                {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                {isMaximized ? (
+                  <Minimize2 className="w-3.5 h-3.5" />
+                ) : (
+                  <Maximize2 className="w-3.5 h-3.5" />
+                )}
               </button>
             </>
           )}
@@ -315,7 +319,11 @@ export const LogConsole: React.FC = () => {
             className="p-1.5 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
             title={isMinimized ? '展开日志面板' : '最小化'}
           >
-            {isMinimized ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            {isMinimized ? (
+              <ChevronUp className="w-3.5 h-3.5" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5" />
+            )}
           </button>
 
           {/* Close Console */}
@@ -401,8 +409,8 @@ export const LogConsole: React.FC = () => {
                     log.type === 'error'
                       ? 'bg-rose-950/20 border-rose-900/40 text-rose-300'
                       : log.level === 'dev'
-                      ? 'bg-slate-900/60 border-slate-800/80 hover:bg-slate-850 text-slate-300'
-                      : 'bg-transparent border-transparent hover:bg-slate-900/50 text-slate-300'
+                        ? 'bg-slate-900/60 border-slate-800/80 hover:bg-slate-850 text-slate-300'
+                        : 'bg-transparent border-transparent hover:bg-slate-900/50 text-slate-300'
                   }`}
                 >
                   <div className="flex items-start gap-2 leading-relaxed">
@@ -467,7 +475,7 @@ export const LogConsole: React.FC = () => {
                           onClick={() =>
                             handleCopyPayload(
                               log.id,
-                              JSON.stringify({ metadata: log.metadata, data: log.data }, null, 2)
+                              JSON.stringify({ metadata: log.metadata, data: log.data }, null, 2),
                             )
                           }
                           className="flex items-center gap-1 text-slate-400 hover:text-slate-200"
@@ -488,7 +496,9 @@ export const LogConsole: React.FC = () => {
 
                       {log.metadata && (
                         <div>
-                          <div className="text-[10px] font-semibold text-slate-400 mb-0.5">Metadata:</div>
+                          <div className="text-[10px] font-semibold text-slate-400 mb-0.5">
+                            Metadata:
+                          </div>
                           <pre className="p-2 rounded bg-slate-900/90 text-amber-300/90 overflow-x-auto max-h-40 whitespace-pre-wrap">
                             {JSON.stringify(log.metadata, null, 2)}
                           </pre>
@@ -497,7 +507,9 @@ export const LogConsole: React.FC = () => {
 
                       {log.data?.inputs !== undefined && (
                         <div>
-                          <div className="text-[10px] font-semibold text-sky-400 mb-0.5">Inputs (开发级别入参):</div>
+                          <div className="text-[10px] font-semibold text-sky-400 mb-0.5">
+                            Inputs (开发级别入参):
+                          </div>
                           <pre className="p-2 rounded bg-slate-900/90 text-sky-200 overflow-x-auto max-h-48 whitespace-pre-wrap">
                             {JSON.stringify(log.data.inputs, null, 2)}
                           </pre>
@@ -506,7 +518,9 @@ export const LogConsole: React.FC = () => {
 
                       {log.data?.outputs !== undefined && (
                         <div>
-                          <div className="text-[10px] font-semibold text-emerald-400 mb-0.5">Outputs (开发级别响应):</div>
+                          <div className="text-[10px] font-semibold text-emerald-400 mb-0.5">
+                            Outputs (开发级别响应):
+                          </div>
                           <pre className="p-2 rounded bg-slate-900/90 text-emerald-200 overflow-x-auto max-h-48 whitespace-pre-wrap">
                             {JSON.stringify(log.data.outputs, null, 2)}
                           </pre>

@@ -48,7 +48,13 @@ export class LocalStorageAdapter implements IStorageAdapter {
     }
     return [
       { id: 'default', name: 'Default', createdAt: Date.now(), isExpanded: true, isPreset: true },
-      { id: 'presets', name: 'Official Presets', createdAt: Date.now(), isExpanded: true, isPreset: true },
+      {
+        id: 'presets',
+        name: 'Official Presets',
+        createdAt: Date.now(),
+        isExpanded: true,
+        isPreset: true,
+      },
     ];
   }
 
@@ -141,7 +147,10 @@ export class LocalStorageAdapter implements IStorageAdapter {
     return newFolder;
   }
 
-  async updateFolder(id: string, updates: { name?: string; isExpanded?: boolean }): Promise<Folder> {
+  async updateFolder(
+    id: string,
+    updates: { name?: string; isExpanded?: boolean },
+  ): Promise<Folder> {
     const folders = this.getStoredFolders();
     const idx = folders.findIndex((f) => f.id === id);
     if (idx === -1) throw new Error(`Folder '${id}' not found`);
@@ -328,7 +337,10 @@ export class ApiServerAdapter implements IStorageAdapter {
     };
   }
 
-  async updateFolder(id: string, updates: { name?: string; isExpanded?: boolean }): Promise<Folder> {
+  async updateFolder(
+    id: string,
+    updates: { name?: string; isExpanded?: boolean },
+  ): Promise<Folder> {
     interface ApiFolder {
       id: string;
       name: string;

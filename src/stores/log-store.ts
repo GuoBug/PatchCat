@@ -141,7 +141,7 @@ export const useLogStore = create<LogStoreState>()(
         URL.revokeObjectURL(url);
       },
     };
-  })
+  }),
 );
 
 // Hook logger subscriber to update Zustand store state in real-time

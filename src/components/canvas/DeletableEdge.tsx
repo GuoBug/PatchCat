@@ -1,10 +1,5 @@
 import React, { useState } from 'react';
-import {
-  BaseEdge,
-  EdgeLabelRenderer,
-  EdgeProps,
-  getBezierPath,
-} from '@xyflow/react';
+import { BaseEdge, EdgeLabelRenderer, EdgeProps, getBezierPath } from '@xyflow/react';
 import { X } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 

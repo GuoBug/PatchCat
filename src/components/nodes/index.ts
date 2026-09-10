@@ -52,4 +52,4 @@ export const SUPPORTED_NODE_TYPES = [
   'http',
 ] as const;
 
-export type RegisteredNodeType = typeof SUPPORTED_NODE_TYPES[number];
+export type RegisteredNodeType = (typeof SUPPORTED_NODE_TYPES)[number];

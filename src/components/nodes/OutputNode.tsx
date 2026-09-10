@@ -23,7 +23,9 @@ export const OutputNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, s
       <div className="space-y-2">
         <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400">
           <span>Final Dispatch Output</span>
-          <span className="text-rose-600 dark:text-pink-400 font-semibold">{hasOutput ? `${Object.keys(outputs).length} key(s)` : '0 key'}</span>
+          <span className="text-rose-600 dark:text-pink-400 font-semibold">
+            {hasOutput ? `${Object.keys(outputs).length} key(s)` : '0 key'}
+          </span>
         </div>
 
         {hasOutput ? (

@@ -24,16 +24,8 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { nanoid } from 'nanoid';
-import type {
-  NodeChange,
-  EdgeChange,
-  Connection,
-} from '@xyflow/react';
-import {
-  applyNodeChanges,
-  applyEdgeChanges,
-  addEdge,
-} from '@xyflow/react';
+import type { NodeChange, EdgeChange, Connection } from '@xyflow/react';
+import { applyNodeChanges, applyEdgeChanges, addEdge } from '@xyflow/react';
 
 import type {
   NodeType,
@@ -45,10 +37,7 @@ import type {
   WorkflowGraph,
   NodeExecutionResult,
 } from '../engine/types.ts';
-import {
-  getDefaultNodeConfig,
-  getDefaultNodeLabel,
-} from '../engine/types.ts';
+import { getDefaultNodeConfig, getDefaultNodeLabel } from '../engine/types.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Store Interface
@@ -109,18 +98,10 @@ export interface WorkflowStoreState {
    * Updates a node's execution status and optionally attaches a
    * {@link NodeExecutionResult} with telemetry data.
    */
-  setNodeStatus: (
-    nodeId: string,
-    status: NodeStatus,
-    result?: NodeExecutionResult,
-  ) => void;
+  setNodeStatus: (nodeId: string, status: NodeStatus, result?: NodeExecutionResult) => void;
 
   /** Updates live streaming content / reasoning for a node during execution */
-  updateNodeStreamingOutput: (
-    nodeId: string,
-    content: string,
-    reasoning?: string,
-  ) => void;
+  updateNodeStreamingOutput: (nodeId: string, content: string, reasoning?: string) => void;
 
   /** Sets or clears the currently selected (focused) node. */
   setSelectedNodeId: (nodeId: string | null) => void;
@@ -132,7 +113,7 @@ export interface WorkflowStoreState {
    * Replaces the entire canvas with a previously saved or preset
    * workflow graph.
    */
-  loadPreset: (graph: WorkflowGraph | { nodes: WorkflowNode[]; edges: WorkflowEdge[]; }) => void;
+  loadPreset: (graph: WorkflowGraph | { nodes: WorkflowNode[]; edges: WorkflowEdge[] }) => void;
 
   /**
    * Resets **every** node's `status` to `idle` and clears its
@@ -180,7 +161,10 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
     nodes: [],
     edges: [],
     selectedNodeId: null,
-    theme: (typeof window !== 'undefined' && localStorage.getItem('patchcat-theme') === 'dark') ? 'dark' : 'light',
+    theme:
+      typeof window !== 'undefined' && localStorage.getItem('patchcat-theme') === 'dark'
+        ? 'dark'
+        : 'light',
 
     setTheme: (theme) => {
       if (typeof window !== 'undefined') {

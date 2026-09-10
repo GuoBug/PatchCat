@@ -31,14 +31,14 @@ export const WorkflowCanvas: React.FC = () => {
       default: DeletableEdge,
       deletable: DeletableEdge,
     }),
-    []
+    [],
   );
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
       setSelectedNodeId(node.id);
     },
-    [setSelectedNodeId]
+    [setSelectedNodeId],
   );
 
   const handlePaneClick = useCallback(() => {
@@ -66,7 +66,9 @@ export const WorkflowCanvas: React.FC = () => {
   const isDark = theme === 'dark';
 
   return (
-    <div className={`w-full h-full relative transition-colors duration-200 ${isDark ? 'bg-[#0B0F17]' : 'bg-slate-50'}`}>
+    <div
+      className={`w-full h-full relative transition-colors duration-200 ${isDark ? 'bg-[#0B0F17]' : 'bg-slate-50'}`}
+    >
       <ReactFlow<WorkflowNode, WorkflowEdge>
         style={{ backgroundColor: isDark ? '#0B0F17' : '#F8FAFC' }}
         nodes={nodes}
@@ -98,13 +100,23 @@ export const WorkflowCanvas: React.FC = () => {
           size={isDark ? 1.2 : 1.25}
           color={isDark ? '#334155' : '#CBD5E1'}
         />
-        <Controls className={isDark ? '!bg-slate-900 !border-slate-800 !shadow-xl' : '!bg-white !border-slate-200 !shadow-sm'} />
+        <Controls
+          className={
+            isDark
+              ? '!bg-slate-900 !border-slate-800 !shadow-xl'
+              : '!bg-white !border-slate-200 !shadow-sm'
+          }
+        />
         <MiniMap
           nodeColor={nodeColor}
           nodeStrokeWidth={2}
           zoomable
           pannable
-          className={isDark ? '!bg-slate-950/90 !border-slate-800 !rounded-xl !shadow-2xl' : '!bg-white/95 !border-slate-200 !rounded-xl !shadow-md'}
+          className={
+            isDark
+              ? '!bg-slate-950/90 !border-slate-800 !rounded-xl !shadow-2xl'
+              : '!bg-white/95 !border-slate-200 !rounded-xl !shadow-md'
+          }
           maskColor={isDark ? 'rgba(11, 15, 23, 0.75)' : 'rgba(248, 250, 252, 0.75)'}
         />
       </ReactFlow>

@@ -17,17 +17,23 @@ export const AggregatorNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, dat
     first_available: {
       label: isZh ? '首个有效输出' : 'First Available',
       icon: <Zap className="w-3 h-3 text-amber-500" />,
-      desc: isZh ? '提取最先执行完毕且未被跳过的分支结果' : 'Takes the first non-skipped branch output',
+      desc: isZh
+        ? '提取最先执行完毕且未被跳过的分支结果'
+        : 'Takes the first non-skipped branch output',
     },
     merge_all: {
       label: isZh ? '合并全部输出' : 'Merge All',
       icon: <Layers className="w-3 h-3 text-purple-500" />,
-      desc: isZh ? '将所有激活分支产出合并为对象字典' : 'Combines all active outputs into an object',
+      desc: isZh
+        ? '将所有激活分支产出合并为对象字典'
+        : 'Combines all active outputs into an object',
     },
     wait_all: {
       label: isZh ? '等待全部就绪' : 'Wait All',
       icon: <GitMerge className="w-3 h-3 text-violet-500" />,
-      desc: isZh ? '等待所有分支就绪 (跳过分支置 null)' : 'Waits for all branches (null for skipped)',
+      desc: isZh
+        ? '等待所有分支就绪 (跳过分支置 null)'
+        : 'Waits for all branches (null for skipped)',
     },
   };
 
@@ -52,9 +58,7 @@ export const AggregatorNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, dat
             {modeInfo.icon}
             <span className="uppercase">{modeInfo.label}</span>
           </span>
-          <span className="text-[10px] text-slate-400 font-mono">
-            key: {outputKey}
-          </span>
+          <span className="text-[10px] text-slate-400 font-mono">key: {outputKey}</span>
         </div>
 
         <div className="p-2 rounded-lg bg-purple-50/40 dark:bg-slate-950 border border-purple-200/50 dark:border-purple-500/20 text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">

@@ -202,7 +202,9 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
             if (typeof finalVal === 'string') {
               assistantContent = finalVal;
             } else if (typeof finalVal === 'object' && finalVal !== null) {
-              assistantContent = (finalVal as Record<string, unknown>)['response'] as string || JSON.stringify(finalVal, null, 2);
+              assistantContent =
+                ((finalVal as Record<string, unknown>)['response'] as string) ||
+                JSON.stringify(finalVal, null, 2);
             }
           }
         } else if (event.type === 'NODE_SKIPPED') {
@@ -233,7 +235,9 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
         id: assistantMsgId,
         timestamp: Date.now(),
         role: 'assistant',
-        content: assistantContent || (errorMsg ? `Workflow Execution Error: ${errorMsg}` : t.chatDebug.emptyResponse),
+        content:
+          assistantContent ||
+          (errorMsg ? `Workflow Execution Error: ${errorMsg}` : t.chatDebug.emptyResponse),
         outputs: finalOutputs,
         durationMs: totalDurationMs,
         error: errorMsg,
@@ -276,9 +280,7 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
                 Ctrl+Shift+D
               </span>
             </h3>
-            <span className="text-[10px] text-slate-400 block">
-              {t.chatDebug.subtitle}
-            </span>
+            <span className="text-[10px] text-slate-400 block">{t.chatDebug.subtitle}</span>
           </div>
         </div>
 
@@ -324,9 +326,7 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
             <p className="font-semibold text-slate-700 dark:text-slate-300 mb-1">
               {t.chatDebug.emptyTitle}
             </p>
-            <p className="text-[11px] max-w-[260px] leading-relaxed">
-              {t.chatDebug.emptyDesc}
-            </p>
+            <p className="text-[11px] max-w-[260px] leading-relaxed">{t.chatDebug.emptyDesc}</p>
           </div>
         )}
 
@@ -369,8 +369,8 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
                 msg.role === 'user'
                   ? 'bg-blue-600 text-white rounded-tr-xs'
                   : msg.error
-                  ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 border border-rose-200 dark:border-rose-500/30 rounded-tl-xs'
-                  : 'bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700/60 rounded-tl-xs'
+                    ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 border border-rose-200 dark:border-rose-500/30 rounded-tl-xs'
+                    : 'bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700/60 rounded-tl-xs'
               }`}
             >
               {msg.content}
@@ -381,9 +381,7 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
               <div className="w-full max-w-[95%] mt-1">
                 <button
                   type="button"
-                  onClick={() =>
-                    setExpandedTraceId(expandedTraceId === msg.id ? null : msg.id)
-                  }
+                  onClick={() => setExpandedTraceId(expandedTraceId === msg.id ? null : msg.id)}
                   className="flex items-center gap-1 text-[10px] text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-mono py-1 px-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   {expandedTraceId === msg.id ? (
@@ -391,7 +389,9 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
                   ) : (
                     <ChevronRight className="w-3 h-3" />
                   )}
-                  <span>{t.chatDebug.executionTrace} ({msg.trace.length} {t.chatDebug.nodesUnit})</span>
+                  <span>
+                    {t.chatDebug.executionTrace} ({msg.trace.length} {t.chatDebug.nodesUnit})
+                  </span>
                 </button>
 
                 {expandedTraceId === msg.id && (
@@ -441,7 +441,9 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
               <span>{t.chatDebug.streamingResponse}</span>
             </div>
             <div className="p-3 rounded-2xl rounded-tl-xs bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 border border-blue-300 dark:border-sky-500/40 max-w-[90%] text-xs leading-relaxed whitespace-pre-wrap">
-              {activeStreamingText || <span className="text-slate-400 italic">{t.chatDebug.thinking}</span>}
+              {activeStreamingText || (
+                <span className="text-slate-400 italic">{t.chatDebug.thinking}</span>
+              )}
               <span className="animate-pulse font-bold text-blue-500"> ▌</span>
             </div>
           </div>
@@ -465,7 +467,11 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
 
           <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-slate-800 text-[10px] text-slate-400">
             <span>
-              Press <kbd className="px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 font-mono">Enter</kbd> to run
+              Press{' '}
+              <kbd className="px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 font-mono">
+                Enter
+              </kbd>{' '}
+              to run
             </span>
             <button
               type="button"
@@ -473,7 +479,11 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
               disabled={!inputQuery.trim() || isRunning}
               className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-medium transition-all shadow-xs cursor-pointer"
             >
-              {isRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+              {isRunning ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Send className="w-3 h-3" />
+              )}
               <span>{t.chatDebug.send}</span>
             </button>
           </div>

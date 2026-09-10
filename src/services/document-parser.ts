@@ -23,7 +23,11 @@ export interface ParseDocumentResult {
 /**
  * Validates text purity to prevent binary noise or garbled characters from polluting the RAG index.
  */
-export function checkTextPurity(text: string): { isPure: boolean; purityScore: number; error?: string } {
+export function checkTextPurity(text: string): {
+  isPure: boolean;
+  purityScore: number;
+  error?: string;
+} {
   if (!text || text.trim().length === 0) {
     return { isPure: false, purityScore: 0, error: '文档内容为空。' };
   }
@@ -65,23 +69,25 @@ export function checkTextPurity(text: string): { isPure: boolean; purityScore: n
  */
 export function cleanDocumentText(text: string): string {
   if (!text) return '';
-  return text
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
-    // Strip null and non-printable control characters (preserve tabs and newlines)
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
-    // Collapse excessive blank lines to double newlines
-    .replace(/\n{3,}/g, '\n\n')
-    // Remove trailing spaces per line
-    .replace(/[ \t]+$/gm, '')
-    .trim();
+  return (
+    text
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      // Strip null and non-printable control characters (preserve tabs and newlines)
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+      // Collapse excessive blank lines to double newlines
+      .replace(/\n{3,}/g, '\n\n')
+      // Remove trailing spaces per line
+      .replace(/[ \t]+$/gm, '')
+      .trim()
+  );
 }
 
 /**
  * Extracts clean, pure plain text from a File or ArrayBuffer.
  */
 export async function parseDocumentFile(
-  file: File | { name: string; buffer: ArrayBuffer; extension?: string }
+  file: File | { name: string; buffer: ArrayBuffer; extension?: string },
 ): Promise<ParseDocumentResult> {
   const filename = file.name;
   const ext = (filename.split('.').pop() || '').toLowerCase();
@@ -117,7 +123,7 @@ export async function parseDocumentFile(
 
     if (!rawText || rawText.trim().length === 0) {
       throw new Error(
-        '未能从该 PDF 中提取到可读文本：该文件未包含文字编码层（常见于通过 Windows“Microsoft Print to PDF”虚拟打印机导出时文字被转为了矢量线条/转曲，或为纯扫描件）。建议在浏览器打印时选择“另存为 PDF (Save as PDF)”重新导出，或直接上传 .html / .md / .txt 源文件。'
+        '未能从该 PDF 中提取到可读文本：该文件未包含文字编码层（常见于通过 Windows“Microsoft Print to PDF”虚拟打印机导出时文字被转为了矢量线条/转曲，或为纯扫描件）。建议在浏览器打印时选择“另存为 PDF (Save as PDF)”重新导出，或直接上传 .html / .md / .txt 源文件。',
       );
     }
   } else if (ext === 'html' || ext === 'htm') {

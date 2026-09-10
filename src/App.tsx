@@ -78,9 +78,7 @@ export const App: React.FC = () => {
     <ReactFlowProvider>
       <div
         className={`w-screen h-screen flex flex-col overflow-hidden font-sans transition-colors duration-200 ${
-          theme === 'dark'
-            ? 'dark bg-[#0B0F17] text-slate-100'
-            : 'bg-slate-50 text-slate-900'
+          theme === 'dark' ? 'dark bg-[#0B0F17] text-slate-100' : 'bg-slate-50 text-slate-900'
         }`}
       >
         {currentView === 'canvas' ? (
@@ -106,10 +104,7 @@ export const App: React.FC = () => {
               <PropertyPanel />
 
               {/* Interactive Chat Debug Slide-over Drawer */}
-              <ChatDebugPanel
-                isOpen={isChatOpen}
-                onClose={() => setIsChatOpen(false)}
-              />
+              <ChatDebugPanel isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
             </main>
 
             {/* Bottom Status / Links Footer */}
@@ -129,10 +124,7 @@ export const App: React.FC = () => {
         <KnowledgeDetailDrawer />
 
         {/* Publish Workflow as REST API Modal */}
-        <PublishApiModal
-          isOpen={isPublishModalOpen}
-          onClose={() => setIsPublishModalOpen(false)}
-        />
+        <PublishApiModal isOpen={isPublishModalOpen} onClose={() => setIsPublishModalOpen(false)} />
       </div>
     </ReactFlowProvider>
   );

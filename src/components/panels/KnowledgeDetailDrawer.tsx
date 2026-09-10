@@ -145,7 +145,7 @@ export const KnowledgeDetailDrawer: React.FC = () => {
             extension: ext,
             size: selectedFile.size,
           },
-          { chunkSize, chunkOverlap }
+          { chunkSize, chunkOverlap },
         );
       } else {
         await uploadDocument(activeKbId, selectedFile, { chunkSize, chunkOverlap });
@@ -186,7 +186,9 @@ export const KnowledgeDetailDrawer: React.FC = () => {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono">
               <span>
-                <strong className="text-slate-800 dark:text-slate-200 font-bold">{documents.length}</strong>{' '}
+                <strong className="text-slate-800 dark:text-slate-200 font-bold">
+                  {documents.length}
+                </strong>{' '}
                 {t.knowledge.documentsCount}
               </span>
               <span>•</span>
@@ -252,7 +254,9 @@ export const KnowledgeDetailDrawer: React.FC = () => {
                     <Sliders className="w-3.5 h-3.5 text-cyan-500" />
                     {t.knowledge.chunkSize}
                   </span>
-                  <span className="font-mono text-cyan-600 dark:text-cyan-400 font-semibold">{chunkSize}</span>
+                  <span className="font-mono text-cyan-600 dark:text-cyan-400 font-semibold">
+                    {chunkSize}
+                  </span>
                 </div>
                 <input
                   type="range"
@@ -303,8 +307,8 @@ export const KnowledgeDetailDrawer: React.FC = () => {
                       {t.knowledge.previewChunks}:
                     </span>
                     <span className="font-mono font-bold text-cyan-600 dark:text-cyan-400">
-                      {previewData?.chunks || 1} {t.knowledge.chunksCount} (~{previewData?.tokens || 0}{' '}
-                      {t.knowledge.tokensCount})
+                      {previewData?.chunks || 1} {t.knowledge.chunksCount} (~
+                      {previewData?.tokens || 0} {t.knowledge.tokensCount})
                     </span>
                   </div>
 
@@ -417,8 +421,8 @@ export const KnowledgeDetailDrawer: React.FC = () => {
                     </span>
                     <span className="text-xs text-slate-400">•</span>
                     <span className="text-xs text-slate-500 dark:text-slate-400">
-                      {chunks.length} {t.knowledge.chunksCount} (Chunk Size: {currentDoc.chunk_size || 500} /
-                      Overlap: {currentDoc.chunk_overlap || 50})
+                      {chunks.length} {t.knowledge.chunksCount} (Chunk Size:{' '}
+                      {currentDoc.chunk_size || 500} / Overlap: {currentDoc.chunk_overlap || 50})
                     </span>
                   </div>
                 </div>
@@ -426,7 +430,9 @@ export const KnowledgeDetailDrawer: React.FC = () => {
                 {/* Chunks List Cards */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-3 min-w-0">
                   {chunks.length === 0 ? (
-                    <div className="text-center py-16 text-slate-400 text-xs">{t.knowledge.noChunks}</div>
+                    <div className="text-center py-16 text-slate-400 text-xs">
+                      {t.knowledge.noChunks}
+                    </div>
                   ) : (
                     chunks.map((chunk) => {
                       return (
@@ -445,7 +451,8 @@ export const KnowledgeDetailDrawer: React.FC = () => {
                                 #{chunk.position}
                               </span>
                               <span className="text-[11px] font-mono text-slate-400">
-                                {chunk.token_count} {t.knowledge.tokensCount} ({chunk.content.length} chars)
+                                {chunk.token_count} {t.knowledge.tokensCount} (
+                                {chunk.content.length} chars)
                               </span>
                               <span className="flex items-center gap-1 text-[11px] font-mono font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-500/20">
                                 <Flame className="w-3 h-3 fill-amber-500 text-amber-500" />
@@ -461,7 +468,11 @@ export const KnowledgeDetailDrawer: React.FC = () => {
                                   ? 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30'
                                   : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700'
                               }`}
-                              title={chunk.is_active ? t.knowledge.chunkActive : t.knowledge.chunkDisabled}
+                              title={
+                                chunk.is_active
+                                  ? t.knowledge.chunkActive
+                                  : t.knowledge.chunkDisabled
+                              }
                             >
                               <div
                                 className={`w-2 h-2 rounded-full ${
@@ -469,7 +480,9 @@ export const KnowledgeDetailDrawer: React.FC = () => {
                                 }`}
                               />
                               <span className="text-[10px]">
-                                {chunk.is_active ? t.knowledge.chunkActive : t.knowledge.chunkDisabled}
+                                {chunk.is_active
+                                  ? t.knowledge.chunkActive
+                                  : t.knowledge.chunkDisabled}
                               </span>
                             </button>
                           </div>
@@ -490,9 +503,7 @@ export const KnowledgeDetailDrawer: React.FC = () => {
                 <p className="font-medium text-slate-600 dark:text-slate-400">
                   {t.knowledge.noDocuments}
                 </p>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  {t.knowledge.dropzoneSubtitle}
-                </p>
+                <p className="text-[11px] text-slate-400 mt-1">{t.knowledge.dropzoneSubtitle}</p>
               </div>
             )}
           </main>

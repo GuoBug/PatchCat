@@ -5,7 +5,8 @@ import type { WorkflowNode } from '../../engine/types.ts';
 import { extractVariableReferences } from '../../engine/variable-resolver.ts';
 
 export const PromptNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, selected }) => {
-  const template = (data.inputs?.['template'] as string) || (data.config?.['template'] as string) || '';
+  const template =
+    (data.inputs?.['template'] as string) || (data.config?.['template'] as string) || '';
   const variables = extractVariableReferences(template);
 
   return (
@@ -25,7 +26,9 @@ export const PromptNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, s
         {/* Extracted Slots Badges (Single Row Only) */}
         <div className="text-[10px] uppercase font-mono text-slate-500 dark:text-slate-400 font-semibold flex items-center justify-between">
           <span>Template Slots</span>
-          <span className="text-violet-600 dark:text-purple-400 font-normal">{variables.length} slot(s)</span>
+          <span className="text-violet-600 dark:text-purple-400 font-normal">
+            {variables.length} slot(s)
+          </span>
         </div>
 
         {variables.length === 0 ? (
@@ -33,7 +36,10 @@ export const PromptNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, s
             No dynamic slots
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 overflow-x-auto py-0.5" style={{ scrollbarWidth: 'none' }}>
+          <div
+            className="flex items-center gap-1.5 overflow-x-auto py-0.5"
+            style={{ scrollbarWidth: 'none' }}
+          >
             {variables.map((v, i) => (
               <span
                 key={i}

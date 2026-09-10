@@ -22,13 +22,13 @@ export interface TopologicalSortResult {
  * Performs Kahn's algorithm on the workflow graph to produce execution layers and detect cycles.
  */
 export function topologicalSort(graph: GraphInput): TopologicalSortResult {
-  const nodeMap = new Map<string, typeof graph.nodes[0]>();
+  const nodeMap = new Map<string, (typeof graph.nodes)[0]>();
   const inDegree = new Map<string, number>();
   const adjacencyList = new Map<string, string[]>();
 
   // All nodes participate in the topological sort
   const activeNodes = graph.nodes;
-  const activeNodeIds = new Set(activeNodes.map(n => n.id));
+  const activeNodeIds = new Set(activeNodes.map((n) => n.id));
 
   for (const node of activeNodes) {
     nodeMap.set(node.id, node);
@@ -104,11 +104,13 @@ export function validateGraphTopology(graph: GraphInput): GraphValidationResult 
   const { hasCycle, cycleNodeIds, executionLayers } = topologicalSort(graph);
 
   if (hasCycle) {
-    errors.push(`Workflow contains circular dependency cycles involving nodes: [${cycleNodeIds.join(', ')}]`);
+    errors.push(
+      `Workflow contains circular dependency cycles involving nodes: [${cycleNodeIds.join(', ')}]`,
+    );
   }
 
   // Check for orphan edges
-  const nodeIds = new Set(graph.nodes.map(n => n.id));
+  const nodeIds = new Set(graph.nodes.map((n) => n.id));
   for (const edge of graph.edges) {
     if (!nodeIds.has(edge.source)) {
       errors.push(`Edge ${edge.id} references non-existent source node "${edge.source}"`);
@@ -122,7 +124,10 @@ export function validateGraphTopology(graph: GraphInput): GraphValidationResult 
   const warnings: string[] = [];
   for (const node of graph.nodes) {
     if (node.data?.type === 'condition' || node.type === 'condition') {
-      const config = (node.data?.config || {}) as { conditions?: Array<{ targetHandle?: string }>; defaultBranch?: string };
+      const config = (node.data?.config || {}) as {
+        conditions?: Array<{ targetHandle?: string }>;
+        defaultBranch?: string;
+      };
       const expectedBranches = new Set<string>();
       for (const rule of config.conditions || []) {
         if (rule.targetHandle) expectedBranches.add(rule.targetHandle);
@@ -135,13 +140,15 @@ export function validateGraphTopology(graph: GraphInput): GraphValidationResult 
 
       const connectedHandles = new Set(
         graph.edges
-          .filter(e => e.source === node.id && e.sourceHandle)
-          .map(e => e.sourceHandle as string)
+          .filter((e) => e.source === node.id && e.sourceHandle)
+          .map((e) => e.sourceHandle as string),
       );
 
       for (const branch of expectedBranches) {
         if (!connectedHandles.has(branch)) {
-          warnings.push(`Condition node "${node.data?.label || node.id}" has an unconnected branch: "${branch}"`);
+          warnings.push(
+            `Condition node "${node.data?.label || node.id}" has an unconnected branch: "${branch}"`,
+          );
         }
       }
     }

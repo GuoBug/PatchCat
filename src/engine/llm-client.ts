@@ -104,7 +104,11 @@ export async function streamChatCompletion(
   logger.detailed(
     'LLMClient',
     `发起模型推理请求 -> ${request.model} (${url})`,
-    { model: request.model, temperature: request.temperature, messagesCount: request.messages.length },
+    {
+      model: request.model,
+      temperature: request.temperature,
+      messagesCount: request.messages.length,
+    },
     undefined,
     'request',
   );
@@ -112,7 +116,13 @@ export async function streamChatCompletion(
   logger.dev(
     'LLMClient',
     `[请求入参 Payload] 模型: ${request.model}`,
-    { inputs: { messages: request.messages, temperature: request.temperature, maxTokens: request.maxTokens } },
+    {
+      inputs: {
+        messages: request.messages,
+        temperature: request.temperature,
+        maxTokens: request.maxTokens,
+      },
+    },
     { url, model: request.model },
     undefined,
     'request',
@@ -174,22 +184,34 @@ export async function streamChatCompletion(
     }
 
     if (safeResponse.status === 401) {
-      throw new Error(`[HTTP 401 鉴权失败] 提供的 API Key 无效或过期 (请求模型: "${request.model}"): ${detail || 'Unauthorized'}`);
+      throw new Error(
+        `[HTTP 401 鉴权失败] 提供的 API Key 无效或过期 (请求模型: "${request.model}"): ${detail || 'Unauthorized'}`,
+      );
     }
     if (safeResponse.status === 404) {
-      throw new Error(`[HTTP 404 模型未找到] 模型 "${request.model}" 在服务商端点 (${url}) 中未找到。提示: 请在右侧属性面板选择当前服务商支持的模型 (如 Google 推荐 gemini-2.5-flash / gemini-2.0-flash)。(${detail})`);
+      throw new Error(
+        `[HTTP 404 模型未找到] 模型 "${request.model}" 在服务商端点 (${url}) 中未找到。提示: 请在右侧属性面板选择当前服务商支持的模型 (如 Google 推荐 gemini-2.5-flash / gemini-2.0-flash)。(${detail})`,
+      );
     }
     if (safeResponse.status === 429) {
-      throw new Error(`[HTTP 429 配额/频率受限] 当前模型 "${request.model}" 请求过于频繁或免费额度已用尽: ${detail || 'Rate limit exceeded'}`);
+      throw new Error(
+        `[HTTP 429 配额/频率受限] 当前模型 "${request.model}" 请求过于频繁或免费额度已用尽: ${detail || 'Rate limit exceeded'}`,
+      );
     }
     if (safeResponse.status === 503) {
-      throw new Error(`[HTTP 503 服务繁忙/模型过载] 服务商当前模型负载过高或临时不可用 (Model "${request.model}" overloaded): ${detail || 'The model is overloaded. Please try again later.'}。建议稍后重试，或在右侧属性面板切换为其他模型 (例如 gemini-2.5-flash)。`);
+      throw new Error(
+        `[HTTP 503 服务繁忙/模型过载] 服务商当前模型负载过高或临时不可用 (Model "${request.model}" overloaded): ${detail || 'The model is overloaded. Please try again later.'}。建议稍后重试，或在右侧属性面板切换为其他模型 (例如 gemini-2.5-flash)。`,
+      );
     }
     if (safeResponse.status >= 500) {
-      throw new Error(`[HTTP ${safeResponse.status} 服务端异常] 服务商网关返回错误 (请求模型: "${request.model}"): ${detail || safeResponse.statusText}`);
+      throw new Error(
+        `[HTTP ${safeResponse.status} 服务端异常] 服务商网关返回错误 (请求模型: "${request.model}"): ${detail || safeResponse.statusText}`,
+      );
     }
 
-    throw new Error(`[HTTP ${safeResponse.status}] LLM API 异常 (模型: "${request.model}"): ${detail || safeResponse.statusText}`);
+    throw new Error(
+      `[HTTP ${safeResponse.status}] LLM API 异常 (模型: "${request.model}"): ${detail || safeResponse.statusText}`,
+    );
   }
 
   // Handle SSE streaming response
@@ -270,7 +292,10 @@ export async function streamChatCompletion(
               }
 
               // DeepSeek R1 reasoning token
-              if (typeof delta.reasoning_content === 'string' && delta.reasoning_content.length > 0) {
+              if (
+                typeof delta.reasoning_content === 'string' &&
+                delta.reasoning_content.length > 0
+              ) {
                 reasoningDelta = delta.reasoning_content;
                 fullReasoning += reasoningDelta;
                 hasNewToken = true;
@@ -314,7 +339,7 @@ export async function streamChatCompletion(
   const usage: TokenUsage = {
     prompt: promptTokens,
     completion: completionTokens,
-    total: reportedUsage?.total ?? (promptTokens + completionTokens),
+    total: reportedUsage?.total ?? promptTokens + completionTokens,
   };
 
   const durationMs = Date.now() - startTime;

@@ -46,6 +46,14 @@
 With **zero mandatory backend setup** (Client-Only BYOK Mode) and direct connectivity to **Google Gemini, DeepSeek, OpenAI, SiliconFlow, and local Ollama**, PatchCat delivers high-performance prompt engineering right inside your browser with enterprise-grade telemetry and zero data leakage.
 
 <p align="center">
+  <img src="./assets/screenshot-hero.png" width="940" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" alt="PatchCat Visual DAG Canvas — Drag-and-drop AI workflow builder with real-time LLM streaming" />
+</p>
+
+<p align="center">
+  <em>PatchCat Visual DAG Canvas — Drag-and-drop workflow builder with real-time LLM token streaming</em>
+</p>
+
+<p align="center">
   <img src="./docs/assets/workflow-topology-en.png" width="940" style="max-width: 100%;" alt="PatchCat Customer Support Routing Workflow Topology" />
 </p>
 
@@ -209,13 +217,15 @@ PatchCat comes with ready-to-use industrial presets:
 We welcome contributions from the global open-source community!
 - 🐛 Found a bug? [Submit an Issue](https://github.com/GuoBug/PatchCat/issues)
 - 💡 Have a feature idea? [Start a Discussion](https://github.com/GuoBug/PatchCat/discussions)
-- 🚀 Want to contribute code? Fork the repo and open a Pull Request.
+- 🚀 Want to contribute code? Read the [Contributing Guide](CONTRIBUTING.md) ([中文版](CONTRIBUTING_CN.md))
+- 🛡️ Found a security vulnerability? See our [Security Policy](SECURITY.md)
+- 📜 Community standards: [Code of Conduct](CODE_OF_CONDUCT.md)
 
 ---
 
 ## 📄 License
 
-Distributed under the **MIT License**. Free for commercial and personal use.
+Distributed under the **[MIT License](LICENSE)**. Free for commercial and personal use.
 
 ---
 
