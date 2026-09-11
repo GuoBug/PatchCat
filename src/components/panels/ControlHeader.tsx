@@ -8,7 +8,6 @@ import {
   Plus,
   ChevronDown,
   Activity,
-  FileCode2,
   AlertOctagon,
   X,
   Loader2,
@@ -25,9 +24,8 @@ import { useSettingsStore } from '../../stores/settings-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
 import { BrowserWorkflowEngine } from '../../engine/browser-engine.ts';
 import { validateGraphTopology } from '../../engine/topological-sort.ts';
-import type { NodeType, WorkflowGraph, TokenUsage } from '../../engine/types.ts';
+import type { NodeType, TokenUsage } from '../../engine/types.ts';
 import { CatLogo } from '../icons/CatLogo.tsx';
-import { PRESETS_DATA } from '../../presets/index.ts';
 import { PROJECT_VERSION } from '../../config/project.ts';
 
 export interface AlertNotification {
@@ -55,7 +53,6 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
   const isExecuting = useWorkflowStore((s) => s.isExecuting);
   const addNode = useWorkflowStore((s) => s.addNode);
   const setNodeStatus = useWorkflowStore((s) => s.setNodeStatus);
-  const loadPreset = useWorkflowStore((s) => s.loadPreset);
   const resetExecutionState = useWorkflowStore((s) => s.resetExecutionState);
   const theme = useWorkflowStore((s) => s.theme);
   const toggleTheme = useWorkflowStore((s) => s.toggleTheme);
@@ -65,7 +62,6 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
   const activeProvider = useSettingsStore((s) => s.activeProvider);
   const providers = useSettingsStore((s) => s.providers);
 
-  const [selectedPresetKey, setSelectedPresetKey] = useState<string>('customer-support');
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [executionTimeMs, setExecutionTimeMs] = useState<number | null>(null);
   const [alertNotification, setAlertNotification] = useState<AlertNotification | null>(null);
@@ -73,10 +69,6 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
 
   const engineRef = useRef<BrowserWorkflowEngine>(new BrowserWorkflowEngine());
   const timerIntervalRef = useRef<number | null>(null);
-
-  const currentPresets = useMemo(() => {
-    return PRESETS_DATA[language] || PRESETS_DATA.en;
-  }, [language]);
 
   // Real-time pre-flight topology validation (detects cycles live)
   const topologyValidation = useMemo(() => {
@@ -91,18 +83,6 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
   // Check if active provider has an API key or is local ollama
   const activeConfig = providers[activeProvider];
   const hasActiveKey = activeProvider === 'ollama' ? true : Boolean(activeConfig?.apiKey?.trim());
-
-  // Handle Preset Change
-  const handleSelectPreset = (key: string) => {
-    setSelectedPresetKey(key);
-    setAlertNotification(null);
-    setShowUnconfiguredModal(false);
-    const preset = currentPresets[key];
-    if (preset?.data) {
-      loadPreset(preset.data as WorkflowGraph);
-      setExecutionTimeMs(null);
-    }
-  };
 
   // Run Workflow Execution Flow
   const executeWorkflowRun = async (runOptions?: { skipLLM?: boolean }) => {
@@ -437,30 +417,6 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
               <span>{t.header.cycleDetected}</span>
             </div>
           )}
-        </div>
-
-        {/* Center: Preset Scenarios Selector */}
-        <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-100 dark:bg-slate-900 px-2 sm:px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-inner shrink min-w-0 max-w-[180px] sm:max-w-xs md:max-w-sm">
-          <FileCode2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 hidden sm:block shrink-0" />
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden md:inline shrink-0">
-            {t.header.preset}
-          </span>
-          <select
-            value={selectedPresetKey}
-            onChange={(e) => handleSelectPreset(e.target.value)}
-            disabled={isExecuting}
-            className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer truncate min-w-0 w-full"
-          >
-            {Object.entries(currentPresets).map(([key, item]) => (
-              <option
-                key={key}
-                value={key}
-                className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200"
-              >
-                {item.name}
-              </option>
-            ))}
-          </select>
         </div>
 
         {/* Right: Actions & Execution Controls */}

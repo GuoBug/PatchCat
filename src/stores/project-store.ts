@@ -63,6 +63,7 @@ export interface ProjectStoreState {
   duplicateWorkflow: (id: string) => string;
   deleteWorkflow: (id: string) => void;
   moveWorkflow: (workflowId: string, targetFolderId: string) => void;
+  updateGlobalInputs: (workflowId: string, globalInputs: Record<string, unknown>) => void;
 
   // Folder CRUD
   createFolder: (name: string) => string;
@@ -107,7 +108,7 @@ function loadInitialFolders(lang: 'en' | 'zh' = 'en'): Folder[] {
     },
     {
       id: 'presets',
-      name: lang === 'zh' ? '官方预设库' : 'Official Presets',
+      name: lang === 'zh' ? '预设模版' : 'Preset Templates',
       createdAt: Date.now(),
       isExpanded: true,
       isPreset: true,
@@ -131,92 +132,35 @@ function loadInitialWorkflows(lang: 'en' | 'zh' = 'en'): SavedWorkflow[] {
   const presets = PRESETS_DATA[lang] || PRESETS_DATA.en;
   const now = Date.now();
 
-  const customerSupport = presets['customer-support'];
-  const reportCritic = presets['report-critic'];
-  const modelArena = presets['model-arena'];
-
   const initialList: SavedWorkflow[] = [];
 
-  if (customerSupport) {
-    initialList.push({
-      id: 'wf-customer-support',
-      name: customerSupport.name,
-      folderId: 'default',
-      nodes: customerSupport.data.nodes,
-      edges: customerSupport.data.edges,
-      globalInputs:
-        (customerSupport.data as unknown as { globalInputs?: Record<string, unknown> })
-          .globalInputs || {},
-      createdAt: now - 3600000 * 5,
-      updatedAt: now - 3600000 * 5,
-      isPreset: true,
-    });
-  }
+  const presetKeys = [
+    'customer-support',
+    'report-critic',
+    'model-arena',
+    'rag-qa',
+    'rag-agentic-auditor',
+    'conditional-routing',
+    'weather-api',
+  ] as const;
 
-  if (reportCritic) {
-    initialList.push({
-      id: 'wf-report-critic',
-      name: reportCritic.name,
-      folderId: 'presets',
-      nodes: reportCritic.data.nodes,
-      edges: reportCritic.data.edges,
-      globalInputs:
-        (reportCritic.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs ||
-        {},
-      createdAt: now - 86400000 * 2,
-      updatedAt: now - 86400000 * 2,
-      isPreset: true,
-    });
-  }
-
-  if (modelArena) {
-    initialList.push({
-      id: 'wf-model-arena',
-      name: modelArena.name,
-      folderId: 'presets',
-      nodes: modelArena.data.nodes,
-      edges: modelArena.data.edges,
-      globalInputs:
-        (modelArena.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs ||
-        {},
-      createdAt: now - 86400000 * 4,
-      updatedAt: now - 86400000 * 4,
-      isPreset: true,
-    });
-  }
-
-  const ragQa = presets['rag-qa'];
-  if (ragQa) {
-    initialList.push({
-      id: 'wf-rag-qa',
-      name: ragQa.name,
-      folderId: 'presets',
-      nodes: ragQa.data.nodes,
-      edges: ragQa.data.edges,
-      globalInputs:
-        (ragQa.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs || {},
-      createdAt: now - 86400000 * 5,
-      updatedAt: now - 86400000 * 5,
-      isPreset: true,
-    });
-  }
-
-  const ragAuditor = presets['rag-agentic-auditor'];
-  if (ragAuditor) {
-    initialList.push({
-      id: 'wf-rag-agentic-auditor',
-      name: ragAuditor.name,
-      folderId: 'presets',
-      nodes: ragAuditor.data.nodes,
-      edges: ragAuditor.data.edges,
-      globalInputs:
-        (ragAuditor.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs ||
-        {},
-      createdAt: now - 86400000 * 6,
-      updatedAt: now - 86400000 * 6,
-      isPreset: true,
-    });
-  }
+  presetKeys.forEach((key, index) => {
+    const item = presets[key];
+    if (item) {
+      initialList.push({
+        id: `wf-${key}`,
+        name: item.name,
+        folderId: 'presets',
+        nodes: item.data.nodes,
+        edges: item.data.edges,
+        globalInputs:
+          (item.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs || {},
+        createdAt: now - 3600000 * (index + 1),
+        updatedAt: now - 3600000 * (index + 1),
+        isPreset: true,
+      });
+    }
+  });
 
   return initialList;
 }
@@ -600,6 +544,24 @@ export const useProjectStore = create<ProjectStoreState>()(
           .moveWorkflow(workflowId, targetFolderId)
           .catch((e) => {
             console.warn('[ProjectStore] Failed to move workflow on backend:', e);
+          });
+      },
+
+      updateGlobalInputs: (workflowId, globalInputs) => {
+        set((state) => {
+          const wf = state.workflows.find((w) => w.id === workflowId);
+          if (wf) {
+            wf.globalInputs = globalInputs;
+            wf.updatedAt = Date.now();
+          }
+        });
+
+        persistToLocalStorage(get().folders, get().workflows, get().activeWorkflowId);
+
+        getActiveAdapter()
+          .saveWorkflow(workflowId, { globalInputs } as any)
+          .catch((e: unknown) => {
+            console.warn('[ProjectStore] Failed to update global inputs on backend:', e);
           });
       },
 

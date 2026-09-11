@@ -12,7 +12,7 @@ import type { Language } from '../i18n/translations.ts';
 
 export type ProviderId = 'openai' | 'deepseek' | 'siliconflow' | 'google' | 'ollama' | 'custom';
 export type AppView = 'canvas' | 'settings';
-export type SettingsTab = 'general' | 'providers' | 'logs';
+export type SettingsTab = 'general' | 'memory' | 'providers' | 'logs';
 
 export interface ProviderConfig {
   id: ProviderId;
@@ -108,7 +108,7 @@ export interface MemoryDefaults {
   enabled: boolean;
   maxHistoryRounds: number;
   maxTokenBudget: number;
-  pruningStrategy: 'window' | 'token_budget' | 'hybrid';
+  pruningStrategy: 'window' | 'token_budget' | 'hybrid' | 'none';
 }
 
 export const DEFAULT_MEMORY_SETTINGS: MemoryDefaults = {

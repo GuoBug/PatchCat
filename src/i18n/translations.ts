@@ -194,6 +194,7 @@ export interface Translations {
     pageTitle: string;
     pageSubtitle: string;
     tabGeneral: string;
+    tabMemory: string;
     tabProviders: string;
     tabLogs: string;
     // General Tab
@@ -213,6 +214,12 @@ export interface Translations {
     engineMockDesc: string;
     engineBrowser: string;
     engineBrowserDesc: string;
+    // Memory & Storage Tab
+    memoryTitle: string;
+    memoryDesc: string;
+    memoryStrategyHybridActive: string;
+    memoryStrategyWindowActive: string;
+    memoryStrategyBudgetActive: string;
     // Storage Mode Section
     storageSection: string;
     storageSectionDesc: string;
@@ -331,6 +338,17 @@ export interface Translations {
     expandSidebar: string;
     workflowsCount: string;
     selectFolder: string;
+    projectSettings: string;
+    folderSettings: string;
+    newWorkflowInFolder: string;
+    workflowParameters: string;
+    workflowParametersDesc: string;
+    paramKey: string;
+    paramValue: string;
+    addParam: string;
+    noParamsConfigured: string;
+    workflowFolder: string;
+    saveSettings: string;
   };
   knowledge: {
     tabTitle: string;
@@ -613,6 +631,7 @@ export const translations: Record<Language, Translations> = {
       pageTitle: 'Settings & Configuration',
       pageSubtitle: 'Manage LLM Providers, UI Language, and Workflow Telemetry Logs',
       tabGeneral: 'General & Language',
+      tabMemory: 'Memory',
       tabProviders: 'LLM Providers & API Keys',
       tabLogs: 'Execution Logs',
       // General Tab
@@ -633,6 +652,16 @@ export const translations: Record<Language, Translations> = {
       engineBrowser: 'Browser BYOK Mode (Recommended)',
       engineBrowserDesc:
         'Direct client-side connection using your own API keys with zero backend latency.',
+      // Memory & Storage Tab
+      memoryTitle: 'Conversation Memory & Storage Policy',
+      memoryDesc:
+        'Configure multi-turn conversation memory, sliding window rounds, token budget limits, and persistent storage architecture.',
+      memoryStrategyHybridActive:
+        '✨ Dual Constraints Active (Both sliding rounds and token budget are enforced).',
+      memoryStrategyWindowActive:
+        'Sliding Window Only (Prunes rounds exceeding the window threshold).',
+      memoryStrategyBudgetActive:
+        'Token Budget Only (Prunes older messages when token limit is reached).',
       // Storage Mode Section
       storageSection: 'Storage & Backend Mode',
       storageSectionDesc: 'Choose where workflows and project directories are saved.',
@@ -750,7 +779,7 @@ export const translations: Record<Language, Translations> = {
       folderNamePlaceholder: 'Folder name...',
       workflowNamePlaceholder: 'Workflow name...',
       defaultFolder: 'Default',
-      presetsFolder: 'Built-in Presets',
+      presetsFolder: 'Preset Templates',
       untitledWorkflow: 'Untitled Workflow',
       rename: 'Rename',
       duplicate: 'Duplicate',
@@ -764,6 +793,19 @@ export const translations: Record<Language, Translations> = {
       expandSidebar: 'Expand Sidebar',
       workflowsCount: 'workflows',
       selectFolder: 'Select destination folder',
+      projectSettings: 'Project Settings',
+      folderSettings: 'Folder Settings',
+      newWorkflowInFolder: 'New Workflow in Folder',
+      workflowParameters: 'Global Runtime Parameters',
+      workflowParametersDesc:
+        'Default parameter values automatically supplied to Input nodes during workflow execution.',
+      paramKey: 'Parameter Name',
+      paramValue: 'Default Value',
+      addParam: 'Add Parameter',
+      noParamsConfigured:
+        'No default parameters configured yet. Click "Add Parameter" to define runtime inputs.',
+      workflowFolder: 'Belongs to Folder',
+      saveSettings: 'Save Settings',
     },
     knowledge: {
       tabTitle: 'Knowledge Bases',
@@ -1042,6 +1084,7 @@ export const translations: Record<Language, Translations> = {
       pageTitle: '系统设置与配置',
       pageSubtitle: '管理 LLM 模型服务商、界面多语言与全链路运行遥测日志',
       tabGeneral: '常规与语言',
+      tabMemory: '记忆',
       tabProviders: '模型服务商与 API Key',
       tabLogs: '运行日志控制台',
       // General Tab
@@ -1061,6 +1104,16 @@ export const translations: Record<Language, Translations> = {
       engineMockDesc: '无网络依赖，使用本地预设快速体验工作流调度过程。',
       engineBrowser: '纯前端 BYOK 直连模式 (推荐)',
       engineBrowserDesc: '使用您自己的 API 密钥从浏览器直接调用大模型，零后端中转，安全隐私。',
+      // Memory & Storage Tab
+      memoryTitle: '会话记忆与存储策略',
+      memoryDesc:
+        '配置多轮会话记忆偏好、滑动窗口轮数、Token 预算限制与底层存储架构。',
+      memoryStrategyHybridActive:
+        '✨ 已启用双重约束（同时受滑动窗口轮数与 Token 预算限制）。',
+      memoryStrategyWindowActive:
+        '仅滑动窗口轮数（超过 K 轮的早期对话将自动截断）。',
+      memoryStrategyBudgetActive:
+        '仅 Token 预算上限（倒序累加 Token 超过预算时将截断更早消息）。',
       // Storage Mode Section
       storageSection: '存储与后端服务模式',
       storageSectionDesc: '选择工作流和项目目录的保存位置与同步方式。',
@@ -1174,7 +1227,7 @@ export const translations: Record<Language, Translations> = {
       folderNamePlaceholder: '目录名称...',
       workflowNamePlaceholder: '流程名称...',
       defaultFolder: '默认目录',
-      presetsFolder: '官方预设库',
+      presetsFolder: '预设模版',
       untitledWorkflow: '未命名流程',
       rename: '重命名',
       duplicate: '复制副本',
@@ -1188,6 +1241,17 @@ export const translations: Record<Language, Translations> = {
       expandSidebar: '展开侧边栏',
       workflowsCount: '个流程',
       selectFolder: '选择目标目录',
+      projectSettings: '项目设置',
+      folderSettings: '目录设置',
+      newWorkflowInFolder: '在此目录下新建项目',
+      workflowParameters: '全局运行时参数',
+      workflowParametersDesc: '在测试与执行该工作流时，默认传递给 Input 节点的预置输入参数。',
+      paramKey: '参数名称',
+      paramValue: '默认参数值',
+      addParam: '添加参数',
+      noParamsConfigured: '暂无预设参数。点击“添加参数”为该项目预置输入参数。',
+      workflowFolder: '所属目录',
+      saveSettings: '保存设置',
     },
     knowledge: {
       tabTitle: '私有知识库',

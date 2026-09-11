@@ -220,7 +220,7 @@ export const sessionStorageAdapter = new IndexedDBSessionAdapter();
 export interface MemoryPruningOptions {
   maxHistoryRounds?: number;
   maxTokenBudget?: number;
-  pruningStrategy?: 'window' | 'token_budget' | 'hybrid';
+  pruningStrategy?: 'window' | 'token_budget' | 'hybrid' | 'none';
 }
 
 /**

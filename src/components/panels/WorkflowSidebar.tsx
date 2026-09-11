@@ -19,6 +19,7 @@ import {
   ChevronsRight,
   Check,
   Database,
+  Sliders,
 } from 'lucide-react';
 import { useProjectStore, type SavedWorkflow, type Folder } from '../../stores/project-store.ts';
 import { useKnowledgeStore } from '../../stores/knowledge-store.ts';
@@ -38,6 +39,376 @@ function formatRelativeTime(timestamp: number): string {
   return `${Math.floor(diffDay / 30)}mo`;
 }
 
+interface WorkflowSettingsModalProps {
+  workflow: SavedWorkflow;
+  folders: Folder[];
+  onClose: () => void;
+  onSave: (
+    workflowId: string,
+    name: string,
+    folderId: string,
+    globalInputs: Record<string, unknown>,
+  ) => void;
+}
+
+const WorkflowSettingsModal: React.FC<WorkflowSettingsModalProps> = ({
+  workflow,
+  folders,
+  onClose,
+  onSave,
+}) => {
+  const { t } = useTranslation();
+  const [name, setName] = useState(workflow.name);
+  const [folderId, setFolderId] = useState(workflow.folderId);
+  const [params, setParams] = useState<Array<{ id: string; key: string; value: string }>>(() => {
+    const raw = workflow.globalInputs || {};
+    return Object.entries(raw).map(([k, v], idx) => ({
+      id: `param-${idx}-${k}`,
+      key: k,
+      value: typeof v === 'object' ? JSON.stringify(v) : String(v ?? ''),
+    }));
+  });
+
+  const handleAddParam = () => {
+    setParams((prev) => [
+      ...prev,
+      { id: `param-${Date.now()}-${prev.length}`, key: '', value: '' },
+    ]);
+  };
+
+  const handleRemoveParam = (id: string) => {
+    setParams((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  const handleParamChange = (id: string, field: 'key' | 'value', val: string) => {
+    setParams((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, [field]: val } : p)),
+    );
+  };
+
+  const handleSave = () => {
+    const cleanName = name.trim() || workflow.name;
+    const cleanInputs: Record<string, unknown> = {};
+    for (const p of params) {
+      const k = p.key.trim();
+      if (k) {
+        let v: unknown = p.value;
+        if (p.value === 'true') v = true;
+        else if (p.value === 'false') v = false;
+        else if (!isNaN(Number(p.value)) && p.value.trim() !== '') v = Number(p.value);
+        else {
+          try {
+            v = JSON.parse(p.value);
+          } catch {
+            v = p.value;
+          }
+        }
+        cleanInputs[k] = v;
+      }
+    }
+    onSave(workflow.id, cleanName, folderId, cleanInputs);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+      <div
+        className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-950/40">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-sky-400">
+              <Sliders className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                {t.sidebar.projectSettings}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-xs">
+                {workflow.name}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-5 space-y-5 overflow-y-auto min-h-0 flex-1">
+          {/* Project Name */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              {t.sidebar.workflowNamePlaceholder}
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500"
+              placeholder={t.sidebar.workflowNamePlaceholder}
+            />
+          </div>
+
+          {/* Belongs to Folder */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              {t.sidebar.workflowFolder}
+            </label>
+            <select
+              value={folderId}
+              onChange={(e) => setFolderId(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 cursor-pointer"
+            >
+              {folders.map((f) => (
+                <option key={f.id} value={f.id} className="bg-white dark:bg-slate-900">
+                  {f.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Global Runtime Parameters */}
+          <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                  {t.sidebar.workflowParameters}
+                </h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  {t.sidebar.workflowParametersDesc}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleAddParam}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/50 dark:hover:bg-blue-900/60 text-blue-600 dark:text-sky-400 text-xs font-semibold transition-colors shrink-0"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{t.sidebar.addParam}</span>
+              </button>
+            </div>
+
+            {params.length === 0 ? (
+              <div className="py-6 px-4 text-center rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800 text-xs text-slate-400">
+                {t.sidebar.noParamsConfigured}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {params.map((p) => (
+                  <div key={p.id} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={p.key}
+                      onChange={(e) => handleParamChange(p.id, 'key', e.target.value)}
+                      placeholder={t.sidebar.paramKey}
+                      className="w-1/3 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500"
+                    />
+                    <input
+                      type="text"
+                      value={p.value}
+                      onChange={(e) => handleParamChange(p.id, 'value', e.target.value)}
+                      placeholder={t.sidebar.paramValue}
+                      className="flex-1 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveParam(p.id)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors shrink-0"
+                      title={t.common.delete}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 flex items-center justify-end gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors"
+          >
+            {t.common.cancel}
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-xs transition-colors"
+          >
+            {t.sidebar.saveSettings}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface FolderRowProps {
+  folder: Folder;
+  count: number;
+  isEditing: boolean;
+  editingName: string;
+  setEditingName: (name: string) => void;
+  onToggle: () => void;
+  onStartRename: () => void;
+  onSaveRename: () => void;
+  onCancelRename: () => void;
+  onDelete: () => void;
+  onCreateWorkflowInFolder: () => void;
+}
+
+const FolderRow: React.FC<FolderRowProps> = ({
+  folder,
+  count,
+  isEditing,
+  editingName,
+  setEditingName,
+  onToggle,
+  onStartRename,
+  onSaveRename,
+  onCancelRename,
+  onDelete,
+  onCreateWorkflowInFolder,
+}) => {
+  const { t } = useTranslation();
+  const [showFolderMenu, setShowFolderMenu] = useState(false);
+  const folderMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (folderMenuRef.current && !folderMenuRef.current.contains(e.target as Node)) {
+        setShowFolderMenu(false);
+      }
+    };
+    if (showFolderMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showFolderMenu]);
+
+  return (
+    <div
+      onClick={onToggle}
+      className="group flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-200/50 dark:hover:bg-slate-800/40 text-xs text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+    >
+      <div className="flex items-center gap-1.5 min-w-0 pr-1">
+        {folder.isExpanded ? (
+          <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+        ) : (
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+        )}
+
+        {folder.isExpanded ? (
+          <FolderOpen className="w-4 h-4 text-blue-500 dark:text-sky-400 shrink-0" />
+        ) : (
+          <FolderIcon className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+        )}
+
+        {isEditing ? (
+          <input
+            type="text"
+            value={editingName}
+            onChange={(e) => setEditingName(e.target.value)}
+            onBlur={onSaveRename}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') onSaveRename();
+              if (e.key === 'Escape') onCancelRename();
+            }}
+            autoFocus
+            onClick={(e) => e.stopPropagation()}
+            className="px-1.5 py-0.5 text-xs bg-white dark:bg-slate-900 border border-blue-500 rounded text-slate-900 dark:text-slate-100 focus:outline-none"
+          />
+        ) : (
+          <span className="font-semibold truncate text-[12px]">{folder.name}</span>
+        )}
+      </div>
+
+      <div className="flex items-center gap-1 shrink-0">
+        <span className="text-[11px] text-slate-400 font-mono">
+          ({count})
+        </span>
+
+        {/* 3-dots folder actions menu */}
+        <div
+          ref={folderMenuRef}
+          className={`relative ${showFolderMenu ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'} transition-opacity`}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowFolderMenu(!showFolderMenu);
+            }}
+            className="p-1 rounded hover:bg-slate-300/60 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+            title="Folder Options"
+          >
+            <MoreHorizontal className="w-3.5 h-3.5" />
+          </button>
+
+          {showFolderMenu && (
+            <div
+              className="absolute right-0 top-full mt-1 w-44 p-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-100 font-sans"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* New Workflow in Folder */}
+              <button
+                onClick={() => {
+                  setShowFolderMenu(false);
+                  onCreateWorkflowInFolder();
+                }}
+                className="w-full px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 text-left text-slate-700 dark:text-slate-300 text-xs transition-colors font-medium"
+              >
+                <Plus className="w-3.5 h-3.5 text-blue-500 dark:text-sky-400" />
+                <span>{t.sidebar.newWorkflowInFolder}</span>
+              </button>
+
+              {!folder.isPreset && (
+                <>
+                  <div className="h-[1px] bg-slate-100 dark:bg-slate-800 my-1" />
+                  {/* Rename Folder */}
+                  <button
+                    onClick={() => {
+                      setShowFolderMenu(false);
+                      onStartRename();
+                    }}
+                    className="w-full px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 text-left text-slate-700 dark:text-slate-300 text-xs transition-colors"
+                  >
+                    <Edit2 className="w-3.5 h-3.5 text-slate-400" />
+                    <span>{t.sidebar.rename}</span>
+                  </button>
+
+                  {/* Delete Folder */}
+                  <button
+                    onClick={() => {
+                      setShowFolderMenu(false);
+                      if (window.confirm(t.sidebar.deleteFolderConfirm)) {
+                        onDelete();
+                      }
+                    }}
+                    className="w-full px-2.5 py-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center gap-2 text-left text-xs transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{t.sidebar.delete}</span>
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface WorkflowItemProps {
   workflow: SavedWorkflow;
   isActive: boolean;
@@ -47,6 +418,7 @@ interface WorkflowItemProps {
   onDuplicate: () => void;
   onDelete: () => void;
   onMove: (targetFolderId: string) => void;
+  onOpenSettings: (workflow: SavedWorkflow) => void;
 }
 
 const WorkflowItem: React.FC<WorkflowItemProps> = ({
@@ -58,6 +430,7 @@ const WorkflowItem: React.FC<WorkflowItemProps> = ({
   onDuplicate,
   onDelete,
   onMove,
+  onOpenSettings,
 }) => {
   const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
@@ -157,7 +530,7 @@ const WorkflowItem: React.FC<WorkflowItemProps> = ({
         <div
           ref={menuRef}
           className={`relative ${
-            showMenu ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            showMenu ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'
           } transition-opacity`}
         >
           <button
@@ -178,6 +551,20 @@ const WorkflowItem: React.FC<WorkflowItemProps> = ({
               className="absolute right-0 top-full mt-1 w-44 p-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-100 font-sans"
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Project Settings */}
+              <button
+                onClick={() => {
+                  setShowMenu(false);
+                  onOpenSettings(workflow);
+                }}
+                className="w-full px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 text-left text-slate-700 dark:text-slate-300 text-xs transition-colors font-medium"
+              >
+                <Sliders className="w-3.5 h-3.5 text-blue-500 dark:text-sky-400" />
+                <span>{t.sidebar.projectSettings}</span>
+              </button>
+
+              <div className="h-[1px] bg-slate-100 dark:bg-slate-800 my-1" />
+
               {/* Rename */}
               <button
                 onClick={() => {
@@ -279,6 +666,7 @@ export const WorkflowSidebar: React.FC = () => {
   const duplicateWorkflow = useProjectStore((s) => s.duplicateWorkflow);
   const deleteWorkflow = useProjectStore((s) => s.deleteWorkflow);
   const moveWorkflow = useProjectStore((s) => s.moveWorkflow);
+  const updateGlobalInputs = useProjectStore((s) => s.updateGlobalInputs);
 
   const createFolder = useProjectStore((s) => s.createFolder);
   const renameFolder = useProjectStore((s) => s.renameFolder);
@@ -291,6 +679,7 @@ export const WorkflowSidebar: React.FC = () => {
   const [showSearchInput, setShowSearchInput] = useState(false);
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editingFolderName, setEditingFolderName] = useState('');
+  const [settingsWorkflow, setSettingsWorkflow] = useState<SavedWorkflow | null>(null);
 
   // Knowledge base tab state
   const [activeTab, setActiveTab] = useState<'workflows' | 'knowledge'>('workflows');
@@ -318,6 +707,24 @@ export const WorkflowSidebar: React.FC = () => {
       renameFolder(folderId, trimmed);
     }
     setEditingFolderId(null);
+  };
+
+  const handleSaveWorkflowSettings = (
+    workflowId: string,
+    newName: string,
+    targetFolderId: string,
+    newGlobalInputs: Record<string, unknown>,
+  ) => {
+    const currentWf = workflows.find((w) => w.id === workflowId);
+    if (!currentWf) return;
+
+    if (newName !== currentWf.name) {
+      renameWorkflow(workflowId, newName);
+    }
+    if (targetFolderId !== currentWf.folderId) {
+      moveWorkflow(workflowId, targetFolderId);
+    }
+    updateGlobalInputs(workflowId, newGlobalInputs);
   };
 
   // Filter workflows by search query
@@ -506,76 +913,27 @@ export const WorkflowSidebar: React.FC = () => {
 
               return (
                 <div key={folder.id} className="space-y-0.5">
-                  <div
-                    onClick={() => toggleFolder(folder.id)}
-                    className="group flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-200/50 dark:hover:bg-slate-800/40 text-xs text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-1.5 min-w-0 pr-1">
-                      {folder.isExpanded ? (
-                        <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      ) : (
-                        <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      )}
-
-                      {folder.isExpanded ? (
-                        <FolderOpen className="w-4 h-4 text-blue-500 dark:text-sky-400 shrink-0" />
-                      ) : (
-                        <FolderIcon className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
-                      )}
-
-                      {editingFolderId === folder.id ? (
-                        <input
-                          type="text"
-                          value={editingFolderName}
-                          onChange={(e) => setEditingFolderName(e.target.value)}
-                          onBlur={() => handleSaveRenameFolder(folder.id)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSaveRenameFolder(folder.id);
-                            if (e.key === 'Escape') setEditingFolderId(null);
-                          }}
-                          autoFocus
-                          onClick={(e) => e.stopPropagation()}
-                          className="px-1.5 py-0.5 text-xs bg-white dark:bg-slate-900 border border-blue-500 rounded text-slate-900 dark:text-slate-100 focus:outline-none"
-                        />
-                      ) : (
-                        <span className="font-semibold truncate text-[12px]">{folder.name}</span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      <span className="text-[11px] text-slate-400 font-mono">
-                        ({folderWorkflows.length})
-                      </span>
-
-                      {!folder.isPreset && (
-                        <div className="opacity-0 group-hover:opacity-100 flex items-center transition-opacity">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingFolderId(folder.id);
-                              setEditingFolderName(folder.name);
-                            }}
-                            className="p-1 hover:bg-slate-300 dark:hover:bg-slate-700 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                            title={t.sidebar.rename}
-                          >
-                            <Edit2 className="w-3 h-3" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (window.confirm(t.sidebar.deleteFolderConfirm)) {
-                                deleteFolder(folder.id);
-                              }
-                            }}
-                            className="p-1 hover:bg-rose-100 dark:hover:bg-rose-900/30 rounded text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
-                            title={t.sidebar.delete}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <FolderRow
+                    folder={folder}
+                    count={folderWorkflows.length}
+                    isEditing={editingFolderId === folder.id}
+                    editingName={editingFolderName}
+                    setEditingName={setEditingFolderName}
+                    onToggle={() => toggleFolder(folder.id)}
+                    onStartRename={() => {
+                      setEditingFolderId(folder.id);
+                      setEditingFolderName(folder.name);
+                    }}
+                    onSaveRename={() => handleSaveRenameFolder(folder.id)}
+                    onCancelRename={() => setEditingFolderId(null)}
+                    onDelete={() => deleteFolder(folder.id)}
+                    onCreateWorkflowInFolder={() => {
+                      createWorkflow(t.sidebar.untitledWorkflow, folder.id);
+                      if (!folder.isExpanded) {
+                        toggleFolder(folder.id);
+                      }
+                    }}
+                  />
 
                   {folder.isExpanded && (
                     <div className="pl-3 space-y-0.5 border-l border-slate-200/80 dark:border-slate-800/80 ml-3.5 my-0.5">
@@ -595,6 +953,7 @@ export const WorkflowSidebar: React.FC = () => {
                             onDuplicate={() => duplicateWorkflow(wf.id)}
                             onDelete={() => deleteWorkflow(wf.id)}
                             onMove={(targetFolderId) => moveWorkflow(wf.id, targetFolderId)}
+                            onOpenSettings={(w) => setSettingsWorkflow(w)}
                           />
                         ))
                       )}
@@ -756,6 +1115,16 @@ export const WorkflowSidebar: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Workflow / Project Settings Modal */}
+      {settingsWorkflow && (
+        <WorkflowSettingsModal
+          workflow={settingsWorkflow}
+          folders={folders}
+          onClose={() => setSettingsWorkflow(null)}
+          onSave={handleSaveWorkflowSettings}
+        />
       )}
     </aside>
   );

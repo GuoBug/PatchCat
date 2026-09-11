@@ -248,6 +248,20 @@ export const SettingsPage: React.FC = () => {
           </button>
 
           <button
+            onClick={() => setSettingsTab('memory')}
+            className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-left whitespace-nowrap ${
+              settingsTab === 'memory'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900'
+            }`}
+          >
+            <Sliders className="w-4 h-4" />
+            <div className="flex-1 min-w-0">
+              <span className="block">{t.settings.tabMemory}</span>
+            </div>
+          </button>
+
+          <button
             onClick={() => setSettingsTab('providers')}
             className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-left whitespace-nowrap ${
               settingsTab === 'providers'
@@ -453,6 +467,20 @@ export const SettingsPage: React.FC = () => {
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* TAB: Memory & Storage */}
+          {settingsTab === 'memory' && (
+            <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-150">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  {t.settings.memoryTitle}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  {t.settings.memoryDesc}
+                </p>
+              </div>
 
               {/* Conversation Memory Defaults (Tier 1 Global Policy) */}
               <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-xs space-y-4">
@@ -511,84 +539,167 @@ export const SettingsPage: React.FC = () => {
                 {/* Sub-controls shown when memory enabled */}
                 {memoryDefaults.enabled && (
                   <div className="space-y-4 pt-1 animate-in fade-in duration-150">
-                    {/* Sliding Window Slider */}
+                    {/* Sliding Window Rounds (Numeric Input) */}
                     <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <label className="font-semibold text-slate-800 dark:text-slate-200">
-                          {t.settings.memoryRoundsLabel}
-                        </label>
-                        <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800/60">
-                          {memoryDefaults.maxHistoryRounds} {language === 'zh' ? '轮' : 'rounds'}
-                        </span>
-                      </div>
+                      <label className="font-semibold text-xs text-slate-800 dark:text-slate-200 block">
+                        {t.settings.memoryRoundsLabel}
+                      </label>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
                         {t.settings.memoryRoundsDesc}
                       </p>
-                      <input
-                        type="range"
-                        min={1}
-                        max={20}
-                        step={1}
-                        value={memoryDefaults.maxHistoryRounds}
-                        onChange={(e) =>
-                          updateMemoryDefaults({ maxHistoryRounds: Number(e.target.value) })
-                        }
-                        className="w-full accent-indigo-600 cursor-pointer"
-                      />
-                    </div>
-
-                    {/* Token Budget Slider */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <label className="font-semibold text-slate-800 dark:text-slate-200">
-                          {t.settings.memoryBudgetLabel}
-                        </label>
-                        <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800/60">
-                          {memoryDefaults.maxTokenBudget.toLocaleString()} tokens
+                      <div className="flex items-center gap-2 pt-0.5">
+                        <input
+                          type="number"
+                          min={1}
+                          max={100}
+                          step={1}
+                          value={memoryDefaults.maxHistoryRounds}
+                          onChange={(e) =>
+                            updateMemoryDefaults({
+                              maxHistoryRounds: Math.max(1, parseInt(e.target.value, 10) || 1),
+                            })
+                          }
+                          className="w-32 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                        />
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                          {language === 'zh' ? '轮 (Rounds)' : 'Rounds'}
                         </span>
                       </div>
+                    </div>
+
+                    {/* Token Budget (Numeric Input) */}
+                    <div className="space-y-1.5">
+                      <label className="font-semibold text-xs text-slate-800 dark:text-slate-200 block">
+                        {t.settings.memoryBudgetLabel}
+                      </label>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
                         {t.settings.memoryBudgetDesc}
                       </p>
-                      <input
-                        type="range"
-                        min={500}
-                        max={16000}
-                        step={250}
-                        value={memoryDefaults.maxTokenBudget}
-                        onChange={(e) =>
-                          updateMemoryDefaults({ maxTokenBudget: Number(e.target.value) })
-                        }
-                        className="w-full accent-indigo-600 cursor-pointer"
-                      />
+                      <div className="flex items-center gap-2 pt-0.5">
+                        <input
+                          type="number"
+                          min={100}
+                          max={128000}
+                          step={100}
+                          value={memoryDefaults.maxTokenBudget}
+                          onChange={(e) =>
+                            updateMemoryDefaults({
+                              maxTokenBudget: Math.max(100, parseInt(e.target.value, 10) || 100),
+                            })
+                          }
+                          className="w-36 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                        />
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                          Tokens
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Pruning Strategy Selection */}
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
-                        {t.settings.memoryStrategyLabel}
-                      </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        {(
-                          [
-                            { id: 'hybrid', label: t.settings.memoryStrategyHybrid },
-                            { id: 'window', label: t.settings.memoryStrategyWindow },
-                            { id: 'token_budget', label: t.settings.memoryStrategyBudget },
-                          ] as const
-                        ).map((strat) => (
-                          <button
-                            key={strat.id}
-                            type="button"
-                            onClick={() => updateMemoryDefaults({ pruningStrategy: strat.id })}
-                            className={`px-3 py-2 rounded-lg border text-xs font-semibold text-left transition-all ${
-                              memoryDefaults.pruningStrategy === strat.id
-                                ? 'border-indigo-600 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-600'
-                                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300'
-                            }`}
-                          >
-                            {strat.label}
-                          </button>
-                        ))}
+                    {/* Pruning Strategy Selection (Dual Toggle) */}
+                    <div className="space-y-2">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
+                          {t.settings.memoryStrategyLabel}
+                        </label>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                          {language === 'zh'
+                            ? '点击按钮可切换选中状态，两个都选中即为双重约束'
+                            : 'Click to toggle constraints; selecting both enables dual constraints.'}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {/* Window Toggle Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const isWindowActive =
+                              memoryDefaults.pruningStrategy === 'window' ||
+                              memoryDefaults.pruningStrategy === 'hybrid';
+                            const isBudgetActive =
+                              memoryDefaults.pruningStrategy === 'token_budget' ||
+                              memoryDefaults.pruningStrategy === 'hybrid';
+
+                            let nextStrategy: 'window' | 'token_budget' | 'hybrid' | 'none';
+                            if (isWindowActive) {
+                              nextStrategy = isBudgetActive ? 'token_budget' : 'none';
+                            } else {
+                              nextStrategy = isBudgetActive ? 'hybrid' : 'window';
+                            }
+                            updateMemoryDefaults({ pruningStrategy: nextStrategy });
+                          }}
+                          className={`px-3.5 py-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all ${
+                            memoryDefaults.pruningStrategy === 'window' ||
+                            memoryDefaults.pruningStrategy === 'hybrid'
+                              ? 'border-indigo-600 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-600/30'
+                              : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400'
+                          }`}
+                        >
+                          <span>{t.settings.memoryStrategyWindow}</span>
+                          {(memoryDefaults.pruningStrategy === 'window' ||
+                            memoryDefaults.pruningStrategy === 'hybrid') && (
+                            <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                          )}
+                        </button>
+
+                        {/* Budget Toggle Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const isWindowActive =
+                              memoryDefaults.pruningStrategy === 'window' ||
+                              memoryDefaults.pruningStrategy === 'hybrid';
+                            const isBudgetActive =
+                              memoryDefaults.pruningStrategy === 'token_budget' ||
+                              memoryDefaults.pruningStrategy === 'hybrid';
+
+                            let nextStrategy: 'window' | 'token_budget' | 'hybrid' | 'none';
+                            if (isBudgetActive) {
+                              nextStrategy = isWindowActive ? 'window' : 'none';
+                            } else {
+                              nextStrategy = isWindowActive ? 'hybrid' : 'token_budget';
+                            }
+                            updateMemoryDefaults({ pruningStrategy: nextStrategy });
+                          }}
+                          className={`px-3.5 py-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all ${
+                            memoryDefaults.pruningStrategy === 'token_budget' ||
+                            memoryDefaults.pruningStrategy === 'hybrid'
+                              ? 'border-indigo-600 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-600/30'
+                              : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400'
+                          }`}
+                        >
+                          <span>{t.settings.memoryStrategyBudget}</span>
+                          {(memoryDefaults.pruningStrategy === 'token_budget' ||
+                            memoryDefaults.pruningStrategy === 'hybrid') && (
+                            <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Strategy active status indication */}
+                      <div className="pt-1">
+                        {memoryDefaults.pruningStrategy === 'hybrid' && (
+                          <div className="p-2.5 rounded-lg bg-indigo-50/80 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/50 text-[11px] font-medium text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
+                            <span>{t.settings.memoryStrategyHybridActive}</span>
+                          </div>
+                        )}
+                        {memoryDefaults.pruningStrategy === 'window' && (
+                          <div className="p-2.5 rounded-lg bg-slate-100/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-300">
+                            {t.settings.memoryStrategyWindowActive}
+                          </div>
+                        )}
+                        {memoryDefaults.pruningStrategy === 'token_budget' && (
+                          <div className="p-2.5 rounded-lg bg-slate-100/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-300">
+                            {t.settings.memoryStrategyBudgetActive}
+                          </div>
+                        )}
+                        {memoryDefaults.pruningStrategy === 'none' && (
+                          <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-[11px] text-amber-700 dark:text-amber-300">
+                            {language === 'zh'
+                              ? '⚠️ 未激活任何裁剪限制（保留所有历史消息）'
+                              : '⚠️ No pruning constraints active (all history preserved).'}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
