@@ -1,6 +1,6 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { useProjectStore } from '../src/stores/project-store.ts';
+import { useProjectStore, reconcileFoldersAndWorkflows } from '../src/stores/project-store.ts';
 import { useWorkflowStore } from '../src/stores/workflow-store.ts';
 
 // Mock localStorage for node environment
@@ -200,16 +200,78 @@ describe('Project & Workflow Folder Management Store', () => {
     await adapter.deleteFolder(newFolder.id);
   });
 
-  it('should clear all workflows and reset to a clean default state in danger zone', async () => {
+  it('should clear all workflows and reset to clean state with default folder and preset templates', async () => {
     const store = useProjectStore.getState();
     await store.clearAllWorkflows();
 
     const state = useProjectStore.getState();
-    assert.equal(state.folders.length, 1);
-    assert.equal(state.workflows.length, 1);
-    assert.equal(state.activeWorkflowId, state.workflows[0].id);
-    assert.equal(state.workflows[0].folderId, state.folders[0].id);
-    assert.deepEqual(state.workflows[0].nodes, []);
-    assert.deepEqual(state.workflows[0].edges, []);
+    assert.ok(state.folders.some((f) => f.id === 'default'));
+    assert.ok(state.folders.some((f) => f.id === 'presets'));
+    assert.equal(state.activeWorkflowId, state.workflows[0]?.id);
+    assert.equal(state.workflows[0]?.folderId, 'default');
+    assert.deepEqual(state.workflows[0]?.nodes, []);
+    assert.deepEqual(state.workflows[0]?.edges, []);
+  });
+
+  it('should reconcile scattered presets into single unified presets folder', () => {
+    // Simulate user state from screenshot: customer-support in default, 2 in presets, 4 missing
+    const scatteredWorkflows = [
+      {
+        id: 'wf-customer-support',
+        name: 'Customer Support Routing',
+        folderId: 'default',
+        nodes: [],
+        edges: [],
+        globalInputs: {},
+        createdAt: 1000,
+        updatedAt: 1000,
+      },
+      {
+        id: 'wf-report-critic',
+        name: 'Report Generator with Critic',
+        folderId: 'presets',
+        nodes: [],
+        edges: [],
+        globalInputs: {},
+        createdAt: 2000,
+        updatedAt: 2000,
+      },
+      {
+        id: 'wf-model-arena',
+        name: 'Multi-LLM Arena & Judge',
+        folderId: 'presets',
+        nodes: [],
+        edges: [],
+        globalInputs: {},
+        createdAt: 3000,
+        updatedAt: 3000,
+      },
+    ];
+
+    const rawFolders = [
+      { id: 'default', name: 'Default', createdAt: 100, isExpanded: true },
+      { id: 'presets', name: 'Official Presets', createdAt: 200, isExpanded: true },
+    ];
+
+    const result = reconcileFoldersAndWorkflows(rawFolders, scatteredWorkflows, 'zh');
+
+    // 1. Folders are properly localized
+    const defaultF = result.folders.find((f: any) => f.id === 'default');
+    const presetsF = result.folders.find((f: any) => f.id === 'presets');
+    assert.equal(defaultF.name, '默认目录');
+    assert.equal(presetsF.name, '预设模版');
+
+    // 2. All 7 presets exist and ALL are in 'presets' folder
+    assert.equal(result.workflows.length, 7);
+    for (const wf of result.workflows) {
+      assert.equal(wf.folderId, 'presets', `Preset ${wf.id} must be in presets folder`);
+      assert.equal(wf.isPreset, true);
+    }
+
+    // 3. customer-support was moved from default to presets
+    const cs = result.workflows.find((w: any) => w.id === 'wf-customer-support');
+    assert.ok(cs);
+    assert.equal(cs.folderId, 'presets');
+    assert.equal(cs.name, '智能客服意图识别与工单路由');
   });
 });

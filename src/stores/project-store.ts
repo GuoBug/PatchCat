@@ -86,84 +86,220 @@ const STORAGE_KEY_ACTIVE = 'patchcat_active_workflow_v2';
 // 2. Storage Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function loadInitialFolders(lang: 'en' | 'zh' = 'en'): Folder[] {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      const raw = localStorage.getItem(STORAGE_KEY_FOLDERS);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    }
-  } catch (e) {
-    console.warn('[ProjectStore] Failed to parse stored folders:', e);
-  }
+export const OFFICIAL_PRESET_KEYS = [
+  'customer-support',
+  'report-critic',
+  'model-arena',
+  'rag-qa',
+  'rag-agentic-auditor',
+  'conditional-routing',
+  'weather-api',
+] as const;
 
-  return [
-    {
-      id: 'default',
-      name: lang === 'zh' ? '默认目录' : 'Default',
-      createdAt: Date.now(),
-      isExpanded: true,
-      isPreset: true,
-    },
-    {
-      id: 'presets',
-      name: lang === 'zh' ? '预设模版' : 'Preset Templates',
-      createdAt: Date.now(),
-      isExpanded: true,
-      isPreset: true,
-    },
-  ];
+export function getInitialLanguage(): 'en' | 'zh' {
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('patchcat-language-v1');
+      if (saved === 'en' || saved === 'zh') return saved;
+      if (typeof navigator !== 'undefined' && navigator.language?.startsWith('zh')) return 'zh';
+    } catch {
+      // ignore
+    }
+  }
+  return 'zh';
 }
 
-function loadInitialWorkflows(lang: 'en' | 'zh' = 'en'): SavedWorkflow[] {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      const raw = localStorage.getItem(STORAGE_KEY_WORKFLOWS);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    }
-  } catch (e) {
-    console.warn('[ProjectStore] Failed to parse stored workflows:', e);
-  }
-
+/**
+ * Reconciles folders and workflows to guarantee:
+ * 1. A dedicated 'presets' folder exists, named '预设模版' (zh) or 'Preset Templates' (en).
+ * 2. A 'default' folder exists, named '默认目录' (zh) or 'Default' (en).
+ * 3. ALL 7 official sample presets reside inside 'folderId: presets' (never in 'default').
+ * 4. Any missing presets are backfilled.
+ * 5. Existing user-created folders and workflows are strictly preserved.
+ */
+export function reconcileFoldersAndWorkflows(
+  rawFolders: Folder[] = [],
+  rawWorkflows: SavedWorkflow[] = [],
+  lang: 'en' | 'zh' = getInitialLanguage(),
+): { folders: Folder[]; workflows: SavedWorkflow[]; hasChanges: boolean } {
+  let hasChanges = false;
   const presets = PRESETS_DATA[lang] || PRESETS_DATA.en;
   const now = Date.now();
 
-  const initialList: SavedWorkflow[] = [];
+  // 1. Folders reconciliation
+  let folders = Array.isArray(rawFolders) ? [...rawFolders] : [];
 
-  const presetKeys = [
-    'customer-support',
-    'report-critic',
-    'model-arena',
-    'rag-qa',
-    'rag-agentic-auditor',
-    'conditional-routing',
-    'weather-api',
-  ] as const;
-
-  presetKeys.forEach((key, index) => {
-    const item = presets[key];
-    if (item) {
-      initialList.push({
-        id: `wf-${key}`,
-        name: item.name,
-        folderId: 'presets',
-        nodes: item.data.nodes,
-        edges: item.data.edges,
-        globalInputs:
-          (item.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs || {},
-        createdAt: now - 3600000 * (index + 1),
-        updatedAt: now - 3600000 * (index + 1),
+  const defaultIndex = folders.findIndex((f) => f.id === 'default');
+  const expectedDefaultName = lang === 'zh' ? '默认目录' : 'Default';
+  if (defaultIndex === -1) {
+    folders.unshift({
+      id: 'default',
+      name: expectedDefaultName,
+      createdAt: now,
+      isExpanded: true,
+      isPreset: true,
+    });
+    hasChanges = true;
+  } else {
+    const existingDefault = folders[defaultIndex];
+    if (
+      existingDefault &&
+      ((existingDefault.name === 'Default' && lang === 'zh') ||
+        (existingDefault.name === '默认目录' && lang === 'en'))
+    ) {
+      folders[defaultIndex] = {
+        ...existingDefault,
+        name: expectedDefaultName,
         isPreset: true,
-      });
+      };
+      hasChanges = true;
+    }
+  }
+
+  const presetsIndex = folders.findIndex((f) => f.id === 'presets');
+  const expectedPresetsName = lang === 'zh' ? '预设模版' : 'Preset Templates';
+  if (presetsIndex === -1) {
+    folders.push({
+      id: 'presets',
+      name: expectedPresetsName,
+      createdAt: now,
+      isExpanded: true,
+      isPreset: true,
+    });
+    hasChanges = true;
+  } else {
+    const existingPresets = folders[presetsIndex];
+    if (existingPresets) {
+      const currentName = existingPresets.name;
+      if (
+        currentName !== expectedPresetsName &&
+        (currentName === 'Official Presets' ||
+          currentName === '官方预设库' ||
+          currentName === 'Preset Templates' ||
+          currentName === '预设模版')
+      ) {
+        folders[presetsIndex] = {
+          ...existingPresets,
+          name: expectedPresetsName,
+          isPreset: true,
+          isExpanded: true,
+        };
+        hasChanges = true;
+      }
+    }
+  }
+
+  // 2. Workflows reconciliation
+  let workflows = Array.isArray(rawWorkflows) ? [...rawWorkflows] : [];
+
+  function matchPresetKey(wf: SavedWorkflow): (typeof OFFICIAL_PRESET_KEYS)[number] | null {
+    if (wf.id.startsWith('wf-')) {
+      const candidate = wf.id.replace('wf-', '') as (typeof OFFICIAL_PRESET_KEYS)[number];
+      if (OFFICIAL_PRESET_KEYS.includes(candidate)) return candidate;
+    }
+    for (const k of OFFICIAL_PRESET_KEYS) {
+      const enItem = PRESETS_DATA.en[k];
+      const zhItem = PRESETS_DATA.zh[k];
+      if (wf.name === enItem?.name || wf.name === zhItem?.name) {
+        return k;
+      }
+    }
+    return null;
+  }
+
+  // A. Ensure any existing preset workflow is in folder 'presets' and marked isPreset: true
+  workflows = workflows.map((wf) => {
+    const key = matchPresetKey(wf);
+    if (key) {
+      let wfChanged = false;
+      const updated = { ...wf };
+      if (updated.folderId !== 'presets') {
+        updated.folderId = 'presets';
+        wfChanged = true;
+      }
+      if (!updated.isPreset) {
+        updated.isPreset = true;
+        wfChanged = true;
+      }
+      // Update localized name if matching standard preset
+      const currentExpected = presets[key]?.name;
+      const altLang = lang === 'zh' ? 'en' : 'zh';
+      const altName = PRESETS_DATA[altLang]?.[key]?.name;
+      if (currentExpected && (updated.name === altName || updated.name === currentExpected)) {
+        if (updated.name !== currentExpected) {
+          updated.name = currentExpected;
+          wfChanged = true;
+        }
+      }
+      if (wfChanged) {
+        hasChanges = true;
+        return updated;
+      }
+    }
+    return wf;
+  });
+
+  // B. Ensure all 7 presets exist
+  OFFICIAL_PRESET_KEYS.forEach((key, index) => {
+    const exists = workflows.some((w) => matchPresetKey(w) === key);
+    if (!exists) {
+      const item = presets[key] || PRESETS_DATA.en[key];
+      if (item) {
+        workflows.push({
+          id: `wf-${key}`,
+          name: item.name,
+          folderId: 'presets',
+          nodes: item.data.nodes,
+          edges: item.data.edges,
+          globalInputs:
+            (item.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs || {},
+          createdAt: now - 3600000 * (index + 1),
+          updatedAt: now - 3600000 * (index + 1),
+          isPreset: true,
+        });
+        hasChanges = true;
+      }
     }
   });
 
-  return initialList;
+  return { folders, workflows, hasChanges };
+}
+
+function loadInitialFoldersAndWorkflows(lang: 'en' | 'zh' = getInitialLanguage()): {
+  folders: Folder[];
+  workflows: SavedWorkflow[];
+} {
+  let rawFolders: Folder[] = [];
+  let rawWorkflows: SavedWorkflow[] = [];
+
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const rawF = localStorage.getItem(STORAGE_KEY_FOLDERS);
+      if (rawF) {
+        const parsed = JSON.parse(rawF);
+        if (Array.isArray(parsed) && parsed.length > 0) rawFolders = parsed;
+      }
+      const rawW = localStorage.getItem(STORAGE_KEY_WORKFLOWS);
+      if (rawW) {
+        const parsed = JSON.parse(rawW);
+        if (Array.isArray(parsed) && parsed.length > 0) rawWorkflows = parsed;
+      }
+    } catch (e) {
+      console.warn('[ProjectStore] Failed to parse stored state:', e);
+    }
+  }
+
+  const { folders, workflows, hasChanges } = reconcileFoldersAndWorkflows(
+    rawFolders,
+    rawWorkflows,
+    lang,
+  );
+
+  if (hasChanges) {
+    persistToLocalStorage(folders, workflows, workflows[0]?.id || null);
+  }
+
+  return { folders, workflows };
 }
 
 function persistToLocalStorage(
@@ -194,8 +330,9 @@ function getActiveAdapter() {
 
 export const useProjectStore = create<ProjectStoreState>()(
   immer((set, get) => {
-    const initialFolders = loadInitialFolders();
-    const initialWorkflows = loadInitialWorkflows();
+    const initialLang = getInitialLanguage();
+    const { folders: initialFolders, workflows: initialWorkflows } =
+      loadInitialFoldersAndWorkflows(initialLang);
     const savedActiveId =
       typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_ACTIVE) : null;
     const initialActiveId =
@@ -647,17 +784,23 @@ export const useProjectStore = create<ProjectStoreState>()(
         persistToLocalStorage(get().folders, get().workflows, get().activeWorkflowId);
       },
 
-      seedPresetsIfEmpty: (lang = 'en') => {
+      seedPresetsIfEmpty: (lang = getInitialLanguage()) => {
+        const currentFolders = get().folders;
         const currentWorkflows = get().workflows;
-        if (currentWorkflows.length === 0) {
-          const initialFolders = loadInitialFolders(lang);
-          const initialWorkflows = loadInitialWorkflows(lang);
+        const { folders, workflows, hasChanges } = reconcileFoldersAndWorkflows(
+          currentFolders,
+          currentWorkflows,
+          lang,
+        );
+        if (hasChanges || currentWorkflows.length === 0) {
           set((state) => {
-            state.folders = initialFolders;
-            state.workflows = initialWorkflows;
-            state.activeWorkflowId = initialWorkflows[0]?.id || null;
+            state.folders = folders;
+            state.workflows = workflows;
+            if (!state.activeWorkflowId || !workflows.some((w) => w.id === state.activeWorkflowId)) {
+              state.activeWorkflowId = workflows[0]?.id || null;
+            }
           });
-          persistToLocalStorage(initialFolders, initialWorkflows, initialWorkflows[0]?.id || null);
+          persistToLocalStorage(folders, workflows, get().activeWorkflowId);
         }
       },
 
@@ -675,8 +818,8 @@ export const useProjectStore = create<ProjectStoreState>()(
 
           // If server is connected but empty, initialize with default seed data
           if (remoteFolders.length === 0 && remoteWorkflows.length === 0) {
-            const seedFolders = loadInitialFolders();
-            const seedWorkflows = loadInitialWorkflows();
+            const { folders: seedFolders, workflows: seedWorkflows } =
+              loadInitialFoldersAndWorkflows();
             for (const f of seedFolders) {
               await adapter.createFolder(f).catch(() => {});
             }
@@ -692,18 +835,22 @@ export const useProjectStore = create<ProjectStoreState>()(
             return;
           }
 
+          const lang = useSettingsStore.getState().language || getInitialLanguage();
+          const { folders: reconciledFolders, workflows: reconciledWorkflows } =
+            reconcileFoldersAndWorkflows(remoteFolders, remoteWorkflows, lang);
+
           set((state) => {
-            state.folders = remoteFolders;
-            state.workflows = remoteWorkflows;
-            state.activeWorkflowId = remoteWorkflows[0]?.id || state.activeWorkflowId;
+            state.folders = reconciledFolders;
+            state.workflows = reconciledWorkflows;
+            state.activeWorkflowId = reconciledWorkflows[0]?.id || state.activeWorkflowId;
             state.isLoading = false;
           });
 
           // Load first workflow into canvas if activeWorkflowId changed
-          const firstId = remoteWorkflows[0]?.id;
+          const firstId = reconciledWorkflows[0]?.id;
           if (firstId) {
             const fullWf = await adapter.getWorkflow(firstId);
-            if (fullWf && fullWf.nodes.length > 0) {
+            if (fullWf && fullWf.nodes && fullWf.nodes.length > 0) {
               useWorkflowStore.getState().loadPreset({
                 nodes: fullWf.nodes,
                 edges: fullWf.edges,
@@ -719,11 +866,20 @@ export const useProjectStore = create<ProjectStoreState>()(
       },
 
       clearAllWorkflows: async () => {
-        const lang = useSettingsStore.getState().language || 'en';
+        const lang = useSettingsStore.getState().language || getInitialLanguage();
         const defaultFolderName = lang === 'zh' ? '默认目录' : 'Default';
         const defaultFolder: Folder = {
           id: 'default',
           name: defaultFolderName,
+          createdAt: Date.now(),
+          isExpanded: true,
+          isPreset: true,
+        };
+
+        const presetsFolderName = lang === 'zh' ? '预设模版' : 'Preset Templates';
+        const presetsFolder: Folder = {
+          id: 'presets',
+          name: presetsFolderName,
           createdAt: Date.now(),
           isExpanded: true,
           isPreset: true,
@@ -743,8 +899,26 @@ export const useProjectStore = create<ProjectStoreState>()(
           isPreset: false,
         };
 
-        const newFolders = [defaultFolder];
-        const newWorkflows = [initialWf];
+        const presets = PRESETS_DATA[lang] || PRESETS_DATA.en;
+        const now = Date.now();
+        const presetWorkflows: SavedWorkflow[] = OFFICIAL_PRESET_KEYS.map((key, index) => {
+          const item = presets[key] || PRESETS_DATA.en[key] || PRESETS_DATA.zh[key];
+          return {
+            id: `wf-${key}`,
+            name: item?.name || key,
+            folderId: 'presets',
+            nodes: item?.data?.nodes || [],
+            edges: item?.data?.edges || [],
+            globalInputs:
+              (item?.data as unknown as { globalInputs?: Record<string, unknown> })?.globalInputs || {},
+            createdAt: now - 3600000 * (index + 1),
+            updatedAt: now - 3600000 * (index + 1),
+            isPreset: true,
+          };
+        });
+
+        const newFolders = [defaultFolder, presetsFolder];
+        const newWorkflows = [initialWf, ...presetWorkflows];
 
         set((state) => {
           state.folders = newFolders;
@@ -766,7 +940,9 @@ export const useProjectStore = create<ProjectStoreState>()(
           for (const w of remoteWfs) {
             await adapter.deleteWorkflow(w.id).catch(() => {});
           }
-          await adapter.createWorkflow(initialWf).catch(() => {});
+          for (const w of newWorkflows) {
+            await adapter.createWorkflow(w).catch(() => {});
+          }
         } catch (e: unknown) {
           console.warn('[ProjectStore] Failed to clear remote workflows:', e);
         }
@@ -774,3 +950,12 @@ export const useProjectStore = create<ProjectStoreState>()(
     };
   }),
 );
+
+// Subscribe to language changes so preset titles and folder names update automatically
+if (typeof window !== 'undefined') {
+  useSettingsStore.subscribe((state, prevState) => {
+    if (state.language !== prevState.language) {
+      useProjectStore.getState().seedPresetsIfEmpty(state.language);
+    }
+  });
+}

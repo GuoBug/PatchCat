@@ -24,6 +24,7 @@ import {
 import { useProjectStore, type SavedWorkflow, type Folder } from '../../stores/project-store.ts';
 import { useKnowledgeStore } from '../../stores/knowledge-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
+import { PRESETS_DATA } from '../../presets/index.ts';
 
 function formatRelativeTime(timestamp: number): string {
   const diffMs = Date.now() - timestamp;
@@ -167,7 +168,11 @@ const WorkflowSettingsModal: React.FC<WorkflowSettingsModalProps> = ({
             >
               {folders.map((f) => (
                 <option key={f.id} value={f.id} className="bg-white dark:bg-slate-900">
-                  {f.name}
+                  {f.id === 'default'
+                    ? t.sidebar.defaultFolder
+                    : f.id === 'presets'
+                      ? t.sidebar.presetsFolder
+                      : f.name}
                 </option>
               ))}
             </select>
@@ -329,7 +334,13 @@ const FolderRow: React.FC<FolderRowProps> = ({
             className="px-1.5 py-0.5 text-xs bg-white dark:bg-slate-900 border border-blue-500 rounded text-slate-900 dark:text-slate-100 focus:outline-none"
           />
         ) : (
-          <span className="font-semibold truncate text-[12px]">{folder.name}</span>
+          <span className="font-semibold truncate text-[12px]">
+            {folder.id === 'default'
+              ? t.sidebar.defaultFolder
+              : folder.id === 'presets'
+                ? t.sidebar.presetsFolder
+                : folder.name}
+          </span>
         )}
       </div>
 
@@ -432,16 +443,23 @@ const WorkflowItem: React.FC<WorkflowItemProps> = ({
   onMove,
   onOpenSettings,
 }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(workflow.name);
   const [showMenu, setShowMenu] = useState(false);
   const [showMoveSubmenu, setShowMoveSubmenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const isPresetWf = Boolean(workflow.isPreset && workflow.id.startsWith('wf-'));
+  const presetKey = isPresetWf ? workflow.id.replace('wf-', '') : '';
+  const displayTitle =
+    isPresetWf && PRESETS_DATA[language]?.[presetKey]?.name
+      ? PRESETS_DATA[language][presetKey].name
+      : workflow.name;
+
   useEffect(() => {
-    setEditName(workflow.name);
-  }, [workflow.name]);
+    setEditName(displayTitle);
+  }, [displayTitle]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -458,10 +476,10 @@ const WorkflowItem: React.FC<WorkflowItemProps> = ({
 
   const handleSaveRename = () => {
     const trimmed = editName.trim();
-    if (trimmed && trimmed !== workflow.name) {
+    if (trimmed && trimmed !== displayTitle) {
       onRename(trimmed);
     } else {
-      setEditName(workflow.name);
+      setEditName(displayTitle);
     }
     setIsEditing(false);
   };
@@ -470,7 +488,7 @@ const WorkflowItem: React.FC<WorkflowItemProps> = ({
     if (e.key === 'Enter') {
       handleSaveRename();
     } else if (e.key === 'Escape') {
-      setEditName(workflow.name);
+      setEditName(displayTitle);
       setIsEditing(false);
     }
   };
@@ -504,13 +522,13 @@ const WorkflowItem: React.FC<WorkflowItemProps> = ({
         ) : (
           <span
             className="truncate text-[12px] leading-relaxed"
-            title={workflow.name}
+            title={displayTitle}
             onDoubleClick={(e) => {
               e.stopPropagation();
               setIsEditing(true);
             }}
           >
-            {workflow.name}
+            {displayTitle}
           </span>
         )}
       </div>
@@ -604,43 +622,55 @@ const WorkflowItem: React.FC<WorkflowItemProps> = ({
 
                 {showMoveSubmenu && (
                   <div className="p-1 mt-1 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-0.5">
-                    {folders.map((f) => (
-                      <button
-                        key={f.id}
-                        disabled={f.id === workflow.folderId}
-                        onClick={() => {
-                          onMove(f.id);
-                          setShowMenu(false);
-                        }}
-                        className={`w-full px-2 py-1 rounded text-left text-[11px] flex items-center justify-between transition-colors ${
-                          f.id === workflow.folderId
-                            ? 'text-blue-600 dark:text-sky-400 font-semibold'
-                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
-                        }`}
-                      >
-                        <span className="truncate">{f.name}</span>
-                        {f.id === workflow.folderId && <Check className="w-3 h-3" />}
-                      </button>
-                    ))}
+                    {folders.map((f) => {
+                      const fDisplayName =
+                        f.id === 'default'
+                          ? t.sidebar.defaultFolder
+                          : f.id === 'presets'
+                            ? t.sidebar.presetsFolder
+                            : f.name;
+                      return (
+                        <button
+                          key={f.id}
+                          disabled={f.id === workflow.folderId}
+                          onClick={() => {
+                            onMove(f.id);
+                            setShowMenu(false);
+                          }}
+                          className={`w-full px-2 py-1 rounded text-left text-[11px] flex items-center justify-between transition-colors ${
+                            f.id === workflow.folderId
+                              ? 'text-blue-600 dark:text-sky-400 font-semibold'
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
+                          }`}
+                        >
+                          <span className="truncate">{fDisplayName}</span>
+                          {f.id === workflow.folderId && <Check className="w-3 h-3" />}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
 
-              <div className="h-[1px] bg-slate-100 dark:bg-slate-800 my-1" />
+              {!workflow.isPreset && (
+                <>
+                  <div className="h-[1px] bg-slate-100 dark:bg-slate-800 my-1" />
 
-              {/* Delete */}
-              <button
-                onClick={() => {
-                  setShowMenu(false);
-                  if (window.confirm(t.sidebar.deleteWorkflowConfirm)) {
-                    onDelete();
-                  }
-                }}
-                className="w-full px-2.5 py-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center gap-2 text-left text-xs transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>{t.sidebar.delete}</span>
-              </button>
+                  {/* Delete */}
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      if (window.confirm(t.sidebar.deleteWorkflowConfirm)) {
+                        onDelete();
+                      }
+                    }}
+                    className="w-full px-2.5 py-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center gap-2 text-left text-xs transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{t.sidebar.delete}</span>
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>

@@ -7,8 +7,11 @@
  */
 
 import { nanoid } from 'nanoid';
-import type { Folder, SavedWorkflow } from '../../stores/project-store.ts';
-import { PRESETS_DATA } from '../../presets/index.ts';
+import {
+  type Folder,
+  type SavedWorkflow,
+  reconcileFoldersAndWorkflows,
+} from '../../stores/project-store.ts';
 
 export interface IStorageAdapter {
   // Folder Operations
@@ -37,25 +40,21 @@ const STORAGE_KEY_WORKFLOWS = 'patchcat_workflows_v2';
 export class LocalStorageAdapter implements IStorageAdapter {
   private getStoredFolders(): Folder[] {
     if (typeof localStorage === 'undefined') return [];
+    let rawFolders: Folder[] = [];
     try {
       const raw = localStorage.getItem(STORAGE_KEY_FOLDERS);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) rawFolders = parsed;
       }
     } catch (e) {
       console.warn('[LocalStorageAdapter] Failed to parse folders:', e);
     }
-    return [
-      { id: 'default', name: 'Default', createdAt: Date.now(), isExpanded: true, isPreset: true },
-      {
-        id: 'presets',
-        name: 'Official Presets',
-        createdAt: Date.now(),
-        isExpanded: true,
-        isPreset: true,
-      },
-    ];
+    const { folders, hasChanges } = reconcileFoldersAndWorkflows(rawFolders, [], 'en');
+    if (hasChanges) {
+      this.setStoredFolders(folders);
+    }
+    return folders;
   }
 
   private setStoredFolders(folders: Folder[]): void {
@@ -65,63 +64,21 @@ export class LocalStorageAdapter implements IStorageAdapter {
 
   private getStoredWorkflows(): SavedWorkflow[] {
     if (typeof localStorage === 'undefined') return [];
+    let rawWorkflows: SavedWorkflow[] = [];
     try {
       const raw = localStorage.getItem(STORAGE_KEY_WORKFLOWS);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) rawWorkflows = parsed;
       }
     } catch (e) {
       console.warn('[LocalStorageAdapter] Failed to parse workflows:', e);
     }
-
-    const presets = PRESETS_DATA.en;
-    const now = Date.now();
-    const list: SavedWorkflow[] = [];
-
-    if (presets['customer-support']) {
-      list.push({
-        id: 'wf-customer-support',
-        name: presets['customer-support'].name,
-        folderId: 'default',
-        nodes: presets['customer-support'].data.nodes,
-        edges: presets['customer-support'].data.edges,
-        globalInputs: {},
-        createdAt: now - 3600000 * 5,
-        updatedAt: now - 3600000 * 5,
-        isPreset: true,
-      });
+    const { workflows, hasChanges } = reconcileFoldersAndWorkflows([], rawWorkflows, 'en');
+    if (hasChanges) {
+      this.setStoredWorkflows(workflows);
     }
-
-    if (presets['rag-qa']) {
-      list.push({
-        id: 'wf-rag-qa',
-        name: presets['rag-qa'].name,
-        folderId: 'presets',
-        nodes: presets['rag-qa'].data.nodes,
-        edges: presets['rag-qa'].data.edges,
-        globalInputs: {},
-        createdAt: now - 86400000 * 5,
-        updatedAt: now - 86400000 * 5,
-        isPreset: true,
-      });
-    }
-
-    if (presets['rag-agentic-auditor']) {
-      list.push({
-        id: 'wf-rag-agentic-auditor',
-        name: presets['rag-agentic-auditor'].name,
-        folderId: 'presets',
-        nodes: presets['rag-agentic-auditor'].data.nodes,
-        edges: presets['rag-agentic-auditor'].data.edges,
-        globalInputs: {},
-        createdAt: now - 86400000 * 6,
-        updatedAt: now - 86400000 * 6,
-        isPreset: true,
-      });
-    }
-
-    return list;
+    return workflows;
   }
 
   private setStoredWorkflows(workflows: SavedWorkflow[]): void {
