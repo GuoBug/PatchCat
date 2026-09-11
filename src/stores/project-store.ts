@@ -27,6 +27,11 @@ export interface Folder {
   isPreset?: boolean;
 }
 
+export interface WorkflowMemoryConfig {
+  maxHistoryRounds?: number;
+  maxTokenBudget?: number;
+}
+
 export interface SavedWorkflow {
   id: string;
   name: string;
@@ -39,6 +44,7 @@ export interface SavedWorkflow {
   isPreset?: boolean;
   api_enabled?: boolean;
   api_key?: string;
+  memoryConfig?: WorkflowMemoryConfig;
 }
 
 export interface ProjectStoreState {
@@ -127,7 +133,7 @@ export function reconcileFoldersAndWorkflows(
   const now = Date.now();
 
   // 1. Folders reconciliation
-  let folders = Array.isArray(rawFolders) ? [...rawFolders] : [];
+  const folders = Array.isArray(rawFolders) ? [...rawFolders] : [];
 
   const defaultIndex = folders.findIndex((f) => f.id === 'default');
   const expectedDefaultName = lang === 'zh' ? '默认目录' : 'Default';
@@ -307,7 +313,7 @@ function persistToLocalStorage(
   workflows: SavedWorkflow[],
   activeId: string | null,
 ) {
-  if (typeof window === 'undefined') return;
+  if (typeof localStorage === 'undefined') return;
   try {
     localStorage.setItem(STORAGE_KEY_FOLDERS, JSON.stringify(folders));
     localStorage.setItem(STORAGE_KEY_WORKFLOWS, JSON.stringify(workflows));

@@ -183,6 +183,7 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
   const nodes = useWorkflowStore((s) => s.nodes);
   const edges = useWorkflowStore((s) => s.edges);
   const activeWorkflowId = useProjectStore((s) => s.activeWorkflowId);
+  const workflows = useProjectStore((s) => s.workflows);
   const memoryDefaults = useSettingsStore((s) => s.memoryDefaults);
   const workflowKey = activeWorkflowId || 'default';
 
@@ -401,9 +402,15 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
         },
       }));
 
+      const currentWorkflow = workflows.find((w) => w.id === activeWorkflowId);
+      const effectiveMaxHistoryRounds =
+        currentWorkflow?.memoryConfig?.maxHistoryRounds ?? memoryDefaults.maxHistoryRounds;
+      const effectiveMaxTokenBudget =
+        currentWorkflow?.memoryConfig?.maxTokenBudget ?? memoryDefaults.maxTokenBudget;
+
       const pruned = pruneConversationMessages(memoryMessages, {
-        maxHistoryRounds: memoryDefaults.maxHistoryRounds,
-        maxTokenBudget: memoryDefaults.maxTokenBudget,
+        maxHistoryRounds: effectiveMaxHistoryRounds,
+        maxTokenBudget: effectiveMaxTokenBudget,
         pruningStrategy: memoryDefaults.pruningStrategy,
       });
 

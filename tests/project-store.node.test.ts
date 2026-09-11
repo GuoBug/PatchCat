@@ -274,4 +274,28 @@ describe('Project & Workflow Folder Management Store', () => {
     assert.equal(cs.folderId, 'presets');
     assert.equal(cs.name, '智能客服意图识别与工单路由');
   });
+
+  it('should update and persist project-level memoryConfig', () => {
+    const store = useProjectStore.getState();
+    const wfId = store.workflows[0]!.id;
+
+    store.updateWorkflow(wfId, {
+      memoryConfig: {
+        maxHistoryRounds: 12,
+        maxTokenBudget: 6000,
+      },
+    });
+
+    const updated = useProjectStore.getState().workflows.find((w) => w.id === wfId);
+    assert.ok(updated);
+    assert.equal(updated.memoryConfig?.maxHistoryRounds, 12);
+    assert.equal(updated.memoryConfig?.maxTokenBudget, 6000);
+
+    // Verify localStorage contains the updated memoryConfig
+    const storedWorkflows = JSON.parse(storageMock['patchcat_workflows_v2'] || '[]');
+    const storedWf = storedWorkflows.find((w: any) => w.id === wfId);
+    assert.ok(storedWf);
+    assert.equal(storedWf.memoryConfig?.maxHistoryRounds, 12);
+    assert.equal(storedWf.memoryConfig?.maxTokenBudget, 6000);
+  });
 });

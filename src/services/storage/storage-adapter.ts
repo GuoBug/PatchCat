@@ -366,6 +366,7 @@ export class ApiServerAdapter implements IStorageAdapter {
       nodes: any[];
       edges: any[];
       global_inputs: Record<string, any>;
+      memory_config?: { maxHistoryRounds?: number; maxTokenBudget?: number };
       is_preset: boolean;
       created_at: string;
       updated_at: string;
@@ -380,6 +381,7 @@ export class ApiServerAdapter implements IStorageAdapter {
         nodes: res.nodes || [],
         edges: res.edges || [],
         globalInputs: res.global_inputs || {},
+        memoryConfig: res.memory_config,
         createdAt: new Date(res.created_at).getTime(),
         updatedAt: new Date(res.updated_at).getTime(),
         isPreset: res.is_preset,
@@ -397,6 +399,7 @@ export class ApiServerAdapter implements IStorageAdapter {
       nodes: any[];
       edges: any[];
       global_inputs: Record<string, any>;
+      memory_config?: { maxHistoryRounds?: number; maxTokenBudget?: number };
       is_preset: boolean;
       created_at: string;
       updated_at: string;
@@ -411,6 +414,7 @@ export class ApiServerAdapter implements IStorageAdapter {
         nodes: workflow.nodes,
         edges: workflow.edges,
         global_inputs: workflow.globalInputs,
+        memory_config: workflow.memoryConfig,
       }),
     });
 
@@ -421,6 +425,7 @@ export class ApiServerAdapter implements IStorageAdapter {
       nodes: res.nodes || [],
       edges: res.edges || [],
       globalInputs: res.global_inputs || {},
+      memoryConfig: res.memory_config,
       createdAt: new Date(res.created_at).getTime(),
       updatedAt: new Date(res.updated_at).getTime(),
       isPreset: res.is_preset,
@@ -435,6 +440,7 @@ export class ApiServerAdapter implements IStorageAdapter {
       nodes: any[];
       edges: any[];
       global_inputs: Record<string, any>;
+      memory_config?: { maxHistoryRounds?: number; maxTokenBudget?: number };
       is_preset: boolean;
       created_at: string;
       updated_at: string;
@@ -446,6 +452,7 @@ export class ApiServerAdapter implements IStorageAdapter {
     if (updates.nodes !== undefined) payload.nodes = updates.nodes;
     if (updates.edges !== undefined) payload.edges = updates.edges;
     if (updates.globalInputs !== undefined) payload.global_inputs = updates.globalInputs;
+    if (updates.memoryConfig !== undefined) payload.memory_config = updates.memoryConfig;
 
     const res = await this.request<ApiWorkflowDetail>(`/api/v1/workflows/${id}`, {
       method: 'PUT',
@@ -459,6 +466,7 @@ export class ApiServerAdapter implements IStorageAdapter {
       nodes: res.nodes || [],
       edges: res.edges || [],
       globalInputs: res.global_inputs || {},
+      memoryConfig: res.memory_config,
       createdAt: new Date(res.created_at).getTime(),
       updatedAt: new Date(res.updated_at).getTime(),
       isPreset: res.is_preset,

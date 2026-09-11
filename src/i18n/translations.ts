@@ -366,6 +366,9 @@ export interface Translations {
     addParam: string;
     noParamsConfigured: string;
     workflowFolder: string;
+    workflowMemorySettings: string;
+    workflowMemoryDesc: string;
+    globalDefaultHint: string;
     saveSettings: string;
   };
   knowledge: {
@@ -844,6 +847,10 @@ export const translations: Record<Language, Translations> = {
       noParamsConfigured:
         'No default parameters configured yet. Click "Add Parameter" to define runtime inputs.',
       workflowFolder: 'Belongs to Folder',
+      workflowMemorySettings: 'Project Memory Constraints',
+      workflowMemoryDesc:
+        'Custom conversation history rounds and token budget for this workflow (overrides global preferences).',
+      globalDefaultHint: 'Global default: ',
       saveSettings: 'Save Settings',
     },
     knowledge: {
@@ -1310,6 +1317,9 @@ export const translations: Record<Language, Translations> = {
       addParam: '添加参数',
       noParamsConfigured: '暂无预设参数。点击“添加参数”为该项目预置输入参数。',
       workflowFolder: '所属目录',
+      workflowMemorySettings: '项目记忆限制',
+      workflowMemoryDesc: '为当前工作流独立配置会话保留轮数与 Token 预算上限（覆盖全局默认偏好）。',
+      globalDefaultHint: '全局默认：',
       saveSettings: '保存设置',
     },
     knowledge: {

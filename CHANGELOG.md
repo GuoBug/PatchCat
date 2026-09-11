@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0] - 2026-09-11
+
+### Added
+- **Project-Level Conversation Memory Settings (`WorkflowSidebar.tsx`, `project-store.ts`)**:
+  - Replaced global runtime parameters in the project settings modal with dedicated project-level memory limit parameters (`maxHistoryRounds` and `maxTokenBudget`).
+  - Stored `memoryConfig` per `SavedWorkflow`, allowing fine-grained context window pruning policies per workflow.
+  - Connected `ChatDebugPanel` execution to resolve effective memory constraints hierarchically (workflow-level override -> global fallback).
+- **Dedicated Presets Directory & Unified Folder Architecture**:
+  - Reorganized all official preset templates under a dedicated `presets` folder (`预设模版` in Chinese, `Preset Templates` in English).
+  - Added self-healing preset reconciliation and deletion protection for official templates.
+- **Settings Danger Zone with Typed Phrase Verification**:
+  - Added secure cache clearing and workflow deletion requiring explicit typed confirmation strings in both English and Chinese.
+
 ## [0.3.1] - 2026-09-11
 
 ### Added

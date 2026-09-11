@@ -20,8 +20,10 @@ import {
   Check,
   Database,
   Sliders,
+  Brain,
 } from 'lucide-react';
 import { useProjectStore, type SavedWorkflow, type Folder } from '../../stores/project-store.ts';
+import { useSettingsStore } from '../../stores/settings-store.ts';
 import { useKnowledgeStore } from '../../stores/knowledge-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
 import { PRESETS_DATA } from '../../presets/index.ts';
@@ -48,7 +50,7 @@ interface WorkflowSettingsModalProps {
     workflowId: string,
     name: string,
     folderId: string,
-    globalInputs: Record<string, unknown>,
+    memoryConfig: { maxHistoryRounds: number; maxTokenBudget: number },
   ) => void;
 }
 
@@ -58,56 +60,23 @@ const WorkflowSettingsModal: React.FC<WorkflowSettingsModalProps> = ({
   onClose,
   onSave,
 }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const globalMemoryDefaults = useSettingsStore((s) => s.memoryDefaults);
   const [name, setName] = useState(workflow.name);
   const [folderId, setFolderId] = useState(workflow.folderId);
-  const [params, setParams] = useState<Array<{ id: string; key: string; value: string }>>(() => {
-    const raw = workflow.globalInputs || {};
-    return Object.entries(raw).map(([k, v], idx) => ({
-      id: `param-${idx}-${k}`,
-      key: k,
-      value: typeof v === 'object' ? JSON.stringify(v) : String(v ?? ''),
-    }));
+  const [maxHistoryRounds, setMaxHistoryRounds] = useState<number>(() => {
+    return workflow.memoryConfig?.maxHistoryRounds ?? globalMemoryDefaults.maxHistoryRounds ?? 5;
   });
-
-  const handleAddParam = () => {
-    setParams((prev) => [
-      ...prev,
-      { id: `param-${Date.now()}-${prev.length}`, key: '', value: '' },
-    ]);
-  };
-
-  const handleRemoveParam = (id: string) => {
-    setParams((prev) => prev.filter((p) => p.id !== id));
-  };
-
-  const handleParamChange = (id: string, field: 'key' | 'value', val: string) => {
-    setParams((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, [field]: val } : p)),
-    );
-  };
+  const [maxTokenBudget, setMaxTokenBudget] = useState<number>(() => {
+    return workflow.memoryConfig?.maxTokenBudget ?? globalMemoryDefaults.maxTokenBudget ?? 3000;
+  });
 
   const handleSave = () => {
     const cleanName = name.trim() || workflow.name;
-    const cleanInputs: Record<string, unknown> = {};
-    for (const p of params) {
-      const k = p.key.trim();
-      if (k) {
-        let v: unknown = p.value;
-        if (p.value === 'true') v = true;
-        else if (p.value === 'false') v = false;
-        else if (!isNaN(Number(p.value)) && p.value.trim() !== '') v = Number(p.value);
-        else {
-          try {
-            v = JSON.parse(p.value);
-          } catch {
-            v = p.value;
-          }
-        }
-        cleanInputs[k] = v;
-      }
-    }
-    onSave(workflow.id, cleanName, folderId, cleanInputs);
+    onSave(workflow.id, cleanName, folderId, {
+      maxHistoryRounds: Math.max(1, maxHistoryRounds),
+      maxTokenBudget: Math.max(100, maxTokenBudget),
+    });
     onClose();
   };
 
@@ -178,61 +147,87 @@ const WorkflowSettingsModal: React.FC<WorkflowSettingsModalProps> = ({
             </select>
           </div>
 
-          {/* Global Runtime Parameters */}
-          <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
-            <div className="flex items-center justify-between">
+          {/* Project Memory Limits */}
+          <div className="space-y-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                <Brain className="w-4 h-4" />
+              </div>
               <div>
                 <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                  {t.sidebar.workflowParameters}
+                  {t.sidebar.workflowMemorySettings}
                 </h4>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  {t.sidebar.workflowParametersDesc}
+                  {t.sidebar.workflowMemoryDesc}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={handleAddParam}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/50 dark:hover:bg-blue-900/60 text-blue-600 dark:text-sky-400 text-xs font-semibold transition-colors shrink-0"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>{t.sidebar.addParam}</span>
-              </button>
             </div>
 
-            {params.length === 0 ? (
-              <div className="py-6 px-4 text-center rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800 text-xs text-slate-400">
-                {t.sidebar.noParamsConfigured}
+            <div className="space-y-4 pt-1">
+              {/* Sliding Window Rounds (Numeric Input) */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {t.settings.memoryRoundsLabel}
+                  </label>
+                  <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+                    {t.sidebar.globalDefaultHint}
+                    {globalMemoryDefaults.maxHistoryRounds}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {t.settings.memoryRoundsDesc}
+                </p>
+                <div className="flex items-center gap-2 pt-0.5">
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    step={1}
+                    value={maxHistoryRounds}
+                    onChange={(e) =>
+                      setMaxHistoryRounds(Math.max(1, parseInt(e.target.value, 10) || 1))
+                    }
+                    className="w-32 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                  />
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {language === 'zh' ? '轮 (Rounds)' : 'Rounds'}
+                  </span>
+                </div>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {params.map((p) => (
-                  <div key={p.id} className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={p.key}
-                      onChange={(e) => handleParamChange(p.id, 'key', e.target.value)}
-                      placeholder={t.sidebar.paramKey}
-                      className="w-1/3 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500"
-                    />
-                    <input
-                      type="text"
-                      value={p.value}
-                      onChange={(e) => handleParamChange(p.id, 'value', e.target.value)}
-                      placeholder={t.sidebar.paramValue}
-                      className="flex-1 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveParam(p.id)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors shrink-0"
-                      title={t.common.delete}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
+
+              {/* Token Budget (Numeric Input) */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {t.settings.memoryBudgetLabel}
+                  </label>
+                  <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+                    {t.sidebar.globalDefaultHint}
+                    {globalMemoryDefaults.maxTokenBudget}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {t.settings.memoryBudgetDesc}
+                </p>
+                <div className="flex items-center gap-2 pt-0.5">
+                  <input
+                    type="number"
+                    min={100}
+                    max={128000}
+                    step={100}
+                    value={maxTokenBudget}
+                    onChange={(e) =>
+                      setMaxTokenBudget(Math.max(100, parseInt(e.target.value, 10) || 100))
+                    }
+                    className="w-32 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                  />
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    Tokens
+                  </span>
+                </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
 
@@ -696,7 +691,7 @@ export const WorkflowSidebar: React.FC = () => {
   const duplicateWorkflow = useProjectStore((s) => s.duplicateWorkflow);
   const deleteWorkflow = useProjectStore((s) => s.deleteWorkflow);
   const moveWorkflow = useProjectStore((s) => s.moveWorkflow);
-  const updateGlobalInputs = useProjectStore((s) => s.updateGlobalInputs);
+  const updateWorkflow = useProjectStore((s) => s.updateWorkflow);
 
   const createFolder = useProjectStore((s) => s.createFolder);
   const renameFolder = useProjectStore((s) => s.renameFolder);
@@ -743,7 +738,7 @@ export const WorkflowSidebar: React.FC = () => {
     workflowId: string,
     newName: string,
     targetFolderId: string,
-    newGlobalInputs: Record<string, unknown>,
+    memoryConfig: { maxHistoryRounds: number; maxTokenBudget: number },
   ) => {
     const currentWf = workflows.find((w) => w.id === workflowId);
     if (!currentWf) return;
@@ -754,7 +749,7 @@ export const WorkflowSidebar: React.FC = () => {
     if (targetFolderId !== currentWf.folderId) {
       moveWorkflow(workflowId, targetFolderId);
     }
-    updateGlobalInputs(workflowId, newGlobalInputs);
+    updateWorkflow(workflowId, { memoryConfig });
   };
 
   // Filter workflows by search query
