@@ -1,9 +1,9 @@
 # 🎯 Next Steps / 下次开发接续清单
 
-> **Current Version**: `v0.3.0` (Completed & Verified ✅)  
+> **Current Version**: `v0.3.1` (Completed & Verified ✅)  
 > **Last Updated**: 2026-09-11  
-> **Previous Milestone**: Phase 3 Conditional Routing, External Integration & Interactive Debugging (Shipped ✅)  
-> **Current Focus**: **Research & Architectural Design for P0-1: Multi-Turn Conversation Memory**
+> **Previous Milestone**: Phase 3 Storage & Multi-Turn Conversation Memory Architecture (Shipped ✅)  
+> **Current Focus**: **Next Stage: Canvas Explicit Memory Node & Backend Multi-Turn REST Session Sync**
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -12,22 +12,34 @@
 <a name="english"></a>
 ## English
 
-### 🔬 Current In-Depth Research: P0-1 Multi-Turn Conversation Memory in DAG Workflows
+### ⚡ Completed Milestone: P0-1 Multi-Turn Conversation Memory & Persistent Storage (v0.3.1)
 
-- [ ] **1. Architecture & Injection Strategy (Node-based vs. Engine-level)**:
-  - **Option A (Engine-level Implicit Context)**: Add an `Enable Conversation Memory` toggle (`maxHistoryRounds: number`) to the LLM Node configuration. When enabled, the DAG scheduler automatically injects sliding-window messages from the current conversation session into the LLM payload before invoking the model.
-  - **Option B (Node-based Explicit Graph Wire)**: Introduce a dedicated `Memory` node on the canvas (`memory.buffer` or `memory.summary`) that connects directly to the LLM node's context handle.
-  - *Trade-off analysis required*: Ease-of-use for prompt builders (Option A) vs. explicit topology and multi-branch isolation (Option B).
-- [ ] **2. Memory Truncation & Budgeting Strategies**:
-  - **Buffer Window Memory**: Retain the latest $K$ rounds of dialogue (low overhead, easy to reason about).
-  - **Token-Budgeted Memory**: Dynamically prune older messages according to model context limits (`maxTokenLimit`).
-  - **Summarized Memory**: Rolling LLM-powered background summarization of older dialogue rounds to preserve critical intent with minimal token consumption.
-- [ ] **3. Session & Multi-LLM Disambiguation**:
-  - **Multi-LLM scoping**: Clarify memory assignment when a workflow contains multiple LLM nodes (e.g., intent classifier LLM vs. answer responder LLM).
-  - **Client-side session isolation**: Namespace memory by `workflowId` with clear/reset controls in `ChatDebugPanel`.
-  - **REST API session continuity**: Support a `session_id` parameter in `POST /api/v1/workflows/{id}/run` to maintain multi-turn memory on the server side.
+- [x] **1. Storage Layer & Persistence Architecture ([PRD-010](docs/01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md))**:
+  - Implemented `IndexedDBSessionAdapter` in `src/services/storage/session-storage.ts` (database `patchcat_chat_db`, store `chat_sessions`), bypassing the 5MB quota and tab-closure data loss of `sessionStorage`.
+  - Built zero-dependency in-memory fallback for headless Node.js test environments.
+  - Transparently disclosed browser File System Access API sandboxing constraints (re-authorization on every reload) vs. self-hosted SQLite via interactive FAQ card in `SettingsPage.tsx`.
+- [x] **2. Two-Tier Configuration Policy (Tier 1 Global Defaults)**:
+  - Created `memoryDefaults` in `settings-store.ts` managing master toggle, sliding window rounds (1–20), token budget limit (500–16,000), and pruning strategies (`hybrid`, `window`, `token_budget`).
+  - Added dedicated UI controls in `SettingsPage.tsx` with interactive sliders, strategy selectors, and reset to defaults action.
+- [x] **3. Algorithmic Context Pruning & Dynamic Context Injection**:
+  - Implemented pure algorithm `pruneConversationMessages` supporting sliding window rounds, reverse-accumulated token budgets, and hybrid mode.
+  - Formatted messages via `formatMessagesToPlainText` and auto-injected history into `inputsBag` variables (`chat_history`, `conversation_history`, `history`) during execution.
+- [x] **4. Workflow-Scoped Chat Session Isolation**:
+  - Refactored `ChatDebugPanel.tsx` to key sessions by `${activeWorkflowId}::${sessionId}` via `sessionStorageAdapter`.
+  - Added scoped session clearing and seamless historical message restoration.
+- [x] **5. Verification & Test Suite Upgrades**:
+  - Added `tests/session-storage.node.test.ts` (10 tests) and updated `tests/settings.node.test.ts` (173 total tests passing at 100%).
 
 ---
+
+### 🔬 Future Development: Advanced Memory & Topology Capabilities
+
+- [ ] **1. Canvas Explicit Memory Node (Option B)**:
+  - Introduce dedicated `Memory` node on the canvas (`memory.buffer`, `memory.summary`) that can be explicitly wired to LLM nodes' context handles for complex branching topologies.
+- [ ] **2. Rolling Background Summarization**:
+  - Implement rolling LLM-powered background summarization of older conversation rounds to preserve critical intent with minimal token consumption.
+- [ ] **3. REST API Multi-Turn Session Continuity**:
+  - Support `session_id` parameter in `POST /api/v1/workflows/{id}/run` to persist and retrieve multi-turn conversation memory on the FastAPI server side.
 
 ### ⚡ Completed Action Plan for v0.3.0
 
@@ -115,22 +127,34 @@ npm run build
 <a name="简体中文"></a>
 ## 简体中文
 
-### 🔬 当前重点研究专题：P0-1 DAG 工作流中的多轮会话记忆 (Conversation Memory)
+### ⚡ 已交付里程碑：P0-1 多轮会话记忆与底层存储架构 (v0.3.1)
 
-- [ ] **1. 记忆架构与注入机制方案权衡 (节点显式连线 vs. 引擎隐式上下文)**：
-  - **方案 A（引擎隐式上下文 / 配置开关）**：在 LLM 节点的属性面板中提供「开启会话记忆」开关（可配置 `保留历史轮数 maxHistoryRounds`）。开启后，调度引擎在调用模型前，自动将当前 Session 中滑动窗口内的历史对话合并进 `messages` 数组。
-  - **方案 B（画布显式节点连线）**：在画布中引入专门的 `Memory`（记忆）节点（如 `memory.buffer` 或 `memory.summary`），将其输出端连线至 LLM 节点的上下文端口。
-  - *需重点权衡*：Prompt 编排者的开箱即用体验（方案 A）对比多分支复杂隔离场景下的拓扑自由度（方案 B）。
-- [ ] **2. 记忆窗口裁剪与 Token 预算策略**：
-  - **滑动窗口记忆 (Buffer Window Memory)**：保留最近 $K$ 轮会话，实现轻量、易于排查和预测。
-  - **Token 预算裁剪 (Token-Budgeted Memory)**：根据目标模型的上下文上限（`maxTokenLimit`）动态倒序淘汰最久远的历史消息。
-  - **滚动摘要记忆 (Summarized Memory)**：利用后台 LLM 对超出轮数的历史对话进行滚动作摘要提炼，以最少 Token 消耗保留核心上下文语义。
-- [ ] **3. 会话隔离与多模型归属裁决**：
-  - **多 LLM 节点歧义**：明确当单一工作流中包含多个 LLM 节点（如意图分类模型 + 客服解答模型）时，记忆应精准绑定给哪个节点，避免无关上下文污染。
-  - **前端会话隔离**：基于 `workflowId` 在浏览器端划分独立存储命名空间，并在 `ChatDebugPanel` 提供一键清空/重置。
-  - **REST API 会话连贯性**：在 `POST /api/v1/workflows/{id}/run` 接口中支持透传 `session_id`，实现服务端跨请求的多轮记忆持久化与复用。
+- [x] **1. 底层存储与端侧持久化架构 ([PRD-010](docs/01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md))**：
+  - 在 `src/services/storage/session-storage.ts` 实现 `IndexedDBSessionAdapter`（数据库 `patchcat_chat_db`，Store `chat_sessions`），解决 5MB 限额与关标签易失问题；
+  - 打造零外部依赖的纯内存回退（In-Memory Fallback），保障 Node.js 测试环境 100% 稳定性；
+  - 在 `SettingsPage.tsx` 中以内置可折叠 Q&A 卡片形式，深度披露浏览器 File System Access API 刷新频繁授权的沙箱限制，阐明端侧 IndexedDB 与自部署 SQLite 的选型优势。
+- [x] **2. 两级配置管控模型 (Tier 1 全局默认偏好)**：
+  - 在 `settings-store.ts` 实现 `memoryDefaults`，统一管理总开关、滑动窗口轮数（1~20 轮）、Token 预算上限（500~16,000）与裁剪策略（`hybrid` / `window` / `token_budget`）；
+  - 在 `SettingsPage.tsx` 常规设置中构建全套可视化控件（动态滑块、策略药丸按钮与一键恢复默认）。
+- [x] **3. 上下文纯策略裁剪算法与变量动态注入**：
+  - 实现纯函数算法 `pruneConversationMessages`，支持滑动窗口轮数截断、倒序 Token 累加预算淘汰与双重约束；
+  - 通过 `formatMessagesToPlainText` 格式化历史问答，并在运行时自动注入 `inputsBag` 的 `chat_history`、`conversation_history` 与 `history` 插槽。
+- [x] **4. 基于工作流 ID 的会话独立隔离**：
+  - 改造 `ChatDebugPanel.tsx`，采用 `${activeWorkflowId}::${sessionId}` 独立键值持久化，杜绝跨画布调试串话；
+  - 支持工作流维度的会话一键清空与加载历史记忆。
+- [x] **5. 全自动化测试与质量保障**：
+  - 新增 `tests/session-storage.node.test.ts`（10 个测试）并更新 `tests/settings.node.test.ts`，全量测试达到 173 个用例全部 100% 通过。
 
 ---
+
+### 🔬 后续演进路线：高级记忆与拓扑图能力
+
+- [ ] **1. 画布显式 Memory 记忆节点 (方案 B)**：
+  - 在画布中引入专门的 `Memory` 节点（`memory.buffer`、`memory.summary`），支持自由连线至各 LLM 节点的 context 端口，赋能复杂多分支拓扑。
+- [ ] **2. 滚动后台摘要提炼 (Rolling Summarizer)**：
+  - 引入后台轻量模型对淘汰的历史轮次进行滚动作语义摘要，以极低 Token 代价保持长效记忆。
+- [ ] **3. REST API 多轮会话状态延续**：
+  - 在 `POST /api/v1/workflows/{id}/run` 中增加 `session_id` 支持，实现 FastAPI 服务端跨 HTTP 请求的多轮对话记忆持久化。
 
 ### ⚡ v0.3.0 已交付行动清单
 

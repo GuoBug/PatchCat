@@ -119,6 +119,13 @@
 - **深层对象与数组访问**：支持访问如 `{{classifier.result.tags[0].name}}` 等复杂嵌套属性。
 - **容错默认值语法**：支持 `{{nodeId.output | "默认值"}}`，防止上游字段为空导致的执行失败。
 
+### 7. 💾 多轮会话记忆与两级存储架构
+- **端侧 IndexedDB 异步持久化**：告别仅 5MB 且关标签易失的 `sessionStorage`，利用非阻塞 IndexedDB 保障画布 60 FPS 丝滑拖拽；
+- **工作流独立会话隔离**：按 `${workflowId}::${sessionId}` 严格作用域物理隔离，杜绝跨画布调试会话串话；
+- **一级全局偏好与二级继承机制**：在设置中心（`SettingsPage.tsx`）统一配置全局会话记忆总开关、滑动窗口轮数（1~20 轮）、Token 预算上限（500~16,000）与三大裁剪策略（`hybrid` / `window` / `token_budget`）；
+- **动态多轮上下文自动拼装**：调试发送时根据策略修剪历史对话，自动将问答对注入 `{{chat_history}}`、`{{conversation_history}}`、`{{history}}` 变量插槽；
+- **存储架构说明与 Q&A 知识库**：设置中心内置折叠卡片，深度解析端侧 IndexedDB、自部署单文件 SQLite（`patchcat.db`）选型优势与现代浏览器 File System Access API 刷新高频授权的沙箱边界。
+
 ---
 
 ## 📸 界面预览与功能展示

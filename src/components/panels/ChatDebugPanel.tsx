@@ -23,6 +23,15 @@ import {
   Check,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
+import { useSettingsStore } from '../../stores/settings-store.ts';
+import { useProjectStore } from '../../stores/project-store.ts';
+import {
+  sessionStorageAdapter,
+  estimateMessageTokens,
+  pruneConversationMessages,
+  formatMessagesToPlainText,
+  type MemoryMessage,
+} from '../../services/storage/session-storage.ts';
 import { BrowserWorkflowEngine } from '../../engine/browser-engine.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
 import { nanoid } from 'nanoid';
@@ -173,15 +182,12 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
   const { t } = useTranslation();
   const nodes = useWorkflowStore((s) => s.nodes);
   const edges = useWorkflowStore((s) => s.edges);
+  const activeWorkflowId = useProjectStore((s) => s.activeWorkflowId);
+  const memoryDefaults = useSettingsStore((s) => s.memoryDefaults);
+  const workflowKey = activeWorkflowId || 'default';
 
-  const [messages, setMessages] = useState<ChatMessageItem[]>(() => {
-    try {
-      const saved = sessionStorage.getItem('patchcat_chat_history');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [messages, setMessages] = useState<ChatMessageItem[]>([]);
+  const isLoadedRef = useRef(false);
 
   const [inputQuery, setInputQuery] = useState('');
   const [isRunning, setIsRunning] = useState(false);
@@ -191,14 +197,72 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<BrowserWorkflowEngine>(new BrowserWorkflowEngine());
 
-  // Save to session storage
+  // Load session messages from IndexedDB adapter when workflow changes or on mount
   useEffect(() => {
-    try {
-      sessionStorage.setItem('patchcat_chat_history', JSON.stringify(messages));
-    } catch {
-      // ignore
-    }
-  }, [messages]);
+    let isCancelled = false;
+    isLoadedRef.current = false;
+
+    sessionStorageAdapter.getSessionMessages(workflowKey).then((loaded) => {
+      if (isCancelled) return;
+      if (loaded.length === 0 && typeof sessionStorage !== 'undefined') {
+        try {
+          const old = sessionStorage.getItem('patchcat_chat_history');
+          if (old) {
+            const parsed = JSON.parse(old);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setMessages(parsed);
+              isLoadedRef.current = true;
+              return;
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+      const chatItems: ChatMessageItem[] = loaded.map((m) => ({
+        id: m.id,
+        timestamp: m.timestamp,
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: m.content,
+        rawInputs: m.metadata?.rawInputs,
+        outputs: m.metadata?.outputs as Record<string, unknown> | undefined,
+        tokenUsage: m.metadata?.tokenUsage,
+        durationMs: m.metadata?.durationMs,
+        error: m.metadata?.error,
+        trace: m.metadata?.trace as ChatNodeTrace[] | undefined,
+      }));
+      setMessages(chatItems);
+      isLoadedRef.current = true;
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [workflowKey]);
+
+  // Persist messages to IndexedDB session storage when messages update
+  useEffect(() => {
+    if (!isLoadedRef.current) return;
+    const memoryMessages: MemoryMessage[] = messages.map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: m.content,
+      timestamp: m.timestamp,
+      metadata: {
+        rawInputs: m.rawInputs,
+        outputs: m.outputs,
+        tokenUsage: m.tokenUsage,
+        durationMs: m.durationMs,
+        error: m.error,
+        trace: m.trace,
+        tokenCount: estimateMessageTokens(m.content),
+      },
+    }));
+
+    sessionStorageAdapter.saveSessionMessages(workflowKey, memoryMessages).catch((err) => {
+      console.warn('[ChatDebugPanel] Failed to save session messages:', err);
+    });
+  }, [messages, workflowKey]);
 
   // Scroll to bottom on new message or streaming text
   useEffect(() => {
@@ -260,7 +324,16 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
 
   const handleClearHistory = () => {
     setMessages([]);
-    sessionStorage.removeItem('patchcat_chat_history');
+    sessionStorageAdapter.clearSessionMessages(workflowKey).catch((err) => {
+      console.warn('[ChatDebugPanel] Failed to clear session messages:', err);
+    });
+    if (typeof sessionStorage !== 'undefined') {
+      try {
+        sessionStorage.removeItem('patchcat_chat_history');
+      } catch {
+        // ignore
+      }
+    }
   };
 
   const handleExportHistory = (format: 'json' | 'markdown') => {
@@ -308,6 +381,36 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
     };
     if (mainQueryKey) {
       inputsBag[mainQueryKey] = query;
+    }
+
+    // If conversation memory is enabled, prune history and inject into inputsBag
+    if (memoryDefaults.enabled && messages.length > 0) {
+      const memoryMessages: MemoryMessage[] = messages.map((m) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        timestamp: m.timestamp,
+        metadata: {
+          rawInputs: m.rawInputs,
+          outputs: m.outputs,
+          tokenUsage: m.tokenUsage,
+          durationMs: m.durationMs,
+          error: m.error,
+          trace: m.trace,
+          tokenCount: estimateMessageTokens(m.content),
+        },
+      }));
+
+      const pruned = pruneConversationMessages(memoryMessages, {
+        maxHistoryRounds: memoryDefaults.maxHistoryRounds,
+        maxTokenBudget: memoryDefaults.maxTokenBudget,
+        pruningStrategy: memoryDefaults.pruningStrategy,
+      });
+
+      const plainTextHistory = formatMessagesToPlainText(pruned);
+      inputsBag['chat_history'] = plainTextHistory;
+      inputsBag['conversation_history'] = plainTextHistory;
+      inputsBag['history'] = plainTextHistory;
     }
 
     // Capture non-empty auxiliary parameters used for this round

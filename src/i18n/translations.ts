@@ -227,6 +227,26 @@ export interface Translations {
     serverDisconnectedBadge: string;
     serverTestSuccess: string;
     serverTestFailed: string;
+    // Storage QA & Explanations
+    storageQaTitle: string;
+    storageQaBrowserDesc: string;
+    storageQaServerDesc: string;
+    storageQaFolderTitle: string;
+    storageQaFolderContent: string;
+    // Conversation Memory Defaults
+    memorySection: string;
+    memorySectionDesc: string;
+    memoryEnableLabel: string;
+    memoryEnableDesc: string;
+    memoryRoundsLabel: string;
+    memoryRoundsDesc: string;
+    memoryBudgetLabel: string;
+    memoryBudgetDesc: string;
+    memoryStrategyLabel: string;
+    memoryStrategyHybrid: string;
+    memoryStrategyWindow: string;
+    memoryStrategyBudget: string;
+    memoryResetBtn: string;
     // Providers Tab
     providersTitle: string;
     providersSubtitle: string;
@@ -629,6 +649,33 @@ export const translations: Record<Language, Translations> = {
       serverDisconnectedBadge: 'Disconnected',
       serverTestSuccess: 'Backend server is healthy and connected to database.',
       serverTestFailed: 'Unable to connect to backend server. Please check if FastAPI is running.',
+      // Storage QA & Explanations
+      storageQaTitle: 'Storage Architecture & FAQ',
+      storageQaBrowserDesc:
+        'Pure client-side mode defaults to browser IndexedDB (hundreds of MBs capacity, async non-blocking, survives tab closure).',
+      storageQaServerDesc:
+        'Self-hosted mode defaults to local zero-config SQLite (patchcat.db, ACID transactional, portable single-file backup).',
+      storageQaFolderTitle: 'Can I store workflows & chats in a custom local folder?',
+      storageQaFolderContent:
+        'Direct local folder write is possible via File System API, but modern browser sandboxes enforce re-authorization on every page reload. For permanent, automated, and zero-prompt local persistence, self-hosted SQLite is strongly recommended.',
+      // Conversation Memory Defaults
+      memorySection: 'Conversation Memory Defaults (Tier 1 Global Policy)',
+      memorySectionDesc:
+        'Configure default conversation context window and token budget inherited by new workflows and LLM nodes.',
+      memoryEnableLabel: 'Default Conversation Memory',
+      memoryEnableDesc:
+        'Automatically inject sliding window history into LLM nodes during interactive chat sessions.',
+      memoryRoundsLabel: 'Context Window (Rounds)',
+      memoryRoundsDesc:
+        'Number of recent dialogue rounds to retain (1 round = 1 user message + 1 assistant message).',
+      memoryBudgetLabel: 'Token Budget Limit',
+      memoryBudgetDesc:
+        'Accumulate tokens in reverse and prune older rounds when this threshold is reached.',
+      memoryStrategyLabel: 'Pruning Strategy',
+      memoryStrategyHybrid: 'Hybrid (Window Rounds + Token Budget)',
+      memoryStrategyWindow: 'Sliding Window Only',
+      memoryStrategyBudget: 'Token Budget Only',
+      memoryResetBtn: 'Reset to Defaults',
       // Providers Tab
       providersTitle: 'LLM Providers & API Keys',
       providersSubtitle:
@@ -1029,6 +1076,33 @@ export const translations: Record<Language, Translations> = {
       serverDisconnectedBadge: '后端未连接',
       serverTestSuccess: '已成功连接至 FastAPI 后端服务并验证数据库连通正常。',
       serverTestFailed: '无法连接至后端服务，请检查 FastAPI 服务是否已在对应端口启动。',
+      // Storage QA & Explanations
+      storageQaTitle: '存储架构说明与 Q&A',
+      storageQaBrowserDesc:
+        '纯前端模式默认采用浏览器端侧 IndexedDB 数据库（数百兆大容量、异步事务零掉帧、页面关闭依然持久）。',
+      storageQaServerDesc:
+        '自部署模式默认采用本地零配置 SQLite 数据库（patchcat.db，ACID 事务，单文件便携随拷随走）。',
+      storageQaFolderTitle: '能否直接指定本地某个自定义文件夹进行保存？',
+      storageQaFolderContent:
+        '纯前端可通过现代浏览器的 File System Access API 实现本地文件夹读写，但浏览器出于安全沙箱策略，每次刷新页面或重启浏览器均须重新弹窗手动授权。如需持久、自动化、免确认的本地体验，强烈推荐一键运行自部署 SQLite 模式。',
+      // Conversation Memory Defaults
+      memorySection: '全局会话记忆偏好 (第一级继承策略)',
+      memorySectionDesc:
+        '设置新建工作流与大模型节点默认继承的上下文轮数与 Token 预算上限（可随时在单个节点覆盖）。',
+      memoryEnableLabel: '默认启用会话上下文记忆',
+      memoryEnableDesc:
+        '在调试会话中自动为 LLM 节点拼接历史滑动窗口记录，实现连续追问与多轮对话。',
+      memoryRoundsLabel: '滑动窗口大小 (轮数)',
+      memoryRoundsDesc:
+        '发送给模型的最近问答对数量 (1轮 = 1次用户提问 + 1次助手回答)。',
+      memoryBudgetLabel: 'Token 预算上限',
+      memoryBudgetDesc:
+        '从最新消息倒序累加 Token，一旦超出该预算将自动裁剪淘汰更早的历史轮次。',
+      memoryStrategyLabel: '预算裁剪策略',
+      memoryStrategyHybrid: '双重约束 (轮数窗口 + Token 预算)',
+      memoryStrategyWindow: '仅滑动窗口轮数',
+      memoryStrategyBudget: '仅 Token 预算上限',
+      memoryResetBtn: '恢复默认配置',
       // Providers Tab
       providersTitle: 'LLM Provider & API Key 设置',
       providersSubtitle: '配置大模型端点与 API 凭证 (BYOK)，零后端纯前端直连。',

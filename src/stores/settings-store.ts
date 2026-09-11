@@ -102,6 +102,21 @@ const STORAGE_KEY = 'patchcat-llm-settings-v1';
 const LANG_STORAGE_KEY = 'patchcat-language-v1';
 const STORAGE_MODE_KEY = 'patchcat-storage-mode-v1';
 const SERVER_URL_KEY = 'patchcat-server-url-v1';
+const MEMORY_DEFAULTS_KEY = 'patchcat-memory-defaults-v1';
+
+export interface MemoryDefaults {
+  enabled: boolean;
+  maxHistoryRounds: number;
+  maxTokenBudget: number;
+  pruningStrategy: 'window' | 'token_budget' | 'hybrid';
+}
+
+export const DEFAULT_MEMORY_SETTINGS: MemoryDefaults = {
+  enabled: true,
+  maxHistoryRounds: 5,
+  maxTokenBudget: 3000,
+  pruningStrategy: 'hybrid',
+};
 
 export interface SettingsStoreState {
   // Navigation
@@ -132,6 +147,11 @@ export interface SettingsStoreState {
   setServerBaseUrl: (url: string) => void;
   testServerConnection: () => Promise<ConnectionTestResult>;
 
+  // Conversation Memory Defaults (Tier 1 Global Policy)
+  memoryDefaults: MemoryDefaults;
+  updateMemoryDefaults: (partial: Partial<MemoryDefaults>) => void;
+  resetMemoryDefaults: () => void;
+
   // Actions
   setActiveProvider: (id: ProviderId) => void;
   updateProviderConfig: (id: ProviderId, partial: Partial<ProviderConfig>) => void;
@@ -154,12 +174,14 @@ function loadInitialState(): {
   providers: Record<ProviderId, ProviderConfig>;
   storageMode: 'local' | 'server';
   serverBaseUrl: string;
+  memoryDefaults: MemoryDefaults;
 } {
   let language: Language = 'en';
   let activeProvider: ProviderId = 'deepseek';
   let providers: Record<ProviderId, ProviderConfig> = DEFAULT_PROVIDERS;
   let storageMode: 'local' | 'server' = 'local';
   let serverBaseUrl = 'http://localhost:8000';
+  let memoryDefaults: MemoryDefaults = DEFAULT_MEMORY_SETTINGS;
 
   if (typeof window !== 'undefined') {
     try {
@@ -185,6 +207,15 @@ function loadInitialState(): {
     }
 
     try {
+      const savedMemory = localStorage.getItem(MEMORY_DEFAULTS_KEY);
+      if (savedMemory) {
+        memoryDefaults = { ...DEFAULT_MEMORY_SETTINGS, ...JSON.parse(savedMemory) };
+      }
+    } catch (e) {
+      console.warn('[SettingsStore] Failed to load memory defaults from localStorage:', e);
+    }
+
+    try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
@@ -199,7 +230,7 @@ function loadInitialState(): {
     }
   }
 
-  return { language, activeProvider, providers, storageMode, serverBaseUrl };
+  return { language, activeProvider, providers, storageMode, serverBaseUrl, memoryDefaults };
 }
 
 function saveState(state: {
@@ -335,6 +366,33 @@ export const useSettingsStore = create<SettingsStoreState>()(
             localStorage.setItem(SERVER_URL_KEY, clean);
           } catch (e) {
             console.error('[SettingsStore] Failed to save serverBaseUrl:', e);
+          }
+        }
+      },
+
+      // Conversation Memory Defaults (Tier 1 Global Policy)
+      memoryDefaults: initial.memoryDefaults,
+      updateMemoryDefaults: (partial) => {
+        set((state) => {
+          state.memoryDefaults = { ...state.memoryDefaults, ...partial };
+        });
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(MEMORY_DEFAULTS_KEY, JSON.stringify(get().memoryDefaults));
+          } catch (e) {
+            console.error('[SettingsStore] Failed to save memory defaults:', e);
+          }
+        }
+      },
+      resetMemoryDefaults: () => {
+        set((state) => {
+          state.memoryDefaults = { ...DEFAULT_MEMORY_SETTINGS };
+        });
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.removeItem(MEMORY_DEFAULTS_KEY);
+          } catch (e) {
+            console.error('[SettingsStore] Failed to reset memory defaults:', e);
           }
         }
       },

@@ -30,6 +30,11 @@ import {
   Check,
   CheckCircle,
   HardDrive,
+  Sliders,
+  HelpCircle,
+  ChevronDown,
+  ChevronUp,
+  Database,
 } from 'lucide-react';
 import {
   useSettingsStore,
@@ -89,6 +94,12 @@ export const SettingsPage: React.FC = () => {
   const serverTestResult = useSettingsStore((s) => s.serverTestResult);
   const testServerConnection = useSettingsStore((s) => s.testServerConnection);
   const syncWithStorage = useProjectStore((s) => s.syncWithStorage);
+
+  // Conversation Memory Defaults (Tier 1 Global Policy)
+  const memoryDefaults = useSettingsStore((s) => s.memoryDefaults);
+  const updateMemoryDefaults = useSettingsStore((s) => s.updateMemoryDefaults);
+  const resetMemoryDefaults = useSettingsStore((s) => s.resetMemoryDefaults);
+  const [showStorageQa, setShowStorageQa] = useState(false);
 
   // Log store
   const logLevel = useLogStore((s) => s.logLevel);
@@ -443,6 +454,147 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Conversation Memory Defaults (Tier 1 Global Policy) */}
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <Sliders className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                        {t.settings.memorySection}
+                      </h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {t.settings.memorySectionDesc}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={resetMemoryDefaults}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold transition-colors"
+                    title={t.settings.memoryResetBtn}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>{t.settings.memoryResetBtn}</span>
+                  </button>
+                </div>
+
+                {/* Enable toggle */}
+                <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 flex items-center justify-between gap-4">
+                  <div>
+                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block">
+                      {t.settings.memoryEnableLabel}
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed block mt-0.5">
+                      {t.settings.memoryEnableDesc}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={memoryDefaults.enabled}
+                    onClick={() => updateMemoryDefaults({ enabled: !memoryDefaults.enabled })}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      memoryDefaults.enabled ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                        memoryDefaults.enabled ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Sub-controls shown when memory enabled */}
+                {memoryDefaults.enabled && (
+                  <div className="space-y-4 pt-1 animate-in fade-in duration-150">
+                    {/* Sliding Window Slider */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <label className="font-semibold text-slate-800 dark:text-slate-200">
+                          {t.settings.memoryRoundsLabel}
+                        </label>
+                        <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800/60">
+                          {memoryDefaults.maxHistoryRounds} {language === 'zh' ? '轮' : 'rounds'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        {t.settings.memoryRoundsDesc}
+                      </p>
+                      <input
+                        type="range"
+                        min={1}
+                        max={20}
+                        step={1}
+                        value={memoryDefaults.maxHistoryRounds}
+                        onChange={(e) =>
+                          updateMemoryDefaults({ maxHistoryRounds: Number(e.target.value) })
+                        }
+                        className="w-full accent-indigo-600 cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Token Budget Slider */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <label className="font-semibold text-slate-800 dark:text-slate-200">
+                          {t.settings.memoryBudgetLabel}
+                        </label>
+                        <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800/60">
+                          {memoryDefaults.maxTokenBudget.toLocaleString()} tokens
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        {t.settings.memoryBudgetDesc}
+                      </p>
+                      <input
+                        type="range"
+                        min={500}
+                        max={16000}
+                        step={250}
+                        value={memoryDefaults.maxTokenBudget}
+                        onChange={(e) =>
+                          updateMemoryDefaults({ maxTokenBudget: Number(e.target.value) })
+                        }
+                        className="w-full accent-indigo-600 cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Pruning Strategy Selection */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
+                        {t.settings.memoryStrategyLabel}
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {(
+                          [
+                            { id: 'hybrid', label: t.settings.memoryStrategyHybrid },
+                            { id: 'window', label: t.settings.memoryStrategyWindow },
+                            { id: 'token_budget', label: t.settings.memoryStrategyBudget },
+                          ] as const
+                        ).map((strat) => (
+                          <button
+                            key={strat.id}
+                            type="button"
+                            onClick={() => updateMemoryDefaults({ pruningStrategy: strat.id })}
+                            className={`px-3 py-2 rounded-lg border text-xs font-semibold text-left transition-all ${
+                              memoryDefaults.pruningStrategy === strat.id
+                                ? 'border-indigo-600 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-600'
+                                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300'
+                            }`}
+                          >
+                            {strat.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Storage & Backend Mode */}
               <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-xs space-y-4">
                 <div className="flex items-center gap-2.5">
@@ -580,6 +732,53 @@ export const SettingsPage: React.FC = () => {
                     )}
                   </div>
                 )}
+
+                {/* Expandable Storage Architecture & FAQ */}
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowStorageQa((prev) => !prev)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <HelpCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <span>{t.settings.storageQaTitle}</span>
+                    </div>
+                    {showStorageQa ? (
+                      <ChevronUp className="w-4 h-4 text-slate-500" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-slate-500" />
+                    )}
+                  </button>
+
+                  {showStorageQa && (
+                    <div className="mt-2.5 p-4 rounded-xl bg-slate-50/90 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-3 animate-in fade-in duration-150 text-xs leading-relaxed">
+                      <div className="flex items-start gap-2.5">
+                        <Database className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                        <p className="text-slate-600 dark:text-slate-300">
+                          {t.settings.storageQaBrowserDesc}
+                        </p>
+                      </div>
+
+                      <div className="flex items-start gap-2.5">
+                        <HardDrive className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                        <p className="text-slate-600 dark:text-slate-300">
+                          {t.settings.storageQaServerDesc}
+                        </p>
+                      </div>
+
+                      <div className="border-t border-slate-200 dark:border-slate-800 pt-3 space-y-1">
+                        <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                          <span>💡</span>
+                          <span>{t.settings.storageQaFolderTitle}</span>
+                        </div>
+                        <p className="text-slate-500 dark:text-slate-400 pl-5">
+                          {t.settings.storageQaFolderContent}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}

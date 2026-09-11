@@ -207,5 +207,36 @@ describe('Settings Store & Provider Configuration', () => {
       globalThis.fetch = originalFetch;
     }
   });
+
+  it('should support updating and resetting conversation memory defaults (Tier 1)', () => {
+    const store = useSettingsStore.getState();
+    assert.deepEqual(store.memoryDefaults, {
+      enabled: true,
+      maxHistoryRounds: 5,
+      maxTokenBudget: 3000,
+      pruningStrategy: 'hybrid',
+    });
+
+    store.updateMemoryDefaults({
+      maxHistoryRounds: 8,
+      maxTokenBudget: 4500,
+      pruningStrategy: 'token_budget',
+    });
+
+    const updated = useSettingsStore.getState().memoryDefaults;
+    assert.equal(updated.maxHistoryRounds, 8);
+    assert.equal(updated.maxTokenBudget, 4500);
+    assert.equal(updated.pruningStrategy, 'token_budget');
+    assert.equal(updated.enabled, true);
+
+    store.resetMemoryDefaults();
+    const reset = useSettingsStore.getState().memoryDefaults;
+    assert.deepEqual(reset, {
+      enabled: true,
+      maxHistoryRounds: 5,
+      maxTokenBudget: 3000,
+      pruningStrategy: 'hybrid',
+    });
+  });
 });
 

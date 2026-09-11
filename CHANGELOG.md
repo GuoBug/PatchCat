@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.1] - 2026-09-11
+
+### Added
+- **Multi-Turn Conversation Memory & Dual-Tier Storage Architecture (`PRD-010`)**:
+  - **IndexedDB Asynchronous Storage Adapter (`session-storage.ts`)**: Replaced 5MB ephemeral `sessionStorage` with high-capacity, non-blocking `IndexedDBSessionAdapter` (database: `patchcat_chat_db`, store: `chat_sessions`) with seamless in-memory fallback for Node.js test runners.
+  - **Tier-1 Global Configuration Policy (`settings-store.ts`)**: Added `memoryDefaults` supporting master toggle, sliding window rounds (1–20), token budget limit (500–16,000), and pruning strategies (`hybrid`, `window`, `token_budget`) with reset to default capabilities.
+  - **Interactive Storage FAQ & Memory Preferences UI (`SettingsPage.tsx`)**:
+    - Embedded Conversation Memory Defaults control card in General settings with sliders, strategy buttons, and instant reset.
+    - Embedded expandable Storage Architecture & FAQ card explaining client-side IndexedDB benefits, self-hosted SQLite advantages, and browser sandbox File System Access API re-authorization trade-offs.
+  - **Workflow-Scoped Session Isolation (`ChatDebugPanel.tsx`)**: Namespaced chat histories by `${workflowId}::${sessionId}`, preventing cross-canvas message contamination.
+  - **Algorithmic Context Pruning & Dynamic Context Injection**: Implemented `pruneConversationMessages` (sliding window, reverse token accumulation, hybrid) and automated injection into `inputsBag` slots (`chat_history`, `conversation_history`, `history`).
+  - **Automated Test Suite Expansion**: Added `tests/session-storage.node.test.ts` (10 tests) and updated `tests/settings.node.test.ts` (173 total tests passing at 100%).
+
 ## [0.3.0] - 2026-09-09
 
 ### Added
