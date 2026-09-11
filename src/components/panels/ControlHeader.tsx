@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import {
   Play,
   Square,
@@ -67,8 +67,22 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
   const [alertNotification, setAlertNotification] = useState<AlertNotification | null>(null);
   const [showUnconfiguredModal, setShowUnconfiguredModal] = useState(false);
 
+  const addMenuRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<BrowserWorkflowEngine>(new BrowserWorkflowEngine());
   const timerIntervalRef = useRef<number | null>(null);
+
+  // Close Quick Add Node menu on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) {
+        setShowAddMenu(false);
+      }
+    };
+    if (showAddMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showAddMenu]);
 
   // Real-time pre-flight topology validation (detects cycles live)
   const topologyValidation = useMemo(() => {
@@ -335,7 +349,7 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
 
   return (
     <>
-      <header className="h-14 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/90 backdrop-blur-md px-4 flex items-center justify-between shrink-0 z-20 select-none shadow-xs transition-colors duration-200">
+      <header className="relative z-40 h-14 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/90 backdrop-blur-md px-4 flex items-center justify-between shrink-0 select-none shadow-xs transition-colors duration-200">
         {/* Left: Brand + Realtime DAG Stats */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <div className="flex items-center gap-2 shrink-0 select-none">
@@ -358,7 +372,7 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
           <div className="h-5 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1 hidden md:block shrink-0" />
 
           {/* Quick Add Node Dropdown */}
-          <div className="relative">
+          <div className="relative" ref={addMenuRef}>
             <button
               onClick={() => setShowAddMenu(!showAddMenu)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-sky-500/10 dark:hover:bg-sky-500/20 text-blue-600 dark:text-sky-400 border border-blue-200 dark:border-sky-500/30 font-medium text-xs transition-all shadow-xs cursor-pointer"
@@ -369,7 +383,7 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
             </button>
 
             {showAddMenu && (
-              <div className="absolute left-0 top-full mt-2 w-64 p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-100 font-sans">
+              <div className="absolute left-0 top-full mt-2 w-64 p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-100 font-sans">
                 <div className="space-y-1">
                   {nodePalette.map((item) => (
                     <button
