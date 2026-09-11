@@ -1,4 +1,4 @@
-﻿import { describe, it } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { translations } from '../src/i18n/translations.ts';
 import { PRESETS_DATA } from '../src/presets/index.ts';
@@ -354,6 +354,53 @@ describe('Frontend Visual Presentation & Visual Readability Tests', () => {
       assert.strictEqual(formatOutputForDisplay(12345), '12345');
       assert.strictEqual(formatOutputForDisplay(true), 'true');
       assert.strictEqual(formatOutputForDisplay('hello world'), 'hello world');
+    });
+  });
+
+  describe('5. Danger Zone Confirmation Matching & Typed Phrase Safety', () => {
+    function isConfirmationMatching(inputVal: string, confirmPhrase: string, altConfirmPhrase?: string): boolean {
+      const trimmed = inputVal.trim();
+      return (
+        trimmed.toUpperCase() === confirmPhrase.toUpperCase() ||
+        Boolean(altConfirmPhrase && trimmed === altConfirmPhrase.trim())
+      );
+    }
+
+    it('validates Clear Cache confirmation phrases (case-insensitive English & Chinese)', () => {
+      const phrase = translations.en.settings.clearCacheConfirmPhrase;
+      const altPhrase = '清除缓存';
+
+      assert.strictEqual(phrase, 'CLEAR CACHE');
+      assert.strictEqual(isConfirmationMatching('CLEAR CACHE', phrase, altPhrase), true);
+      assert.strictEqual(isConfirmationMatching('clear cache', phrase, altPhrase), true);
+      assert.strictEqual(isConfirmationMatching('  Clear Cache  ', phrase, altPhrase), true);
+      assert.strictEqual(isConfirmationMatching('清除缓存', phrase, altPhrase), true);
+      assert.strictEqual(isConfirmationMatching(' 清除缓存 ', phrase, altPhrase), true);
+
+      // Rejections
+      assert.strictEqual(isConfirmationMatching('', phrase, altPhrase), false);
+      assert.strictEqual(isConfirmationMatching('clear', phrase, altPhrase), false);
+      assert.strictEqual(isConfirmationMatching('delete', phrase, altPhrase), false);
+      assert.strictEqual(isConfirmationMatching('CLEAR', phrase, altPhrase), false);
+    });
+
+    it('validates Clear All Workflows confirmation phrases (case-insensitive English & Chinese)', () => {
+      const phrase = translations.en.settings.clearWorkflowsConfirmPhrase;
+      const altPhrase = '清除所有流程';
+
+      assert.strictEqual(phrase, 'DELETE ALL WORKFLOWS');
+      assert.strictEqual(isConfirmationMatching('DELETE ALL WORKFLOWS', phrase, altPhrase), true);
+      assert.strictEqual(isConfirmationMatching('delete all workflows', phrase, altPhrase), true);
+      assert.strictEqual(isConfirmationMatching('  Delete All Workflows  ', phrase, altPhrase), true);
+      assert.strictEqual(isConfirmationMatching('清除所有流程', phrase, altPhrase), true);
+      assert.strictEqual(isConfirmationMatching(' 清除所有流程 ', phrase, altPhrase), true);
+
+      // Rejections
+      assert.strictEqual(isConfirmationMatching('', phrase, altPhrase), false);
+      assert.strictEqual(isConfirmationMatching('DELETE', phrase, altPhrase), false);
+      assert.strictEqual(isConfirmationMatching('workflows', phrase, altPhrase), false);
+      assert.strictEqual(isConfirmationMatching('CLEAR CACHE', phrase, altPhrase), false);
+      assert.strictEqual(isConfirmationMatching('清除缓存', phrase, altPhrase), false);
     });
   });
 });

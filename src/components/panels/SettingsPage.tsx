@@ -35,6 +35,7 @@ import {
   ChevronDown,
   ChevronUp,
   Database,
+  ShieldAlert,
 } from 'lucide-react';
 import {
   useSettingsStore,
@@ -45,6 +46,7 @@ import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import { useProjectStore } from '../../stores/project-store.ts';
 import { useLogStore } from '../../stores/log-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
+import { DangerConfirmModal } from './DangerConfirmModal.tsx';
 import { CatLogo } from '../icons/CatLogo.tsx';
 import type { LogLevel, LogType } from '../../engine/logger.ts';
 import { PROJECT_LINKS } from '../../config/project.ts';
@@ -93,7 +95,9 @@ export const SettingsPage: React.FC = () => {
   const setServerBaseUrl = useSettingsStore((s) => s.setServerBaseUrl);
   const serverTestResult = useSettingsStore((s) => s.serverTestResult);
   const testServerConnection = useSettingsStore((s) => s.testServerConnection);
+  const clearAllCaches = useSettingsStore((s) => s.clearAllCaches);
   const syncWithStorage = useProjectStore((s) => s.syncWithStorage);
+  const clearAllWorkflows = useProjectStore((s) => s.clearAllWorkflows);
 
   // Conversation Memory Defaults (Tier 1 Global Policy)
   const memoryDefaults = useSettingsStore((s) => s.memoryDefaults);
@@ -121,6 +125,8 @@ export const SettingsPage: React.FC = () => {
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [activeDangerModal, setActiveDangerModal] = useState<'cache' | 'workflows' | null>(null);
+  const [dangerSuccessToast, setDangerSuccessToast] = useState<string | null>(null);
 
   const logListRef = useRef<HTMLDivElement>(null);
 
@@ -465,6 +471,72 @@ export const SettingsPage: React.FC = () => {
                       {t.settings.engineMockDesc}
                     </div>
                   </button>
+                </div>
+              </div>
+
+              {/* Danger Zone (GitHub-style confirmation for destructive actions) */}
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-900/60 shadow-xs space-y-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 shrink-0">
+                    <ShieldAlert className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-rose-600 dark:text-rose-400">
+                      {t.settings.dangerZoneTitle}
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      {t.settings.dangerZoneDesc}
+                    </p>
+                  </div>
+                </div>
+
+                {dangerSuccessToast && (
+                  <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2 animate-in fade-in">
+                    <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span>{dangerSuccessToast}</span>
+                  </div>
+                )}
+
+                <div className="divide-y divide-slate-100 dark:divide-slate-800/80 border-t border-slate-100 dark:border-slate-800/80">
+                  {/* Clear All Cache */}
+                  <div className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        {t.settings.clearCacheTitle}
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 max-w-xl leading-relaxed">
+                        {t.settings.clearCacheDesc}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveDangerModal('cache')}
+                      className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900/80 transition-colors shrink-0 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      {t.settings.clearCacheBtn}
+                    </button>
+                  </div>
+
+                  {/* Clear All Workflows */}
+                  <div className="pt-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        {t.settings.clearWorkflowsTitle}
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 max-w-xl leading-relaxed">
+                        {t.settings.clearWorkflowsDesc}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveDangerModal('workflows')}
+                      className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-700 shadow-xs transition-colors shrink-0 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      {t.settings.clearWorkflowsBtn}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1541,6 +1613,41 @@ export const SettingsPage: React.FC = () => {
           )}
         </main>
       </div>
+
+      {/* Danger Zone GitHub-style Confirmation Modal */}
+      {activeDangerModal === 'cache' && (
+        <DangerConfirmModal
+          isOpen={true}
+          title={t.settings.clearCacheTitle}
+          description={t.settings.clearCacheDesc}
+          confirmPhrase={t.settings.clearCacheConfirmPhrase}
+          altConfirmPhrase="清除缓存"
+          confirmButtonText={t.settings.clearCacheBtn}
+          onConfirm={async () => {
+            await clearAllCaches();
+            setDangerSuccessToast(t.settings.clearCacheSuccess);
+            setTimeout(() => setDangerSuccessToast(null), 4000);
+          }}
+          onClose={() => setActiveDangerModal(null)}
+        />
+      )}
+
+      {activeDangerModal === 'workflows' && (
+        <DangerConfirmModal
+          isOpen={true}
+          title={t.settings.clearWorkflowsTitle}
+          description={t.settings.clearWorkflowsDesc}
+          confirmPhrase={t.settings.clearWorkflowsConfirmPhrase}
+          altConfirmPhrase="清除所有流程"
+          confirmButtonText={t.settings.clearWorkflowsBtn}
+          onConfirm={async () => {
+            await clearAllWorkflows();
+            setDangerSuccessToast(t.settings.clearWorkflowsSuccess);
+            setTimeout(() => setDangerSuccessToast(null), 4000);
+          }}
+          onClose={() => setActiveDangerModal(null)}
+        />
+      )}
     </div>
   );
 };

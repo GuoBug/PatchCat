@@ -199,4 +199,17 @@ describe('Project & Workflow Folder Management Store', () => {
 
     await adapter.deleteFolder(newFolder.id);
   });
+
+  it('should clear all workflows and reset to a clean default state in danger zone', async () => {
+    const store = useProjectStore.getState();
+    await store.clearAllWorkflows();
+
+    const state = useProjectStore.getState();
+    assert.equal(state.folders.length, 1);
+    assert.equal(state.workflows.length, 1);
+    assert.equal(state.activeWorkflowId, state.workflows[0].id);
+    assert.equal(state.workflows[0].folderId, state.folders[0].id);
+    assert.deepEqual(state.workflows[0].nodes, []);
+    assert.deepEqual(state.workflows[0].edges, []);
+  });
 });

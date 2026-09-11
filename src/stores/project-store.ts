@@ -74,6 +74,7 @@ export interface ProjectStoreState {
   // Synchronization & Seed
   seedPresetsIfEmpty: (language?: 'en' | 'zh') => void;
   syncWithStorage: () => Promise<void>;
+  clearAllWorkflows: () => Promise<void>;
 }
 
 const STORAGE_KEY_FOLDERS = 'patchcat_folders_v2';
@@ -714,6 +715,60 @@ export const useProjectStore = create<ProjectStoreState>()(
           set((state) => {
             state.isLoading = false;
           });
+        }
+      },
+
+      clearAllWorkflows: async () => {
+        const lang = useSettingsStore.getState().language || 'en';
+        const defaultFolderName = lang === 'zh' ? '默认目录' : 'Default';
+        const defaultFolder: Folder = {
+          id: 'default',
+          name: defaultFolderName,
+          createdAt: Date.now(),
+          isExpanded: true,
+          isPreset: true,
+        };
+
+        const initialWfId = `wf-${nanoid(8)}`;
+        const initialWfName = lang === 'zh' ? '未命名流程' : 'Untitled Workflow';
+        const initialWf: SavedWorkflow = {
+          id: initialWfId,
+          name: initialWfName,
+          folderId: 'default',
+          nodes: [],
+          edges: [],
+          globalInputs: {},
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          isPreset: false,
+        };
+
+        const newFolders = [defaultFolder];
+        const newWorkflows = [initialWf];
+
+        set((state) => {
+          state.folders = newFolders;
+          state.workflows = newWorkflows;
+          state.activeWorkflowId = initialWfId;
+        });
+
+        // Reset canvas
+        const wfStore = useWorkflowStore.getState();
+        wfStore.loadPreset({ nodes: [], edges: [] });
+        wfStore.resetExecutionState();
+
+        persistToLocalStorage(newFolders, newWorkflows, initialWfId);
+
+        // Also clean up remote adapter if server mode is connected
+        try {
+          const adapter = getActiveAdapter();
+          const remoteWfs = await adapter.getWorkflows();
+          for (const w of remoteWfs) {
+            await adapter.deleteWorkflow(w.id).catch(() => {});
+          }
+          await adapter.createWorkflow(initialWf).catch(() => {});
+        } catch (e: unknown) {
+          console.warn('[ProjectStore] Failed to clear remote workflows:', e);
         }
       },
     };

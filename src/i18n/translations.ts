@@ -299,6 +299,24 @@ export interface Translations {
     showDetails: string;
     hideDetails: string;
     copyPayloadJson: string;
+    // Danger Zone
+    dangerZoneTitle: string;
+    dangerZoneDesc: string;
+    clearCacheTitle: string;
+    clearCacheDesc: string;
+    clearCacheBtn: string;
+    clearCacheConfirmPhrase: string;
+    clearCacheSuccess: string;
+    clearWorkflowsTitle: string;
+    clearWorkflowsDesc: string;
+    clearWorkflowsBtn: string;
+    clearWorkflowsConfirmPhrase: string;
+    clearWorkflowsSuccess: string;
+    dangerModalTitle: string;
+    dangerModalWarning: string;
+    dangerModalPrompt: string;
+    dangerModalInputPlaceholder: string;
+    dangerModalConfirmBtn: string;
   };
   help: {
     title: string;
@@ -754,6 +772,27 @@ export const translations: Record<Language, Translations> = {
       showDetails: 'View Payload',
       hideDetails: 'Hide Payload',
       copyPayloadJson: 'Copy JSON',
+      // Danger Zone
+      dangerZoneTitle: 'Danger Zone',
+      dangerZoneDesc:
+        'Irreversible and destructive actions. Please proceed with extreme caution.',
+      clearCacheTitle: 'Clear All Local Cache',
+      clearCacheDesc:
+        'Wipe multi-turn conversation memory, telemetry execution logs, and provider connection test caches. Workflows will not be affected.',
+      clearCacheBtn: 'Clear All Cache...',
+      clearCacheConfirmPhrase: 'CLEAR CACHE',
+      clearCacheSuccess: 'All local caches have been wiped successfully.',
+      clearWorkflowsTitle: 'Clear All Workflows',
+      clearWorkflowsDesc:
+        'Permanently delete all custom workflows and folders, resetting the canvas to a clean slate. This action cannot be undone.',
+      clearWorkflowsBtn: 'Clear All Workflows...',
+      clearWorkflowsConfirmPhrase: 'DELETE ALL WORKFLOWS',
+      clearWorkflowsSuccess: 'All workflows have been cleared and reset.',
+      dangerModalTitle: 'Are you absolutely sure?',
+      dangerModalWarning: 'This action is destructive and cannot be undone.',
+      dangerModalPrompt: 'Please type the following confirmation phrase to proceed:',
+      dangerModalInputPlaceholder: 'Type confirmation phrase here...',
+      dangerModalConfirmBtn: 'I understand the consequences, execute',
     },
     help: {
       title: 'PatchCat Documentation',
@@ -1202,6 +1241,26 @@ export const translations: Record<Language, Translations> = {
       showDetails: '详情 Payload',
       hideDetails: '收起详情',
       copyPayloadJson: '复制 JSON',
+      // Danger Zone
+      dangerZoneTitle: '危险操作区域',
+      dangerZoneDesc: '以下操作具有不可逆破坏性，请格外谨慎执行。',
+      clearCacheTitle: '清除所有本地缓存',
+      clearCacheDesc:
+        '清空多轮会话记忆、运行遥测日志及模型服务商连接测试缓存。您的工作流与项目结构不会受到任何影响。',
+      clearCacheBtn: '清除所有缓存...',
+      clearCacheConfirmPhrase: 'CLEAR CACHE',
+      clearCacheSuccess: '所有本地会话与日志缓存已成功清空。',
+      clearWorkflowsTitle: '清除所有流程',
+      clearWorkflowsDesc:
+        '永久清空所有自建目录与工作流流程并重置为空白画布。此操作不可逆，所有未导出的流程资产将被永久销毁。',
+      clearWorkflowsBtn: '清除所有流程...',
+      clearWorkflowsConfirmPhrase: 'DELETE ALL WORKFLOWS',
+      clearWorkflowsSuccess: '所有工作流已全部清空并重置为初始状态。',
+      dangerModalTitle: '您确定要执行此危险操作吗？',
+      dangerModalWarning: '此操作具有破坏性且无法撤销！',
+      dangerModalPrompt: '请在下方输入指定的确认短语以继续：',
+      dangerModalInputPlaceholder: '输入确认短语...',
+      dangerModalConfirmBtn: '我已了解后果，确认执行',
     },
     help: {
       title: 'PatchCat 帮助与使用文档',

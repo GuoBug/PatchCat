@@ -238,5 +238,20 @@ describe('Settings Store & Provider Configuration', () => {
       pruningStrategy: 'hybrid',
     });
   });
+
+  it('should clear all caches in danger zone', async () => {
+    const store = useSettingsStore.getState();
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('pc_chat_session_123', 'mock conversation');
+      localStorage.setItem('custom_setting_keep', 'keep me');
+    }
+
+    await store.clearAllCaches();
+
+    if (typeof localStorage !== 'undefined') {
+      assert.equal(localStorage.getItem('pc_chat_session_123'), null);
+      assert.equal(localStorage.getItem('custom_setting_keep'), 'keep me');
+    }
+  });
 });
 

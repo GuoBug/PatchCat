@@ -9,6 +9,7 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import type { Language } from '../i18n/translations.ts';
+import { useLogStore } from './log-store.ts';
 
 export type ProviderId = 'openai' | 'deepseek' | 'siliconflow' | 'google' | 'ollama' | 'custom';
 export type AppView = 'canvas' | 'settings';
@@ -165,6 +166,7 @@ export interface SettingsStoreState {
     model: string;
     hasKey: boolean;
   };
+  clearAllCaches: () => Promise<void>;
 }
 
 // Helper to load settings from LocalStorage
@@ -686,6 +688,46 @@ export const useSettingsStore = create<SettingsStoreState>()(
           });
           return result;
         }
+      },
+
+      clearAllCaches: async () => {
+        // 1. Delete IndexedDB chat sessions database
+        if (typeof window !== 'undefined' && window.indexedDB) {
+          try {
+            window.indexedDB.deleteDatabase('patchcat_chat_db');
+          } catch (e) {
+            console.warn('[SettingsStore] Failed to delete IndexedDB patchcat_chat_db:', e);
+          }
+        }
+
+        // 2. Clear localStorage items related to chat cache & telemetry
+        if (typeof window !== 'undefined' && window.localStorage) {
+          try {
+            const keysToRemove: string[] = [];
+            for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              if (key && key.startsWith('pc_chat_')) {
+                keysToRemove.push(key);
+              }
+            }
+            keysToRemove.forEach((k) => localStorage.removeItem(k));
+          } catch (e) {
+            console.warn('[SettingsStore] Failed to clear chat cache in localStorage:', e);
+          }
+        }
+
+        // 3. Clear logs from log-store if available
+        try {
+          useLogStore.getState().clearLogs();
+        } catch (e) {
+          console.warn('[SettingsStore] Failed to clear logs:', e);
+        }
+
+        // 4. Reset provider connection test results
+        set((state) => {
+          state.testResults = {} as any;
+          state.serverTestResult = { status: 'idle' };
+        });
       },
     };
   }),
