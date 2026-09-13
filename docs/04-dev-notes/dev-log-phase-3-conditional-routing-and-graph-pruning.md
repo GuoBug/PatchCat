@@ -1,7 +1,7 @@
 # Dev Log (Phase 3 - Part 1): 条件分支路由、Kahn 图剪枝与 HTTP 节点实战
 
 > **版本归属**: `v0.3.0`  
-> **关联博客**: 《从 0 到 1 打造 AI 提示流编排器：条件分支路由、Kahn 图剪枝与 HTTP 节点实战（开源系列 06）》  
+> **关联阶段**: Phase 3 Conditional Routing & Dynamic Branch Skipping  
 > **发布日期**: 2026-09-09  
 
 ---
