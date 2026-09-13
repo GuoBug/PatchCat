@@ -1244,7 +1244,11 @@ export class BrowserWorkflowEngine {
                   }
 
                   let toolArgs: Record<string, unknown> = {};
-                  try { toolArgs = JSON.parse(toolArgsStr); } catch (e) {}
+                  try {
+                    toolArgs = JSON.parse(toolArgsStr);
+                  } catch {
+                    // Ignore JSON parse error on malformed tool arguments
+                  }
 
                   const binding = config.tools?.find(t => t.name === toolName);
                   let toolResultStr = '';

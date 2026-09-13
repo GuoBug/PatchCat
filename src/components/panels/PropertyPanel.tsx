@@ -32,6 +32,7 @@ import { useSettingsStore } from '../../stores/settings-store.ts';
 import { useKnowledgeStore } from '../../stores/knowledge-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
 import { extractVariableReferences } from '../../engine/variable-resolver.ts';
+import type { AgentToolBinding, AgentToolType } from '../../engine/types.ts';
 
 interface InputParameterItemProps {
   paramKey: string;
@@ -1432,7 +1433,7 @@ export const PropertyPanel: React.FC = () => {
         {/* Agent Node Configuration */}
         {type === 'agent' && (() => {
           const systemPrompt = (config.systemPrompt as string) || '';
-          const tools = (config.tools as any[]) || [];
+          const tools = (config.tools as AgentToolBinding[]) || [];
           const maxIterations = (config.maxIterations as number) ?? 10;
           const temperature = (config.temperature as number) ?? 0.7;
 
@@ -1477,108 +1478,93 @@ export const PropertyPanel: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  {tools.map((tool, idx) => (
-                    <div key={tool.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 space-y-2">
-                          <input
-                            type="text"
-                            value={tool.name}
-                            onChange={(e) => {
-                              const newTools = [...tools];
-                              newTools[idx].name = e.target.value;
+                  {tools.map((tool, idx) => {
+                    const updateTool = (patch: Partial<AgentToolBinding>) => {
+                      const updated = tools.map((t, i) => (i === idx ? { ...t, ...patch } : t));
+                      updateNodeConfig(id, { tools: updated });
+                    };
+
+                    return (
+                      <div key={tool.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 space-y-2">
+                            <input
+                              type="text"
+                              value={tool.name}
+                              onChange={(e) => updateTool({ name: e.target.value })}
+                              placeholder={t.propertyPanel.agentToolName}
+                              className="w-full px-2 py-1 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold"
+                            />
+                            <input
+                              type="text"
+                              value={tool.description}
+                              onChange={(e) => updateTool({ description: e.target.value })}
+                              placeholder={t.propertyPanel.agentToolDescription}
+                              className="w-full px-2 py-1 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs"
+                            />
+                            <select
+                              value={tool.type}
+                              onChange={(e) => updateTool({ type: e.target.value as AgentToolType })}
+                              className="w-full px-2 py-1 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs"
+                            >
+                              <option value="builtin_code">builtin_code</option>
+                              <option value="builtin_http">builtin_http</option>
+                              <option value="custom_schema">custom_schema</option>
+                            </select>
+                          </div>
+                          <button
+                            onClick={() => {
+                              const newTools = tools.filter((_, i) => i !== idx);
                               updateNodeConfig(id, { tools: newTools });
                             }}
-                            placeholder={t.propertyPanel.agentToolName}
-                            className="w-full px-2 py-1 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold"
-                          />
-                          <input
-                            type="text"
-                            value={tool.description}
-                            onChange={(e) => {
-                              const newTools = [...tools];
-                              newTools[idx].description = e.target.value;
-                              updateNodeConfig(id, { tools: newTools });
-                            }}
-                            placeholder={t.propertyPanel.agentToolDescription}
-                            className="w-full px-2 py-1 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs"
-                          />
-                          <select
-                            value={tool.type}
-                            onChange={(e) => {
-                              const newTools = [...tools];
-                              newTools[idx].type = e.target.value;
-                              updateNodeConfig(id, { tools: newTools });
-                            }}
-                            className="w-full px-2 py-1 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs"
+                            className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
                           >
-                            <option value="builtin_code">builtin_code</option>
-                            <option value="builtin_http">builtin_http</option>
-                            <option value="custom_schema">custom_schema</option>
-                          </select>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                        <button
-                          onClick={() => {
-                            const newTools = tools.filter((_, i) => i !== idx);
-                            updateNodeConfig(id, { tools: newTools });
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+
+                        {tool.type === 'builtin_code' && (
+                          <div className="space-y-1">
+                            <label className="text-[10px] text-slate-400 uppercase">{t.propertyPanel.agentToolCode}</label>
+                            <textarea
+                              value={tool.implementation || ''}
+                              onChange={(e) => updateTool({ implementation: e.target.value })}
+                              className="w-full h-24 px-2 py-1.5 rounded bg-slate-900 text-slate-200 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-violet-500"
+                            />
+                          </div>
+                        )}
+
+                        {tool.type === 'builtin_http' && (
+                          <div className="space-y-1">
+                            <label className="text-[10px] text-slate-400 uppercase">{t.propertyPanel.agentToolUrl}</label>
+                            <input
+                              type="text"
+                              value={tool.implementation || ''}
+                              onChange={(e) => updateTool({ implementation: e.target.value })}
+                              className="w-full px-2 py-1.5 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                            />
+                          </div>
+                        )}
+                        
+                        {tool.type === 'custom_schema' && (
+                          <div className="space-y-1">
+                            <label className="text-[10px] text-slate-400 uppercase">{t.propertyPanel.agentToolSchema}</label>
+                            <textarea
+                              value={tool.schema ? JSON.stringify(tool.schema, null, 2) : ''}
+                              onChange={(e) => {
+                                try {
+                                  updateTool({ schema: JSON.parse(e.target.value) });
+                                } catch {
+                                  // Ignore invalid json temporarily
+                                }
+                              }}
+                              className="w-full h-24 px-2 py-1.5 rounded bg-slate-900 text-slate-200 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-violet-500"
+                            />
+                          </div>
+                        )}
                       </div>
-
-                      {tool.type === 'builtin_code' && (
-                        <div className="space-y-1">
-                          <label className="text-[10px] text-slate-400 uppercase">{t.propertyPanel.agentToolCode}</label>
-                          <textarea
-                            value={tool.implementation || ''}
-                            onChange={(e) => {
-                              const newTools = [...tools];
-                              newTools[idx].implementation = e.target.value;
-                              updateNodeConfig(id, { tools: newTools });
-                            }}
-                            className="w-full h-24 px-2 py-1.5 rounded bg-slate-900 text-slate-200 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-violet-500"
-                          />
-                        </div>
-                      )}
-
-                      {tool.type === 'builtin_http' && (
-                        <div className="space-y-1">
-                          <label className="text-[10px] text-slate-400 uppercase">{t.propertyPanel.agentToolUrl}</label>
-                          <input
-                            type="text"
-                            value={tool.implementation || ''}
-                            onChange={(e) => {
-                              const newTools = [...tools];
-                              newTools[idx].implementation = e.target.value;
-                              updateNodeConfig(id, { tools: newTools });
-                            }}
-                            className="w-full px-2 py-1.5 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono"
-                          />
-                        </div>
-                      )}
-                      
-                      {tool.type === 'custom_schema' && (
-                        <div className="space-y-1">
-                          <label className="text-[10px] text-slate-400 uppercase">{t.propertyPanel.agentToolSchema}</label>
-                          <textarea
-                            value={tool.schema ? JSON.stringify(tool.schema, null, 2) : ''}
-                            onChange={(e) => {
-                              const newTools = [...tools];
-                              try {
-                                newTools[idx].schema = JSON.parse(e.target.value);
-                              } catch(err) {
-                                // Ignore invalid json temporarily
-                              }
-                              updateNodeConfig(id, { tools: newTools });
-                            }}
-                            className="w-full h-24 px-2 py-1.5 rounded bg-slate-900 text-slate-200 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-violet-500"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 

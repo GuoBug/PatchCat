@@ -6,7 +6,7 @@ import { Wrench, Repeat2, Cpu } from 'lucide-react';
 
 export const AgentNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, selected }) => {
   const model = (data.config?.['model'] as string) || 'gpt-4o';
-  const tools = (data.config?.['tools'] as any[]) || [];
+  const tools = (data.config?.['tools'] as unknown[]) || [];
   const maxIterations = (data.config?.['maxIterations'] as number) || 10;
   
   const isRunning = data.status === 'running';
