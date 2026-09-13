@@ -341,9 +341,27 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
     },
     {
       type: 'http',
-      label: 'HTTP Request',
-      desc: 'Call external REST APIs, webhooks, and services',
+      label: t.nodeTypes.http,
+      desc: t.nodeTypes.httpDesc,
       color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/30',
+    },
+    {
+      type: 'agent',
+      label: t.nodeTypes.agent,
+      desc: t.nodeTypes.agentDesc,
+      color: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/30',
+    },
+    {
+      type: 'loop',
+      label: t.nodeTypes.loop,
+      desc: t.nodeTypes.loopDesc,
+      color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+    },
+    {
+      type: 'sub_workflow',
+      label: t.nodeTypes.sub_workflow,
+      desc: t.nodeTypes.sub_workflowDesc,
+      color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
     },
   ];
 

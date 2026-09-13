@@ -64,6 +64,9 @@ export interface Translations {
     condition: string;
     aggregator: string;
     http: string;
+    agent: string;
+    loop: string;
+    sub_workflow: string;
     inputDesc: string;
     promptDesc: string;
     llmDesc: string;
@@ -73,6 +76,9 @@ export interface Translations {
     conditionDesc: string;
     aggregatorDesc: string;
     httpDesc: string;
+    agentDesc: string;
+    loopDesc: string;
+    sub_workflowDesc: string;
   };
   propertyPanel: {
     title: string;
@@ -189,6 +195,25 @@ export interface Translations {
     httpSendInQuery: string;
     httpTimeoutLabel: string;
     httpMaxRetriesLabel: string;
+    // Agent Node
+    agentSystemPrompt: string;
+    agentTools: string;
+    agentAddTool: string;
+    agentToolName: string;
+    agentToolDescription: string;
+    agentToolType: string;
+    agentMaxIterations: string;
+    agentToolCode: string;
+    agentToolUrl: string;
+    agentToolSchema: string;
+    // Loop Node
+    loopInputVariable: string;
+    loopConcurrency: string;
+    loopItemTimeout: string;
+    // Sub-Workflow Node
+    subWorkflowTarget: string;
+    subWorkflowInputMapping: string;
+    subWorkflowOutputMapping: string;
   };
   settings: {
     pageTitle: string;
@@ -519,6 +544,9 @@ export const translations: Record<Language, Translations> = {
       condition: 'Conditional Branch',
       aggregator: 'Variable Aggregator',
       http: 'HTTP Request',
+      agent: 'AI Agent',
+      loop: 'Loop Iterator',
+      sub_workflow: 'Sub-Workflow',
       inputDesc: 'Inject entry parameters into workflow',
       promptDesc: 'Dynamic prompt template assembly',
       llmDesc: 'Execute LLM inference call',
@@ -528,6 +556,9 @@ export const translations: Record<Language, Translations> = {
       conditionDesc: 'Multi-branch conditional routing with dynamic skipping',
       aggregatorDesc: 'Reconverge multiple branches and aggregate values',
       httpDesc: 'Send external HTTP API requests with auth & retries',
+      agentDesc: 'AI Agent that can use tools',
+      loopDesc: 'Iterate over array inputs',
+      sub_workflowDesc: 'Call another workflow',
     },
     propertyPanel: {
       title: 'Node Properties',
@@ -647,6 +678,25 @@ export const translations: Record<Language, Translations> = {
       httpSendInQuery: 'Send in Query Param',
       httpTimeoutLabel: 'Timeout (ms)',
       httpMaxRetriesLabel: 'Max Retries',
+      // Agent Node
+      agentSystemPrompt: 'System Prompt',
+      agentTools: 'Registered Tools',
+      agentAddTool: 'Add Tool',
+      agentToolName: 'Tool Name',
+      agentToolDescription: 'Description',
+      agentToolType: 'Tool Type',
+      agentMaxIterations: 'Max Iterations',
+      agentToolCode: 'Code Implementation',
+      agentToolUrl: 'API URL',
+      agentToolSchema: 'JSON Schema',
+      // Loop Node
+      loopInputVariable: 'Input Array Variable',
+      loopConcurrency: 'Concurrency',
+      loopItemTimeout: 'Item Timeout (ms)',
+      // Sub-Workflow Node
+      subWorkflowTarget: 'Target Workflow',
+      subWorkflowInputMapping: 'Input Mapping',
+      subWorkflowOutputMapping: 'Output Mapping',
     },
     settings: {
       pageTitle: 'Settings & Configuration',
@@ -999,6 +1049,9 @@ export const translations: Record<Language, Translations> = {
       condition: '条件分支',
       aggregator: '变量聚合器',
       http: 'HTTP 请求',
+      agent: 'AI 智能体',
+      loop: '循环迭代器',
+      sub_workflow: '子工作流',
       inputDesc: '向工作流注入入参变量',
       promptDesc: '动态组装提示词模板',
       llmDesc: '执行大模型推理调用',
@@ -1008,6 +1061,9 @@ export const translations: Record<Language, Translations> = {
       conditionDesc: '多路条件分支路由，动态跳过未命中下游分支',
       aggregatorDesc: '汇聚收拢多路分支变量并按模式聚合输出',
       httpDesc: '调用外部三方 REST API 接口，支持重试与鉴权',
+      agentDesc: 'AI 智能体，可绑定多种工具自主推理执行',
+      loopDesc: '对数组对象进行高并发批量循环迭代处理',
+      sub_workflowDesc: '复用调用另一个子工作流并返回结果',
     },
     propertyPanel: {
       title: '节点属性配置',
@@ -1125,6 +1181,25 @@ export const translations: Record<Language, Translations> = {
       httpSendInQuery: '在 Query 参数中携带',
       httpTimeoutLabel: '超时时长 (ms)',
       httpMaxRetriesLabel: '重试次数',
+      // Agent Node
+      agentSystemPrompt: '系统提示词',
+      agentTools: '已注册工具',
+      agentAddTool: '添加工具',
+      agentToolName: '工具名称',
+      agentToolDescription: '工具描述',
+      agentToolType: '工具类型',
+      agentMaxIterations: '最大迭代轮数',
+      agentToolCode: '代码实现',
+      agentToolUrl: 'API 地址',
+      agentToolSchema: 'JSON Schema',
+      // Loop Node
+      loopInputVariable: '输入数组变量',
+      loopConcurrency: '并发数',
+      loopItemTimeout: '单项超时 (ms)',
+      // Sub-Workflow Node
+      subWorkflowTarget: '目标工作流',
+      subWorkflowInputMapping: '输入映射',
+      subWorkflowOutputMapping: '输出映射',
     },
     settings: {
       pageTitle: '系统设置与配置',

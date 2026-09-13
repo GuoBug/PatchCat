@@ -144,6 +144,9 @@ const nodeCounters: Record<NodeType, number> = {
   condition: 0,
   aggregator: 0,
   http: 0,
+  agent: 0,
+  loop: 0,
+  sub_workflow: 0,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

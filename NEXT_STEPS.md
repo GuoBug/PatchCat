@@ -1,9 +1,9 @@
 # 🎯 Next Steps / 下次开发接续清单
 
-> **Current Version**: `v0.3.1` (Completed & Verified ✅)  
-> **Last Updated**: 2026-09-11  
-> **Previous Milestone**: Phase 3 Storage & Multi-Turn Conversation Memory Architecture (Shipped ✅)  
-> **Current Focus**: **Next Stage: Canvas Explicit Memory Node & Backend Multi-Turn REST Session Sync**
+> **Current Version**: `v0.4.2` (Completed & Verified ✅)  
+> **Last Updated**: 2026-09-13  
+> **Previous Milestone**: Phase 4 Agent Capabilities & ReAct Autonomous Loop (Shipped ✅)  
+> **Current Focus**: **Phase 5: Hybrid Retrieval (BM25 + Dense), Reranker Integration & Docker Deployment**
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -12,36 +12,35 @@
 <a name="english"></a>
 ## English
 
-### ⚡ Completed Milestone: P0-1 Multi-Turn Conversation Memory & Persistent Storage (v0.3.1)
+### ⚡ Completed Milestone: Phase 4 Agent Capabilities & Autonomous ReAct Loop (v0.4.2)
 
-- [x] **1. Storage Layer & Persistence Architecture ([PRD-010](docs/01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md))**:
-  - Implemented `IndexedDBSessionAdapter` in `src/services/storage/session-storage.ts` (database `patchcat_chat_db`, store `chat_sessions`), bypassing the 5MB quota and tab-closure data loss of `sessionStorage`.
-  - Built zero-dependency in-memory fallback for headless Node.js test environments.
-  - Transparently disclosed browser File System Access API sandboxing constraints (re-authorization on every reload) vs. self-hosted SQLite via interactive FAQ card in `SettingsPage.tsx`.
-- [x] **2. Two-Tier Configuration Policy (Tier 1 Global Defaults)**:
-  - Created `memoryDefaults` in `settings-store.ts` managing master toggle, sliding window rounds (1–20), token budget limit (500–16,000), and pruning strategies (`hybrid`, `window`, `token_budget`).
-  - Added dedicated UI controls in `SettingsPage.tsx` with interactive sliders, strategy selectors, and reset to defaults action.
-- [x] **3. Algorithmic Context Pruning & Dynamic Context Injection**:
-  - Implemented pure algorithm `pruneConversationMessages` supporting sliding window rounds, reverse-accumulated token budgets, and hybrid mode.
-  - Formatted messages via `formatMessagesToPlainText` and auto-injected history into `inputsBag` variables (`chat_history`, `conversation_history`, `history`) during execution.
-- [x] **4. Workflow-Scoped Chat Session Isolation**:
-  - Refactored `ChatDebugPanel.tsx` to key sessions by `${activeWorkflowId}::${sessionId}` via `sessionStorageAdapter`.
-  - Added scoped session clearing and seamless historical message restoration.
-- [x] **5. Verification & Test Suite Upgrades**:
-  - Added `tests/session-storage.node.test.ts` (10 tests) and updated `tests/settings.node.test.ts` (173 total tests passing at 100%).
+- [x] **1. Agent Execution Engine & ReAct Loop ([PRD-011](docs/01-prd/PRD-011-Agent-Capabilities-and-Tool-Use.md))**:
+  - Implemented `AgentNode.tsx` with blue-purple gradient, dynamic tool count badges, and real-time iteration counters.
+  - Implemented autonomous ReAct loop inside `BrowserWorkflowEngine` (`browser-engine.ts`) with cycle control, maxIterations bounds, and `AGENT_ITERATION` / `AGENT_TOOL_CALL` real-time event streaming.
+  - Supported multi-type tool execution: sandboxed JavaScript (`builtin_code`), external HTTP REST (`builtin_http`), canvas node delegation (`canvas_node`), and declarative schema definitions (`custom_schema`).
+- [x] **2. Universal Tool Calling Extension (`llm-client.ts`)**:
+  - Extended OpenAI / Google Gemini / DeepSeek client with `tools` JSON Schema declaration and `tool_choice` options.
+  - Built streaming accumulator reconstructing `delta.tool_calls` fragments across SSE chunks into structured function invocations.
+- [x] **3. Loop & Sub-Workflow Primitives**:
+  - Added `LoopNode.tsx` for batch processing of dynamic array variables with concurrent slicing.
+  - Added `SubWorkflowNode.tsx` for reusable nesting of existing project workflows.
+- [x] **4. Visual Configuration & Presets**:
+  - Built Property Panel UI for System Prompt, collapsible Registered Tool list editor, and iteration sliders.
+  - Created official bilingual preset "Autonomous Agent with Tool Calling" (`agent-tool-calling`) in English and Chinese.
+  - Expanded automated test suite with `tests/agent-node.node.test.ts` (195 tests total, 100% green pass rate).
 
 ---
 
-### 🔬 Future Development: Advanced Memory & Topology Capabilities
+### 🔬 Next Stage: Phase 5 Advanced RAG & Docker Production Delivery (v0.6.0)
 
-- [ ] **1. Canvas Explicit Memory Node (Option B)**:
-  - Introduce dedicated `Memory` node on the canvas (`memory.buffer`, `memory.summary`) that can be explicitly wired to LLM nodes' context handles for complex branching topologies.
-- [ ] **2. Rolling Background Summarization**:
-  - Implement rolling LLM-powered background summarization of older conversation rounds to preserve critical intent with minimal token consumption.
-- [ ] **3. REST API Multi-Turn Session Continuity**:
-  - Support `session_id` parameter in `POST /api/v1/workflows/{id}/run` to persist and retrieve multi-turn conversation memory on the FastAPI server side.
-
-### ⚡ Completed Action Plan for v0.3.0
+- [ ] **1. Hybrid Search (BM25 + Dense Vector)**:
+  - Implement Reciprocal Rank Fusion (RRF) combining keyword inverted index with cosine similarity.
+- [ ] **2. Reranker Cross-Encoder Integration**:
+  - Integrate Cohere / BGE / Jina reranker models to improve Top-K context recall precision.
+- [ ] **3. Docker Compose Private Deployment**:
+  - Deliver standardized `docker-compose.yml` packaging Vite static frontend, FastAPI async backend, and PostgreSQL `pgvector`.
+- [ ] **4. Rolling Background Summarization**:
+  - Implement rolling LLM background summarization of pruned conversational memory rounds.
 
 #### 1. IF/ELSE Conditional Branch Node ([PRD-007](docs/01-prd/PRD-007-Conditional-Branch-and-Dynamic-Routing.md))
 - [x] Add `condition` node type to `NodeType` union in `types.ts`
@@ -127,34 +126,35 @@ npm run build
 <a name="简体中文"></a>
 ## 简体中文
 
-### ⚡ 已交付里程碑：P0-1 多轮会话记忆与底层存储架构 (v0.3.1)
+### ⚡ 已交付里程碑：Phase 4 AI 智能体能力层与 ReAct 自主循环架构 (v0.4.2)
 
-- [x] **1. 底层存储与端侧持久化架构 ([PRD-010](docs/01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md))**：
-  - 在 `src/services/storage/session-storage.ts` 实现 `IndexedDBSessionAdapter`（数据库 `patchcat_chat_db`，Store `chat_sessions`），解决 5MB 限额与关标签易失问题；
-  - 打造零外部依赖的纯内存回退（In-Memory Fallback），保障 Node.js 测试环境 100% 稳定性；
-  - 在 `SettingsPage.tsx` 中以内置可折叠 Q&A 卡片形式，深度披露浏览器 File System Access API 刷新频繁授权的沙箱限制，阐明端侧 IndexedDB 与自部署 SQLite 的选型优势。
-- [x] **2. 两级配置管控模型 (Tier 1 全局默认偏好)**：
-  - 在 `settings-store.ts` 实现 `memoryDefaults`，统一管理总开关、滑动窗口轮数（1~20 轮）、Token 预算上限（500~16,000）与裁剪策略（`hybrid` / `window` / `token_budget`）；
-  - 在 `SettingsPage.tsx` 常规设置中构建全套可视化控件（动态滑块、策略药丸按钮与一键恢复默认）。
-- [x] **3. 上下文纯策略裁剪算法与变量动态注入**：
-  - 实现纯函数算法 `pruneConversationMessages`，支持滑动窗口轮数截断、倒序 Token 累加预算淘汰与双重约束；
-  - 通过 `formatMessagesToPlainText` 格式化历史问答，并在运行时自动注入 `inputsBag` 的 `chat_history`、`conversation_history` 与 `history` 插槽。
-- [x] **4. 基于工作流 ID 的会话独立隔离**：
-  - 改造 `ChatDebugPanel.tsx`，采用 `${activeWorkflowId}::${sessionId}` 独立键值持久化，杜绝跨画布调试串话；
-  - 支持工作流维度的会话一键清空与加载历史记忆。
-- [x] **5. 全自动化测试与质量保障**：
-  - 新增 `tests/session-storage.node.test.ts`（10 个测试）并更新 `tests/settings.node.test.ts`，全量测试达到 173 个用例全部 100% 通过。
+- [x] **1. Agent 执行引擎与 ReAct 循环 ([PRD-011](docs/01-prd/PRD-011-Agent-Capabilities-and-Tool-Use.md))**：
+  - 在 `src/components/nodes/AgentNode.tsx` 打造蓝紫色科技风智能体卡片，提供已注册工具数、模型标记与实时迭代步数脉冲徽章；
+  - 在 `src/engine/browser-engine.ts` 中实现完整的 ReAct（`思考 ➔ 调工具 ➔ 观察 ➔ 思考`）闭环循环，内置 `maxIterations` 熔断防止死循环；
+  - 支持多模态工具路由执行：Web Worker 沙箱安全执行 JavaScript（`builtin_code`）、外部 REST API 动态请求（`builtin_http`）、画布已有节点委托（`canvas_node`）以及标准工具 Schema（`custom_schema`）。
+- [x] **2. 通用 Tool Calling 客户端增强 (`src/engine/llm-client.ts`)**：
+  - 规范化扩展 OpenAI / Google Gemini / DeepSeek 的标准 `tools`（JSON Schema）与 `tool_choice` 参数；
+  - 打造高可靠 SSE 流式累加器，无缝拼接分片传输的 `delta.tool_calls`。
+- [x] **3. 批量循环与子流程嵌套原语**：
+  - 新增 `LoopNode.tsx` 列表批量并发迭代节点，具备完善的非数组/空数据容错；
+  - 新增 `SubWorkflowNode.tsx` 子工作流组件，实现已有工作流的组件化嵌套复用。
+- [x] **4. 可视化交互面板与官方双语预设**：
+  - 在 `PropertyPanel.tsx` 中打造系统提示词编辑区、可折叠动态增删的工具列表卡片管理器、最大轮数与温度调节滑块；
+  - 打造官方中英双语「自主工具调用 Agent」预设（`agent-tool-calling`），演示外汇汇率查询与交易扣费高精度计算的协同链路；
+  - 新增 `tests/agent-node.node.test.ts`（16 个新用例），自动化测试套件扩充至 195 项用例 100% 绿灯全通。
 
 ---
 
-### 🔬 后续演进路线：高级记忆与拓扑图能力
+### 🔬 下一阶段攻坚：Phase 5 高级 RAG 混合检索与 Docker 私有化交付 (v0.6.0)
 
-- [ ] **1. 画布显式 Memory 记忆节点 (方案 B)**：
-  - 在画布中引入专门的 `Memory` 节点（`memory.buffer`、`memory.summary`），支持自由连线至各 LLM 节点的 context 端口，赋能复杂多分支拓扑。
-- [ ] **2. 滚动后台摘要提炼 (Rolling Summarizer)**：
+- [ ] **1. 混合检索体系 (BM25 倒排 + 稠密向量)**：
+  - 引入 Reciprocal Rank Fusion (RRF) 倒排索引与向量相似度加权融合召回算法，解决专业术语与生僻词漏检痛点。
+- [ ] **2. 交叉编码器 Reranker 重排序集成**：
+  - 深度接入 Cohere / BGE / Jina 交叉重排模型，大幅压缩上下文冗余噪声。
+- [ ] **3. Docker Compose 标准化私有部署包**：
+  - 编写生产级 `docker-compose.yml`，打包 Vite 静态前端、FastAPI 异步网关与 PostgreSQL `pgvector`。
+- [ ] **4. 滚动后台长效摘要记忆 (Rolling Summarizer)**：
   - 引入后台轻量模型对淘汰的历史轮次进行滚动作语义摘要，以极低 Token 代价保持长效记忆。
-- [ ] **3. REST API 多轮会话状态延续**：
-  - 在 `POST /api/v1/workflows/{id}/run` 中增加 `session_id` 支持，实现 FastAPI 服务端跨 HTTP 请求的多轮对话记忆持久化。
 
 ### ⚡ v0.3.0 已交付行动清单
 

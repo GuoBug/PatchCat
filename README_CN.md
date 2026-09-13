@@ -14,13 +14,13 @@
   </p>
 
   <p>
-    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/版本-v0.4.0-blue.svg" alt="Release: v0.4.0" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/版本-v0.4.2-blue.svg" alt="Release: v0.4.2" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/开源协议-MIT-emerald.svg" alt="License: MIT" /></a>
-    <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.8%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
-    <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=black" alt="React 19" /></a>
+    <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
+    <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" alt="React 18" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/自动化测试-94前端%20%7C%2021后端%20全通-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/自动化测试-195项全部通过-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
@@ -41,7 +41,7 @@
 
 ## 🌟 什么是 PatchCat？
 
-**PatchCat** 是一个现代化、轻量化且具备企业级特性的**可视化提示词编排平台与有向无环图（DAG）执行引擎**。专为 AI 工程师、Prompt 架构师以及多智能体开发者打造，让您可以像搭积木一样串联 Prompt 模板、大语言模型（LLM）、JavaScript 数据转换与分支条件路由，构建高并发、可并行的智能化工作流。
+**PatchCat** 是一个现代化、轻量化且具备企业级特性的**可视化提示词编排平台与有向无环图（DAG）执行引擎**。专为 AI 工程师、Prompt 架构师以及多智能体开发者打造，让您可以像搭积木一样串联 Prompt 模板、大语言模型（LLM）、自主 Agent 智能体、JavaScript 数据转换与分支条件路由，构建高并发、可并行的智能化工作流。
 
 系统原生支持**零后端依赖模式（Client-Only BYOK）**，所有数据与 API Key 均仅保存在浏览器本地，直连 **Google Gemini、DeepSeek、OpenAI、SiliconFlow（硅基流动）以及本地 Ollama**，在浏览器端即可获得极致低延迟的实时流式体验与严密的隐私安全保障。
 
@@ -79,8 +79,14 @@
 
 ## 🚀 核心特性
 
-### 1. 🎨 可视化 DAG 画布与 Kahn 拓扑调度器
-- **拖拽式工作流画布**：基于 `@xyflow/react`（React Flow v12）打造，包含 9 大专业节点组件（`输入`, `提示词`, `大模型`, `脚本代码`, `输出`, `知识库`, `条件分支`, `变量聚合器`, `HTTP请求`）。
+### 1. 🤖 自主 AI Agent 与 ReAct 工具调用 (Phase 4 新增)
+- **内聚 ReAct 自主推理循环**：支持 `思考 (Think) ➔ 执行工具 (Act) ➔ 观察结果 (Observe) ➔ 思考` 循环，具备防死锁与最大迭代轮数熔断保护。
+- **全模型 Tool Calling 兼容**：标准化适配 OpenAI、Gemini 及 DeepSeek 工具格式，支持 SSE 流式传输中动态拼接组装函数分片。
+- **多模态工具路由执行**：内置隔离沙箱代码执行（`builtin_code`）、动态外部 HTTP API 请求（`builtin_http`）及画布既有节点委托（`canvas_node`）。
+- **批量循环与子流程嵌套**：提供动态数组批量迭代器（`LoopNode`）与多流程复合嵌套（`SubWorkflowNode`）。
+
+### 2. 🎨 可视化 DAG 画布与 Kahn 拓扑调度器
+- **拖拽式工作流画布**：基于 `@xyflow/react`（React Flow v12）打造，包含 12 大专业节点组件（`输入`, `提示词`, `大模型`, `智能体`, `循环迭代`, `子工作流`, `脚本代码`, `输出`, `知识库`, `条件分支`, `变量聚合器`, `HTTP请求`）。
 - **多路条件分支路由与动态跳过**：支持 IF/ELSE 规则求值、未命中下游分支动态跳过（`NODE_SKIPPED`）与聚合器汇聚收拢。
 - **交互式 Chat 调试抽屉与一键 API 发布**：全局快捷键 `Ctrl+Shift+D` 呼出实时对话调试抽屉；支持一键生成 FastAPI REST API 端点与 Key 鉴权。
 

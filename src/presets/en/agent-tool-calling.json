@@ -1,0 +1,123 @@
+﻿{
+  "version": "1.0.0",
+  "metadata": {
+    "id": "f1a2b3c4-0004-4000-a000-000000000001",
+    "name": "Autonomous Agent with Tool Calling",
+    "description": "ReAct agent that autonomously evaluates user goals, dynamically calls built-in calculation and lookup tools, and synthesizes answers.",
+    "author": "PatchCat Team",
+    "tags": [
+      "Agent",
+      "Tool Calling",
+      "ReAct",
+      "Automation"
+    ],
+    "createdAt": "2026-09-13T00:00:00Z",
+    "updatedAt": "2026-09-13T00:00:00Z"
+  },
+  "viewport": {
+    "x": 50,
+    "y": 150,
+    "zoom": 0.85
+  },
+  "nodes": [
+    {
+      "id": "input_user",
+      "type": "input",
+      "position": {
+        "x": 50,
+        "y": 250
+      },
+      "data": {
+        "label": "User Query",
+        "description": "User business request requiring tools",
+        "inputs": {
+          "user_query": "I have 450 USD. Convert it to CNY using the current exchange rate, then apply a 3% transaction fee to tell me the net amount in CNY."
+        }
+      }
+    },
+    {
+      "id": "agent_solver",
+      "type": "agent",
+      "position": {
+        "x": 420,
+        "y": 250
+      },
+      "data": {
+        "label": "Financial Assistant Agent",
+        "description": "ReAct agent with tools for exchange rate and math calculations",
+        "inputs": {
+          "prompt": "{{input_user.user_query}}"
+        },
+        "config": {
+          "systemPrompt": "You are a professional financial assistant agent. Use the available tools to find exchange rates and perform accurate arithmetic before providing the final answer.",
+          "tools": [
+            {
+              "id": "tool_exchange_rate",
+              "name": "get_exchange_rate",
+              "description": "Get current currency exchange rate between two currencies",
+              "type": "builtin_code",
+              "implementation": "const rates = { 'USD_CNY': 7.25, 'EUR_CNY': 7.85, 'JPY_CNY': 0.048 }; const key = inputs.from + '_' + inputs.to; return { rate: rates[key] || 7.25, from: inputs.from, to: inputs.to };",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "from": { "type": "string", "description": "Source currency e.g. USD" },
+                  "to": { "type": "string", "description": "Target currency e.g. CNY" }
+                },
+                "required": ["from", "to"]
+              }
+            },
+            {
+              "id": "tool_calculator",
+              "name": "calculate",
+              "description": "Accurately compute mathematical operations like multiplication or percentage fees",
+              "type": "builtin_code",
+              "implementation": "return { result: eval(inputs.expression) };",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expression": { "type": "string", "description": "Arithmetic string, e.g. 450 * 7.25 * 0.97" }
+                },
+                "required": ["expression"]
+              }
+            }
+          ],
+          "maxIterations": 6,
+          "temperature": 0.3,
+          "model": "gpt-4o"
+        }
+      }
+    },
+    {
+      "id": "output_result",
+      "type": "output",
+      "position": {
+        "x": 840,
+        "y": 250
+      },
+      "data": {
+        "label": "Agent Response",
+        "description": "Synthesized final answer from the agent",
+        "inputs": {
+          "final_answer": "{{agent_solver.response}}",
+          "iterations": "{{agent_solver.iterations}}"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_input_to_agent",
+      "source": "input_user",
+      "target": "agent_solver",
+      "sourceHandle": "out",
+      "targetHandle": "in"
+    },
+    {
+      "id": "edge_agent_to_output",
+      "source": "agent_solver",
+      "target": "output_result",
+      "sourceHandle": "out",
+      "targetHandle": "in"
+    }
+  ]
+}

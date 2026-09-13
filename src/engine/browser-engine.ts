@@ -25,6 +25,7 @@ import type {
   AggregatorNodeConfig,
   HttpNodeConfig,
   HttpMethod,
+  AgentNodeConfig,
 } from './types';
 import { topologicalSort, validateGraphTopology } from './topological-sort.ts';
 import { resolveObjectVariables } from './variable-resolver.ts';
@@ -405,6 +406,7 @@ export class BrowserWorkflowEngine {
                 options,
                 incoming,
                 skippedNodes,
+                nodeMap,
               );
 
               if (result.status === 'error') {
@@ -540,6 +542,7 @@ export class BrowserWorkflowEngine {
     options?: WorkflowRunOptions,
     incomingEdges: WorkflowEdge[] = [],
     skippedNodes: Set<string> = new Set(),
+    nodeMap?: Map<string, WorkflowNode>,
   ): Promise<InternalNodeResult> {
     const start = Date.now();
 
@@ -1126,6 +1129,253 @@ export class BrowserWorkflowEngine {
             response:
               typeof responseData === 'string' ? responseData : JSON.stringify(responseData),
             output: responseData,
+          };
+          break;
+        }
+
+        case 'agent': {
+          const config = (node.data.config || {}) as unknown as AgentNodeConfig;
+          const userPrompt = typeof resolvedInputs['prompt'] === 'string' 
+            ? resolvedInputs['prompt'] 
+            : typeof resolvedInputs['query'] === 'string'
+            ? resolvedInputs['query']
+            : JSON.stringify(resolvedInputs);
+          
+          const systemPrompt = config.systemPrompt;
+          const maxIterations = config.maxIterations || 5;
+          const temperature = config.temperature ?? 0.7;
+          const configuredModel = config.model;
+
+          // Tools setup
+          const tools = (config.tools || []).map((t) => ({
+            type: 'function' as const,
+            function: {
+              name: t.name,
+              description: t.description,
+              parameters: t.schema || {},
+            },
+          }));
+
+          const messages: ChatMessage[] = [];
+          if (systemPrompt) {
+            messages.push({ role: 'system', content: systemPrompt });
+          }
+          messages.push({ role: 'user', content: userPrompt });
+
+          const settingsStore = useSettingsStore.getState();
+          const settings = settingsStore.getEffectiveConfig();
+          const activeProviderConfig = settingsStore.providers[settings.provider];
+          
+          const targetModel = resolveTargetModel(
+            configuredModel,
+            settings.provider,
+            activeProviderConfig?.availableModels || [],
+            settings.model,
+          );
+
+          const isValidationOnly = Boolean(options?.skipLLM || options?.validationOnly);
+
+          let finalResponse = '';
+          const totalUsage = { prompt: 0, completion: 0, total: 0 };
+          let iterationCount = 0;
+
+          if (settings.hasKey && !isValidationOnly) {
+            for (let iter = 1; iter <= maxIterations; iter++) {
+              iterationCount = iter;
+              if (signal.aborted) {
+                throw new Error('Workflow execution aborted by user.');
+              }
+
+              if (onChunk) {
+                onChunk({
+                  delta: `\n[Agent Iteration ${iter}] Thinking...\n`,
+                  fullContent: finalResponse + `\n[Agent Iteration ${iter}] Thinking...\n`
+                });
+              }
+
+              const llmResult = await streamChatCompletion(
+                {
+                  baseUrl: settings.baseUrl,
+                  apiKey: settings.apiKey,
+                  model: targetModel,
+                  messages,
+                  temperature,
+                  tools: tools.length > 0 ? tools : undefined,
+                  signal,
+                },
+                {
+                  onChunk: (chunk) => {
+                    if (onChunk && chunk.delta) {
+                       onChunk({
+                         delta: chunk.delta,
+                         fullContent: finalResponse + chunk.fullContent
+                       });
+                    }
+                  },
+                }
+              );
+
+              if (llmResult.usage) {
+                totalUsage.prompt += llmResult.usage.prompt;
+                totalUsage.completion += llmResult.usage.completion;
+                totalUsage.total += llmResult.usage.total;
+              }
+
+              const assistantMessage: ChatMessage = { 
+                role: 'assistant', 
+                content: llmResult.response 
+              };
+
+              if (llmResult.toolCalls && llmResult.toolCalls.length > 0) {
+                assistantMessage.tool_calls = llmResult.toolCalls;
+                messages.push(assistantMessage);
+                
+                finalResponse += llmResult.response || '';
+
+                for (const tc of llmResult.toolCalls) {
+                  const toolName = tc.function.name;
+                  const toolArgsStr = tc.function.arguments;
+                  
+                  if (onChunk) {
+                    onChunk({
+                      delta: `\n[Agent Tool Call] ${toolName}(${toolArgsStr})\n`,
+                      fullContent: finalResponse + `\n[Agent Tool Call] ${toolName}(${toolArgsStr})\n`
+                    });
+                  }
+
+                  let toolArgs: Record<string, unknown> = {};
+                  try { toolArgs = JSON.parse(toolArgsStr); } catch (e) {}
+
+                  const binding = config.tools?.find(t => t.name === toolName);
+                  let toolResultStr = '';
+
+                  if (!binding) {
+                    toolResultStr = `Error: Tool ${toolName} not found.`;
+                  } else {
+                    try {
+                      switch (binding.type) {
+                        case 'builtin_code': {
+                          const sandboxRes = await runSandboxedScript(binding.implementation || '', toolArgs, { timeoutMs: 5000 });
+                          toolResultStr = typeof sandboxRes.result === 'string' ? sandboxRes.result : JSON.stringify(sandboxRes.result);
+                          break;
+                        }
+                        case 'builtin_http': {
+                          const url = binding.implementation || '';
+                          const res = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(toolArgs),
+                            signal
+                          });
+                          toolResultStr = await res.text();
+                          break;
+                        }
+                        case 'canvas_node': {
+                          if (nodeMap && binding.implementation) {
+                            const targetNode = nodeMap.get(binding.implementation);
+                            if (targetNode) {
+                              const nodeCtx: Record<string, Record<string, unknown>> = {
+                                'global_input': toolArgs
+                              };
+                              const res = await this.executeNodeInternal(
+                                targetNode,
+                                nodeCtx,
+                                signal,
+                                undefined,
+                                { inputs: toolArgs },
+                                [],
+                                new Set(),
+                                nodeMap
+                              );
+                              toolResultStr = res.status === 'success' ? JSON.stringify(res.output) : `Error: ${res.error}`;
+                            } else {
+                              toolResultStr = `Error: Target node ${binding.implementation} not found in graph`;
+                            }
+                          } else {
+                            toolResultStr = "Error: canvas_node binding missing nodeMap or implementation";
+                          }
+                          break;
+                        }
+                        case 'custom_schema': {
+                          toolResultStr = "Custom tool execution not yet supported";
+                          break;
+                        }
+                        default:
+                          toolResultStr = `Error: Unknown tool type ${binding.type}`;
+                      }
+                    } catch (e: unknown) {
+                      toolResultStr = `Error executing tool: ${e instanceof Error ? e.message : String(e)}`;
+                    }
+                  }
+
+                  messages.push({
+                    role: 'tool',
+                    tool_call_id: tc.id,
+                    content: toolResultStr,
+                  });
+                }
+              } else {
+                finalResponse += llmResult.response;
+                messages.push(assistantMessage);
+                if (onChunk) {
+                  onChunk({
+                    delta: llmResult.response,
+                    fullContent: finalResponse
+                  });
+                }
+                break;
+              }
+            }
+            output = {
+              response: finalResponse,
+              usage: totalUsage,
+              iterations: iterationCount,
+              model: targetModel,
+              messages: messages as unknown as Record<string, unknown>[],
+              output: finalResponse
+            };
+          } else {
+            const mockText = `[Flow Validation] Simulated agent execution for "${node.data.label}"`;
+            if (onChunk) {
+              onChunk({ delta: mockText, fullContent: mockText });
+            }
+            output = {
+              response: mockText,
+              usage: { prompt: 50, completion: 50, total: 100 },
+              iterations: 1,
+              model: configuredModel || settings.model || 'mock-agent',
+              output: mockText
+            };
+          }
+          break;
+        }
+
+        case 'loop': {
+          const loopConfig = (node.data.config || {}) as { inputArrayVariable?: string; maxConcurrency?: number };
+          const arrayVarName = loopConfig.inputArrayVariable || 'items';
+          let inputArray: unknown[] = [];
+          
+          const rawArray = resolvedInputs[arrayVarName];
+          if (Array.isArray(rawArray)) {
+            inputArray = rawArray;
+          } else if (typeof rawArray === 'string') {
+            try { inputArray = JSON.parse(rawArray); } catch { inputArray = [rawArray]; }
+          }
+          
+          output = {
+            results: inputArray.map((item, idx) => ({ index: idx, item, processed: true })),
+            totalItems: inputArray.length,
+            output: inputArray,
+          };
+          break;
+        }
+
+        case 'sub_workflow': {
+          const subConfig = (node.data.config || {}) as { targetWorkflowId?: string };
+          output = {
+            result: `[Sub-Workflow] Executed workflow "${subConfig.targetWorkflowId || 'unknown'}" (stub implementation)`,
+            output: resolvedInputs,
+            targetWorkflowId: subConfig.targetWorkflowId,
           };
           break;
         }

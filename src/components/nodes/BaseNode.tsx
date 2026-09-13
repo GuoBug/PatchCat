@@ -16,6 +16,8 @@ import {
   GitMerge,
   Globe,
   MinusCircle,
+  Repeat,
+  Layers,
 } from 'lucide-react';
 import type { NodeType, NodeStatus, NodeExecutionResult } from '../../engine/types.ts';
 
@@ -104,6 +106,27 @@ const typeConfig: Record<
       'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-500/10 dark:text-teal-400 dark:border-teal-500/30',
     handleColor: '#14B8A6',
     badge: 'HTTP',
+  },
+  agent: {
+    icon: Bot,
+    color:
+      'bg-gradient-to-br from-violet-500/20 to-indigo-500/20 text-indigo-700 border-violet-500/40 dark:text-indigo-400',
+    handleColor: '#8B5CF6',
+    badge: 'AGENT',
+  },
+  loop: {
+    icon: Repeat,
+    color:
+      'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30',
+    handleColor: '#10B981',
+    badge: 'LOOP',
+  },
+  sub_workflow: {
+    icon: Layers,
+    color:
+      'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30',
+    handleColor: '#F59E0B',
+    badge: 'SUBFLOW',
   },
 };
 

@@ -46,7 +46,10 @@ export type NodeType =
   | 'knowledge'
   | 'condition'
   | 'aggregator'
-  | 'http';
+  | 'http'
+  | 'agent'
+  | 'loop'
+  | 'sub_workflow';
 
 /**
  * Execution lifecycle status for an individual node.
@@ -253,7 +256,9 @@ export type ExecutionEventType =
   | 'NODE_ERROR'
   | 'NODE_SKIPPED'
   | 'WORKFLOW_COMPLETE'
-  | 'WORKFLOW_ERROR';
+  | 'WORKFLOW_ERROR'
+  | 'AGENT_TOOL_CALL'
+  | 'AGENT_ITERATION';
 
 /** Type-safe payload map keyed by {@link ExecutionEventType}. */
 export interface ExecutionEventPayloadMap {
@@ -280,6 +285,20 @@ export interface ExecutionEventPayloadMap {
     timestamp: number;
   };
   WORKFLOW_ERROR: { error: string; failedNodeId?: string; timestamp: number };
+  AGENT_TOOL_CALL: {
+    nodeId: string;
+    iterationIndex: number;
+    toolName: string;
+    toolArgs: Record<string, unknown>;
+    toolResult?: unknown;
+  };
+  AGENT_ITERATION: {
+    nodeId: string;
+    iterationIndex: number;
+    maxIterations: number;
+    action: 'thinking' | 'tool_call' | 'tool_result' | 'final_answer';
+    content?: string;
+  };
 }
 
 /**
@@ -414,7 +433,60 @@ export interface HttpNodeConfig {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 10. Node Default Config Factories
+// 11. Tool Calling, Agent, Loop & Sub-Workflow Configuration
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ToolDefinition {
+  type: 'function';
+  function: {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+  };
+}
+
+export interface ToolCallResult {
+  id: string;
+  type: 'function';
+  function: { name: string; arguments: string };
+}
+
+export type AgentToolType = 'builtin_http' | 'builtin_code' | 'canvas_node' | 'custom_schema';
+
+export interface AgentToolBinding {
+  id: string;
+  name: string;
+  description: string;
+  type: AgentToolType;
+  targetNodeId?: string;
+  schema?: Record<string, unknown>;
+  implementation?: string;
+}
+
+export interface AgentNodeConfig {
+  systemPrompt: string;
+  tools: AgentToolBinding[];
+  maxIterations: number;
+  stopCondition?: string;
+  model?: string;
+  temperature?: number;
+}
+
+export interface LoopNodeConfig {
+  inputArrayVariable: string;
+  targetWorkflowId?: string;
+  maxConcurrency: number;
+  itemTimeoutMs: number;
+}
+
+export interface SubWorkflowNodeConfig {
+  targetWorkflowId: string;
+  inputMapping: Record<string, string>;
+  outputMapping: Record<string, string>;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 12. Node Default Config Factories
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -472,6 +544,25 @@ export function getDefaultNodeConfig(type: NodeType): Record<string, unknown> {
         authType: 'none',
         authConfig: {},
       };
+    case 'agent':
+      return {
+        systemPrompt: 'You are a helpful assistant. Use the available tools to answer user questions accurately.',
+        tools: [],
+        maxIterations: 10,
+        temperature: 0.7,
+      };
+    case 'loop':
+      return {
+        inputArrayVariable: '',
+        maxConcurrency: 1,
+        itemTimeoutMs: 30000,
+      };
+    case 'sub_workflow':
+      return {
+        targetWorkflowId: '',
+        inputMapping: {},
+        outputMapping: {},
+      };
   }
 }
 
@@ -489,6 +580,9 @@ export function getDefaultNodeLabel(type: NodeType): string {
     condition: 'IF / ELSE Condition',
     aggregator: 'Variable Aggregator',
     http: 'HTTP Request',
+    agent: 'AI Agent',
+    loop: 'Loop Iterator',
+    sub_workflow: 'Sub-Workflow',
   };
   return labels[type];
 }

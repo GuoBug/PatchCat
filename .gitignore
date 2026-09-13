@@ -89,3 +89,8 @@ server/.env
 
 # Security & Internal Audit (Not for Public Release)
 docs/安全TODO/
+
+# Temporary visual scratch images & design drafts
+scratch_*.png
+github_mark.png
+github_mark.svg

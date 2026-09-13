@@ -13,6 +13,9 @@ import { KnowledgeNode } from './KnowledgeNode';
 import { ConditionNode } from './ConditionNode';
 import { AggregatorNode } from './AggregatorNode';
 import { HttpNode } from './HttpNode';
+import { AgentNode } from './AgentNode';
+import { LoopNode } from './LoopNode';
+import { SubWorkflowNode } from './SubWorkflowNode';
 
 export { BaseNode } from './BaseNode';
 export { InputNode } from './InputNode';
@@ -24,6 +27,9 @@ export { KnowledgeNode } from './KnowledgeNode';
 export { ConditionNode } from './ConditionNode';
 export { AggregatorNode } from './AggregatorNode';
 export { HttpNode } from './HttpNode';
+export { AgentNode } from './AgentNode';
+export { LoopNode } from './LoopNode';
+export { SubWorkflowNode } from './SubWorkflowNode';
 
 /**
  * Standard NodeTypes dictionary registered in React Flow
@@ -38,6 +44,9 @@ export const nodeTypes: NodeTypes = {
   condition: ConditionNode,
   aggregator: AggregatorNode,
   http: HttpNode,
+  agent: AgentNode,
+  loop: LoopNode,
+  subworkflow: SubWorkflowNode,
 };
 
 export const SUPPORTED_NODE_TYPES = [
@@ -50,6 +59,9 @@ export const SUPPORTED_NODE_TYPES = [
   'condition',
   'aggregator',
   'http',
+  'agent',
+  'loop',
+  'subworkflow',
 ] as const;
 
 export type RegisteredNodeType = (typeof SUPPORTED_NODE_TYPES)[number];

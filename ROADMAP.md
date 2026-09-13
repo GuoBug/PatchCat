@@ -1,7 +1,7 @@
 # 🗺️ PatchCat Product Roadmap
 
-> **Current Stage**: `v0.2.0` (Released ✅)  
-> **Last Updated**: 2026-09-09  
+> **Current Stage**: `v0.4.2` (Released ✅)  
+> **Last Updated**: 2026-09-13  
 > **Positioning**: A local-first, zero-setup, visual high-performance AI prompt workflow orchestrator  
 
 [English](#english) | [简体中文](#简体中文)
@@ -22,18 +22,16 @@
 
 ### 🔮 Future Milestone Details
 
-#### Phase 4 — v0.4.0: Agent Capabilities & Advanced RAG
+#### Phase 5 — v0.6.0: Advanced RAG & Vector Intelligence
 
 | Feature | Description |
 |:---|:---|
-| **Function Calling / Tool Use** | LLM nodes can declare tool schemas and auto-route tool_calls responses |
-| **Agent ReAct Loop** | LLM → Decide → Tool → Feedback → Loop until complete |
-| **Conversation Memory** | Buffer Memory, Summary Memory, Vector Memory strategies |
-| **Hybrid Search (BM25 + Dense)** | RRF weighted fusion for improved retrieval accuracy |
-| **Reranker Integration** | Cohere / BGE reranker for knowledge retrieval refinement |
-| **Sub-workflow Node** | Package existing workflows as reusable composite nodes |
+| **Hybrid Search (BM25 + Dense)** | Reciprocal Rank Fusion (RRF) weighted retrieval across lexical and semantic vectors |
+| **Reranker Integration** | Cohere / BGE / Jina cross-encoder reranker for context recall refinement |
+| **Rolling Background Summarization**| Background LLM rolling compression of older conversation turns |
+| **Canvas Explicit Memory Node** | Graph-level buffer/summary/vector memory nodes wireable to LLM contexts |
 
-#### Phase 5 — v1.0.0: Production & Enterprise Delivery
+#### Phase 6 — v1.0.0: Production & Enterprise Delivery
 
 | Feature | Description |
 |:---|:---|
@@ -54,6 +52,8 @@
 - [x] **Phase 2**: RAG Knowledge Base & Canvas Retrieval Node (2026-09-03)
 - [x] **Phase 2.5**: Knowledge Base UX Polish, Document Parsers & Visualization (2026-09-04 ~ 09-08)
 - [x] **Phase 3**: Conditional Routing, External Integration & Interactive Debugging (2026-09-09)
+- [x] **Phase 3.1**: Multi-Turn Conversation Memory & Dual-Tier Storage Architecture (2026-09-11)
+- [x] **Phase 4**: Agent Capabilities, ReAct Autonomous Loop & Tool Use (2026-09-13)
 
 ---
 
@@ -73,18 +73,16 @@
 
 ### 🔮 未来里程碑详细规划
 
-#### Phase 4 — v0.4.0：Agent 能力与高级 RAG
+#### Phase 5 — v0.6.0：高级 RAG 与向量智能
 
 | 功能 | 描述 |
 |:---|:---|
-| **Function Calling / 工具调用** | LLM 节点可声明工具 Schema 并自动路由 tool_calls 响应 |
-| **Agent ReAct 循环** | LLM → 判断 → 工具 → 反馈 → 循环直至完成 |
-| **对话记忆 (Memory)** | Buffer Memory、Summary Memory、Vector Memory 多种记忆策略 |
-| **混合检索 (BM25 + 稠密向量)** | RRF 加权融合，提升检索准确率 |
-| **Reranker 重排序** | Cohere / BGE 重排序器增强知识库检索精度 |
-| **子工作流节点** | 将已有工作流打包为可复用的复合节点 |
+| **混合检索 (BM25 + 稠密向量)** | 基于 RRF 加权倒排与稠密融合，全面提升召回精准率 |
+| **Reranker 重排序集成** | Cohere / BGE / Jina 交叉编码器重排序模型深度适配 |
+| **滚动后台摘要提炼** | 轻量模型对淘汰轮次后台滚动长效提炼，兼顾成本与长期记忆 |
+| **画布显式 Memory 节点** | 支持画线挂载至任意 LLM 节点的独立记忆节点 |
 
-#### Phase 5 — v1.0.0：生产交付与企业级功能
+#### Phase 6 — v1.0.0：生产交付与企业级功能
 
 | 功能 | 描述 |
 |:---|:---|
@@ -105,3 +103,5 @@
 - [x] **Phase 2**：RAG 知识库体系与画布检索节点全链路闭环 (2026-09-03)
 - [x] **Phase 2.5**：知识库可视化管理、文档解析器与体验增强 (2026-09-04 ~ 09-08)
 - [x] **Phase 3**：条件路由、外部集成与交互式调试 (2026-09-09)
+- [x] **Phase 3.1**：多轮会话记忆与底层存储持久化架构 (2026-09-11)
+- [x] **Phase 4**：AI 智能体能力层、ReAct 自主循环与多模态工具调用 (2026-09-13)

@@ -10,8 +10,14 @@ import type { TokenUsage } from './types';
 import { logger } from './logger.ts';
 
 export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
+  role: 'system' | 'user' | 'assistant' | 'tool';
+  content: string | null;
+  tool_calls?: Array<{
+    id: string;
+    type: 'function';
+    function: { name: string; arguments: string };
+  }>;
+  tool_call_id?: string;
 }
 
 export interface LLMChatRequest {
@@ -22,6 +28,15 @@ export interface LLMChatRequest {
   temperature?: number;
   maxTokens?: number;
   signal?: AbortSignal;
+  tools?: Array<{
+    type: 'function';
+    function: {
+      name: string;
+      description: string;
+      parameters: Record<string, unknown>;
+    };
+  }>;
+  tool_choice?: 'auto' | 'none' | 'required';
 }
 
 export interface LLMStreamChunk {
@@ -41,6 +56,11 @@ export interface LLMExecutionOutput {
   usage: TokenUsage;
   finishReason: string;
   durationMs: number;
+  toolCalls?: Array<{
+    id: string;
+    type: 'function';
+    function: { name: string; arguments: string };
+  }>;
 }
 
 /**
@@ -100,6 +120,13 @@ export async function streamChatCompletion(
       include_usage: true,
     },
   };
+
+  if (request.tools && request.tools.length > 0) {
+    (payload as Record<string, unknown>).tools = request.tools;
+    if (request.tool_choice) {
+      (payload as Record<string, unknown>).tool_choice = request.tool_choice;
+    }
+  }
 
   logger.detailed(
     'LLMClient',
@@ -228,6 +255,10 @@ export async function streamChatCompletion(
   let finishReason = 'stop';
   let reportedUsage: TokenUsage | undefined;
   let buffer = '';
+  const toolCallAccumulator = new Map<
+    number,
+    { id: string; type: string; function: { name: string; arguments: string } }
+  >();
 
   const onAbort = () => {
     reader.cancel().catch(() => {});
@@ -301,6 +332,29 @@ export async function streamChatCompletion(
                 hasNewToken = true;
               }
 
+              // Tool calls
+              if (Array.isArray(delta.tool_calls)) {
+                for (const tc of delta.tool_calls) {
+                  const index = tc.index;
+                  if (!toolCallAccumulator.has(index)) {
+                    toolCallAccumulator.set(index, {
+                      id: tc.id || '',
+                      type: tc.type || 'function',
+                      function: {
+                        name: tc.function?.name || '',
+                        arguments: tc.function?.arguments || '',
+                      },
+                    });
+                  } else {
+                    const existing = toolCallAccumulator.get(index)!;
+                    if (tc.id) existing.id = tc.id;
+                    if (tc.type) existing.type = tc.type;
+                    if (tc.function?.name) existing.function.name += tc.function.name;
+                    if (tc.function?.arguments) existing.function.arguments += tc.function.arguments;
+                  }
+                }
+              }
+
               if (hasNewToken && callbacks?.onChunk) {
                 callbacks.onChunk({
                   delta: contentDelta,
@@ -344,10 +398,15 @@ export async function streamChatCompletion(
 
   const durationMs = Date.now() - startTime;
 
+  let finalToolCalls: Array<{ id: string; type: 'function'; function: { name: string; arguments: string } }> | undefined;
+  if (toolCallAccumulator.size > 0) {
+    finalToolCalls = Array.from(toolCallAccumulator.values()) as Array<{ id: string; type: 'function'; function: { name: string; arguments: string } }>;
+  }
+
   logger.summary(
     'LLMClient',
     `模型推理完成: ${request.model} [${durationMs}ms] (消耗 ${usage.total} tokens)`,
-    { model: request.model, durationMs, usage, finishReason },
+    { model: request.model, durationMs, usage, finishReason, toolCalls: finalToolCalls },
     undefined,
     'request',
     durationMs,
@@ -356,7 +415,7 @@ export async function streamChatCompletion(
   logger.dev(
     'LLMClient',
     `[响应输出 Payload] 模型: ${request.model}`,
-    { outputs: { response: fullContent, reasoning: fullReasoning || undefined, usage } },
+    { outputs: { response: fullContent, reasoning: fullReasoning || undefined, usage, toolCalls: finalToolCalls } },
     { durationMs, finishReason },
     undefined,
     'request',
@@ -369,5 +428,6 @@ export async function streamChatCompletion(
     usage,
     finishReason,
     durationMs,
+    toolCalls: finalToolCalls,
   };
 }

@@ -1,0 +1,123 @@
+﻿{
+  "version": "1.0.0",
+  "metadata": {
+    "id": "f1a2b3c4-0004-4000-a000-000000000002",
+    "name": "自主工具调用 Agent",
+    "description": "基于 ReAct 范式的自主智能体，能够理解用户需求，动态调用汇率换算与高精度算术工具，最终输出综合解答。",
+    "author": "PatchCat Team",
+    "tags": [
+      "Agent",
+      "工具调用",
+      "ReAct",
+      "自主智能体"
+    ],
+    "createdAt": "2026-09-13T00:00:00Z",
+    "updatedAt": "2026-09-13T00:00:00Z"
+  },
+  "viewport": {
+    "x": 50,
+    "y": 150,
+    "zoom": 0.85
+  },
+  "nodes": [
+    {
+      "id": "input_user",
+      "type": "input",
+      "position": {
+        "x": 50,
+        "y": 250
+      },
+      "data": {
+        "label": "用户提问输入",
+        "description": "需要多步计算与工具辅助的综合任务",
+        "inputs": {
+          "user_query": "我有 450 美元，请帮我按最新汇率折算为人民币，并扣除 3% 的跨境手续费，计算出最终到手人民币金额。"
+        }
+      }
+    },
+    {
+      "id": "agent_solver",
+      "type": "agent",
+      "position": {
+        "x": 420,
+        "y": 250
+      },
+      "data": {
+        "label": "智能财务助手 Agent",
+        "description": "支持自主调用汇率查询与代数计算工具的 ReAct 智能体",
+        "inputs": {
+          "prompt": "{{input_user.user_query}}"
+        },
+        "config": {
+          "systemPrompt": "你是一名资深智能财务分析助手。请充分利用已提供的工具查询汇率及精确执行数学运算，给出详尽、可靠且条理清晰的最终答案。",
+          "tools": [
+            {
+              "id": "tool_exchange_rate",
+              "name": "get_exchange_rate",
+              "description": "查询两个指定币种之间的最新外汇兑换牌价",
+              "type": "builtin_code",
+              "implementation": "const rates = { 'USD_CNY': 7.25, 'EUR_CNY': 7.85, 'JPY_CNY': 0.048 }; const key = inputs.from + '_' + inputs.to; return { rate: rates[key] || 7.25, from: inputs.from, to: inputs.to };",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "from": { "type": "string", "description": "源货币代码，如 USD" },
+                  "to": { "type": "string", "description": "目标货币代码，如 CNY" }
+                },
+                "required": ["from", "to"]
+              }
+            },
+            {
+              "id": "tool_calculator",
+              "name": "calculate",
+              "description": "高精度执行代数运算、乘法及手续费折算",
+              "type": "builtin_code",
+              "implementation": "return { result: eval(inputs.expression) };",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expression": { "type": "string", "description": "数学算式，例如 450 * 7.25 * 0.97" }
+                },
+                "required": ["expression"]
+              }
+            }
+          ],
+          "maxIterations": 6,
+          "temperature": 0.3,
+          "model": "gpt-4o"
+        }
+      }
+    },
+    {
+      "id": "output_result",
+      "type": "output",
+      "position": {
+        "x": 840,
+        "y": 250
+      },
+      "data": {
+        "label": "Agent 最终回答",
+        "description": "整合工具返回结果后的输出呈现",
+        "inputs": {
+          "final_answer": "{{agent_solver.response}}",
+          "iterations": "{{agent_solver.iterations}}"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_input_to_agent",
+      "source": "input_user",
+      "target": "agent_solver",
+      "sourceHandle": "out",
+      "targetHandle": "in"
+    },
+    {
+      "id": "edge_agent_to_output",
+      "source": "agent_solver",
+      "target": "output_result",
+      "sourceHandle": "out",
+      "targetHandle": "in"
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import ragKnowledgeQaEn from './en/rag-knowledge-qa.json' with { type: 'json' };
 import ragAgenticAuditorEn from './en/rag-agentic-auditor.json' with { type: 'json' };
 import conditionalRoutingEn from './en/conditional-customer-routing.json' with { type: 'json' };
 import weatherApiEn from './en/weather-api-integration.json' with { type: 'json' };
+import agentToolCallingEn from './en/agent-tool-calling.json' with { type: 'json' };
 
 import customerSupportZh from './zh/customer-support-routing.json' with { type: 'json' };
 import reportCriticZh from './zh/report-generation-critic.json' with { type: 'json' };
@@ -13,6 +14,7 @@ import ragKnowledgeQaZh from './zh/rag-knowledge-qa.json' with { type: 'json' };
 import ragAgenticAuditorZh from './zh/rag-agentic-auditor.json' with { type: 'json' };
 import conditionalRoutingZh from './zh/conditional-customer-routing.json' with { type: 'json' };
 import weatherApiZh from './zh/weather-api-integration.json' with { type: 'json' };
+import agentToolCallingZh from './zh/agent-tool-calling.json' with { type: 'json' };
 
 import type { WorkflowGraph } from '../engine/types.ts';
 import type { Language } from '../i18n/translations.ts';
@@ -68,6 +70,12 @@ export const PRESETS_DATA: Record<Language, Record<string, PresetItem>> = {
       desc: 'External HTTP Request & Advisory Summary',
       data: weatherApiEn as unknown as WorkflowGraph,
     },
+    'agent-tool-calling': {
+      key: 'agent-tool-calling',
+      name: 'Autonomous Agent with Tool Calling',
+      desc: 'ReAct Agent with Lookup & Calculation Tools',
+      data: agentToolCallingEn as unknown as WorkflowGraph,
+    },
   },
   zh: {
     'customer-support': {
@@ -112,6 +120,12 @@ export const PRESETS_DATA: Record<Language, Record<string, PresetItem>> = {
       desc: '三方 HTTP 接口请求与早报播报',
       data: weatherApiZh as unknown as WorkflowGraph,
     },
+    'agent-tool-calling': {
+      key: 'agent-tool-calling',
+      name: '自主智能体工具调用与运算流',
+      desc: 'ReAct 自主循环调用汇率与运算工具',
+      data: agentToolCallingZh as unknown as WorkflowGraph,
+    },
   },
 };
 
@@ -123,6 +137,7 @@ export {
   ragAgenticAuditorEn,
   conditionalRoutingEn,
   weatherApiEn,
+  agentToolCallingEn,
   customerSupportZh,
   reportCriticZh,
   modelArenaZh,
@@ -130,4 +145,5 @@ export {
   ragAgenticAuditorZh,
   conditionalRoutingZh,
   weatherApiZh,
+  agentToolCallingZh,
 };

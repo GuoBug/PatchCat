@@ -61,6 +61,12 @@ export const WorkflowCanvas: React.FC = () => {
         return '#F59E0B';
       case 'output':
         return '#F43F5E';
+      case 'agent':
+        return '#8B5CF6'; // violet
+      case 'loop':
+        return '#10B981'; // emerald
+      case 'subworkflow':
+        return '#F59E0B'; // amber
       default:
         return '#64748B';
     }

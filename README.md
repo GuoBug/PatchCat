@@ -14,13 +14,13 @@
   </p>
 
   <p>
-    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/version-v0.4.0-blue.svg" alt="Release: v0.4.0" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/version-v0.4.2-blue.svg" alt="Release: v0.4.2" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-emerald.svg" alt="License: MIT" /></a>
-    <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.8%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
-    <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=black" alt="React 19" /></a>
+    <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
+    <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" alt="React 18" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-94%20Frontend%20%7C%2021%20Backend%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-195%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
@@ -41,7 +41,7 @@
 
 ## 🌟 What is PatchCat?
 
-**PatchCat** is a modern, lightweight, yet enterprise-grade **visual prompt orchestration platform and DAG execution engine**. Designed for AI engineers, prompt designers, and developers building agentic workflows, PatchCat makes it effortless to chain prompts, LLMs, code transformations, and conditional routers into robust, parallelized pipelines.
+**PatchCat** is a modern, lightweight, yet enterprise-grade **visual prompt orchestration platform and DAG execution engine**. Designed for AI engineers, prompt designers, and developers building agentic workflows, PatchCat makes it effortless to chain prompts, LLMs, autonomous agents, code transformations, and conditional routers into robust, parallelized pipelines.
 
 With **zero mandatory backend setup** (Client-Only BYOK Mode) and direct connectivity to **Google Gemini, DeepSeek, OpenAI, SiliconFlow, and local Ollama**, PatchCat delivers high-performance prompt engineering right inside your browser with enterprise-grade telemetry and zero data leakage.
 
@@ -79,8 +79,14 @@ Why choose **PatchCat** over heavyweight orchestration tools?
 
 ## 🚀 Key Features
 
-### 1. 🎨 Visual DAG Canvas & Topology Scheduler
-- **Drag-and-Drop Workflow Builder**: Built on `@xyflow/react` (React Flow v12) with 9 specialized node components (`Input`, `Prompt`, `LLM`, `Code`, `Output`, `Knowledge`, `Condition`, `Aggregator`, `HTTP`).
+### 1. 🤖 Autonomous AI Agent & ReAct Tool Calling (Phase 4)
+- **Built-in ReAct Loop**: Enclosed `Think -> Act -> Observe -> Think` cycle with cycle prevention and maxIterations safeguards.
+- **Universal Tool Calling Client**: Full support for OpenAI, Gemini, and DeepSeek standard tool schemas with streaming `delta.tool_calls` assembly.
+- **Multi-Type Tool Dispatcher**: Route to sandboxed JavaScript (`builtin_code`), external REST endpoints (`builtin_http`), or delegate to canvas nodes (`canvas_node`).
+- **Loop & Sub-Workflow Primitives**: Dynamic array batch iterator (`LoopNode`) and composite workflow encapsulation (`SubWorkflowNode`).
+
+### 2. 🎨 Visual DAG Canvas & Topology Scheduler
+- **Drag-and-Drop Workflow Builder**: Built on `@xyflow/react` (React Flow v12) with 12 specialized node components (`Input`, `Prompt`, `LLM`, `Agent`, `Loop`, `Sub-Workflow`, `Code`, `Output`, `Knowledge`, `Condition`, `Aggregator`, `HTTP`).
 - **Dynamic Conditional Routing & Skipping**: IF/ELSE multi-branch evaluation with dynamic downstream skipping and variable aggregation.
 - **Interactive Chat Debug & API Publishing**: Slide-over Chat panel (`Ctrl+Shift+D`) and instant FastAPI REST endpoint generation with API Key auth.
 

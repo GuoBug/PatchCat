@@ -27,6 +27,8 @@
 | [PRD-007](01-prd/PRD-007-Conditional-Branch-and-Dynamic-Routing.md) | **IF/ELSE Conditional Branch & Variable Aggregator** | Phase 3 | ✅ Done |
 | [PRD-008](01-prd/PRD-008-HTTP-Request-Node.md) | **HTTP Request Node** | Phase 3 | ✅ Done |
 | [PRD-009](01-prd/PRD-009-Chat-Debug-Panel-and-Workflow-API.md) | **Chat Debug Panel & Workflow API Publishing** | Phase 3 | ✅ Done |
+| [PRD-010](01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md) | **Conversation Memory & Persistent Storage** | Phase 3.1 | ✅ Done |
+| [PRD-011](01-prd/PRD-011-Agent-Capabilities-and-Tool-Use.md) | **AI Agent Capabilities, ReAct Autonomous Loop & Tool Calling** | Phase 4 | ✅ Done |
 
 ---
 
@@ -38,6 +40,7 @@
 - [PatchCat Architecture Technical Whitepaper (RFC-101)](02-architecture/patchcat-architecture-whitepaper.md)
 - [Phase 1: FastAPI + PostgreSQL Backend & Dual-Mode Storage](02-architecture/phase-1-backend-and-dual-storage-architecture.md)
 - [Phase 2: Knowledge Base (RAG) Vector Engine & Data Modeling](02-architecture/phase-2-knowledge-base-and-rag-architecture.md)
+- [Phase 3: Conversation Memory & Dual-Tier Storage Architecture](02-architecture/phase-3-conversation-memory-and-storage-architecture.md)
 
 ---
 
@@ -59,24 +62,20 @@
 - [Preflight Model Check & Flow Validation (Dry-Run)](04-dev-notes/preflight-model-check-and-flow-validation.md)
 - [Engineering Test Coverage & Runtime Benchmarks](04-dev-notes/engineering-test-coverage-and-runtime-benchmarks.md)
 - [Feature Overview & Testing Guide](04-dev-notes/feature-overview-and-testing-guide.md)
-- [User Manual & Component Guide](04-dev-notes/user-manual-and-component-guide.md)
+- [User Manual & Node Configuration Guide](04-dev-notes/user-manual-and-component-guide.md)
 
-#### Chronological Dev Logs
-- [📖 Phase 0: Core Topological Scheduler & Visual Canvas](04-dev-notes/dev-log-phase-0-core-engine-and-visual-canvas.md)
-- [📖 Phase 0.5: Multi-Model Ecosystem, Logging & i18n](04-dev-notes/dev-log-phase-0-5-multi-model-logging-and-i18n.md)
-- [📖 Phase 1: Drawer Management & Dual-Mode Storage](04-dev-notes/dev-log-phase-1-drawer-management-and-dual-storage.md)
-- [📖 Phase 2: RAG Knowledge Base & Canvas Node](04-dev-notes/dev-log-phase-2-rag-knowledge-base-and-canvas-node.md)
-
----
-
-### 05. Quick Start Guides
-
-- [Quick Start Guide (English)](quick-start.md)
-- [快速上手指南 (简体中文)](quick-start-zh.md)
+#### Development Evolution Logs
+- [📖 Phase 0: Core DAG Scheduler & Visual Canvas](04-dev-notes/dev-log-phase-0-core-engine-and-visual-canvas.md)
+- [📖 Phase 0.5: Multi-Model Ecosystem, Sanitized Logging & i18n](04-dev-notes/dev-log-phase-0-5-multi-model-logging-and-i18n.md)
+- [📖 Phase 1: Drawer-Style Multi-Workflow Management & Dual-Mode Storage](04-dev-notes/dev-log-phase-1-drawer-management-and-dual-storage.md)
+- [📖 Phase 2: RAG Knowledge Base & Canvas Retrieval Node](04-dev-notes/dev-log-phase-2-rag-knowledge-base-and-canvas-node.md)
+- [📖 Phase 3: Conditional Routing, External Integration & Interactive Debugging](04-dev-notes/dev-log-phase-3-conditional-routing-and-graph-pruning.md)
+- [📖 Phase 3: Chat Debug Panel & API Publishing](04-dev-notes/dev-log-phase-3-chat-debug-and-api-publishing.md)
+- [📖 Phase 4: AI Agent Capabilities, ReAct Autonomous Loop & Multi-Modal Tool Calling](04-dev-notes/dev-log-phase-4-agent-capabilities-and-react-loop.md)
 
 ---
 
-### 06. Security
+### 05. Security & Quality Audits
 
 - [安全审计与代码质量简报](安全TODO/安全审计与代码质量简报.md)
 
@@ -100,6 +99,8 @@
 | [PRD-007](01-prd/PRD-007-Conditional-Branch-and-Dynamic-Routing.md) | **IF/ELSE 条件分支与 Variable 聚合节点** | Phase 3 | ✅ 已完成 |
 | [PRD-008](01-prd/PRD-008-HTTP-Request-Node.md) | **HTTP 请求节点** | Phase 3 | ✅ 已完成 |
 | [PRD-009](01-prd/PRD-009-Chat-Debug-Panel-and-Workflow-API.md) | **Chat 调试面板与工作流 API 发布** | Phase 3 | ✅ 已完成 |
+| [PRD-010](01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md) | **多轮会话记忆与端侧持久化存储架构** | Phase 3.1 | ✅ 已完成 |
+| [PRD-011](01-prd/PRD-011-Agent-Capabilities-and-Tool-Use.md) | **AI Agent 智能体能力层、ReAct 自主循环与多模态工具调用** | Phase 4 | ✅ 已完成 |
 
 ---
 
@@ -111,6 +112,7 @@
 - [PatchCat 架构技术白皮书 (RFC-101)](02-architecture/patchcat-architecture-whitepaper.md)
 - [Phase 1: FastAPI + PostgreSQL 后端与双模存储设计](02-architecture/phase-1-backend-and-dual-storage-architecture.md)
 - [Phase 2: 知识库（RAG）向量引擎与数据建模方案](02-architecture/phase-2-knowledge-base-and-rag-architecture.md)
+- [Phase 3: 多轮会话记忆与底层存储持久化架构](02-architecture/phase-3-conversation-memory-and-storage-architecture.md)
 
 ---
 
@@ -138,7 +140,10 @@
 - [📖 Phase 0：核心拓扑调度引擎与可视化画布构建](04-dev-notes/dev-log-phase-0-core-engine-and-visual-canvas.md)
 - [📖 Phase 0.5：多模型生态适配、三层脱敏日志与国际化](04-dev-notes/dev-log-phase-0-5-multi-model-logging-and-i18n.md)
 - [📖 Phase 1：抽屉式多流程管理与双模存储架构](04-dev-notes/dev-log-phase-1-drawer-management-and-dual-storage.md)
-- [📖 Phase 2：RAG 知识库体系与画布节点全链路闭环](04-dev-notes/dev-log-phase-2-rag-knowledge-base-and-canvas-node.md)
+- [📖 Phase 2：RAG 知识库体系与画布检索节点全链路闭环](04-dev-notes/dev-log-phase-2-rag-knowledge-base-and-canvas-node.md)
+- [📖 Phase 3：条件路由、外部集成与交互式调试](04-dev-notes/dev-log-phase-3-conditional-routing-and-graph-pruning.md)
+- [📖 Phase 3：Chat 调试抽屉与一键 API 发布](04-dev-notes/dev-log-phase-3-chat-debug-and-api-publishing.md)
+- [📖 Phase 4：AI 智能体能力层、ReAct 自主循环与多模态工具调用](04-dev-notes/dev-log-phase-4-agent-capabilities-and-react-loop.md)
 
 ---
 

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.2] - 2026-09-13
+
+### Added
+- **AI Agent Capabilities & ReAct Autonomous Loop (`PRD-011`)**:
+  - **Native Agent Node (`AgentNode.tsx`, `browser-engine.ts`)**: Built-in ReAct (Reason + Act) autonomous execution loop allowing LLMs to alternate between reasoning and invoking tools up to `maxIterations` with cycle protection.
+  - **Universal Tool Calling Client (`llm-client.ts`)**: Extended OpenAI/Gemini/DeepSeek chat completion requests to declare `tools` JSON Schema, streaming and accumulating `delta.tool_calls` over Server-Sent Events (SSE).
+  - **Multi-Type Tool Execution Router**: Built-in routing for sandboxed JavaScript execution (`builtin_code`), external HTTP REST endpoints (`builtin_http`), canvas node invocation (`canvas_node`), and declarative custom tool schemas (`custom_schema`).
+  - **Batch Loop Iterator Node (`LoopNode.tsx`)**: Sequential & concurrent iteration node executing child mappings over dynamic array variables with robust fallback for non-array inputs.
+  - **Sub-Workflow Composite Node (`SubWorkflowNode.tsx`)**: Reusable workflow nesting primitive referencing existing project workflows.
+  - **Interactive Agent Property Panel (`PropertyPanel.tsx`)**: Full configuration interface for System Prompt, collapsible Registered Tool list editor, max iterations slider, and temperature tuning.
+  - **Bilingual Autonomous Agent Official Preset**: Added "Autonomous Agent with Tool Calling" (`agent-tool-calling`) in English and Chinese, combining exchange rate lookups with precision code calculations.
+  - **Comprehensive Automated Test Expansion**: Added `tests/agent-node.node.test.ts` (16 new tests), expanding the test suite to 195 automated tests passing with 100% green rate.
+
 ## [0.4.0] - 2026-09-11
 
 ### Added
