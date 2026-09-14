@@ -17,7 +17,7 @@ export function getNestedProperty(obj: unknown, path: string): unknown {
   const normalizedPath = path.replace(/\[(\w+)\]/g, '.$1');
   const segments = normalizedPath.split('.').filter(Boolean);
 
-  let current: any = obj;
+  let current: unknown = obj;
   for (const segment of segments) {
     if (current === null || current === undefined || typeof current !== 'object') {
       return undefined;
@@ -26,7 +26,7 @@ export function getNestedProperty(obj: unknown, path: string): unknown {
     if (segment === '__proto__' || segment === 'constructor' || segment === 'prototype') {
       return undefined;
     }
-    current = current[segment];
+    current = (current as Record<string, unknown>)[segment];
   }
 
   return current;
@@ -38,6 +38,8 @@ export interface VariableReference {
   propertyPath: string;
   defaultValue?: string;
 }
+
+const SINGLE_EXACT_VARIABLE_REGEX = /^\s*\{\{\s*([a-zA-Z0-9_-]+)\.([a-zA-Z0-9_.[\]-]+)(?:\s*\|\s*([^}]+))?\s*\}\}\s*$/;
 
 /**
  * Extracts all variable references from a template string.
@@ -101,12 +103,44 @@ export function resolveTemplateVariables(
 
 /**
  * Recursively resolves all variable slots within an arbitrary object or array.
+ * If a string is EXACTLY a single variable slot like "{{nodeId.field}}",
+ * its original native type (Object, Array, Number, Boolean) is preserved.
  */
 export function resolveObjectVariables<T>(
   data: T,
   context: Record<string, Record<string, unknown>>,
 ): T {
   if (typeof data === 'string') {
+    const exactMatch = SINGLE_EXACT_VARIABLE_REGEX.exec(data);
+    if (exactMatch) {
+      const nodeId = exactMatch[1] ?? '';
+      const propertyPath = exactMatch[2] ?? '';
+      const fallbackRaw = exactMatch[3];
+
+      const nodeOutput = context[nodeId];
+      if (nodeOutput) {
+        const value = getNestedProperty(nodeOutput, propertyPath);
+        if (value !== undefined && value !== null) {
+          return value as unknown as T;
+        }
+      }
+
+      if (fallbackRaw !== undefined) {
+        const trimmed = fallbackRaw.trim().replace(/^['"]|['"]$/g, '');
+        try {
+          return JSON.parse(trimmed) as unknown as T;
+        } catch {
+          return trimmed as unknown as T;
+        }
+      }
+
+      if (!nodeOutput) {
+        return data; // Keep placeholder if node not in context
+      }
+
+      return '' as unknown as T;
+    }
+
     return resolveTemplateVariables(data, context) as unknown as T;
   }
 
@@ -127,3 +161,6 @@ export function resolveObjectVariables<T>(
 
   return data;
 }
+
+export { resolveObjectVariables as resolveVariables };
+export { resolveObjectVariables as resolveNodeInputs };

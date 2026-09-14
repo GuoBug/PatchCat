@@ -206,6 +206,77 @@ export class BrowserWorkflowEngine {
     this.abortController = null;
   }
 
+  /** Resolves effective settings with IoC dependency injection fallback */
+  private resolveSettings(options?: WorkflowRunOptions) {
+    const injected = options?.context?.settings;
+    if (injected) {
+      return {
+        hasKey: injected.hasKey ?? Boolean(injected.apiKey),
+        baseUrl: injected.baseUrl || 'https://api.openai.com',
+        apiKey: injected.apiKey || '',
+        provider: injected.provider || 'openai',
+        model: injected.model || 'gpt-4o',
+        availableModels: injected.availableModels || [],
+        storageMode: 'local',
+        serverBaseUrl: 'http://localhost:8000',
+      };
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        const settingsStore = useSettingsStore.getState();
+        const cfg = settingsStore.getEffectiveConfig();
+        const activeProviderConfig = settingsStore.providers[cfg.provider];
+        return {
+          hasKey: cfg.hasKey,
+          baseUrl: cfg.baseUrl,
+          apiKey: cfg.apiKey,
+          provider: cfg.provider,
+          model: cfg.model,
+          availableModels: activeProviderConfig?.availableModels || [],
+          storageMode: settingsStore.storageMode,
+          serverBaseUrl: settingsStore.serverBaseUrl || 'http://localhost:8000',
+        };
+      } catch {
+        // Fallback if store is unavailable
+      }
+    }
+    return {
+      hasKey: false,
+      baseUrl: '',
+      apiKey: '',
+      provider: 'mock',
+      model: 'mock',
+      availableModels: [],
+      storageMode: 'local',
+      serverBaseUrl: 'http://localhost:8000',
+    };
+  }
+
+  /** Resolves knowledge retriever with IoC dependency injection fallback */
+  private resolveKnowledgeAdapter(options?: WorkflowRunOptions) {
+    if (options?.context?.knowledgeAdapter) {
+      return options.context.knowledgeAdapter as {
+        retrieve: (
+          kbId: string,
+          query: string,
+          topK?: number,
+          scoreThreshold?: number,
+        ) => Promise<{ context: string; chunks: unknown[] }>;
+      };
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        const store = useKnowledgeStore.getState();
+        return {
+          retrieve: store.retrieve.bind(store),
+        };
+      } catch {
+        // Fallback if store is unavailable
+      }
+    }
+    return undefined;
+  }
+
   /**
    * Main execution loop — yields a typed event stream with real-time token chunks.
    */
@@ -635,10 +706,8 @@ export class BrowserWorkflowEngine {
               ? (node.data.config['temperature'] as number)
               : 0.7;
 
-          // Retrieve active provider settings from settings store
-          const settingsStore = useSettingsStore.getState();
-          const settings = settingsStore.getEffectiveConfig();
-          const activeProviderConfig = settingsStore.providers[settings.provider];
+          // Retrieve active provider settings via IoC helper
+          const settings = this.resolveSettings(options);
 
           const isValidationOnly = Boolean(options?.skipLLM || options?.validationOnly);
 
@@ -653,7 +722,7 @@ export class BrowserWorkflowEngine {
             const targetModel = resolveTargetModel(
               configuredModel,
               settings.provider,
-              activeProviderConfig?.availableModels || [],
+              settings.availableModels,
               settings.model,
             );
 
@@ -785,9 +854,9 @@ export class BrowserWorkflowEngine {
               ? (node.data.config['scoreThreshold'] as number)
               : 0.0;
 
-          const settingsStore = useSettingsStore.getState();
-          const storageMode = settingsStore.storageMode;
-          const serverBaseUrl = settingsStore.serverBaseUrl || 'http://localhost:8000';
+          const settings = this.resolveSettings(options);
+          const storageMode = settings.storageMode;
+          const serverBaseUrl = settings.serverBaseUrl || 'http://localhost:8000';
           let contextStr = '';
           let recalledChunks: unknown[] = [];
 
@@ -826,11 +895,20 @@ export class BrowserWorkflowEngine {
             // 2. Client-side local retrieval (default LocalStorage mode or offline fallback)
             if (!contextStr) {
               try {
-                const knowledgeStore = useKnowledgeStore.getState();
-                const retrieved = await knowledgeStore.retrieve(kbId, query, topK, scoreThreshold);
-                if (retrieved && retrieved.context) {
-                  contextStr = retrieved.context;
-                  recalledChunks = retrieved.chunks;
+                const adapter = this.resolveKnowledgeAdapter(options) as {
+                  retrieve: (
+                    id: string,
+                    q: string,
+                    k?: number,
+                    th?: number,
+                  ) => Promise<{ context: string; chunks: unknown[] }>;
+                } | undefined;
+                if (adapter) {
+                  const retrieved = await adapter.retrieve(kbId, query, topK, scoreThreshold);
+                  if (retrieved && retrieved.context) {
+                    contextStr = retrieved.context;
+                    recalledChunks = retrieved.chunks;
+                  }
                 }
               } catch (err) {
                 logger.detailed(
@@ -1162,14 +1240,12 @@ export class BrowserWorkflowEngine {
           }
           messages.push({ role: 'user', content: userPrompt });
 
-          const settingsStore = useSettingsStore.getState();
-          const settings = settingsStore.getEffectiveConfig();
-          const activeProviderConfig = settingsStore.providers[settings.provider];
+          const settings = this.resolveSettings(options);
           
           const targetModel = resolveTargetModel(
             configuredModel,
             settings.provider,
-            activeProviderConfig?.availableModels || [],
+            settings.availableModels,
             settings.model,
           );
 
@@ -1317,6 +1393,57 @@ export class BrowserWorkflowEngine {
                     tool_call_id: tc.id,
                     content: toolResultStr,
                   });
+                }
+
+                // If max iterations reached on tool call, perform terminal synthesis
+                if (iter === maxIterations) {
+                  if (onChunk) {
+                    onChunk({
+                      delta: `\n[Agent Max Iterations Reached] Synthesizing final answer...\n`,
+                      fullContent: finalResponse + `\n[Agent Max Iterations Reached] Synthesizing final answer...\n`,
+                    });
+                  }
+                  messages.push({
+                    role: 'user',
+                    content:
+                      'You have reached the maximum tool-calling iteration limit. Please synthesize your final conclusion based on all prior findings and tool results.',
+                  });
+                  try {
+                    const terminalLlmResult = await streamChatCompletion(
+                      {
+                        baseUrl: settings.baseUrl,
+                        apiKey: settings.apiKey,
+                        model: targetModel,
+                        messages,
+                        temperature,
+                        tool_choice: 'none',
+                        signal,
+                      },
+                      {
+                        onChunk: (chunk) => {
+                          if (onChunk && chunk.delta) {
+                            onChunk({
+                              delta: chunk.delta,
+                              fullContent: finalResponse + chunk.fullContent,
+                            });
+                          }
+                        },
+                      },
+                    );
+                    finalResponse += terminalLlmResult.response;
+                    messages.push({
+                      role: 'assistant',
+                      content: terminalLlmResult.response,
+                    });
+                    if (terminalLlmResult.usage) {
+                      totalUsage.prompt += terminalLlmResult.usage.prompt;
+                      totalUsage.completion += terminalLlmResult.usage.completion;
+                      totalUsage.total += terminalLlmResult.usage.total;
+                    }
+                  } catch {
+                    // Fallback to existing response
+                  }
+                  break;
                 }
               } else {
                 finalResponse += llmResult.response;

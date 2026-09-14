@@ -439,15 +439,17 @@ export const useSettingsStore = create<SettingsStoreState>()(
             state.serverTestResult = result;
           });
           return result;
-        } catch (err: any) {
+        } catch (err: unknown) {
           const latencyMs = Math.round(performance.now() - start);
+          const errName = err instanceof Error ? err.name : '';
+          const errMsg = err instanceof Error ? err.message : 'Connection failed';
           const result: ConnectionTestResult = {
             status: 'error',
             latencyMs,
             message:
-              err.name === 'TimeoutError'
+              errName === 'TimeoutError'
                 ? 'Connection timed out (5s)'
-                : err.message || 'Connection failed',
+                : errMsg,
           };
           set((state) => {
             state.serverTestResult = result;
@@ -725,7 +727,7 @@ export const useSettingsStore = create<SettingsStoreState>()(
 
         // 4. Reset provider connection test results
         set((state) => {
-          state.testResults = {} as any;
+          state.testResults = {} as Record<ProviderId, ConnectionTestResult>;
           state.serverTestResult = { status: 'idle' };
         });
       },

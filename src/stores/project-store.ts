@@ -596,7 +596,7 @@ export const useProjectStore = create<ProjectStoreState>()(
         persistToLocalStorage(get().folders, get().workflows, get().activeWorkflowId);
 
         getActiveAdapter()
-          .saveWorkflow(id, updates as any)
+          .saveWorkflow(id, updates)
           .catch((e) => {
             console.warn('[ProjectStore] Failed to update workflow on backend:', e);
           });
@@ -703,7 +703,7 @@ export const useProjectStore = create<ProjectStoreState>()(
         persistToLocalStorage(get().folders, get().workflows, get().activeWorkflowId);
 
         getActiveAdapter()
-          .saveWorkflow(workflowId, { globalInputs } as any)
+          .saveWorkflow(workflowId, { globalInputs })
           .catch((e: unknown) => {
             console.warn('[ProjectStore] Failed to update global inputs on backend:', e);
           });

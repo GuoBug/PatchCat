@@ -70,9 +70,9 @@ export const KnowledgeDetailDrawer: React.FC = () => {
         chunks: res.total_chunks,
         tokens: res.estimated_tokens,
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.warn('Failed to parse and preview document:', e);
-      setUploadError(e.message || 'Failed to process document');
+      setUploadError(e instanceof Error ? e.message : 'Failed to process document');
       setPreviewData(null);
       setParsedContent(null);
     } finally {
@@ -154,8 +154,8 @@ export const KnowledgeDetailDrawer: React.FC = () => {
       setParsedContent(null);
       setPreviewData(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
-    } catch (err: any) {
-      setUploadError(err.message || 'Failed to upload document');
+    } catch (err: unknown) {
+      setUploadError(err instanceof Error ? err.message : 'Failed to upload document');
     }
   };
 

@@ -61,6 +61,9 @@ interface KnowledgeState {
   closeDetail: () => void;
 }
 
+const getErrorMessage = (err: unknown, fallback: string) =>
+  err instanceof Error ? err.message : fallback;
+
 // Global active adapter instance
 let activeAdapter: IKnowledgeAdapter = new LocalKnowledgeAdapter();
 
@@ -104,8 +107,8 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
       } else if (currentActive && !kbs.some((k) => k.id === currentActive)) {
         await get().selectKnowledgeBase(kbs[0]?.id || null);
       }
-    } catch (err: any) {
-      set({ error: err.message || 'Failed to load knowledge bases', isLoading: false });
+    } catch (err: unknown) {
+      set({ error: getErrorMessage(err, 'Failed to load knowledge bases'), isLoading: false });
     }
   },
 
@@ -124,8 +127,8 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
       if (docs.length > 0 && docs[0]) {
         await get().selectDocument(docs[0].id);
       }
-    } catch (err: any) {
-      set({ error: err.message || 'Failed to load documents', isLoading: false });
+    } catch (err: unknown) {
+      set({ error: getErrorMessage(err, 'Failed to load documents'), isLoading: false });
     }
   },
 
@@ -137,8 +140,8 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
       await get().selectKnowledgeBase(newKb.id);
       set({ isLoading: false });
       return newKb;
-    } catch (err: any) {
-      set({ error: err.message || 'Failed to create knowledge base', isLoading: false });
+    } catch (err: unknown) {
+      set({ error: getErrorMessage(err, 'Failed to create knowledge base'), isLoading: false });
       throw err;
     }
   },
@@ -149,8 +152,8 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
       await activeAdapter.deleteKnowledgeBase(kbId);
       await get().loadKnowledgeBases();
       set({ isLoading: false });
-    } catch (err: any) {
-      set({ error: err.message || 'Failed to delete knowledge base', isLoading: false });
+    } catch (err: unknown) {
+      set({ error: getErrorMessage(err, 'Failed to delete knowledge base'), isLoading: false });
       throw err;
     }
   },
@@ -165,8 +168,8 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
     try {
       const chunks = await activeAdapter.getDocumentChunks(docId);
       set({ chunks });
-    } catch (err: any) {
-      set({ error: err.message || 'Failed to load document chunks' });
+    } catch (err: unknown) {
+      set({ error: getErrorMessage(err, 'Failed to load document chunks') });
     }
   },
 
@@ -185,8 +188,8 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
       });
       await get().selectDocument(newDoc.id);
       return newDoc;
-    } catch (err: any) {
-      set({ error: err.message || 'Failed to upload document', isUploading: false });
+    } catch (err: unknown) {
+      set({ error: getErrorMessage(err, 'Failed to upload document'), isUploading: false });
       throw err;
     }
   },
@@ -204,8 +207,8 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
         await get().selectDocument(remainingDoc);
       }
       set({ isLoading: false });
-    } catch (err: any) {
-      set({ error: err.message || 'Failed to delete document', isLoading: false });
+    } catch (err: unknown) {
+      set({ error: getErrorMessage(err, 'Failed to delete document'), isLoading: false });
       throw err;
     }
   },
@@ -216,8 +219,8 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
       set((state) => ({
         chunks: state.chunks.map((c) => (c.id === chunkId ? updated : c)),
       }));
-    } catch (err: any) {
-      set({ error: err.message || 'Failed to toggle chunk state' });
+    } catch (err: unknown) {
+      set({ error: getErrorMessage(err, 'Failed to toggle chunk state') });
       throw err;
     }
   },

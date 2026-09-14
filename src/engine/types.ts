@@ -360,6 +360,18 @@ export interface WorkflowRunOptions {
   skipLLM?: boolean;
   /** When true, runs in validation-only mode. */
   validationOnly?: boolean;
+  /** Context dependency injection for headless/Worker/testing execution without React Zustand stores */
+  context?: {
+    settings?: {
+      hasKey?: boolean;
+      baseUrl?: string;
+      apiKey?: string;
+      provider?: string;
+      model?: string;
+      availableModels?: string[];
+    };
+    knowledgeAdapter?: unknown;
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

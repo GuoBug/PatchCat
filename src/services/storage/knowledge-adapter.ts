@@ -8,6 +8,7 @@
 
 import { nanoid } from 'nanoid';
 import { parseDocumentFile } from '../document-parser.ts';
+import { safeSetLocalStorageItem } from './storage-adapter.ts';
 
 export interface KnowledgeBaseSummary {
   id: string;
@@ -284,7 +285,7 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       this.memKBs = kbs;
       return;
     }
-    localStorage.setItem(STORAGE_KEY_KBS, JSON.stringify(kbs));
+    safeSetLocalStorageItem(STORAGE_KEY_KBS, JSON.stringify(kbs));
   }
 
   private getStoredDocs(): DocumentItem[] {
@@ -325,7 +326,7 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       this.memDocs = docs;
       return;
     }
-    localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(docs));
+    safeSetLocalStorageItem(STORAGE_KEY_DOCS, JSON.stringify(docs));
   }
 
   private getStoredChunks(): DocumentChunkItem[] {
@@ -368,7 +369,7 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       this.memChunks = chunks;
       return;
     }
-    localStorage.setItem(STORAGE_KEY_CHUNKS, JSON.stringify(chunks));
+    safeSetLocalStorageItem(STORAGE_KEY_CHUNKS, JSON.stringify(chunks));
   }
 
   async getKnowledgeBases(search?: string): Promise<KnowledgeBaseSummary[]> {
@@ -429,10 +430,10 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
     fileInput: File | { name: string; content: string; extension?: string; size?: number },
     options?: ChunkOptions,
   ): Promise<DocumentItem> {
-    let filename = '';
-    let text = '';
-    let extension = 'txt';
-    let size = 0;
+    let filename: string;
+    let text: string;
+    let extension: string;
+    let size: number;
 
     if (typeof File !== 'undefined' && fileInput instanceof File) {
       filename = fileInput.name;
@@ -703,13 +704,10 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       });
       const charOverlapRatio = chineseChars.length > 0 ? charOverlapCount / chineseChars.length : 0;
 
-      let similarity = 0.35;
-      if (terms.size > 0) {
-        const termRatio = termMatches / Math.max(1, terms.size);
-        similarity = Math.min(0.96, 0.45 + termRatio * 0.35 + charOverlapRatio * 0.16);
-      } else {
-        similarity = 0.75;
-      }
+      const similarity =
+        terms.size > 0
+          ? Math.min(0.96, 0.45 + (termMatches / Math.max(1, terms.size)) * 0.35 + charOverlapRatio * 0.16)
+          : 0.75;
 
       return {
         chunk,

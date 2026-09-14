@@ -339,22 +339,17 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
 
   const handleExportHistory = (format: 'json' | 'markdown') => {
     if (messages.length === 0) return;
-    let text = '';
-    let filename = `chat-history-${new Date().toISOString().slice(0, 10)}`;
-
-    if (format === 'json') {
-      text = JSON.stringify(messages, null, 2);
-      filename += '.json';
-    } else {
-      filename += '.md';
-      text = messages
-        .map((m) => {
-          const sender = m.role === 'user' ? '### 👤 User' : '### 🤖 Assistant';
-          const meta = m.durationMs ? ` *(Duration: ${m.durationMs}ms)*` : '';
-          return `${sender}${meta}\n\n${m.content}\n`;
-        })
-        .join('\n---\n\n');
-    }
+    const filename = `chat-history-${new Date().toISOString().slice(0, 10)}.${format === 'json' ? 'json' : 'md'}`;
+    const text =
+      format === 'json'
+        ? JSON.stringify(messages, null, 2)
+        : messages
+            .map((m) => {
+              const sender = m.role === 'user' ? '### 👤 User' : '### 🤖 Assistant';
+              const meta = m.durationMs ? ` *(Duration: ${m.durationMs}ms)*` : '';
+              return `${sender}${meta}\n\n${m.content}\n`;
+            })
+            .join('\n---\n\n');
 
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);

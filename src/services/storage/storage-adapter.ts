@@ -12,6 +12,7 @@ import {
   type SavedWorkflow,
   reconcileFoldersAndWorkflows,
 } from '../../stores/project-store.ts';
+import type { WorkflowNode, WorkflowEdge } from '../../engine/types.ts';
 
 export interface IStorageAdapter {
   // Folder Operations
@@ -37,6 +38,32 @@ export interface IStorageAdapter {
 const STORAGE_KEY_FOLDERS = 'patchcat_folders_v2';
 const STORAGE_KEY_WORKFLOWS = 'patchcat_workflows_v2';
 
+/**
+ * Safely writes to localStorage with QuotaExceededError detection and graceful error handling.
+ */
+export function safeSetLocalStorageItem(key: string, value: string): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(key, value);
+  } catch (err: unknown) {
+    const isQuota =
+      err instanceof DOMException &&
+      (err.code === 22 ||
+        err.code === 1014 ||
+        err.name === 'QuotaExceededError' ||
+        err.name === 'NS_ERROR_DOM_QUOTA_REACHED');
+    if (isQuota) {
+      console.error(
+        `[LocalStorage QuotaExceededError] 本地存储物理配额已满 (${key})。`,
+      );
+      throw new Error(
+        `[存储空间耗尽] 本地浏览器 LocalStorage 5MB 配额已满，无法保存 "${key}"。请清理无用工作流或切片。`,
+      );
+    }
+    throw err;
+  }
+}
+
 export class LocalStorageAdapter implements IStorageAdapter {
   private getStoredFolders(): Folder[] {
     if (typeof localStorage === 'undefined') return [];
@@ -58,8 +85,7 @@ export class LocalStorageAdapter implements IStorageAdapter {
   }
 
   private setStoredFolders(folders: Folder[]): void {
-    if (typeof localStorage === 'undefined') return;
-    localStorage.setItem(STORAGE_KEY_FOLDERS, JSON.stringify(folders));
+    safeSetLocalStorageItem(STORAGE_KEY_FOLDERS, JSON.stringify(folders));
   }
 
   private getStoredWorkflows(): SavedWorkflow[] {
@@ -82,8 +108,7 @@ export class LocalStorageAdapter implements IStorageAdapter {
   }
 
   private setStoredWorkflows(workflows: SavedWorkflow[]): void {
-    if (typeof localStorage === 'undefined') return;
-    localStorage.setItem(STORAGE_KEY_WORKFLOWS, JSON.stringify(workflows));
+    safeSetLocalStorageItem(STORAGE_KEY_WORKFLOWS, JSON.stringify(workflows));
   }
 
   async getFolders(): Promise<Folder[]> {
@@ -215,6 +240,19 @@ export class LocalStorageAdapter implements IStorageAdapter {
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. ApiServer Adapter (FastAPI + PostgreSQL / SQLite Mode)
 // ─────────────────────────────────────────────────────────────────────────────
+
+interface ApiWorkflowDetail {
+  id: string;
+  name: string;
+  folder_id: string | null;
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+  global_inputs: Record<string, unknown>;
+  memory_config?: { maxHistoryRounds?: number; maxTokenBudget?: number };
+  is_preset: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export class ApiServerAdapter implements IStorageAdapter {
   private baseUrl: string;
@@ -359,19 +397,6 @@ export class ApiServerAdapter implements IStorageAdapter {
   }
 
   async getWorkflow(id: string): Promise<SavedWorkflow | null> {
-    interface ApiWorkflowDetail {
-      id: string;
-      name: string;
-      folder_id: string | null;
-      nodes: any[];
-      edges: any[];
-      global_inputs: Record<string, any>;
-      memory_config?: { maxHistoryRounds?: number; maxTokenBudget?: number };
-      is_preset: boolean;
-      created_at: string;
-      updated_at: string;
-    }
-
     try {
       const res = await this.request<ApiWorkflowDetail>(`/api/v1/workflows/${id}`);
       return {
@@ -392,19 +417,6 @@ export class ApiServerAdapter implements IStorageAdapter {
   }
 
   async createWorkflow(workflow: SavedWorkflow): Promise<SavedWorkflow> {
-    interface ApiWorkflowDetail {
-      id: string;
-      name: string;
-      folder_id: string | null;
-      nodes: any[];
-      edges: any[];
-      global_inputs: Record<string, any>;
-      memory_config?: { maxHistoryRounds?: number; maxTokenBudget?: number };
-      is_preset: boolean;
-      created_at: string;
-      updated_at: string;
-    }
-
     const res = await this.request<ApiWorkflowDetail>('/api/v1/workflows', {
       method: 'POST',
       body: JSON.stringify({
@@ -433,20 +445,7 @@ export class ApiServerAdapter implements IStorageAdapter {
   }
 
   async saveWorkflow(id: string, updates: Partial<SavedWorkflow>): Promise<SavedWorkflow> {
-    interface ApiWorkflowDetail {
-      id: string;
-      name: string;
-      folder_id: string | null;
-      nodes: any[];
-      edges: any[];
-      global_inputs: Record<string, any>;
-      memory_config?: { maxHistoryRounds?: number; maxTokenBudget?: number };
-      is_preset: boolean;
-      created_at: string;
-      updated_at: string;
-    }
-
-    const payload: Record<string, any> = {};
+    const payload: Record<string, unknown> = {};
     if (updates.name !== undefined) payload.name = updates.name;
     if (updates.folderId !== undefined) payload.folder_id = updates.folderId;
     if (updates.nodes !== undefined) payload.nodes = updates.nodes;
@@ -474,18 +473,6 @@ export class ApiServerAdapter implements IStorageAdapter {
   }
 
   async duplicateWorkflow(id: string): Promise<SavedWorkflow> {
-    interface ApiWorkflowDetail {
-      id: string;
-      name: string;
-      folder_id: string | null;
-      nodes: any[];
-      edges: any[];
-      global_inputs: Record<string, any>;
-      is_preset: boolean;
-      created_at: string;
-      updated_at: string;
-    }
-
     const res = await this.request<ApiWorkflowDetail>(`/api/v1/workflows/${id}/duplicate`, {
       method: 'POST',
     });
@@ -504,18 +491,6 @@ export class ApiServerAdapter implements IStorageAdapter {
   }
 
   async moveWorkflow(id: string, targetFolderId: string): Promise<SavedWorkflow> {
-    interface ApiWorkflowDetail {
-      id: string;
-      name: string;
-      folder_id: string | null;
-      nodes: any[];
-      edges: any[];
-      global_inputs: Record<string, any>;
-      is_preset: boolean;
-      created_at: string;
-      updated_at: string;
-    }
-
     const res = await this.request<ApiWorkflowDetail>(`/api/v1/workflows/${id}/move`, {
       method: 'POST',
       body: JSON.stringify({ target_folder_id: targetFolderId }),

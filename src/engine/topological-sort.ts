@@ -4,6 +4,7 @@
  */
 
 import type { WorkflowNode, WorkflowEdge, GraphValidationResult } from './types';
+import { extractVariableReferences } from './variable-resolver.ts';
 
 /** Minimal graph shape accepted by the sorting / validation functions. */
 interface GraphInput {
@@ -150,6 +151,72 @@ export function validateGraphTopology(graph: GraphInput): GraphValidationResult 
             `Condition node "${node.data?.label || node.id}" has an unconnected branch: "${branch}"`,
           );
         }
+      }
+    }
+  }
+
+  // 3. Build upstream ancestor reachability map to detect Ghost Edges
+  const ancestorsMap = new Map<string, Set<string>>();
+  for (const node of graph.nodes) {
+    ancestorsMap.set(node.id, new Set<string>());
+  }
+  const incomingMap = new Map<string, string[]>();
+  for (const edge of graph.edges) {
+    if (!incomingMap.has(edge.target)) incomingMap.set(edge.target, []);
+    incomingMap.get(edge.target)!.push(edge.source);
+  }
+  for (const node of graph.nodes) {
+    const visited = ancestorsMap.get(node.id)!;
+    const queue = [...(incomingMap.get(node.id) || [])];
+    while (queue.length > 0) {
+      const parent = queue.shift()!;
+      if (!visited.has(parent)) {
+        visited.add(parent);
+        const grandParents = incomingMap.get(parent) || [];
+        for (const gp of grandParents) {
+          if (!visited.has(gp)) queue.push(gp);
+        }
+      }
+    }
+  }
+
+  const collectStrings = (target: unknown, out: string[]) => {
+    if (typeof target === 'string') {
+      out.push(target);
+    } else if (Array.isArray(target)) {
+      for (const item of target) collectStrings(item, out);
+    } else if (target !== null && typeof target === 'object') {
+      for (const val of Object.values(target as Record<string, unknown>)) {
+        collectStrings(val, out);
+      }
+    }
+  };
+
+  for (const node of graph.nodes) {
+    const stringPool: string[] = [];
+    if (node.data?.inputs) collectStrings(node.data.inputs, stringPool);
+    if (node.data?.config) collectStrings(node.data.config, stringPool);
+
+    const referencedNodeIds = new Set<string>();
+    for (const str of stringPool) {
+      const refs = extractVariableReferences(str);
+      for (const ref of refs) {
+        if (ref.nodeId && ref.nodeId !== 'global_input') {
+          referencedNodeIds.add(ref.nodeId);
+        }
+      }
+    }
+
+    const nodeLabel = node.data?.label || node.id;
+    for (const refId of referencedNodeIds) {
+      if (!nodeIds.has(refId)) {
+        warnings.push(
+          `Node "${nodeLabel}" (${node.id}) references a non-existent node "${refId}" in its template slots.`,
+        );
+      } else if (refId !== node.id && !ancestorsMap.get(node.id)?.has(refId)) {
+        warnings.push(
+          `Ghost variable dependency detected: Node "${nodeLabel}" references "{{${refId}...}}", but there is no directed connection from "${refId}" to this node in the canvas.`,
+        );
       }
     }
   }

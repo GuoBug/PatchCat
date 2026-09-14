@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Share2, X, Copy, Check, RefreshCw } from 'lucide-react';
-import { useProjectStore } from '../../stores/project-store.ts';
+import { useProjectStore, type SavedWorkflow } from '../../stores/project-store.ts';
 import { useSettingsStore } from '../../stores/settings-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
 import { nanoid } from 'nanoid';
@@ -24,13 +24,13 @@ export const PublishApiModal: React.FC<PublishApiModalProps> = ({ isOpen, onClos
 
   if (!isOpen || !activeWf) return null;
 
-  const isEnabled = Boolean((activeWf as any).api_enabled);
-  const currentKey = ((activeWf as any).api_key as string) || '';
+  const isEnabled = Boolean(activeWf.api_enabled);
+  const currentKey = activeWf.api_key || '';
   const endpointUrl = `${serverBaseUrl}/api/v1/workflows/${activeWf.id}/run`;
 
   const handleToggleEnable = () => {
     const nextEnabled = !isEnabled;
-    const patch: any = { api_enabled: nextEnabled };
+    const patch: Partial<SavedWorkflow> = { api_enabled: nextEnabled };
     if (nextEnabled && !currentKey) {
       patch.api_key = `pk_live_${nanoid(24)}`;
     }
@@ -39,7 +39,7 @@ export const PublishApiModal: React.FC<PublishApiModalProps> = ({ isOpen, onClos
 
   const handleRegenerateKey = () => {
     const newKey = `pk_live_${nanoid(24)}`;
-    updateWorkflow(activeWf.id, { api_key: newKey } as any);
+    updateWorkflow(activeWf.id, { api_key: newKey });
   };
 
   const handleCopy = (text: string, type: 'snippet' | 'key') => {

@@ -172,72 +172,108 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
       }));
       useWorkflowStore.getState().setEdges(runningEdges);
 
-      for await (const event of engine.executeWorkflow(
-        { nodes: store.nodes, edges: store.edges },
-        { inputs: store.globalInputs, skipLLM: runOptions?.skipLLM },
-      )) {
-        switch (event.type) {
-          case 'NODE_START':
-            store.setNodeStatus(event.payload.nodeId, 'running');
-            break;
-          case 'NODE_CHUNK':
-            store.updateNodeStreamingOutput(
-              event.payload.nodeId,
-              event.payload.fullContent,
-              event.payload.fullReasoning,
-            );
-            break;
-          case 'NODE_COMPLETE': {
-            const rawUsage = event.payload.output?.usage as TokenUsage | undefined;
-            const tokenUsage = rawUsage || { prompt: 60, completion: 60, total: 120 };
-            store.setNodeStatus(event.payload.nodeId, 'success', {
-              latencyMs: event.payload.durationMs,
-              tokenUsage,
-              timestamp: Date.now(),
-            });
-            if (event.payload.output) {
-              store.updateNodeData(event.payload.nodeId, {
-                outputs: event.payload.output,
+      // RAF Batcher to prevent React Flow canvas dirty re-renders on high-frequency SSE chunks
+      const pendingChunks = new Map<string, { content: string; reasoning?: string }>();
+      let rafHandle: number | null = null;
+
+      const flushChunks = () => {
+        if (pendingChunks.size === 0) return;
+        pendingChunks.forEach((item, nodeId) => {
+          store.updateNodeStreamingOutput(nodeId, item.content, item.reasoning);
+        });
+        pendingChunks.clear();
+        rafHandle = null;
+      };
+
+      const scheduleChunk = (nodeId: string, content: string, reasoning?: string) => {
+        pendingChunks.set(nodeId, { content, reasoning });
+        if (rafHandle === null) {
+          if (typeof requestAnimationFrame !== 'undefined') {
+            rafHandle = requestAnimationFrame(flushChunks);
+          } else {
+            flushChunks();
+          }
+        }
+      };
+
+      try {
+        for await (const event of engine.executeWorkflow(
+          { nodes: store.nodes, edges: store.edges },
+          { inputs: store.globalInputs, skipLLM: runOptions?.skipLLM },
+        )) {
+          switch (event.type) {
+            case 'NODE_START':
+              flushChunks();
+              store.setNodeStatus(event.payload.nodeId, 'running');
+              break;
+            case 'NODE_CHUNK':
+              scheduleChunk(
+                event.payload.nodeId,
+                event.payload.fullContent,
+                event.payload.fullReasoning,
+              );
+              break;
+            case 'NODE_COMPLETE': {
+              flushChunks();
+              const rawUsage = event.payload.output?.usage as TokenUsage | undefined;
+              const tokenUsage = rawUsage || { prompt: 60, completion: 60, total: 120 };
+              store.setNodeStatus(event.payload.nodeId, 'success', {
+                latencyMs: event.payload.durationMs,
+                tokenUsage,
+                timestamp: Date.now(),
               });
+              if (event.payload.output) {
+                store.updateNodeData(event.payload.nodeId, {
+                  outputs: event.payload.output,
+                });
+              }
+              break;
             }
-            break;
-          }
-          case 'NODE_ERROR':
-            store.setNodeStatus(event.payload.nodeId, 'error', {
-              latencyMs: event.payload.durationMs,
-              error: event.payload.error,
-              timestamp: Date.now(),
-            });
-            setAlertNotification({
-              type: 'error',
-              title: `[${event.payload.nodeId}] Execution Error`,
-              message: event.payload.error,
-            });
-            break;
-          case 'WORKFLOW_COMPLETE': {
-            const finalEdges = useWorkflowStore.getState().edges.map((e) => ({
-              ...e,
-              animated: false,
-              style: { stroke: '#10B981', strokeWidth: 2 },
-            }));
-            useWorkflowStore.getState().setEdges(finalEdges);
-            break;
-          }
-          case 'WORKFLOW_ERROR':
-            console.error('[Workflow Error]:', event.payload.error);
-            if (
-              event.payload.error.includes('Cycle') ||
-              event.payload.error.includes('cycle') ||
-              event.payload.error.includes('validation')
-            ) {
+            case 'NODE_ERROR':
+              flushChunks();
+              store.setNodeStatus(event.payload.nodeId, 'error', {
+                latencyMs: event.payload.durationMs,
+                error: event.payload.error,
+                timestamp: Date.now(),
+              });
               setAlertNotification({
                 type: 'error',
-                title: t.header.cycleAlertTitle,
+                title: `[${event.payload.nodeId}] Execution Error`,
                 message: event.payload.error,
               });
+              break;
+            case 'WORKFLOW_COMPLETE': {
+              flushChunks();
+              const finalEdges = useWorkflowStore.getState().edges.map((e) => ({
+                ...e,
+                animated: false,
+                style: { stroke: '#10B981', strokeWidth: 2 },
+              }));
+              useWorkflowStore.getState().setEdges(finalEdges);
+              break;
             }
-            break;
+            case 'WORKFLOW_ERROR':
+              flushChunks();
+              console.error('[Workflow Error]:', event.payload.error);
+              if (
+                event.payload.error.includes('Cycle') ||
+                event.payload.error.includes('cycle') ||
+                event.payload.error.includes('validation')
+              ) {
+                setAlertNotification({
+                  type: 'error',
+                  title: t.header.cycleAlertTitle,
+                  message: event.payload.error,
+                });
+              }
+              break;
+          }
         }
+      } finally {
+        if (rafHandle !== null && typeof cancelAnimationFrame !== 'undefined') {
+          cancelAnimationFrame(rafHandle);
+        }
+        flushChunks();
       }
     } catch (e: unknown) {
       const errMsg = e instanceof Error ? e.message : String(e);

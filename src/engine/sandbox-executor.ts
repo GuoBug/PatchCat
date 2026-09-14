@@ -99,19 +99,29 @@ function runInBrowserWorker(
                 scriptBody = script;
               }
             }
-            var wrappedScript = '"use strict";\\n' + scriptBody;
+            var wrappedScript = '"use strict";\n' + scriptBody;
             var fn = new Function('inputs', 'console', wrappedScript);
             var res = fn(inputs, customConsole);
-            self.postMessage({
-              success: true,
-              result: res,
-              stdout: logs.join('\\n')
-            });
+            Promise.resolve(res)
+              .then(function(resolvedRes) {
+                self.postMessage({
+                  success: true,
+                  result: resolvedRes,
+                  stdout: logs.join('\n')
+                });
+              })
+              .catch(function(asyncErr) {
+                self.postMessage({
+                  success: false,
+                  error: asyncErr && asyncErr.message ? asyncErr.message : String(asyncErr),
+                  stdout: logs.join('\n')
+                });
+              });
           } catch(err) {
             self.postMessage({
               success: false,
               error: err && err.message ? err.message : String(err),
-              stdout: logs.join('\\n')
+              stdout: logs.join('\n')
             });
           }
         };
@@ -221,11 +231,13 @@ async function runInNodeVm(
       }
     }
 
-    const wrappedCode = `"use strict";\n__result = (function(inputs, console) {\n${scriptBody}\n})(inputs, console);`;
+    const wrappedCode = `"use strict";\n__result = (async function(inputs, console) {\n${scriptBody}\n})(inputs, console);`;
 
     const sandbox = {
       inputs: JSON.parse(JSON.stringify(inputs)),
       console: customConsole,
+      setTimeout,
+      clearTimeout,
       __result: undefined,
     };
 
@@ -235,10 +247,33 @@ async function runInNodeVm(
       displayErrors: true,
     });
 
-    return {
-      result: sandbox.__result,
-      stdout: logs.join('\n'),
-    };
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        reject(
+          new Error(
+            `[沙箱执行超时] 代码执行时间超过安全阈值 (${timeoutMs}ms)，已由看门狗强行终止。`,
+          ),
+        );
+      }, timeoutMs);
+    });
+
+    try {
+      const resolvedResult = await Promise.race([
+        Promise.resolve(sandbox.__result),
+        timeoutPromise,
+      ]);
+      const cleanResult =
+        resolvedResult !== undefined && typeof resolvedResult === 'object' && resolvedResult !== null
+          ? JSON.parse(JSON.stringify(resolvedResult))
+          : resolvedResult;
+      return {
+        result: cleanResult,
+        stdout: logs.join('\n'),
+      };
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
     throw new Error(errMsg);
