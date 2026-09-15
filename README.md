@@ -31,6 +31,9 @@
     <a href="https://GuoBug.github.io/PatchCat/" target="_blank">
       <img src="https://img.shields.io/badge/🚀_Live_Demo-Try_PatchCat_Online-2563eb?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live Demo" />
     </a>
+    <a href="#-video-walkthrough">
+      <img src="https://img.shields.io/badge/🎬_Demo_Video-Watch_Walkthrough-8b5cf6?style=for-the-badge" alt="Watch Demo Video" />
+    </a>
     <a href="https://codespaces.new/GuoBug/PatchCat" target="_blank">
       <img src="https://img.shields.io/badge/⚡_Codespaces-Instant_Cloud_Dev-0ea5e9?style=for-the-badge&logo=github&logoColor=white" alt="Open in GitHub Codespaces" />
     </a>
@@ -45,6 +48,15 @@
 
 With **zero mandatory backend setup** (Client-Only BYOK Mode) and direct connectivity to **Google Gemini, DeepSeek, OpenAI, SiliconFlow, and local Ollama**, PatchCat delivers high-performance prompt engineering right inside your browser with enterprise-grade telemetry and zero data leakage.
 
+---
+
+## 🎬 Video Walkthrough
+
+> Watch the full end-to-end demo: from client-side API key configuration, drag-and-drop canvas building, real-time topological execution, to interactive chat testing and API publishing.
+
+https://github.com/user-attachments/assets/e8d3cc61-68f4-43fd-9463-2051a7a35c3d
+
+
 <p align="center">
   <img src="./assets/screenshot-hero.png" width="940" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" alt="PatchCat Visual DAG Canvas — Drag-and-drop AI workflow builder with real-time LLM streaming" />
 </p>
@@ -56,7 +68,6 @@ With **zero mandatory backend setup** (Client-Only BYOK Mode) and direct connect
 <p align="center">
   <img src="./docs/assets/workflow-topology-en.png" width="940" style="max-width: 100%;" alt="PatchCat Customer Support Routing Workflow Topology" />
 </p>
-
 
 ---
 

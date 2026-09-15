@@ -31,6 +31,9 @@
     <a href="https://GuoBug.github.io/PatchCat/" target="_blank">
       <img src="https://img.shields.io/badge/🚀_在线体验-即刻免安装试用-2563eb?style=for-the-badge&logo=googlechrome&logoColor=white" alt="在线体验" />
     </a>
+    <a href="#-完整实机演示视频">
+      <img src="https://img.shields.io/badge/🎬_演示视频-观看实录-8b5cf6?style=for-the-badge" alt="观看实机演示视频" />
+    </a>
     <a href="https://codespaces.new/GuoBug/PatchCat" target="_blank">
       <img src="https://img.shields.io/badge/⚡_Codespaces-云端一键极速开发-0ea5e9?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Codespaces" />
     </a>
@@ -45,6 +48,15 @@
 
 系统原生支持**零后端依赖模式（Client-Only BYOK）**，所有数据与 API Key 均仅保存在浏览器本地，直连 **Google Gemini、DeepSeek、OpenAI、SiliconFlow（硅基流动）以及本地 Ollama**，在浏览器端即可获得极致低延迟的实时流式体验与严密的隐私安全保障。
 
+---
+
+## 🎬 完整实机演示视频
+
+> 完整实录演示：从客户端本地 API Key 安全配置、画布自由拖拽连线、Kahn 拓扑调度执行、Chat 对话模式交互，到 Publish API 界面导出。
+
+https://github.com/user-attachments/assets/e8d3cc61-68f4-43fd-9463-2051a7a35c3d
+
+
 <p align="center">
   <img src="./assets/screenshot-hero.png" width="940" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" alt="PatchCat 可视化 DAG 画布 — 拖拽式 AI 工作流编排器，支持实时 LLM 流式输出" />
 </p>
@@ -56,7 +68,6 @@
 <p align="center">
   <img src="./docs/assets/workflow-topology-zh.png" width="940" style="max-width: 100%;" alt="PatchCat 智能客服工单路由工作流拓扑" />
 </p>
-
 
 ---
 
