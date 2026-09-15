@@ -298,4 +298,102 @@ describe('Project & Workflow Folder Management Store', () => {
     assert.equal(storedWf.memoryConfig?.maxHistoryRounds, 12);
     assert.equal(storedWf.memoryConfig?.maxTokenBudget, 6000);
   });
+
+  it('should support workflow locking and reject saving when locked', () => {
+    const store = useProjectStore.getState();
+    const wfId = store.createWorkflow('Lockable Workflow', 'default');
+
+    // By default, newly created user workflows are not locked
+    let wf = useProjectStore.getState().workflows.find((w) => w.id === wfId);
+    assert.ok(wf);
+    assert.equal(wf.isLocked, false || undefined);
+
+    // Lock the workflow
+    store.toggleWorkflowLock(wfId);
+    wf = useProjectStore.getState().workflows.find((w) => w.id === wfId);
+    assert.equal(wf?.isLocked, true);
+
+    // Set initial nodes
+    const originalNodes = [...(wf?.nodes || [])];
+
+    // Simulate canvas changes in workflowStore
+    useWorkflowStore.setState({
+      nodes: [
+        {
+          id: 'modified_node',
+          type: 'prompt',
+          position: { x: 999, y: 999 },
+          data: { label: 'Dirty Node Should Not Save', status: 'idle', inputs: {}, outputs: {}, config: {} },
+        },
+      ],
+    });
+
+    // Attempt to save current workflow while locked
+    store.saveCurrentWorkflow(wfId);
+
+    // Verify the workflow in project store still has original nodes, not modified nodes
+    const wfAfterSaveAttempt = useProjectStore.getState().workflows.find((w) => w.id === wfId);
+    assert.equal(wfAfterSaveAttempt?.nodes.length, originalNodes.length);
+    assert.equal(wfAfterSaveAttempt?.nodes[0]?.id, originalNodes[0]?.id);
+
+    // Unlock the workflow
+    store.toggleWorkflowLock(wfId);
+    const unlockedWf = useProjectStore.getState().workflows.find((w) => w.id === wfId);
+    assert.equal(unlockedWf?.isLocked, false);
+
+    // Now saveCurrentWorkflow should succeed
+    store.saveCurrentWorkflow(wfId);
+    const savedWf = useProjectStore.getState().workflows.find((w) => w.id === wfId);
+    assert.equal(savedWf?.nodes.length, 1);
+    assert.equal(savedWf?.nodes[0]?.id, 'modified_node');
+  });
+
+  it('should verify all English preset JSON files contain zero Chinese characters', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const enDir = path.resolve(process.cwd(), 'src/presets/en');
+    const files = fs.readdirSync(enDir).filter((f) => f.endsWith('.json'));
+
+    assert.ok(files.length >= 7, 'Must have all official preset json files in en folder');
+
+    const zhRegex = /[\u4e00-\u9fa5]/;
+    for (const file of files) {
+      const content = fs.readFileSync(path.join(enDir, file), 'utf8');
+      const match = content.match(zhRegex);
+      assert.equal(
+        match,
+        null,
+        `English preset file "${file}" must not contain Chinese characters, but found: ${match?.[0]}`,
+      );
+    }
+  });
+
+  it('should deeply synchronize preset nodes when reconciling with en vs zh language', () => {
+    const store = useProjectStore.getState();
+
+    // Reconcile with English
+    const enResult = reconcileFoldersAndWorkflows(store.folders, store.workflows, 'en');
+    const enCs = enResult.workflows.find((w) => w.id === 'wf-customer-support');
+    assert.ok(enCs);
+    assert.equal(enCs.name, 'Customer Support Routing');
+    assert.equal(enCs.isLocked, true);
+    // English prompt/nodes should be in English
+    const enPromptNode = enCs.nodes.find((n) => n.id === 'prompt_intent_classification');
+    assert.ok(enPromptNode);
+    const enTemplate = String(enPromptNode.data.inputs?.template || '');
+    assert.ok(enTemplate.includes('support ticket triage'));
+    assert.ok(!/[\u4e00-\u9fa5]/.test(enTemplate));
+
+    // Reconcile with Chinese
+    const zhResult = reconcileFoldersAndWorkflows(enResult.folders, enResult.workflows, 'zh');
+    const zhCs = zhResult.workflows.find((w) => w.id === 'wf-customer-support');
+    assert.ok(zhCs);
+    assert.equal(zhCs.name, '智能客服意图识别与工单路由');
+    assert.equal(zhCs.isLocked, true);
+    const zhPromptNode = zhCs.nodes.find((n) => n.id === 'prompt_intent_classification');
+    assert.ok(zhPromptNode);
+    const zhTemplate = String(zhPromptNode.data.inputs?.template || '');
+    assert.ok(zhTemplate.includes('资深工单分流专家'));
+    assert.ok(/[\u4e00-\u9fa5]/.test(zhTemplate));
+  });
 });

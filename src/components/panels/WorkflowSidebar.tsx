@@ -21,6 +21,8 @@ import {
   Database,
   Sliders,
   Brain,
+  Lock,
+  Unlock,
 } from 'lucide-react';
 import { useProjectStore, type SavedWorkflow, type Folder } from '../../stores/project-store.ts';
 import { useSettingsStore } from '../../stores/settings-store.ts';
@@ -425,6 +427,7 @@ interface WorkflowItemProps {
   onDelete: () => void;
   onMove: (targetFolderId: string) => void;
   onOpenSettings: (workflow: SavedWorkflow) => void;
+  onToggleLock: () => void;
 }
 
 const WorkflowItem: React.FC<WorkflowItemProps> = ({
@@ -437,6 +440,7 @@ const WorkflowItem: React.FC<WorkflowItemProps> = ({
   onDelete,
   onMove,
   onOpenSettings,
+  onToggleLock,
 }) => {
   const { t, language } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
@@ -515,16 +519,26 @@ const WorkflowItem: React.FC<WorkflowItemProps> = ({
             className="w-full px-1.5 py-0.5 rounded bg-white dark:bg-slate-900 border border-blue-500 text-xs text-slate-900 dark:text-slate-100 focus:outline-none"
           />
         ) : (
-          <span
-            className="truncate text-[12px] leading-relaxed"
-            title={displayTitle}
-            onDoubleClick={(e) => {
-              e.stopPropagation();
-              setIsEditing(true);
-            }}
-          >
-            {displayTitle}
-          </span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            {workflow.isLocked && (
+              <span
+                title={t.sidebar.lockedBadge}
+                className="shrink-0 text-amber-500 dark:text-amber-400"
+              >
+                <Lock className="w-3 h-3" />
+              </span>
+            )}
+            <span
+              className="truncate text-[12px] leading-relaxed"
+              title={displayTitle}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                setIsEditing(true);
+              }}
+            >
+              {displayTitle}
+            </span>
+          </div>
         )}
       </div>
 
@@ -564,6 +578,33 @@ const WorkflowItem: React.FC<WorkflowItemProps> = ({
               className="absolute right-0 top-full mt-1 w-44 p-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-100 font-sans"
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Toggle Lock / Unlock Workflow */}
+              <button
+                onClick={() => {
+                  setShowMenu(false);
+                  onToggleLock();
+                }}
+                className={`w-full px-2.5 py-1.5 rounded-lg flex items-center gap-2 text-left text-xs transition-colors font-medium ${
+                  workflow.isLocked
+                    ? 'hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-600 dark:text-amber-400'
+                    : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                }`}
+              >
+                {workflow.isLocked ? (
+                  <>
+                    <Unlock className="w-3.5 h-3.5 text-amber-500" />
+                    <span>{t.sidebar.unlockWorkflow}</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>{t.sidebar.lockWorkflow}</span>
+                  </>
+                )}
+              </button>
+
+              <div className="h-[1px] bg-slate-100 dark:bg-slate-800 my-1" />
+
               {/* Project Settings */}
               <button
                 onClick={() => {
@@ -692,6 +733,7 @@ export const WorkflowSidebar: React.FC = () => {
   const deleteWorkflow = useProjectStore((s) => s.deleteWorkflow);
   const moveWorkflow = useProjectStore((s) => s.moveWorkflow);
   const updateWorkflow = useProjectStore((s) => s.updateWorkflow);
+  const toggleWorkflowLock = useProjectStore((s) => s.toggleWorkflowLock);
 
   const createFolder = useProjectStore((s) => s.createFolder);
   const renameFolder = useProjectStore((s) => s.renameFolder);
@@ -979,6 +1021,7 @@ export const WorkflowSidebar: React.FC = () => {
                             onDelete={() => deleteWorkflow(wf.id)}
                             onMove={(targetFolderId) => moveWorkflow(wf.id, targetFolderId)}
                             onOpenSettings={(w) => setSettingsWorkflow(w)}
+                            onToggleLock={() => toggleWorkflowLock(wf.id)}
                           />
                         ))
                       )}

@@ -42,6 +42,7 @@ export interface SavedWorkflow {
   createdAt: number;
   updatedAt: number;
   isPreset?: boolean;
+  isLocked?: boolean;
   api_enabled?: boolean;
   api_key?: string;
   memoryConfig?: WorkflowMemoryConfig;
@@ -64,6 +65,9 @@ export interface ProjectStoreState {
   createWorkflow: (name?: string, folderId?: string) => string;
   loadWorkflow: (id: string) => Promise<void>;
   saveCurrentWorkflow: (id?: string) => void;
+  autoSaveCurrentWorkflow: () => void;
+  toggleWorkflowLock: (id: string) => void;
+  setWorkflowLocked: (id: string, locked: boolean) => void;
   renameWorkflow: (id: string, name: string) => void;
   updateWorkflow: (id: string, updates: Partial<SavedWorkflow>) => void;
   duplicateWorkflow: (id: string) => string;
@@ -227,13 +231,26 @@ export function reconcileFoldersAndWorkflows(
         updated.isPreset = true;
         wfChanged = true;
       }
-      // Update localized name if matching standard preset
+      if (updated.isLocked === undefined) {
+        updated.isLocked = true;
+        wfChanged = true;
+      }
+      // Update localized name and graph data if matching standard preset
       const currentExpected = presets[key]?.name;
       const altLang = lang === 'zh' ? 'en' : 'zh';
       const altName = PRESETS_DATA[altLang]?.[key]?.name;
-      if (currentExpected && (updated.name === altName || updated.name === currentExpected)) {
+      if (currentExpected && (updated.name === altName || updated.name === currentExpected || updated.isLocked)) {
         if (updated.name !== currentExpected) {
           updated.name = currentExpected;
+          wfChanged = true;
+        }
+        // Deeply sync localized nodes, edges and inputs for presets
+        const targetPreset = presets[key];
+        if (targetPreset) {
+          updated.nodes = targetPreset.data.nodes;
+          updated.edges = targetPreset.data.edges;
+          updated.globalInputs =
+            (targetPreset.data as unknown as { globalInputs?: Record<string, unknown> }).globalInputs || {};
           wfChanged = true;
         }
       }
@@ -245,7 +262,7 @@ export function reconcileFoldersAndWorkflows(
     return wf;
   });
 
-  // B. Ensure all 7 presets exist
+  // B. Ensure all official presets exist
   OFFICIAL_PRESET_KEYS.forEach((key, index) => {
     const exists = workflows.some((w) => matchPresetKey(w) === key);
     if (!exists) {
@@ -262,6 +279,7 @@ export function reconcileFoldersAndWorkflows(
           createdAt: now - 3600000 * (index + 1),
           updatedAt: now - 3600000 * (index + 1),
           isPreset: true,
+          isLocked: true,
         });
         hasChanges = true;
       }
@@ -328,6 +346,22 @@ function persistToLocalStorage(
 function getActiveAdapter() {
   const settings = useSettingsStore.getState();
   return getStorageAdapter(settings.storageMode, settings.serverBaseUrl);
+}
+
+let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function cancelAutoSaveTimer(): void {
+  if (autoSaveTimer) {
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = null;
+  }
+}
+
+export function scheduleAutoSave(): void {
+  cancelAutoSaveTimer();
+  autoSaveTimer = setTimeout(() => {
+    useProjectStore.getState().autoSaveCurrentWorkflow();
+  }, 800);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -483,19 +517,33 @@ export const useProjectStore = create<ProjectStoreState>()(
         const wf = get().workflows.find((w) => w.id === id);
         if (!wf) return;
 
-        // Auto-save currently active workflow
+        cancelAutoSaveTimer();
+
+        // Auto-save currently active workflow only if not locked
         const currentActiveId = get().activeWorkflowId;
         if (currentActiveId && currentActiveId !== id) {
-          const currentNodes = useWorkflowStore.getState().nodes;
-          const currentEdges = useWorkflowStore.getState().edges;
-          set((state) => {
-            const existing = state.workflows.find((w) => w.id === currentActiveId);
-            if (existing) {
-              existing.nodes = currentNodes;
-              existing.edges = currentEdges;
-              existing.updatedAt = Date.now();
-            }
-          });
+          const currentWf = get().workflows.find((w) => w.id === currentActiveId);
+          if (currentWf && !currentWf.isLocked) {
+            const currentNodes = useWorkflowStore.getState().nodes;
+            const currentEdges = useWorkflowStore.getState().edges;
+            const currentInputs = useWorkflowStore.getState().globalInputs;
+            set((state) => {
+              const existing = state.workflows.find((w) => w.id === currentActiveId);
+              if (existing && !existing.isLocked) {
+                existing.nodes = currentNodes;
+                existing.edges = currentEdges;
+                existing.globalInputs = currentInputs;
+                existing.updatedAt = Date.now();
+              }
+            });
+            getActiveAdapter()
+              .saveWorkflow(currentActiveId, {
+                nodes: currentNodes,
+                edges: currentEdges,
+                globalInputs: currentInputs,
+              })
+              .catch(() => {});
+          }
         }
 
         set((state) => {
@@ -536,13 +584,16 @@ export const useProjectStore = create<ProjectStoreState>()(
         const targetId = id || get().activeWorkflowId;
         if (!targetId) return;
 
+        const targetWf = get().workflows.find((w) => w.id === targetId);
+        if (!targetWf || targetWf.isLocked) return;
+
         const currentNodes = useWorkflowStore.getState().nodes;
         const currentEdges = useWorkflowStore.getState().edges;
         const currentInputs = useWorkflowStore.getState().globalInputs;
 
         set((state) => {
           const wf = state.workflows.find((w) => w.id === targetId);
-          if (wf) {
+          if (wf && !wf.isLocked) {
             wf.nodes = currentNodes;
             wf.edges = currentEdges;
             wf.globalInputs = currentInputs;
@@ -560,6 +611,55 @@ export const useProjectStore = create<ProjectStoreState>()(
           })
           .catch((e) => {
             console.warn('[ProjectStore] Failed to sync saved workflow to backend:', e);
+          });
+      },
+
+      autoSaveCurrentWorkflow: () => {
+        const activeId = get().activeWorkflowId;
+        if (!activeId) return;
+        const currentWf = get().workflows.find((w) => w.id === activeId);
+        if (!currentWf || currentWf.isLocked) return;
+
+        get().saveCurrentWorkflow(activeId);
+      },
+
+      toggleWorkflowLock: (id) => {
+        cancelAutoSaveTimer();
+        let nextLocked = false;
+        set((state) => {
+          const wf = state.workflows.find((w) => w.id === id);
+          if (wf) {
+            wf.isLocked = !wf.isLocked;
+            nextLocked = Boolean(wf.isLocked);
+            wf.updatedAt = Date.now();
+          }
+        });
+
+        persistToLocalStorage(get().folders, get().workflows, get().activeWorkflowId);
+
+        getActiveAdapter()
+          .saveWorkflow(id, { isLocked: nextLocked })
+          .catch((e) => {
+            console.warn('[ProjectStore] Failed to sync workflow lock state to backend:', e);
+          });
+      },
+
+      setWorkflowLocked: (id, locked) => {
+        cancelAutoSaveTimer();
+        set((state) => {
+          const wf = state.workflows.find((w) => w.id === id);
+          if (wf) {
+            wf.isLocked = locked;
+            wf.updatedAt = Date.now();
+          }
+        });
+
+        persistToLocalStorage(get().folders, get().workflows, get().activeWorkflowId);
+
+        getActiveAdapter()
+          .saveWorkflow(id, { isLocked: locked })
+          .catch((e) => {
+            console.warn('[ProjectStore] Failed to sync workflow lock state to backend:', e);
           });
       },
 
@@ -920,6 +1020,7 @@ export const useProjectStore = create<ProjectStoreState>()(
             createdAt: now - 3600000 * (index + 1),
             updatedAt: now - 3600000 * (index + 1),
             isPreset: true,
+            isLocked: true,
           };
         });
 
@@ -962,6 +1063,45 @@ if (typeof window !== 'undefined') {
   useSettingsStore.subscribe((state, prevState) => {
     if (state.language !== prevState.language) {
       useProjectStore.getState().seedPresetsIfEmpty(state.language);
+      // If current active workflow is a preset, immediately reload localized nodes to canvas
+      const activeId = useProjectStore.getState().activeWorkflowId;
+      const activeWf = useProjectStore.getState().workflows.find((w) => w.id === activeId);
+      if (activeWf && activeWf.isPreset) {
+        useWorkflowStore.getState().loadPreset({
+          nodes: activeWf.nodes,
+          edges: activeWf.edges,
+        });
+      }
+    }
+  });
+}
+
+// Auto-save subscription: monitor canvas changes and debounced-save if workflow is not locked
+if (typeof window !== 'undefined') {
+  let prevNodes = useWorkflowStore.getState().nodes;
+  let prevEdges = useWorkflowStore.getState().edges;
+  let prevInputs = useWorkflowStore.getState().globalInputs;
+
+  useWorkflowStore.subscribe((state) => {
+    if (
+      state.nodes !== prevNodes ||
+      state.edges !== prevEdges ||
+      state.globalInputs !== prevInputs
+    ) {
+      prevNodes = state.nodes;
+      prevEdges = state.edges;
+      prevInputs = state.globalInputs;
+
+      // Do not auto-save during execution
+      if (state.isExecuting) return;
+
+      const projectStore = useProjectStore.getState();
+      const activeId = projectStore.activeWorkflowId;
+      if (!activeId) return;
+      const currentWf = projectStore.workflows.find((w) => w.id === activeId);
+      if (!currentWf || currentWf.isLocked) return;
+
+      scheduleAutoSave();
     }
   });
 }

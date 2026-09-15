@@ -56,77 +56,77 @@ function runInBrowserWorker(
 ): Promise<SandboxExecutionResult> {
   return new Promise((resolve, reject) => {
     // Construct self-contained worker source code with network blocking
-    const workerSource = `
-      (function() {
-        // 1. Defensively strip network and dangerous capabilities inside WorkerGlobalScope
-        try { self.fetch = undefined; } catch(e) {}
-        try { self.XMLHttpRequest = undefined; } catch(e) {}
-        try { self.WebSocket = undefined; } catch(e) {}
-        try { self.EventSource = undefined; } catch(e) {}
-        try { self.importScripts = undefined; } catch(e) {}
-        try { self.Worker = undefined; } catch(e) {}
-        try { self.SharedWorker = undefined; } catch(e) {}
-        try { self.indexedDB = undefined; } catch(e) {}
-
-        self.onmessage = function(event) {
-          var payload = event.data;
-          var inputs = payload.inputs;
-          var script = payload.script;
-
-          var logs = [];
-          var customConsole = {
-            log: function() {
-              var args = Array.prototype.slice.call(arguments);
-              logs.push(args.map(function(a) {
-                return (typeof a === 'object' && a !== null) ? JSON.stringify(a) : String(a);
-              }).join(' '));
-            },
-            error: function() {
-              var args = Array.prototype.slice.call(arguments);
-              logs.push('[Error] ' + args.map(function(a) {
-                return (typeof a === 'object' && a !== null) ? JSON.stringify(a) : String(a);
-              }).join(' '));
-            }
-          };
-
-          try {
-            var scriptBody = script;
-            if (!/\\breturn\\b/.test(script)) {
-              try {
-                new Function('inputs', 'console', '"use strict"; return (' + script + ');');
-                scriptBody = 'return (' + script + ');';
-              } catch(e) {
-                scriptBody = script;
-              }
-            }
-            var wrappedScript = '"use strict";\n' + scriptBody;
-            var fn = new Function('inputs', 'console', wrappedScript);
-            var res = fn(inputs, customConsole);
-            Promise.resolve(res)
-              .then(function(resolvedRes) {
-                self.postMessage({
-                  success: true,
-                  result: resolvedRes,
-                  stdout: logs.join('\n')
-                });
-              })
-              .catch(function(asyncErr) {
-                self.postMessage({
-                  success: false,
-                  error: asyncErr && asyncErr.message ? asyncErr.message : String(asyncErr),
-                  stdout: logs.join('\n')
-                });
-              });
-          } catch(err) {
-            self.postMessage({
-              success: false,
-              error: err && err.message ? err.message : String(err),
-              stdout: logs.join('\n')
-            });
-          }
-        };
-      })();
-    `;
+    const workerSource = [
+      '(function() {',
+      '  // 1. Defensively strip network and dangerous capabilities inside WorkerGlobalScope',
+      '  try { self.fetch = undefined; } catch(e) {}',
+      '  try { self.XMLHttpRequest = undefined; } catch(e) {}',
+      '  try { self.WebSocket = undefined; } catch(e) {}',
+      '  try { self.EventSource = undefined; } catch(e) {}',
+      '  try { self.importScripts = undefined; } catch(e) {}',
+      '  try { self.Worker = undefined; } catch(e) {}',
+      '  try { self.SharedWorker = undefined; } catch(e) {}',
+      '  try { self.indexedDB = undefined; } catch(e) {}',
+      '',
+      '  self.onmessage = function(event) {',
+      '    var payload = event.data;',
+      '    var inputs = payload.inputs;',
+      '    var script = payload.script;',
+      '',
+      '    var logs = [];',
+      '    var customConsole = {',
+      '      log: function() {',
+      '        var args = Array.prototype.slice.call(arguments);',
+      '        logs.push(args.map(function(a) {',
+      '          return (typeof a === "object" && a !== null) ? JSON.stringify(a) : String(a);',
+      '        }).join(" "));',
+      '      },',
+      '      error: function() {',
+      '        var args = Array.prototype.slice.call(arguments);',
+      '        logs.push("[Error] " + args.map(function(a) {',
+      '          return (typeof a === "object" && a !== null) ? JSON.stringify(a) : String(a);',
+      '        }).join(" "));',
+      '      }',
+      '    };',
+      '',
+      '    try {',
+      '      var scriptBody = script;',
+      '      if (!/\\breturn\\b/.test(script)) {',
+      '        try {',
+      '          new Function("inputs", "console", "\\"use strict\\"; return (" + script + ");");',
+      '          scriptBody = "return (" + script + ");";',
+      '        } catch(e) {',
+      '          scriptBody = script;',
+      '        }',
+      '      }',
+      '      var AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;',
+      '      var fn = new AsyncFunction("inputs", "console", "\\"use strict\\";\\n" + scriptBody);',
+      '      var res = fn(inputs, customConsole);',
+      '      Promise.resolve(res)',
+      '        .then(function(resolvedRes) {',
+      '          self.postMessage({',
+      '            success: true,',
+      '            result: resolvedRes,',
+      '            stdout: logs.join("\\n")',
+      '          });',
+      '        })',
+      '        .catch(function(asyncErr) {',
+      '          self.postMessage({',
+      '            success: false,',
+      '            error: asyncErr && asyncErr.message ? asyncErr.message : String(asyncErr),',
+      '            stdout: logs.join("\\n")',
+      '          });',
+      '        });',
+      '    } catch(err) {',
+      '      self.postMessage({',
+      '        success: false,',
+      '        error: err && err.message ? err.message : String(err),',
+      '        stdout: logs.join("\\n")',
+      '      });',
+      '    }',
+      '  };',
+      '})();',
+    ].join('\n');
 
     let blobUrl: string | null = null;
     let worker: Worker | null = null;

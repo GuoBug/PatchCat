@@ -81,6 +81,13 @@
 
 ---
 
+### 06. Brainstorming & Concept Backlog
+
+- [💡 PatchCat Brainstorming Vault & Concept Backlog](brainstorming/README.md)
+  - [🐾 PatchCat 2.0: From Workflow Canvas to Agent Cockpit (PRD)](brainstorming/PRD-PatchCat-2.0-Cockpit-Architecture.md)
+
+---
+
 ---
 
 <a name="简体中文"></a>
@@ -157,3 +164,10 @@
 ### 06. 安全
 
 - [安全审计与代码质量简报](安全TODO/安全审计与代码质量简报.md)
+
+---
+
+### 07. 头脑风暴与创意 Backlog
+
+- [💡 PatchCat 创意灵感与产品演进 Backlog](brainstorming/README.md)
+  - [🐾 PatchCat 2.0：从「画布编排」到「智能体驾驶舱」需求设计文档 (PRD)](brainstorming/PRD-PatchCat-2.0-Cockpit-Architecture.md)

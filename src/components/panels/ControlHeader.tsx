@@ -18,8 +18,10 @@ import {
   Settings,
   ShieldAlert,
   MessageSquare,
+  Lock,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
+import { useProjectStore } from '../../stores/project-store.ts';
 import { useSettingsStore } from '../../stores/settings-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
 import { BrowserWorkflowEngine } from '../../engine/browser-engine.ts';
@@ -61,6 +63,10 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
   const setSettingsTab = useSettingsStore((s) => s.setSettingsTab);
   const activeProvider = useSettingsStore((s) => s.activeProvider);
   const providers = useSettingsStore((s) => s.providers);
+
+  const activeWorkflow = useProjectStore((s) =>
+    s.workflows.find((w) => w.id === s.activeWorkflowId),
+  );
 
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [executionTimeMs, setExecutionTimeMs] = useState<number | null>(null);
@@ -477,6 +483,17 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
               {edges.length} {t.common.edges}
             </span>
           </div>
+
+          {/* Active Workflow Lock Indicator */}
+          {activeWorkflow?.isLocked && (
+            <div
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400 text-xs font-medium"
+              title={t.sidebar.lockedBadge}
+            >
+              <Lock className="w-3.5 h-3.5 text-amber-500" />
+              <span className="hidden sm:inline font-sans">{t.header.lockedWorkflowBadge}</span>
+            </div>
+          )}
 
           {/* Live Topological Cycle Warning Chip */}
           {!topologyValidation.valid && (

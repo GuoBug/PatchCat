@@ -53,6 +53,7 @@ export interface Translations {
     unconfiguredBadge: string;
     publishApi: string;
     chatDebug: string;
+    lockedWorkflowBadge: string;
   };
   nodeTypes: {
     input: string;
@@ -395,6 +396,11 @@ export interface Translations {
     workflowMemoryDesc: string;
     globalDefaultHint: string;
     saveSettings: string;
+    lockWorkflow: string;
+    unlockWorkflow: string;
+    lockedBadge: string;
+    workflowLockedToast: string;
+    workflowUnlockedToast: string;
   };
   knowledge: {
     tabTitle: string;
@@ -533,6 +539,7 @@ export const translations: Record<Language, Translations> = {
       unconfiguredBadge: 'No API Key Set',
       publishApi: 'Publish API',
       chatDebug: 'Chat',
+      lockedWorkflowBadge: 'Locked (Read-Only)',
     },
     nodeTypes: {
       input: 'Input Node',
@@ -902,6 +909,11 @@ export const translations: Record<Language, Translations> = {
         'Custom conversation history rounds and token budget for this workflow (overrides global preferences).',
       globalDefaultHint: 'Global default: ',
       saveSettings: 'Save Settings',
+      lockWorkflow: 'Lock Workflow',
+      unlockWorkflow: 'Unlock Workflow',
+      lockedBadge: 'Locked (Changes not saved)',
+      workflowLockedToast: 'Workflow locked. Changes will not be saved.',
+      workflowUnlockedToast: 'Workflow unlocked. Changes will be saved automatically.',
     },
     knowledge: {
       tabTitle: 'Knowledge Bases',
@@ -1038,6 +1050,7 @@ export const translations: Record<Language, Translations> = {
       unconfiguredBadge: '未配置 API Key',
       publishApi: '发布 API',
       chatDebug: '对话调试',
+      lockedWorkflowBadge: '已锁定 (修改不保存)',
     },
     nodeTypes: {
       input: '输入节点',
@@ -1396,6 +1409,11 @@ export const translations: Record<Language, Translations> = {
       workflowMemoryDesc: '为当前工作流独立配置会话保留轮数与 Token 预算上限（覆盖全局默认偏好）。',
       globalDefaultHint: '全局默认：',
       saveSettings: '保存设置',
+      lockWorkflow: '锁定流程',
+      unlockWorkflow: '解锁流程',
+      lockedBadge: '已锁定 (修改不保存)',
+      workflowLockedToast: '流程已锁定，画布修改将不予保存。',
+      workflowUnlockedToast: '流程已解锁，画布修改将自动在本地保存。',
     },
     knowledge: {
       tabTitle: '私有知识库',

@@ -452,6 +452,7 @@ export class ApiServerAdapter implements IStorageAdapter {
     if (updates.edges !== undefined) payload.edges = updates.edges;
     if (updates.globalInputs !== undefined) payload.global_inputs = updates.globalInputs;
     if (updates.memoryConfig !== undefined) payload.memory_config = updates.memoryConfig;
+    if (updates.isLocked !== undefined) payload.is_locked = updates.isLocked;
 
     const res = await this.request<ApiWorkflowDetail>(`/api/v1/workflows/${id}`, {
       method: 'PUT',
