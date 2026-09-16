@@ -9,6 +9,8 @@
  *   - Node.js:  Isolated VM context with memory and execution timeout limits.
  */
 
+import { RUNTIME_DEFAULTS } from '../config/runtime-defaults.ts';
+
 export interface SandboxExecutionOptions {
   timeoutMs?: number;
 }
@@ -26,7 +28,7 @@ export async function runSandboxedScript(
   inputs: Record<string, unknown>,
   options: SandboxExecutionOptions = {},
 ): Promise<SandboxExecutionResult> {
-  const timeoutMs = options.timeoutMs ?? 5000;
+  const timeoutMs = options.timeoutMs ?? RUNTIME_DEFAULTS.SANDBOX_TIMEOUT_SECONDS * 1000;
 
   if (!rawScript || rawScript.trim().length === 0) {
     return { result: inputs, stdout: '' };

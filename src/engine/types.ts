@@ -17,6 +17,7 @@
  */
 
 import type { Node, Edge } from '@xyflow/react';
+import { RUNTIME_DEFAULTS } from '../config/runtime-defaults.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Enumerations & Literal Unions
@@ -482,6 +483,9 @@ export interface AgentNodeConfig {
   stopCondition?: string;
   model?: string;
   temperature?: number;
+  maxTokenBudget?: number;
+  loopDetectionEnabled?: boolean;
+  loopDetectionThreshold?: number;
 }
 
 export interface LoopNodeConfig {
@@ -546,7 +550,7 @@ export function getDefaultNodeConfig(type: NodeType): Record<string, unknown> {
         queryParams: {},
         bodyType: 'none',
         bodyContent: '',
-        timeout: 30000,
+        timeout: RUNTIME_DEFAULTS.HTTP_NODE_TIMEOUT_MS,
         retryConfig: {
           maxRetries: 1,
           retryDelayMs: 1000,
@@ -560,14 +564,17 @@ export function getDefaultNodeConfig(type: NodeType): Record<string, unknown> {
       return {
         systemPrompt: 'You are a helpful assistant. Use the available tools to answer user questions accurately.',
         tools: [],
-        maxIterations: 10,
+        maxIterations: RUNTIME_DEFAULTS.AGENT_DEFAULT_MAX_ITERATIONS,
         temperature: 0.7,
+        maxTokenBudget: RUNTIME_DEFAULTS.AGENT_TOKEN_BUDGET,
+        loopDetectionEnabled: RUNTIME_DEFAULTS.AGENT_LOOP_DETECTION_ENABLED,
+        loopDetectionThreshold: RUNTIME_DEFAULTS.AGENT_LOOP_DETECTION_THRESHOLD,
       };
     case 'loop':
       return {
         inputArrayVariable: '',
         maxConcurrency: 1,
-        itemTimeoutMs: 30000,
+        itemTimeoutMs: RUNTIME_DEFAULTS.LOOP_NODE_ITEM_TIMEOUT_MS,
       };
     case 'sub_workflow':
       return {

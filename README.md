@@ -14,17 +14,17 @@
   </p>
 
   <p>
-    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/version-v0.4.2-blue.svg" alt="Release: v0.4.2" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/version-v0.4.4-blue.svg" alt="Release: v0.4.4" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-emerald.svg" alt="License: MIT" /></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" alt="React 18" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-195%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-223%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
-    <strong><a href="README.md">English</a></strong> | <strong><a href="README_CN.md">简体中文</a></strong> | <strong><a href="docs/quick-start.md">📖 Quick Start Guide</a></strong>
+    <strong><a href="README.md">English</a></strong> | <strong><a href="README_CN.md">简体中文</a></strong> | <strong><a href="docs/quick-start.md">📖 Quick Start Guide</a></strong> | <strong><a href="docs/05-configuration/README.md">⚙️ Configuration</a></strong>
   </p>
 
   <p>

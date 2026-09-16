@@ -7,7 +7,6 @@ export interface DangerConfirmModalProps {
   title: string;
   description: string;
   confirmPhrase: string;
-  altConfirmPhrase?: string;
   confirmButtonText?: string;
   onConfirm: () => Promise<void> | void;
   onClose: () => void;
@@ -18,7 +17,6 @@ export const DangerConfirmModal: React.FC<DangerConfirmModalProps> = ({
   title,
   description,
   confirmPhrase,
-  altConfirmPhrase,
   confirmButtonText,
   onConfirm,
   onClose,
@@ -37,9 +35,7 @@ export const DangerConfirmModal: React.FC<DangerConfirmModalProps> = ({
   if (!isOpen) return null;
 
   const trimmed = inputVal.trim();
-  const isMatch =
-    trimmed.toUpperCase() === confirmPhrase.toUpperCase() ||
-    (altConfirmPhrase && trimmed === altConfirmPhrase.trim());
+  const isMatch = trimmed.toUpperCase() === confirmPhrase.trim().toUpperCase();
 
   const handleConfirm = async () => {
     if (!isMatch || isExecuting) return;
@@ -109,14 +105,6 @@ export const DangerConfirmModal: React.FC<DangerConfirmModalProps> = ({
               <code className="px-2.5 py-1 rounded-lg bg-rose-100 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-mono font-bold tracking-wider text-xs select-all">
                 {confirmPhrase}
               </code>
-              {altConfirmPhrase && (
-                <>
-                  <span className="text-slate-400 text-[11px]">or</span>
-                  <code className="px-2.5 py-1 rounded-lg bg-rose-100 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-mono font-bold text-xs select-all">
-                    {altConfirmPhrase}
-                  </code>
-                </>
-              )}
             </div>
             <input
               type="text"

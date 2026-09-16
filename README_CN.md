@@ -14,17 +14,17 @@
   </p>
 
   <p>
-    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/版本-v0.4.2-blue.svg" alt="Release: v0.4.2" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/版本-v0.4.4-blue.svg" alt="Release: v0.4.4" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/开源协议-MIT-emerald.svg" alt="License: MIT" /></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" alt="React 18" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/自动化测试-195项全部通过-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/自动化测试-223项全部通过-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
-    <strong><a href="README.md">English</a></strong> | <strong><a href="README_CN.md">简体中文</a></strong> | <strong><a href="docs/quick-start-zh.md">📖 快速入门指南 (5分钟教程)</a></strong>
+    <strong><a href="README.md">English</a></strong> | <strong><a href="README_CN.md">简体中文</a></strong> | <strong><a href="docs/quick-start-zh.md">📖 快速入门指南 (5分钟教程)</a></strong> | <strong><a href="docs/05-configuration/README.md">⚙️ 系统配置</a></strong>
   </p>
 
   <p>

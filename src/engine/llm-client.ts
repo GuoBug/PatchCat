@@ -8,6 +8,7 @@
 
 import type { TokenUsage } from './types';
 import { logger } from './logger.ts';
+import { RUNTIME_DEFAULTS } from '../config/runtime-defaults.ts';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
@@ -28,6 +29,8 @@ export interface LLMChatRequest {
   temperature?: number;
   maxTokens?: number;
   signal?: AbortSignal;
+  maxRetries?: number;
+  retryDelaySeconds?: number;
   tools?: Array<{
     type: 'function';
     function: {
@@ -156,7 +159,8 @@ export async function streamChatCompletion(
   );
 
   let response: Response | null = null;
-  const maxRetries = 1;
+  const maxRetries = request.maxRetries ?? RUNTIME_DEFAULTS.LLM_MAX_RETRIES;
+  const retryDelayMs = (request.retryDelaySeconds ?? RUNTIME_DEFAULTS.LLM_RETRY_DELAY_SECONDS) * 1000;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -168,8 +172,8 @@ export async function streamChatCompletion(
       });
 
       if (response.status === 503 && attempt < maxRetries) {
-        // Transient 503/overload spike: wait 1.5s then retry once
-        await new Promise((r) => setTimeout(r, 1500));
+        // Transient 503/overload spike: wait backoff then retry once
+        await new Promise((r) => setTimeout(r, retryDelayMs));
         continue;
       }
       break;
@@ -178,7 +182,7 @@ export async function streamChatCompletion(
         throw new Error('LLM call aborted by user.');
       }
       if (attempt < maxRetries) {
-        await new Promise((r) => setTimeout(r, 1500));
+        await new Promise((r) => setTimeout(r, retryDelayMs));
         continue;
       }
       const msg = err instanceof Error ? err.message : String(err);

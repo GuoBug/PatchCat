@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.4] - 2026-09-16
+
+### Added
+- **Centralized Runtime Defaults (`src/config/runtime-defaults.ts`)**:
+  - Eliminated magic numbers across the entire platform, consolidating auto-save debounce, sandbox timeouts, tool watchdogs, LLM retries, and deadlock thresholds into a single source of truth.
+- **Hardened ReAct Agent Runtime Protection (`src/engine/browser-engine.ts`)**:
+  - **Token Budget Limiter (`maxTokenBudget`)**: Hard ceiling for token consumption per agent node (`0` = unlimited), auto-interrupting the loop when exceeded.
+  - **Tool Deadlock Breaker (`loopDetectionEnabled`)**: Detects repeated identical tool calls, injecting corrective hints at 2 calls and tripping a hard circuit breaker at 3 calls.
+  - **Tool Execution Timeout Watchdog**: Configurable tool execution timeout linked to Global Settings, equipping `builtin_http` with `AbortSignal.timeout`.
+  - **Tool Error Observation Feedback**: Unified try/catch returning structured observations allowing LLM self-correction.
+  - **Sub-Workflow Variable Scope Isolation**: Context cloned with `structuredClone` to prevent parent graph variable pollution.
+- **Global Settings 5-Tab Architecture (`SettingsPage.tsx`)**:
+  - Reorganized into 5 dedicated tabs: General & Backup, Execution & Safety, Model Providers & Network, Conversation Memory, and Execution Logs.
+  - Added user-facing controls for Auto-save debounce slider, tool timeout watchdog toggle & duration, code sandbox timeout slider, agent deadlock detection, and network retry/delay sliders.
+- **Configuration Backup & Migration (Export / Import)**:
+  - Added sanitized export (strips API keys for safe public sharing) and full export (includes credentials for device migration).
+  - Schema-validated configuration import with instant store hydration and `localStorage` synchronization.
+- **Single-Language Danger Zone Confirmations (`DangerConfirmModal.tsx`)**:
+  - Strictly requires language-specific confirmation phrases (`清空缓存` / `删除所有工作流` for Chinese, `CLEAR CACHE` / `DELETE ALL WORKFLOWS` for English).
+- **Official Configuration Reference Documentation**:
+  - Added `docs/05-configuration/README.md` and `docs/05-configuration/runtime-parameters-reference.md`.
+- **Automated Test Expansion**:
+  - Added `tests/agent-runtime-guard.node.test.ts` (12 new tests), expanding test suite to 223 frontend unit/contract tests passing 100%.
+
 ## [0.4.2] - 2026-09-13
 
 ### Added

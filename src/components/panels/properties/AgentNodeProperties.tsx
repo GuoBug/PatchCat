@@ -19,6 +19,9 @@ export const AgentNodeProperties: React.FC<AgentNodePropertiesProps> = ({
   const tools = (config.tools as AgentToolBinding[]) || [];
   const maxIterations = (config.maxIterations as number) ?? 10;
   const temperature = (config.temperature as number) ?? 0.7;
+  const maxTokenBudget = (config.maxTokenBudget as number) ?? 0;
+  const loopDetectionEnabled = (config.loopDetectionEnabled as boolean) ?? true;
+  const loopDetectionThreshold = (config.loopDetectionThreshold as number) ?? 3;
 
   return (
     <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800/80">
@@ -198,6 +201,60 @@ export const AgentNodeProperties: React.FC<AgentNodePropertiesProps> = ({
             onChange={(e) => updateNodeConfig(nodeId, { temperature: parseFloat(e.target.value) })}
             className="w-full accent-violet-600 cursor-pointer"
           />
+        </div>
+
+        {/* Token Budget Limit */}
+        <div className="space-y-1">
+          <div className="flex justify-between items-center">
+            <label className="text-xs text-slate-600 dark:text-slate-300">
+              {t.propertyPanel.agentTokenBudget}
+            </label>
+            <span className="text-xs font-mono text-slate-500">
+              {maxTokenBudget > 0 ? `${maxTokenBudget} tokens` : '0 (Unlimited)'}
+            </span>
+          </div>
+          <input
+            type="number"
+            min="0"
+            step="500"
+            value={maxTokenBudget}
+            onChange={(e) => {
+              const val = Math.max(0, parseInt(e.target.value, 10) || 0);
+              updateNodeConfig(nodeId, { maxTokenBudget: val });
+            }}
+            className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+            placeholder="0 = Unlimited"
+          />
+        </div>
+
+        {/* Loop Detection */}
+        <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-between">
+            <label className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-1.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={loopDetectionEnabled}
+                onChange={(e) => updateNodeConfig(nodeId, { loopDetectionEnabled: e.target.checked })}
+                className="rounded text-violet-600 focus:ring-violet-500"
+              />
+              <span>{t.propertyPanel.agentLoopDetection}</span>
+            </label>
+            {loopDetectionEnabled && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] text-slate-400">{t.propertyPanel.agentLoopThreshold}:</span>
+                <select
+                  value={loopDetectionThreshold}
+                  onChange={(e) => updateNodeConfig(nodeId, { loopDetectionThreshold: parseInt(e.target.value, 10) })}
+                  className="px-2 py-0.5 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                >
+                  <option value={2}>2</option>
+                  <option value={3}>3</option>
+                  <option value={4}>4</option>
+                  <option value={5}>5</option>
+                </select>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

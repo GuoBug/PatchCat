@@ -35,7 +35,9 @@ import {
   ChevronDown,
   ChevronUp,
   Database,
+  Shield,
   ShieldAlert,
+  Upload,
 } from 'lucide-react';
 import {
   useSettingsStore,
@@ -104,6 +106,26 @@ export const SettingsPage: React.FC = () => {
   const updateMemoryDefaults = useSettingsStore((s) => s.updateMemoryDefaults);
   const resetMemoryDefaults = useSettingsStore((s) => s.resetMemoryDefaults);
   const [showStorageQa, setShowStorageQa] = useState(false);
+
+  // Runtime Protection, Editor Preferences & Network Settings
+  const runtimeProtection = useSettingsStore((s) => s.runtimeProtection);
+  const updateRuntimeProtection = useSettingsStore((s) => s.updateRuntimeProtection);
+  const resetRuntimeProtection = useSettingsStore((s) => s.resetRuntimeProtection);
+  const editorPreferences = useSettingsStore((s) => s.editorPreferences);
+  const updateEditorPreferences = useSettingsStore((s) => s.updateEditorPreferences);
+  const networkSettings = useSettingsStore((s) => s.networkSettings);
+  const updateNetworkSettings = useSettingsStore((s) => s.updateNetworkSettings);
+  const resetNetworkSettings = useSettingsStore((s) => s.resetNetworkSettings);
+  const exportSettings = useSettingsStore((s) => s.exportSettings);
+  const importSettings = useSettingsStore((s) => s.importSettings);
+
+  // Export / Import Modal State
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importJsonText, setImportJsonText] = useState('');
+  const [importStatus, setImportStatus] = useState<{ type: 'idle' | 'success' | 'error'; message?: string }>({ type: 'idle' });
+  const [exportIncludeKeys, setExportIncludeKeys] = useState(false);
+  const [copiedExport, setCopiedExport] = useState(false);
 
   // Log store
   const logLevel = useLogStore((s) => s.logLevel);
@@ -254,16 +276,16 @@ export const SettingsPage: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setSettingsTab('memory')}
+            onClick={() => setSettingsTab('execution')}
             className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-left whitespace-nowrap ${
-              settingsTab === 'memory'
+              settingsTab === 'execution'
                 ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25'
                 : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900'
             }`}
           >
-            <Sliders className="w-4 h-4" />
+            <Shield className="w-4 h-4" />
             <div className="flex-1 min-w-0">
-              <span className="block">{t.settings.tabMemory}</span>
+              <span className="block">{t.settings.tabExecution}</span>
             </div>
           </button>
 
@@ -278,6 +300,20 @@ export const SettingsPage: React.FC = () => {
             <KeyRound className="w-4 h-4" />
             <div className="flex-1 min-w-0">
               <span className="block">{t.settings.tabProviders}</span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setSettingsTab('memory')}
+            className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-left whitespace-nowrap ${
+              settingsTab === 'memory'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900'
+            }`}
+          >
+            <Sliders className="w-4 h-4" />
+            <div className="flex-1 min-w-0">
+              <span className="block">{t.settings.tabMemory}</span>
             </div>
           </button>
 
@@ -474,6 +510,86 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Auto-save Debounce Delay */}
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-xs space-y-4">
+                <div className="flex items-center gap-2.5">
+                  <Clock className="w-5 h-5 text-indigo-500" />
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                      {t.settings.autoSaveDebounce}
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {t.settings.autoSaveDebounceDesc}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">Debounce Delay</span>
+                    <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                      {editorPreferences?.autoSaveDebounceMs ?? 1000} ms
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="500"
+                    max="5000"
+                    step="250"
+                    value={editorPreferences?.autoSaveDebounceMs ?? 1000}
+                    onChange={(e) => updateEditorPreferences({ autoSaveDebounceMs: parseInt(e.target.value, 10) })}
+                    className="w-full accent-indigo-600 cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-400 font-mono">
+                    <span>500ms (Fast)</span>
+                    <span>1000ms (Default)</span>
+                    <span>5000ms (Low Frequency)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* System Backup & Migration */}
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-xs space-y-4">
+                <div className="flex items-center gap-2.5">
+                  <Database className="w-5 h-5 text-blue-500" />
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                      {t.settings.backupSection}
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {t.settings.backupSectionDesc}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setExportIncludeKeys(false);
+                      setCopiedExport(false);
+                      setShowExportModal(true);
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 dark:text-sky-300 border border-blue-200 dark:border-blue-900/80 transition-colors cursor-pointer"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{t.settings.exportSettingsBtn}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImportJsonText('');
+                      setImportStatus({ type: 'idle' });
+                      setShowImportModal(true);
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>{t.settings.importSettingsBtn}</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Danger Zone (GitHub-style confirmation for destructive actions) */}
               <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-900/60 shadow-xs space-y-4">
                 <div className="flex items-center gap-2.5">
@@ -537,6 +653,199 @@ export const SettingsPage: React.FC = () => {
                       {t.settings.clearWorkflowsBtn}
                     </button>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: Execution & Safety Tab */}
+          {settingsTab === 'execution' && (
+            <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-150">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  {t.settings.executionTitle}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  {t.settings.executionDesc}
+                </p>
+              </div>
+
+              {/* Tool Execution Watchdog */}
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <Clock className="w-5 h-5 text-amber-500" />
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                        {t.settings.toolTimeoutTitle}
+                      </h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {t.settings.toolTimeoutDesc}
+                      </p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={runtimeProtection.toolTimeoutEnabled}
+                      onChange={(e) =>
+                        updateRuntimeProtection({ toolTimeoutEnabled: e.target.checked })
+                      }
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                {runtimeProtection.toolTimeoutEnabled && (
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-600 dark:text-slate-300 font-medium">
+                        {t.settings.toolTimeoutSecondsLabel}
+                      </span>
+                      <span className="font-mono font-bold text-blue-600 dark:text-sky-400">
+                        {runtimeProtection.toolTimeoutSeconds}s
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="5"
+                      max="300"
+                      step="5"
+                      value={runtimeProtection.toolTimeoutSeconds}
+                      onChange={(e) =>
+                        updateRuntimeProtection({ toolTimeoutSeconds: parseInt(e.target.value, 10) })
+                      }
+                      className="w-full accent-blue-600 cursor-pointer"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Code Sandbox Timeout */}
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-xs space-y-4">
+                <div className="flex items-center gap-2.5">
+                  <Code className="w-5 h-5 text-indigo-500" />
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                      {t.settings.sandboxTimeoutTitle}
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {t.settings.sandboxTimeoutDesc}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-600 dark:text-slate-300 font-medium">
+                      {t.settings.sandboxTimeoutSecondsLabel}
+                    </span>
+                    <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                      {runtimeProtection.sandboxTimeoutSeconds}s
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="2"
+                    max="60"
+                    step="1"
+                    value={runtimeProtection.sandboxTimeoutSeconds}
+                    onChange={(e) =>
+                      updateRuntimeProtection({ sandboxTimeoutSeconds: parseInt(e.target.value, 10) })
+                    }
+                    className="w-full accent-indigo-600 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* Agent Safeguards & Deadlock Breaker */}
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-xs space-y-4">
+                <div className="flex items-center gap-2.5">
+                  <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                      {t.settings.agentSafeguardsTitle}
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {t.settings.agentSafeguardsDesc}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="divide-y divide-slate-100 dark:divide-slate-800/80 border-t border-slate-100 dark:border-slate-800/80">
+                  {/* Loop Detection */}
+                  <div className="py-3 flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        {t.settings.agentLoopEnable}
+                      </div>
+                      <div className="text-[11px] text-slate-500">
+                        {t.settings.agentSafeguardsDesc}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {runtimeProtection.loopDetectionEnabled && (
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <span className="text-slate-400">{t.settings.agentLoopThresholdLabel}:</span>
+                          <select
+                            value={runtimeProtection.loopDetectionThreshold}
+                            onChange={(e) =>
+                              updateRuntimeProtection({ loopDetectionThreshold: parseInt(e.target.value, 10) })
+                            }
+                            className="px-2 py-1 rounded bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                          >
+                            <option value={2}>2</option>
+                            <option value={3}>3</option>
+                            <option value={4}>4</option>
+                            <option value={5}>5</option>
+                          </select>
+                        </div>
+                      )}
+                      <input
+                        type="checkbox"
+                        checked={runtimeProtection.loopDetectionEnabled}
+                        onChange={(e) =>
+                          updateRuntimeProtection({ loopDetectionEnabled: e.target.checked })
+                        }
+                        className="rounded text-blue-600 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Agent Default Iterations */}
+                  <div className="pt-3 space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-600 dark:text-slate-300 font-medium">
+                        {t.settings.agentDefaultIterationsLabel}
+                      </span>
+                      <span className="font-mono font-bold text-slate-600 dark:text-slate-300">
+                        {runtimeProtection.defaultMaxIterations}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="30"
+                      step="1"
+                      value={runtimeProtection.defaultMaxIterations}
+                      onChange={(e) =>
+                        updateRuntimeProtection({ defaultMaxIterations: parseInt(e.target.value, 10) })
+                      }
+                      className="w-full accent-blue-600 cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => resetRuntimeProtection()}
+                    className="text-[11px] text-slate-500 hover:text-blue-600 dark:hover:text-sky-400 flex items-center gap-1 cursor-pointer"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset to Defaults</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1305,6 +1614,65 @@ export const SettingsPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Network Resiliency Policy */}
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-xs space-y-4">
+                <div className="flex items-center gap-2.5">
+                  <Radio className="w-5 h-5 text-sky-500" />
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                      {t.settings.networkSection}
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {t.settings.networkSectionDesc}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      {t.settings.networkMaxRetriesLabel}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="10"
+                      value={networkSettings.llmMaxRetries}
+                      onChange={(e) =>
+                        updateNetworkSettings({ llmMaxRetries: Math.max(0, parseInt(e.target.value, 10) || 0) })
+                      }
+                      className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      {t.settings.networkRetryDelayLabel}
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="30"
+                      value={networkSettings.llmRetryDelaySeconds}
+                      onChange={(e) =>
+                        updateNetworkSettings({ llmRetryDelaySeconds: Math.max(1, parseInt(e.target.value, 10) || 1) })
+                      }
+                      className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => resetNetworkSettings()}
+                    className="text-[11px] text-slate-500 hover:text-blue-600 dark:hover:text-sky-400 flex items-center gap-1 cursor-pointer"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset to Defaults</span>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1614,6 +1982,214 @@ export const SettingsPage: React.FC = () => {
         </main>
       </div>
 
+      {/* Export Settings Modal */}
+      {showExportModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in"
+          onClick={() => setShowExportModal(false)}
+        >
+          <div
+            className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 animate-in zoom-in-95 font-sans"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Download className="w-4 h-4 text-blue-600 dark:text-sky-400" />
+                <span>{t.settings.exportModalTitle}</span>
+              </h3>
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setExportIncludeKeys(false)}
+                  className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    !exportIncludeKeys
+                      ? 'border-blue-600 bg-blue-50/70 dark:bg-blue-950/30 text-blue-900 dark:text-sky-300 ring-2 ring-blue-600/20'
+                      : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  <div className="font-bold text-xs">{t.settings.exportModalSanitized}</div>
+                  <div className="text-[11px] opacity-75 mt-0.5">{t.settings.exportModalSanitizedDesc}</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExportIncludeKeys(true)}
+                  className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    exportIncludeKeys
+                      ? 'border-amber-500 bg-amber-50/70 dark:bg-amber-950/30 text-amber-900 dark:text-amber-300 ring-2 ring-amber-500/20'
+                      : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  <div className="font-bold text-xs">{t.settings.exportModalFull}</div>
+                  <div className="text-[11px] opacity-75 mt-0.5">{t.settings.exportModalFullDesc}</div>
+                </button>
+              </div>
+
+              {exportIncludeKeys && (
+                <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-[11px] text-amber-700 dark:text-amber-400">
+                  {t.settings.exportModalWarning}
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  JSON Preview
+                </label>
+                <textarea
+                  readOnly
+                  rows={8}
+                  value={exportSettings(exportIncludeKeys)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 text-slate-200 text-xs font-mono resize-none focus:outline-none select-all"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  const json = exportSettings(exportIncludeKeys);
+                  navigator.clipboard.writeText(json);
+                  setCopiedExport(true);
+                  setTimeout(() => setCopiedExport(false), 2000);
+                }}
+                className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                {copiedExport ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedExport ? t.common.copied : t.common.copy}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const json = exportSettings(exportIncludeKeys);
+                  const blob = new Blob([json], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `patchcat-settings-${exportIncludeKeys ? 'full' : 'sanitized'}-${new Date().toISOString().slice(0, 10)}.json`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="px-4 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download JSON</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Settings Modal */}
+      {showImportModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in"
+          onClick={() => setShowImportModal(false)}
+        >
+          <div
+            className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 animate-in zoom-in-95 font-sans"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Upload className="w-4 h-4 text-blue-600 dark:text-sky-400" />
+                <span>{t.settings.importModalTitle}</span>
+              </h3>
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {t.settings.importModalDesc}
+              </p>
+
+              {importStatus.type === 'error' && (
+                <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{importStatus.message || t.settings.importModalError}</span>
+                </div>
+              )}
+
+              {importStatus.type === 'success' && (
+                <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 shrink-0" />
+                  <span>{t.settings.importModalSuccess}</span>
+                </div>
+              )}
+
+              <textarea
+                rows={7}
+                value={importJsonText}
+                onChange={(e) => setImportJsonText(e.target.value)}
+                placeholder={t.settings.importModalPastePlaceholder}
+                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-xs font-mono resize-none focus:outline-none focus:border-blue-500"
+              />
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  accept=".json,application/json"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                      const text = evt.target?.result as string;
+                      if (text) setImportJsonText(text);
+                    };
+                    reader.readAsText(file);
+                  }}
+                  className="text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-100 dark:file:bg-slate-800 file:text-slate-700 dark:file:text-slate-300 hover:file:bg-slate-200 cursor-pointer"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowImportModal(false)}
+                className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                {t.common.cancel}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const res = importSettings(importJsonText);
+                  if (!res.success) {
+                    setImportStatus({ type: 'error', message: res.error });
+                  } else {
+                    setImportStatus({ type: 'success' });
+                    setTimeout(() => {
+                      setShowImportModal(false);
+                      setImportStatus({ type: 'idle' });
+                      setImportJsonText('');
+                    }, 1200);
+                  }
+                }}
+                disabled={!importJsonText.trim()}
+                className="px-4 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white shadow-xs transition-colors cursor-pointer"
+              >
+                {t.settings.importModalConfirmBtn}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Danger Zone GitHub-style Confirmation Modal */}
       {activeDangerModal === 'cache' && (
         <DangerConfirmModal
@@ -1621,7 +2197,6 @@ export const SettingsPage: React.FC = () => {
           title={t.settings.clearCacheTitle}
           description={t.settings.clearCacheDesc}
           confirmPhrase={t.settings.clearCacheConfirmPhrase}
-          altConfirmPhrase="清除缓存"
           confirmButtonText={t.settings.clearCacheBtn}
           onConfirm={async () => {
             await clearAllCaches();
@@ -1638,7 +2213,6 @@ export const SettingsPage: React.FC = () => {
           title={t.settings.clearWorkflowsTitle}
           description={t.settings.clearWorkflowsDesc}
           confirmPhrase={t.settings.clearWorkflowsConfirmPhrase}
-          altConfirmPhrase="清除所有流程"
           confirmButtonText={t.settings.clearWorkflowsBtn}
           onConfirm={async () => {
             await clearAllWorkflows();

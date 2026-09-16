@@ -14,6 +14,7 @@ import { useWorkflowStore } from './workflow-store.ts';
 import { useSettingsStore } from './settings-store.ts';
 import { PRESETS_DATA } from '../presets/index.ts';
 import { getStorageAdapter } from '../services/storage/storage-adapter.ts';
+import { RUNTIME_DEFAULTS } from '../config/runtime-defaults.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Types & Interfaces
@@ -359,9 +360,12 @@ export function cancelAutoSaveTimer(): void {
 
 export function scheduleAutoSave(): void {
   cancelAutoSaveTimer();
+  const debounceMs =
+    useSettingsStore.getState().editorPreferences?.autoSaveDebounceMs ??
+    RUNTIME_DEFAULTS.AUTOSAVE_DEBOUNCE_MS;
   autoSaveTimer = setTimeout(() => {
     useProjectStore.getState().autoSaveCurrentWorkflow();
-  }, 800);
+  }, debounceMs);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

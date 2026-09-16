@@ -75,13 +75,20 @@
 
 ---
 
-### 05. Security & Quality Audits
+### 05. Configuration & System Parameters
+
+- [⚙️ Configuration Architecture & Settings Backup/Migration](05-configuration/README.md)
+- [📋 Runtime Parameters Reference Dictionary](05-configuration/runtime-parameters-reference.md)
+
+---
+
+### 06. Security & Quality Audits
 
 - [安全审计与代码质量简报](安全TODO/安全审计与代码质量简报.md)
 
 ---
 
-### 06. Brainstorming & Concept Backlog
+### 07. Brainstorming & Concept Backlog
 
 - [💡 PatchCat Brainstorming Vault & Concept Backlog](brainstorming/README.md)
   - [🐾 PatchCat 2.0: From Workflow Canvas to Agent Cockpit (PRD)](brainstorming/PRD-PatchCat-2.0-Cockpit-Architecture.md)
@@ -154,20 +161,27 @@
 
 ---
 
-### 05. 快速上手指南
+### 05. 参数配置与系统设定
+
+- [⚙️ 配置架构模型与备份/迁移指南](05-configuration/README.md)
+- [📋 运行时参数参考字典](05-configuration/runtime-parameters-reference.md)
+
+---
+
+### 06. 快速上手指南
 
 - [Quick Start Guide (English)](quick-start.md)
 - [快速上手指南 (简体中文)](quick-start-zh.md)
 
 ---
 
-### 06. 安全
+### 07. 安全审计
 
 - [安全审计与代码质量简报](安全TODO/安全审计与代码质量简报.md)
 
 ---
 
-### 07. 头脑风暴与创意 Backlog
+### 08. 头脑风暴与创意 Backlog
 
 - [💡 PatchCat 创意灵感与产品演进 Backlog](brainstorming/README.md)
   - [🐾 PatchCat 2.0：从「画布编排」到「智能体驾驶舱」需求设计文档 (PRD)](brainstorming/PRD-PatchCat-2.0-Cockpit-Architecture.md)

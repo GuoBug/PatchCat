@@ -207,6 +207,9 @@ export interface Translations {
     agentToolCode: string;
     agentToolUrl: string;
     agentToolSchema: string;
+    agentTokenBudget: string;
+    agentLoopDetection: string;
+    agentLoopThreshold: string;
     // Loop Node
     loopInputVariable: string;
     loopConcurrency: string;
@@ -220,10 +223,11 @@ export interface Translations {
     pageTitle: string;
     pageSubtitle: string;
     tabGeneral: string;
+    tabExecution: string;
     tabMemory: string;
     tabProviders: string;
     tabLogs: string;
-    // General Tab
+    // General Tab & Backup
     generalTitle: string;
     generalDesc: string;
     languageSection: string;
@@ -234,6 +238,44 @@ export interface Translations {
     themeSectionDesc: string;
     themeLight: string;
     themeDark: string;
+    autoSaveDebounce: string;
+    autoSaveDebounceDesc: string;
+    backupSection: string;
+    backupSectionDesc: string;
+    exportSettingsBtn: string;
+    importSettingsBtn: string;
+    exportModalTitle: string;
+    exportModalSanitized: string;
+    exportModalSanitizedDesc: string;
+    exportModalFull: string;
+    exportModalFullDesc: string;
+    exportModalWarning: string;
+    importModalTitle: string;
+    importModalDesc: string;
+    importModalPastePlaceholder: string;
+    importModalConfirmBtn: string;
+    importModalSuccess: string;
+    importModalError: string;
+    // Execution & Safety Tab
+    executionTitle: string;
+    executionDesc: string;
+    toolTimeoutTitle: string;
+    toolTimeoutDesc: string;
+    toolTimeoutEnable: string;
+    toolTimeoutSecondsLabel: string;
+    sandboxTimeoutTitle: string;
+    sandboxTimeoutDesc: string;
+    sandboxTimeoutSecondsLabel: string;
+    agentSafeguardsTitle: string;
+    agentSafeguardsDesc: string;
+    agentLoopEnable: string;
+    agentLoopThresholdLabel: string;
+    agentDefaultIterationsLabel: string;
+    // Network Resiliency in Providers Tab
+    networkSection: string;
+    networkSectionDesc: string;
+    networkMaxRetriesLabel: string;
+    networkRetryDelayLabel: string;
     engineSection: string;
     engineSectionDesc: string;
     engineMock: string;
@@ -696,6 +738,9 @@ export const translations: Record<Language, Translations> = {
       agentToolCode: 'Code Implementation',
       agentToolUrl: 'API URL',
       agentToolSchema: 'JSON Schema',
+      agentTokenBudget: 'Token Budget Limit (0 = Unlimited)',
+      agentLoopDetection: 'Deadlock Loop Detection',
+      agentLoopThreshold: 'Trip Threshold',
       // Loop Node
       loopInputVariable: 'Input Array Variable',
       loopConcurrency: 'Concurrency',
@@ -707,14 +752,15 @@ export const translations: Record<Language, Translations> = {
     },
     settings: {
       pageTitle: 'Settings & Configuration',
-      pageSubtitle: 'Manage LLM Providers, UI Language, and Workflow Telemetry Logs',
-      tabGeneral: 'General & Language',
+      pageSubtitle: 'Manage LLM Providers, UI Language, Runtime Protection, and Workflow Logs',
+      tabGeneral: 'General & Backup',
+      tabExecution: 'Execution & Safety',
       tabMemory: 'Memory',
-      tabProviders: 'LLM Providers & API Keys',
+      tabProviders: 'LLM Providers & Network',
       tabLogs: 'Execution Logs',
-      // General Tab
+      // General Tab & Backup
       generalTitle: 'General Settings',
-      generalDesc: 'Customize interface language, visual theme, and execution preferences.',
+      generalDesc: 'Customize interface language, visual theme, and canvas auto-save preferences.',
       languageSection: 'Display Language',
       languageSectionDesc: 'Select your preferred language for the interface and default presets.',
       langEn: 'English (US)',
@@ -723,6 +769,44 @@ export const translations: Record<Language, Translations> = {
       themeSectionDesc: 'Switch between light and dark visual aesthetics.',
       themeLight: 'Light Slate Theme',
       themeDark: 'Dark Cyberpunk Theme',
+      autoSaveDebounce: 'Auto-Save Debounce Delay',
+      autoSaveDebounceDesc: 'Time in milliseconds to wait after edits before auto-saving to storage.',
+      backupSection: 'System Configuration Backup & Migration',
+      backupSectionDesc: 'Export or import your full environment configuration, models, and execution settings.',
+      exportSettingsBtn: 'Export Settings JSON',
+      importSettingsBtn: 'Import Settings JSON',
+      exportModalTitle: 'Export System Configuration',
+      exportModalSanitized: 'Sanitized Export (Recommended)',
+      exportModalSanitizedDesc: 'Exports all providers and runtime settings without API keys. Safe to share.',
+      exportModalFull: 'Full Export (Sensitive)',
+      exportModalFullDesc: 'Exports all settings including plaintext API keys for complete local migration.',
+      exportModalWarning: 'Warning: Full export contains unencrypted API keys. Keep your exported file secure!',
+      importModalTitle: 'Import System Configuration',
+      importModalDesc: 'Paste your PatchCat settings JSON below or upload a configuration file.',
+      importModalPastePlaceholder: 'Paste settings JSON here...',
+      importModalConfirmBtn: 'Import and Apply Settings',
+      importModalSuccess: 'Settings imported successfully! Preferences have been updated.',
+      importModalError: 'Failed to import settings. Please verify the JSON schema.',
+      // Execution & Safety Tab
+      executionTitle: 'Execution Engine & Runtime Protection',
+      executionDesc: 'Configure execution watchdogs, script sandbox timeouts, and AI Agent deadlock breakers.',
+      toolTimeoutTitle: 'Step Tool Execution Watchdog',
+      toolTimeoutDesc: 'Protects external HTTP and custom tool calls from hanging the workflow indefinitely.',
+      toolTimeoutEnable: 'Enable Step Tool Execution Timeout',
+      toolTimeoutSecondsLabel: 'Timeout Threshold (Seconds)',
+      sandboxTimeoutTitle: 'JavaScript Code Sandbox Guard',
+      sandboxTimeoutDesc: 'Maximum execution time for Web Worker script sandboxes before termination.',
+      sandboxTimeoutSecondsLabel: 'Sandbox Timeout (Seconds)',
+      agentSafeguardsTitle: 'Agent Cognitive Deadlock & Circuit Breakers',
+      agentSafeguardsDesc: 'Detects and breaks repetitive identical tool-calling loops to protect token budgets.',
+      agentLoopEnable: 'Enable Deadlock Loop Detection',
+      agentLoopThresholdLabel: 'Consecutive Identical Calls to Trip',
+      agentDefaultIterationsLabel: 'Default Max Iterations',
+      // Network Resiliency in Providers Tab
+      networkSection: 'Network Resiliency & Retry Policy',
+      networkSectionDesc: 'Configure automatic retries and backoff delays for transient provider network errors.',
+      networkMaxRetriesLabel: 'Max Automatic Retries',
+      networkRetryDelayLabel: 'Retry Backoff Delay (Seconds)',
       engineSection: 'Execution Mode',
       engineSectionDesc: 'Choose how workflows are executed.',
       engineMock: 'Mock Execution Engine',
@@ -1205,6 +1289,9 @@ export const translations: Record<Language, Translations> = {
       agentToolCode: '代码实现',
       agentToolUrl: 'API 地址',
       agentToolSchema: 'JSON Schema',
+      agentTokenBudget: 'Token 预算上限 (0 = 不限制)',
+      agentLoopDetection: '死锁循环检测',
+      agentLoopThreshold: '判定熔断阈值',
       // Loop Node
       loopInputVariable: '输入数组变量',
       loopConcurrency: '并发数',
@@ -1216,14 +1303,15 @@ export const translations: Record<Language, Translations> = {
     },
     settings: {
       pageTitle: '系统设置与配置',
-      pageSubtitle: '管理 LLM 模型服务商、界面多语言与全链路运行遥测日志',
-      tabGeneral: '常规与语言',
-      tabMemory: '记忆',
-      tabProviders: '模型服务商与 API Key',
-      tabLogs: '运行日志控制台',
-      // General Tab
-      generalTitle: '常规与语言偏好',
-      generalDesc: '自定义界面语言、显示主题与工作流执行模式。',
+      pageSubtitle: '管理 LLM 模型服务商、界面多语言、运行防护与全链路日志',
+      tabGeneral: '常规与备份',
+      tabExecution: '运行与防护',
+      tabMemory: '会话记忆',
+      tabProviders: '模型与网络',
+      tabLogs: '审计日志',
+      // General Tab & Backup
+      generalTitle: '常规与系统偏好',
+      generalDesc: '自定义界面语言、显示主题与画布自动保存防抖延迟。',
       languageSection: '界面显示语言 (Language)',
       languageSectionDesc: '选择您希望使用的界面展示语言与默认示例。',
       langEn: 'English (US)',
@@ -1232,6 +1320,44 @@ export const translations: Record<Language, Translations> = {
       themeSectionDesc: '在清爽现代浅色风格与极客暗黑主题间切换。',
       themeLight: '现代极简浅色 (Light)',
       themeDark: '赛博极客暗黑 (Dark)',
+      autoSaveDebounce: '画布自动保存防抖延迟',
+      autoSaveDebounceDesc: '编辑停顿后自动暂存至存储的时间（毫秒），低配或弱网环境建议调高。',
+      backupSection: '系统配置备份与跨机迁移',
+      backupSectionDesc: '一键导出或导入当前系统的全套环境偏好、模型配置与运行保护参数。',
+      exportSettingsBtn: '导出系统配置 JSON',
+      importSettingsBtn: '导入系统配置 JSON',
+      exportModalTitle: '导出系统配置备份',
+      exportModalSanitized: '安全脱敏导出 (推荐)',
+      exportModalSanitizedDesc: '导出所有模型服务商与运行时配置，自动剔除 API 密钥，适合公开分享或排错。',
+      exportModalFull: '完整全量备份 (含密钥)',
+      exportModalFullDesc: '包含所有明文 API 密钥与端点，用于个人跨设备无损迁移。',
+      exportModalWarning: '警告：全量导出包含明文 API 密钥，请妥善保管导出的 JSON 文件，切勿上传公开网络！',
+      importModalTitle: '导入系统配置备份',
+      importModalDesc: '在下方粘贴 PatchCat 导出的配置 JSON 文本，或选择配置文件上传。',
+      importModalPastePlaceholder: '在此粘贴配置 JSON 内容...',
+      importModalConfirmBtn: '确认导入并应用配置',
+      importModalSuccess: '配置导入成功！系统环境与服务商设置已刷新。',
+      importModalError: '导入失败，请检查输入的 JSON 格式是否正确且符合 PatchCat 规范。',
+      // Execution & Safety Tab
+      executionTitle: '执行引擎与运行防护',
+      executionDesc: '配置工具超时看门狗、JS 脚本隔离沙箱与智能体死循环熔断保护。',
+      toolTimeoutTitle: '工具单步执行看门狗',
+      toolTimeoutDesc: '防止外部 HTTP API 或长时间未响应的自定义工具将整张画布无限期挂起。',
+      toolTimeoutEnable: '启用工具单步执行超时保护',
+      toolTimeoutSecondsLabel: '超时时间阈值 (秒)',
+      sandboxTimeoutTitle: 'JavaScript 代码沙箱防护',
+      sandboxTimeoutDesc: 'Web Worker 隔离沙箱脚本的最大允许执行时间，防止用户死循环代码卡死进程。',
+      sandboxTimeoutSecondsLabel: '沙箱看门狗超时 (秒)',
+      agentSafeguardsTitle: 'Agent 认知死循环打破与熔断器',
+      agentSafeguardsDesc: '实时检测并打破大模型连续重复调用相同工具的死锁循环，防止巨额 Token 浪费。',
+      agentLoopEnable: '启用重复调用死锁打破器',
+      agentLoopThresholdLabel: '连续重复调用熔断阈值',
+      agentDefaultIterationsLabel: '默认最大迭代轮数',
+      // Network Resiliency in Providers Tab
+      networkSection: '网络连接韧性与重试策略',
+      networkSectionDesc: '针对大模型服务商偶发 503 超载或网络抖动设置自动重试与退避间隔。',
+      networkMaxRetriesLabel: '瞬时故障自动重试次数',
+      networkRetryDelayLabel: '重试退避等待时长 (秒)',
       engineSection: '执行引擎模式',
       engineSectionDesc: '选择工作流的驱动与执行方式。',
       engineMock: 'Mock 离线模拟引擎',
@@ -1343,13 +1469,13 @@ export const translations: Record<Language, Translations> = {
       clearCacheDesc:
         '清空多轮会话记忆、运行遥测日志及模型服务商连接测试缓存。您的工作流与项目结构不会受到任何影响。',
       clearCacheBtn: '清除所有缓存...',
-      clearCacheConfirmPhrase: 'CLEAR CACHE',
+      clearCacheConfirmPhrase: '清空缓存',
       clearCacheSuccess: '所有本地会话与日志缓存已成功清空。',
       clearWorkflowsTitle: '清除所有流程',
       clearWorkflowsDesc:
         '永久清空所有自建目录与工作流流程并重置为空白画布。此操作不可逆，所有未导出的流程资产将被永久销毁。',
       clearWorkflowsBtn: '清除所有流程...',
-      clearWorkflowsConfirmPhrase: 'DELETE ALL WORKFLOWS',
+      clearWorkflowsConfirmPhrase: '删除所有工作流',
       clearWorkflowsSuccess: '所有工作流已全部清空并重置为初始状态。',
       dangerModalTitle: '您确定要执行此危险操作吗？',
       dangerModalWarning: '此操作具有破坏性且无法撤销！',

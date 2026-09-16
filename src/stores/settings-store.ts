@@ -10,10 +10,18 @@ import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import type { Language } from '../i18n/translations.ts';
 import { useLogStore } from './log-store.ts';
+import {
+  type RuntimeProtectionSettings,
+  type EditorPreferences,
+  type NetworkSettings,
+  DEFAULT_RUNTIME_PROTECTION,
+  DEFAULT_EDITOR_PREFERENCES,
+  DEFAULT_NETWORK_SETTINGS,
+} from '../config/runtime-defaults.ts';
 
 export type ProviderId = 'openai' | 'deepseek' | 'siliconflow' | 'google' | 'ollama' | 'custom';
 export type AppView = 'canvas' | 'settings';
-export type SettingsTab = 'general' | 'memory' | 'providers' | 'logs';
+export type SettingsTab = 'general' | 'execution' | 'memory' | 'providers' | 'logs';
 
 export interface ProviderConfig {
   id: ProviderId;
@@ -104,6 +112,9 @@ const LANG_STORAGE_KEY = 'patchcat-language-v1';
 const STORAGE_MODE_KEY = 'patchcat-storage-mode-v1';
 const SERVER_URL_KEY = 'patchcat-server-url-v1';
 const MEMORY_DEFAULTS_KEY = 'patchcat-memory-defaults-v1';
+const RUNTIME_PROTECTION_KEY = 'patchcat-runtime-protection-v1';
+const EDITOR_PREFERENCES_KEY = 'patchcat-editor-preferences-v1';
+const NETWORK_SETTINGS_KEY = 'patchcat-network-settings-v1';
 
 export interface MemoryDefaults {
   enabled: boolean;
@@ -153,6 +164,25 @@ export interface SettingsStoreState {
   updateMemoryDefaults: (partial: Partial<MemoryDefaults>) => void;
   resetMemoryDefaults: () => void;
 
+  // Runtime Protection & Watchdogs
+  runtimeProtection: RuntimeProtectionSettings;
+  updateRuntimeProtection: (partial: Partial<RuntimeProtectionSettings>) => void;
+  resetRuntimeProtection: () => void;
+
+  // Editor Preferences
+  editorPreferences: EditorPreferences;
+  updateEditorPreferences: (partial: Partial<EditorPreferences>) => void;
+  resetEditorPreferences: () => void;
+
+  // Network Resiliency Settings
+  networkSettings: NetworkSettings;
+  updateNetworkSettings: (partial: Partial<NetworkSettings>) => void;
+  resetNetworkSettings: () => void;
+
+  // Backup & Migration
+  exportSettings: (includeSensitiveKeys?: boolean) => string;
+  importSettings: (jsonString: string) => { success: boolean; error?: string };
+
   // Actions
   setActiveProvider: (id: ProviderId) => void;
   updateProviderConfig: (id: ProviderId, partial: Partial<ProviderConfig>) => void;
@@ -177,6 +207,9 @@ function loadInitialState(): {
   storageMode: 'local' | 'server';
   serverBaseUrl: string;
   memoryDefaults: MemoryDefaults;
+  runtimeProtection: RuntimeProtectionSettings;
+  editorPreferences: EditorPreferences;
+  networkSettings: NetworkSettings;
 } {
   let language: Language = 'en';
   let activeProvider: ProviderId = 'deepseek';
@@ -184,6 +217,9 @@ function loadInitialState(): {
   let storageMode: 'local' | 'server' = 'local';
   let serverBaseUrl = 'http://localhost:8000';
   let memoryDefaults: MemoryDefaults = DEFAULT_MEMORY_SETTINGS;
+  let runtimeProtection: RuntimeProtectionSettings = DEFAULT_RUNTIME_PROTECTION;
+  let editorPreferences: EditorPreferences = DEFAULT_EDITOR_PREFERENCES;
+  let networkSettings: NetworkSettings = DEFAULT_NETWORK_SETTINGS;
 
   if (typeof window !== 'undefined') {
     try {
@@ -218,6 +254,33 @@ function loadInitialState(): {
     }
 
     try {
+      const savedProtection = localStorage.getItem(RUNTIME_PROTECTION_KEY);
+      if (savedProtection) {
+        runtimeProtection = { ...DEFAULT_RUNTIME_PROTECTION, ...JSON.parse(savedProtection) };
+      }
+    } catch (e) {
+      console.warn('[SettingsStore] Failed to load runtime protection settings:', e);
+    }
+
+    try {
+      const savedEditor = localStorage.getItem(EDITOR_PREFERENCES_KEY);
+      if (savedEditor) {
+        editorPreferences = { ...DEFAULT_EDITOR_PREFERENCES, ...JSON.parse(savedEditor) };
+      }
+    } catch (e) {
+      console.warn('[SettingsStore] Failed to load editor preferences:', e);
+    }
+
+    try {
+      const savedNetwork = localStorage.getItem(NETWORK_SETTINGS_KEY);
+      if (savedNetwork) {
+        networkSettings = { ...DEFAULT_NETWORK_SETTINGS, ...JSON.parse(savedNetwork) };
+      }
+    } catch (e) {
+      console.warn('[SettingsStore] Failed to load network settings:', e);
+    }
+
+    try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
@@ -232,7 +295,17 @@ function loadInitialState(): {
     }
   }
 
-  return { language, activeProvider, providers, storageMode, serverBaseUrl, memoryDefaults };
+  return {
+    language,
+    activeProvider,
+    providers,
+    storageMode,
+    serverBaseUrl,
+    memoryDefaults,
+    runtimeProtection,
+    editorPreferences,
+    networkSettings,
+  };
 }
 
 function saveState(state: {
@@ -396,6 +469,199 @@ export const useSettingsStore = create<SettingsStoreState>()(
           } catch (e) {
             console.error('[SettingsStore] Failed to reset memory defaults:', e);
           }
+        }
+      },
+
+      // Runtime Protection & Watchdogs
+      runtimeProtection: initial.runtimeProtection,
+      updateRuntimeProtection: (partial) => {
+        set((state) => {
+          state.runtimeProtection = { ...state.runtimeProtection, ...partial };
+        });
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(RUNTIME_PROTECTION_KEY, JSON.stringify(get().runtimeProtection));
+          } catch (e) {
+            console.error('[SettingsStore] Failed to save runtimeProtection:', e);
+          }
+        }
+      },
+      resetRuntimeProtection: () => {
+        set((state) => {
+          state.runtimeProtection = { ...DEFAULT_RUNTIME_PROTECTION };
+        });
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.removeItem(RUNTIME_PROTECTION_KEY);
+          } catch (e) {
+            console.error('[SettingsStore] Failed to reset runtimeProtection:', e);
+          }
+        }
+      },
+
+      // Editor Preferences
+      editorPreferences: initial.editorPreferences,
+      updateEditorPreferences: (partial) => {
+        set((state) => {
+          state.editorPreferences = { ...state.editorPreferences, ...partial };
+        });
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(EDITOR_PREFERENCES_KEY, JSON.stringify(get().editorPreferences));
+          } catch (e) {
+            console.error('[SettingsStore] Failed to save editorPreferences:', e);
+          }
+        }
+      },
+      resetEditorPreferences: () => {
+        set((state) => {
+          state.editorPreferences = { ...DEFAULT_EDITOR_PREFERENCES };
+        });
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.removeItem(EDITOR_PREFERENCES_KEY);
+          } catch (e) {
+            console.error('[SettingsStore] Failed to reset editorPreferences:', e);
+          }
+        }
+      },
+
+      // Network Resiliency Settings
+      networkSettings: initial.networkSettings,
+      updateNetworkSettings: (partial) => {
+        set((state) => {
+          state.networkSettings = { ...state.networkSettings, ...partial };
+        });
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(NETWORK_SETTINGS_KEY, JSON.stringify(get().networkSettings));
+          } catch (e) {
+            console.error('[SettingsStore] Failed to save networkSettings:', e);
+          }
+        }
+      },
+      resetNetworkSettings: () => {
+        set((state) => {
+          state.networkSettings = { ...DEFAULT_NETWORK_SETTINGS };
+        });
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.removeItem(NETWORK_SETTINGS_KEY);
+          } catch (e) {
+            console.error('[SettingsStore] Failed to reset networkSettings:', e);
+          }
+        }
+      },
+
+      // Backup & Migration
+      exportSettings: (includeSensitiveKeys = false) => {
+        const state = get();
+        const exportData = {
+          schemaVersion: '1.0',
+          version: '0.4.4',
+          app: 'PatchCat',
+          exportedAt: new Date().toISOString(),
+          includeSensitiveKeys,
+          language: state.language,
+          storageMode: state.storageMode,
+          serverBaseUrl: state.serverBaseUrl,
+          memoryDefaults: state.memoryDefaults,
+          runtimeProtection: state.runtimeProtection,
+          editorPreferences: state.editorPreferences,
+          networkSettings: state.networkSettings,
+          activeProvider: state.activeProvider,
+          providers: Object.fromEntries(
+            Object.entries(state.providers).map(([id, p]) => [
+              id,
+              {
+                ...p,
+                apiKey: includeSensitiveKeys ? p.apiKey : '',
+              },
+            ]),
+          ),
+        };
+        return JSON.stringify(exportData, null, 2);
+      },
+
+      importSettings: (jsonString: string) => {
+        try {
+          const data = JSON.parse(jsonString);
+          if (!data || typeof data !== 'object') {
+            return { success: false, error: 'Invalid JSON format: expected an object' };
+          }
+          if (data.app && data.app !== 'PatchCat') {
+            return { success: false, error: 'Incompatible settings format: not a PatchCat configuration' };
+          }
+          if (!data.providers || typeof data.providers !== 'object') {
+            return { success: false, error: 'Missing providers configuration in backup' };
+          }
+
+          set((state) => {
+            if (data.language === 'en' || data.language === 'zh') {
+              state.language = data.language;
+            }
+            if (data.storageMode === 'local' || data.storageMode === 'server') {
+              state.storageMode = data.storageMode;
+            }
+            if (typeof data.serverBaseUrl === 'string') {
+              state.serverBaseUrl = data.serverBaseUrl;
+            }
+            if (data.memoryDefaults && typeof data.memoryDefaults === 'object') {
+              state.memoryDefaults = { ...state.memoryDefaults, ...data.memoryDefaults };
+            }
+            if (data.runtimeProtection && typeof data.runtimeProtection === 'object') {
+              state.runtimeProtection = { ...state.runtimeProtection, ...data.runtimeProtection };
+            }
+            if (data.editorPreferences && typeof data.editorPreferences === 'object') {
+              state.editorPreferences = { ...state.editorPreferences, ...data.editorPreferences };
+            }
+            if (data.networkSettings && typeof data.networkSettings === 'object') {
+              state.networkSettings = { ...state.networkSettings, ...data.networkSettings };
+            }
+            if (data.activeProvider && state.providers[data.activeProvider as ProviderId]) {
+              state.activeProvider = data.activeProvider as ProviderId;
+            }
+            if (data.providers && typeof data.providers === 'object') {
+              for (const [key, p] of Object.entries(data.providers)) {
+                const pid = key as ProviderId;
+                if (state.providers[pid] && typeof p === 'object' && p !== null) {
+                  const incoming = p as Partial<ProviderConfig>;
+                  state.providers[pid] = {
+                    ...state.providers[pid],
+                    ...incoming,
+                    apiKey: incoming.apiKey || state.providers[pid].apiKey,
+                  };
+                }
+              }
+            }
+          });
+
+          // Sync to localStorage
+          if (typeof window !== 'undefined') {
+            const current = get();
+            try {
+              localStorage.setItem(LANG_STORAGE_KEY, current.language);
+              localStorage.setItem(STORAGE_MODE_KEY, current.storageMode);
+              localStorage.setItem(SERVER_URL_KEY, current.serverBaseUrl);
+              localStorage.setItem(MEMORY_DEFAULTS_KEY, JSON.stringify(current.memoryDefaults));
+              localStorage.setItem(RUNTIME_PROTECTION_KEY, JSON.stringify(current.runtimeProtection));
+              localStorage.setItem(EDITOR_PREFERENCES_KEY, JSON.stringify(current.editorPreferences));
+              localStorage.setItem(NETWORK_SETTINGS_KEY, JSON.stringify(current.networkSettings));
+              saveState({
+                activeProvider: current.activeProvider,
+                providers: current.providers,
+              });
+            } catch (e) {
+              console.error('[SettingsStore] Failed to persist imported settings:', e);
+            }
+          }
+
+          return { success: true };
+        } catch (err) {
+          return {
+            success: false,
+            error: err instanceof Error ? err.message : 'Failed to parse settings JSON',
+          };
         }
       },
 

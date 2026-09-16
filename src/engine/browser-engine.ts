@@ -34,6 +34,7 @@ import { runSandboxedScript } from './sandbox-executor.ts';
 import { useSettingsStore } from '../stores/settings-store.ts';
 import { useKnowledgeStore } from '../stores/knowledge-store.ts';
 import { logger } from './logger.ts';
+import { RUNTIME_DEFAULTS, DEFAULT_RUNTIME_PROTECTION } from '../config/runtime-defaults.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Internal Types & Evaluators
@@ -208,17 +209,18 @@ export class BrowserWorkflowEngine {
 
   /** Resolves effective settings with IoC dependency injection fallback */
   private resolveSettings(options?: WorkflowRunOptions) {
-    const injected = options?.context?.settings;
+    const injected = options?.context?.settings as Record<string, unknown> | undefined;
     if (injected) {
       return {
-        hasKey: injected.hasKey ?? Boolean(injected.apiKey),
-        baseUrl: injected.baseUrl || 'https://api.openai.com',
-        apiKey: injected.apiKey || '',
-        provider: injected.provider || 'openai',
-        model: injected.model || 'gpt-4o',
-        availableModels: injected.availableModels || [],
+        hasKey: (injected.hasKey as boolean | undefined) ?? Boolean(injected.apiKey),
+        baseUrl: (injected.baseUrl as string) || 'https://api.openai.com',
+        apiKey: (injected.apiKey as string) || '',
+        provider: (injected.provider as string) || 'openai',
+        model: (injected.model as string) || 'gpt-4o',
+        availableModels: (injected.availableModels as string[]) || [],
         storageMode: 'local',
         serverBaseUrl: 'http://localhost:8000',
+        runtimeProtection: (injected.runtimeProtection as typeof DEFAULT_RUNTIME_PROTECTION) || DEFAULT_RUNTIME_PROTECTION,
       };
     }
     if (typeof window !== 'undefined') {
@@ -235,6 +237,7 @@ export class BrowserWorkflowEngine {
           availableModels: activeProviderConfig?.availableModels || [],
           storageMode: settingsStore.storageMode,
           serverBaseUrl: settingsStore.serverBaseUrl || 'http://localhost:8000',
+          runtimeProtection: settingsStore.runtimeProtection || DEFAULT_RUNTIME_PROTECTION,
         };
       } catch {
         // Fallback if store is unavailable
@@ -249,6 +252,7 @@ export class BrowserWorkflowEngine {
       availableModels: [],
       storageMode: 'local',
       serverBaseUrl: 'http://localhost:8000',
+      runtimeProtection: DEFAULT_RUNTIME_PROTECTION,
     };
   }
 
@@ -1220,9 +1224,36 @@ export class BrowserWorkflowEngine {
             : JSON.stringify(resolvedInputs);
           
           const systemPrompt = config.systemPrompt;
-          const maxIterations = config.maxIterations || 5;
+          const maxIterations = config.maxIterations || RUNTIME_DEFAULTS.AGENT_DEFAULT_MAX_ITERATIONS;
           const temperature = config.temperature ?? 0.7;
           const configuredModel = config.model;
+          const maxTokenBudget = Math.max(0, config.maxTokenBudget ?? RUNTIME_DEFAULTS.AGENT_TOKEN_BUDGET);
+
+          const settings = this.resolveSettings(options);
+
+          const loopDetectionEnabled =
+            config.loopDetectionEnabled ??
+            settings.runtimeProtection?.loopDetectionEnabled ??
+            RUNTIME_DEFAULTS.AGENT_LOOP_DETECTION_ENABLED;
+          const loopDetectionThreshold =
+            config.loopDetectionThreshold ??
+            settings.runtimeProtection?.loopDetectionThreshold ??
+            RUNTIME_DEFAULTS.AGENT_LOOP_DETECTION_THRESHOLD;
+
+          const toolTimeoutEnabled =
+            settings.runtimeProtection?.toolTimeoutEnabled ??
+            RUNTIME_DEFAULTS.TOOL_EXECUTION_TIMEOUT_ENABLED;
+          const toolTimeoutSeconds =
+            settings.runtimeProtection?.toolTimeoutSeconds ??
+            RUNTIME_DEFAULTS.TOOL_EXECUTION_TIMEOUT_SECONDS;
+          const toolTimeoutMs = toolTimeoutEnabled ? toolTimeoutSeconds * 1000 : undefined;
+          const sandboxTimeoutMs =
+            (settings.runtimeProtection?.sandboxTimeoutSeconds ??
+              RUNTIME_DEFAULTS.SANDBOX_TIMEOUT_SECONDS) * 1000;
+
+          let consecutiveIdenticalCount = 0;
+          let lastCallSig = '';
+          let isDeadlockTripped = false;
 
           // Tools setup
           const tools = (config.tools || []).map((t) => ({
@@ -1239,8 +1270,6 @@ export class BrowserWorkflowEngine {
             messages.push({ role: 'system', content: systemPrompt });
           }
           messages.push({ role: 'user', content: userPrompt });
-
-          const settings = this.resolveSettings(options);
           
           const targetModel = resolveTargetModel(
             configuredModel,
@@ -1297,6 +1326,19 @@ export class BrowserWorkflowEngine {
                 totalUsage.total += llmResult.usage.total;
               }
 
+              // ── Safeguard: Token Budget Limiter ─────────────────────────
+              if (maxTokenBudget > 0 && totalUsage.total >= maxTokenBudget) {
+                const budgetMsg = `\n[Agent Token Budget Exceeded] Total ${totalUsage.total} tokens reached budget limit of ${maxTokenBudget}. Terminating loop.\n`;
+                if (onChunk) {
+                  onChunk({
+                    delta: budgetMsg,
+                    fullContent: finalResponse + budgetMsg,
+                  });
+                }
+                finalResponse += budgetMsg;
+                break;
+              }
+
               const assistantMessage: ChatMessage = { 
                 role: 'assistant', 
                 content: llmResult.response 
@@ -1311,7 +1353,41 @@ export class BrowserWorkflowEngine {
                 for (const tc of llmResult.toolCalls) {
                   const toolName = tc.function.name;
                   const toolArgsStr = tc.function.arguments;
-                  
+
+                  // ── Safeguard: Looping Tool-Call Deadlock Detection ───────
+                  const callSig = `${toolName}:${toolArgsStr}`;
+                  if (callSig === lastCallSig) {
+                    consecutiveIdenticalCount++;
+                  } else {
+                    lastCallSig = callSig;
+                    consecutiveIdenticalCount = 1;
+                  }
+
+                  if (loopDetectionEnabled) {
+                    if (consecutiveIdenticalCount >= loopDetectionThreshold) {
+                      isDeadlockTripped = true;
+                      const deadlockMsg = `\n[Agent Deadlock Protection] Tripped: ${consecutiveIdenticalCount} consecutive identical calls to "${toolName}". Terminating loop to prevent token waste.\n`;
+                      if (onChunk) {
+                        onChunk({
+                          delta: deadlockMsg,
+                          fullContent: finalResponse + deadlockMsg,
+                        });
+                      }
+                      finalResponse += deadlockMsg;
+                      messages.push({
+                        role: 'tool',
+                        tool_call_id: tc.id,
+                        content: `Observation: Execution halted by Deadlock Breaker (${consecutiveIdenticalCount} identical calls). Please synthesize conclusion immediately.`,
+                      });
+                      break;
+                    } else if (consecutiveIdenticalCount === RUNTIME_DEFAULTS.AGENT_LOOP_DETECTION_HINT_THRESHOLD) {
+                      messages.push({
+                        role: 'user',
+                        content: `[System Hint: You invoked tool "${toolName}" twice with identical parameters. If polling or awaiting state change, continue; otherwise synthesize your final answer.]`,
+                      });
+                    }
+                  }
+
                   if (onChunk) {
                     onChunk({
                       delta: `\n[Agent Tool Call] ${toolName}(${toolArgsStr})\n`,
@@ -1330,24 +1406,41 @@ export class BrowserWorkflowEngine {
                   let toolResultStr = '';
 
                   if (!binding) {
-                    toolResultStr = `Error: Tool ${toolName} not found.`;
+                    toolResultStr = `Observation: Error - Tool "${toolName}" not found.`;
                   } else {
                     try {
                       switch (binding.type) {
                         case 'builtin_code': {
-                          const sandboxRes = await runSandboxedScript(binding.implementation || '', toolArgs, { timeoutMs: 5000 });
+                          const sandboxRes = await runSandboxedScript(binding.implementation || '', toolArgs, { timeoutMs: sandboxTimeoutMs });
                           toolResultStr = typeof sandboxRes.result === 'string' ? sandboxRes.result : JSON.stringify(sandboxRes.result);
                           break;
                         }
                         case 'builtin_http': {
                           const url = binding.implementation || '';
-                          const res = await fetch(url, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(toolArgs),
-                            signal
-                          });
-                          toolResultStr = await res.text();
+                          let fetchSignal = signal;
+                          let fetchTimer: ReturnType<typeof setTimeout> | undefined;
+                          if (toolTimeoutMs) {
+                            const timeoutController = new AbortController();
+                            fetchTimer = setTimeout(
+                              () => timeoutController.abort(new Error(`Tool HTTP request timed out (>${toolTimeoutSeconds}s)`)),
+                              toolTimeoutMs,
+                            );
+                            if (signal) {
+                              signal.addEventListener('abort', () => timeoutController.abort(), { once: true });
+                            }
+                            fetchSignal = timeoutController.signal;
+                          }
+                          try {
+                            const res = await fetch(url, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify(toolArgs),
+                              signal: fetchSignal,
+                            });
+                            toolResultStr = await res.text();
+                          } finally {
+                            if (fetchTimer) clearTimeout(fetchTimer);
+                          }
                           break;
                         }
                         case 'canvas_node': {
@@ -1367,24 +1460,24 @@ export class BrowserWorkflowEngine {
                                 new Set(),
                                 nodeMap
                               );
-                              toolResultStr = res.status === 'success' ? JSON.stringify(res.output) : `Error: ${res.error}`;
+                              toolResultStr = res.status === 'success' ? JSON.stringify(res.output) : `Observation: Error in delegated node - ${res.error}`;
                             } else {
-                              toolResultStr = `Error: Target node ${binding.implementation} not found in graph`;
+                              toolResultStr = `Observation: Error - Target node "${binding.implementation}" not found in graph`;
                             }
                           } else {
-                            toolResultStr = "Error: canvas_node binding missing nodeMap or implementation";
+                            toolResultStr = "Observation: Error - canvas_node binding missing nodeMap or implementation";
                           }
                           break;
                         }
                         case 'custom_schema': {
-                          toolResultStr = "Custom tool execution not yet supported";
+                          toolResultStr = "Observation: Custom tool execution not yet supported";
                           break;
                         }
                         default:
-                          toolResultStr = `Error: Unknown tool type ${binding.type}`;
+                          toolResultStr = `Observation: Error - Unknown tool type "${binding.type}"`;
                       }
                     } catch (e: unknown) {
-                      toolResultStr = `Error executing tool: ${e instanceof Error ? e.message : String(e)}`;
+                      toolResultStr = `Observation: Error executing tool "${toolName}": ${e instanceof Error ? e.message : String(e)}`;
                     }
                   }
 
@@ -1393,6 +1486,10 @@ export class BrowserWorkflowEngine {
                     tool_call_id: tc.id,
                     content: toolResultStr,
                   });
+                }
+
+                if (isDeadlockTripped) {
+                  break;
                 }
 
                 // If max iterations reached on tool call, perform terminal synthesis
@@ -1503,9 +1600,15 @@ export class BrowserWorkflowEngine {
 
         case 'sub_workflow': {
           const subConfig = (node.data.config || {}) as { targetWorkflowId?: string };
+          let isolatedInputs: Record<string, unknown>;
+          try {
+            isolatedInputs = structuredClone(resolvedInputs);
+          } catch {
+            isolatedInputs = JSON.parse(JSON.stringify(resolvedInputs));
+          }
           output = {
-            result: `[Sub-Workflow] Executed workflow "${subConfig.targetWorkflowId || 'unknown'}" (stub implementation)`,
-            output: resolvedInputs,
+            result: `[Sub-Workflow] Executed workflow "${subConfig.targetWorkflowId || 'unknown'}" (isolated scope)`,
+            output: isolatedInputs,
             targetWorkflowId: subConfig.targetWorkflowId,
           };
           break;
