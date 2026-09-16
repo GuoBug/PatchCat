@@ -59,21 +59,35 @@ export function useTranslation() {
 - 全局路由状态受控于 `useSettingsStore.currentView`（`'canvas'` | `'settings'`）。
 - 顶部导航栏原“日志”按钮升级为统一的“设置”按钮；进入设置页后，顶部导航栏展示清晰的 `← Back to Canvas` (返回画布) 按钮。
 
-### 3.2 设置功能分区
+### 3.2 设置功能分区 (v0.4.4 升级为 5 维层级导航)
 ```
 SettingsPage
-├── General (常规设置)
-│   ├── 语言切换 (English / 简体中文)
-│   ├── 主题外观 (Dark Mode / Light Mode)
-│   └── 引擎模式 (Browser BYOK / Local Server)
-├── LLM Providers (模型服务商 & API Key)
-│   ├── Google Gemini (支持原生 endpoint 与模型动态探测)
-│   ├── DeepSeek (支持 R1 思考过程与 V3)
-│   ├── OpenAI (GPT-4o, GPT-4o-mini)
-│   ├── SiliconFlow (硅基流动云端开源模型)
-│   └── Local Ollama (本地无 Key 连接与自动检测)
-└── Execution Logs (实时运行与遥测日志)
-    ├── 级别过滤 (System / Request / Node / Error)
-    ├── Payload 报文折叠查看与复制
-    └── 导出 JSON / 导出 TXT
+├── 1. General & Backup (常规与备份)
+│   ├── 界面语言切换 (English / 简体中文)
+│   ├── 主题外观 (Dark Slate / Light Mode)
+│   ├── 引擎运行模式 (Browser BYOK / Local FastAPI Server)
+│   ├── 画布自动保存防抖延迟 (Auto-save Debounce Slider, 100~3000ms)
+│   ├── 配置备份与迁移 (Export / Import Backup JSON，支持按需脱敏 Key)
+│   └── 危险区域 (Danger Zone: 清除缓存 / 恢复出厂设置，双语防误触二次验证)
+├── 2. Execution & Safety (执行与安全)
+│   ├── 单次执行 Token 硬熔断 (Token Budget Limiter, 0为不限, >0即熔断)
+│   ├── 死锁打破器 (Looping Tool-Call Detector 开关与 2~10 阈值)
+│   ├── 单步工具执行看门狗 (Step Watchdog Timeout 开关与 5~300s 阈值)
+│   ├── 代码沙箱执行超时 (Code Sandbox Timeout, 1000~30000ms)
+│   └── 节点失败重试策略 (Max Retries 0~5 & 指数退避开关)
+├── 3. Providers & Network (模型与网络)
+│   ├── 大模型服务商 (Google Gemini / DeepSeek / OpenAI / SiliconFlow / Local Ollama)
+│   ├── 全局网络请求超时 (Global HTTP Timeout, 5~120s)
+│   ├── 允许跨域直连 (CORS Direct Fetch 开关)
+│   └── 自定义反向代理 (Custom Proxy Base URL)
+├── 4. Conversation Memory (对话记忆)
+│   ├── 上下文最大保留消息轮数 (Max Memory Messages, 1~50)
+│   └── 超长上下文自动滑动截断/摘要压缩 (Auto Context Compaction)
+└── 5. Execution Logs (实时运行与遥测日志)
+    ├── 日志级别过滤 (Summary / Detailed / Development)
+    ├── 类别过滤 (System / Request / Node / Error / Security)
+    ├── Payload 结构化报文折叠查看与一键复制
+    ├── 实时关键词搜索与节点高亮过滤
+    └── 日志导出 (.json / .txt) 与一键清空
 ```
+

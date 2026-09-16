@@ -73,7 +73,7 @@ PatchCat operates with a **100% Client-Only Privacy Architecture**: your API Key
 3. Paste your API Key into the input field.
 4. Click **`测试连通性 (Test Connection)`**:
    - PatchCat automatically tests the endpoint and fetches all available chat models (e.g., `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.0-flash`).
-5. Close the Settings modal. Your provider is now active and marked with a green indicator in the header!
+5. Click **`← Back to Canvas`** in the top-left corner. Your provider is now active and marked with a green indicator in the header!
 
 > [!TIP]
 > **Recommended Model**: For Google Gemini, we recommend **`gemini-2.5-flash`** for instant response speeds and high availability on the free tier.
@@ -104,16 +104,16 @@ This workflow consists of 5 canonical nodes:
 
 ## 🔍 Step 4: Inspect Telemetry & 3-Tier Security Logs
 
-PatchCat includes an enterprise-grade execution logging engine and bottom console drawer.
+PatchCat includes an enterprise-grade execution logging engine integrated directly into the Settings Center.
 
-1. Click the **`日志 (Logs)`** button in the top navigation bar to open the **Log Console Drawer**.
+1. Click the **`Settings`** button in the top navigation bar, then switch to the **`Execution Logs (运行日志)`** tab.
 2. Switch between the **3 Configurable Log Levels**:
    - **`概要 (Summary)`**: Macro workflow lifecycle, HTTP status codes, latency, and system alerts.
    - **`详细 (Detailed)`**: Node IDs, runtime parameters (`model`, `temperature`, `max_tokens`), and DAG layer wave scheduling.
    - **`开发 (Development)`**: Full Prompt inputs, variable resolution payloads, and LLM generated responses.
 3. **Strict Zero-Leakage Guarantee**: Notice that even in `Development` mode, all API keys (`sk-***`, `AIzaSy***`), Bearer tokens, and passwords are automatically masked with `***[MASKED]***`.
 4. **Tools in the Console**:
-   - **Filter by Type**: `All`, `System`, `Request`, `Node`, `Error`.
+   - **Filter by Type**: `All`, `System`, `Request`, `Node`, `Error`, `Security`.
    - **Search**: Filter logs in real time by keywords or Node IDs.
    - **Expand Payload**: Click `详情 Payload` to inspect formatted JSON trees and copy with one click.
    - **Export**: Click `导出` to download logs as `.json` or `.txt` reports.

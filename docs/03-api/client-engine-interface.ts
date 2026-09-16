@@ -7,7 +7,19 @@
 
 export type EngineMode = 'browser' | 'server';
 
-export type NodeType = 'input' | 'prompt' | 'llm' | 'code' | 'router' | 'output';
+export type NodeType =
+  | 'input'
+  | 'prompt'
+  | 'llm'
+  | 'code'
+  | 'output'
+  | 'knowledge'
+  | 'condition'
+  | 'aggregator'
+  | 'http'
+  | 'agent'
+  | 'loop'
+  | 'sub_workflow';
 
 export type NodeExecutionStatus = 'idle' | 'pending' | 'running' | 'success' | 'error' | 'skipped';
 

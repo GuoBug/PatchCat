@@ -1,10 +1,10 @@
 ---
 title: "Visual Canvas & Component User Manual"
-version: "1.0.0"
+version: "0.4.4"
 status: "Active"
 author: "AI Orchestrator Product & Engineering Team"
 created: "2026-08-28"
-updated: "2026-08-28"
+updated: "2026-09-16"
 ---
 
 # Visual Canvas & Component User Manual / 可视化画布与组件功能说明手册
@@ -22,31 +22,38 @@ The **AI Prompt Flow Orchestrator** web interface is built with a modern dark-sl
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
-│  [Logo] AI Prompt Flow v2.0  |  Nodes: 4  Edges: 3  [+ Add Node]  |  Preset: [Dropdown] │ [Time: 120ms] [↺] [▶ Run] │
+│  [Logo] PATCHCAT v0.4.4  |  Nodes: 8  Edges: 7  [+ Add Node]  |  Preset: [Dropdown]    │ [Time: 120ms] [↺] [▶ Run] │
 ├───────────────────────────────────────────────────────────────────┬────────────────────┤
 │                                                                   │                    │
-│   [Input Node] ────▶ [Prompt Node] ────▶ [LLM Node] ────▶ [Output] │   Property Panel   │
-│                                                                   │   (Inspector)      │
-│   • Background Grid Dots (gap 18px)                               │   • Node Labels    │
-│   • Zoom / Pan Controls                                           │   • Template Form  │
-│   • Multi-color MiniMap                                           │   • Model Configs  │
-│                                                                   │   • Output Copier  │
+│   [Input] ──▶ [Knowledge] ──▶ [Prompt] ──▶ [LLM] ──▶ [Output]    │   Property Panel   │
+│                 │                                                 │   (Inspector)      │
+│                 └──▶ [Condition] ──▶ [Agent] ──▶ [Aggregator]     │   • Parameters     │
+│                                                                   │   • LLM Configs    │
+│   • Background Grid Dots (gap 18px)                               │   • Agent Tools    │
+│   • Zoom / Pan Controls & MiniMap                                 │   • Output Copier  │
 └───────────────────────────────────────────────────────────────────┴────────────────────┘
 ```
 
 ---
 
-### 2. Node Components Matrix
+### 2. Node Components Matrix (12 Built-in Node Types)
 
 Every node is rendered as a responsive, hardware-accelerated SVG/DOM card with dynamic border states and telemetry badges:
 
 | Node Type | Icon & Theme | Input Port (Left) | Output Port (Right) | Dedicated Features & Preview |
 | :--- | :--- | :--- | :--- | :--- |
-| **Input Node** | 🟢 Emerald / `PlayCircle` | *None* | `output` | Live parameter list (key-value dictionary preview), customizable default values. |
-| **Prompt Node** | 🟣 Purple / `FileText` | `inputs` | `promptText` | Template text preview with automatic detection and purple badge highlighting for `{{nodeId.outputKey}}` slots. |
-| **LLM Node** | 🔵 Sky / `Bot` | `prompt` | `response` | Model provider tag (GPT-4o, Claude 3.5, DeepSeek-R1), temperature badge ($T: 0.7$), and real-time streaming response box. |
-| **Code Node** | 🟡 Amber / `Code2` | `inputs` | `result` | Monospace code block preview supporting lightweight JS / Python transformation sandbox scripts. |
-| **Output Node** | 🌸 Pink / `CheckCircle2` | `final` | *None* | Formatted multi-line output display with one-click JSON / text clipboard copy button. |
+| **Input Node** | 🟢 Emerald / `PlayCircle` | *None* | `output` | Live parameter dictionary (Key-Value editor), custom types, default values. |
+| **Prompt Node** | 🟣 Purple / `FileText` | `inputs` | `promptText` | Multi-line template editor with automatic detection and purple badges for `{{nodeId.var}}`. |
+| **LLM Node** | 🔵 Sky / `Bot` | `prompt` | `response` | Multi-provider selector (Gemini, DeepSeek, OpenAI, Ollama), streaming tokens, reasoning chain preview. |
+| **Code Node** | 🟡 Amber / `Code2` | `inputs` | `result` | Monospace code block preview supporting safe JS sandbox execution for data transformation. |
+| **Output Node** | 🌸 Pink / `CheckCircle2` | `final` | *None* | Formatted multi-line output display with Markdown preview and one-click JSON/text copy. |
+| **Condition Node** | 🟠 Orange / `GitFork` | `input` | `true` / `false` | Rule-based branch evaluator supporting comparison expressions and downstream branch pruning. |
+| **Aggregator Node** | 🔷 Cyan / `GitMerge` | `branch_a`, `branch_b` | `merged` | Multi-path synchronizer merging parallel or conditional branches with fallback resolution. |
+| **HTTP Node** | 🌐 Indigo / `Globe` | `inputs` | `response` | REST API caller supporting GET/POST/PUT/DELETE, custom headers, query params, and JSON body. |
+| **Knowledge (RAG)**| 🪸 Teal / `Database` | `query` | `chunks` | Local/server vector database retrieval with cosine similarity scoring and top-K chunk ranking. |
+| **Agent Node** | 🔮 Violet / `Sparkles` | `goal` | `result` | Autonomous ReAct loop with dynamic tool discovery, step watchdog, and loop deadlock detector. |
+| **Loop Node** | 🔄 Blue / `Repeat` | `items` | `aggregated` | Iterative execution over arrays or condition-based repetition with max iteration bounds. |
+| **Sub-Workflow** | 🌺 Rose / `Workflow` | `inputs` | `outputs` | Nested DAG composition with independent scope isolation and sub-canvas navigation. |
 
 #### Node Lifecycle Visual States
 - `idle`: Slate border (`border-slate-800`), node is ready for execution.
@@ -54,6 +61,7 @@ Every node is rendered as a responsive, hardware-accelerated SVG/DOM card with d
 - `running`: Pulsing cyan glow (`border-sky-500 animate-pulse shadow-lg shadow-sky-500/20`), node is actively executing.
 - `success`: Emerald solid border (`border-emerald-500/80`), node completed successfully with latency (`ms`) and token counters (`tok`) in the footer.
 - `error`: Rose alert border (`border-rose-500 shadow-md shadow-rose-500/20`), execution halted with error message.
+
 
 ---
 
@@ -108,21 +116,28 @@ The fixed 380px inspector provides live reactive controls:
 <a name="中文版本"></a>
 ## 中文版本
 
-### PATCHCAT v0.1 — AI 提示流编排器 用户手册与组件说明指南
+### PATCHCAT v0.4.4 — AI 提示流编排器 用户手册与组件说明指南
 
 **AI 提示流编排器 (AI Prompt Flow Orchestrator)** 采用现代暗黑工业风（Dark Slate）设计，基于 `@xyflow/react` (React Flow v12)、Tailwind CSS、Lucide 图标库与 Zustand + Immer 打造全响应式交互。
 
 ---
 
-### 2. 节点组件矩阵与生命周期
+### 2. 节点组件矩阵与生命周期 (内置 12 类核心节点)
 
 | 节点类型 | 图标与主题色 | 输入端点 (左) | 输出端点 (右) | 专属功能与预览特性 |
 | :--- | :--- | :--- | :--- | :--- |
-| **Input (输入节点)** | 🟢 翡翠绿 / `PlayCircle` | *无* | `output` | 动态参数字典预览（Key-Value 列表），支持随时追加自定义字段。 |
+| **Input (输入节点)** | 🟢 翡翠绿 / `PlayCircle` | *无* | `output` | 动态参数字典预览（Key-Value 列表），支持随时追加自定义字段与默认值。 |
 | **Prompt (提示词节点)** | 🟣 紫罗兰 / `FileText` | `inputs` | `promptText` | 多行模板片段预览，自动对 `{{nodeId.outputKey}}` 插槽赋予紫色徽章高亮。 |
-| **LLM (大模型节点)** | 🔵 天空蓝 / `Bot` | `prompt` | `response` | 模型名称徽章（GPT-4o / DeepSeek-R1 等）、温度标签 ($T: 0.7$) 与响应文本预览。 |
-| **Code (代码节点)** | 🟡 琥珀黄 / `Code2` | `inputs` | `result` | 等宽代码块预览，支持轻量级 JS / Python 数据清洗脚本。 |
-| **Output (输出节点)** | 🌸 樱花粉 / `CheckCircle2` | `final` | *无* | 结构化最终产物展示框，支持 Markdown 渲染与一键剪贴板复制。 |
+| **LLM (大模型节点)** | 🔵 天空蓝 / `Bot` | `prompt` | `response` | 模型名称徽章（Gemini / DeepSeek / OpenAI / Ollama 等）、实时流式吐字与思考链折叠展示。 |
+| **Code (代码节点)** | 🟡 琥珀黄 / `Code2` | `inputs` | `result` | 等宽代码块预览，支持轻量级 JS 沙箱安全数据清洗脚本与超时控制。 |
+| **Output (输出节点)** | 🌸 樱花粉 / `CheckCircle2` | `final` | *无* | 结构化最终产物展示框，支持 Markdown 实时渲染与一键剪贴板复制。 |
+| **Condition (条件分支)** | 🟠 珊瑚橙 / `GitFork` | `input` | `true` / `false` | 支持 If/Else 规则表达式比较，自动进行下游无效拓扑分支死路剪枝。 |
+| **Aggregator (变量聚合)**| 🔷 荧光青 / `GitMerge` | `branch_a`, `branch_b` | `merged` | 多分支汇聚合并节点，等待并行或条件路径就绪并执行降级合并。 |
+| **HTTP (外部接口请求)** | 🌐 靛青蓝 / `Globe` | `inputs` | `response` | 标准 REST API 调用（GET/POST/PUT/DELETE），支持自定义 Header、Query 与 JSON Payload。 |
+| **Knowledge (知识库RAG)**| 🪸 蓝绿色 / `Database` | `query` | `chunks` | 本地与服务端双模向量检索，支持 Cosine 余弦相似度打分与 Top-K 切片召回。 |
+| **Agent (智能体 ReAct)** | 🔮 幻彩紫 / `Sparkles` | `goal` | `result` | 自主目标规划 ReAct 循环，搭载死锁打破器、看门狗超时监控与动态工具集调用。 |
+| **Loop (循环控制)** | 🔄 科技蓝 / `Repeat` | `items` | `aggregated` | 数组批处理迭代或条件轮询，内置最大迭代安全边界保护。 |
+| **Sub-Workflow (子工作流)**| 🌺 蔷薇红 / `Workflow` | `inputs` | `outputs` | 独立拓扑子画布嵌套与作用域隔离，支持复杂巨型工作流模块化解耦。 |
 
 #### 节点生命周期状态视觉流转
 - `idle (就绪)`：板岩灰边框，节点待命中。
@@ -130,6 +145,7 @@ The fixed 380px inspector provides live reactive controls:
 - `running (执行中)`：天空蓝发光呼吸动效（`animate-pulse`），正在发起模型调用或计算。
 - `success (成功)`：翡翠绿常亮边框，底部脚标附带执行耗时（`ms`）与 Token 消耗统计。
 - `error (异常)`：玫瑰红警示边框，附带错误详细信息。
+
 
 ---
 
@@ -172,7 +188,7 @@ The fixed 380px inspector provides live reactive controls:
 # 1. 启动前端 Vite 本地可视化开发服务器 (http://localhost:5173)
 npm run dev
 
-# 2. 运行 18 项全量单元与工程基准测试 (全部秒级通过)
+# 2. 运行 223+ 项前端单元与工程基准测试 (涵盖拓扑调度、Agent安全看门狗、死锁检测、配置备份迁移)
 npm test
 
 # 3. 运行严格静态类型检查 (零 any 校验)
@@ -180,4 +196,9 @@ npm run typecheck
 
 # 4. 执行生产环境打包构建 (生成 dist/ 静态产物)
 npm run build
+
+# 5. (可选) 启动 Python FastAPI 后端服务并运行 21 项后端集成测试
+uvicorn server.main:app --reload --port 8000
+pytest server/tests/
 ```
+
