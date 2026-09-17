@@ -111,13 +111,30 @@ milestone: "Phase 4.2 (v0.4.6)"
   * 属性配置的核心数据修改；
 * **保护机制**：历史栈深度固定为 **25 步**，采用 Immer 结构共享浅拷贝，避免连续操作导致内存暴增。
 
-##### 3. 单节点就地局部重试 (In-Place Node Local Retry)
-* **业务痛点根治**：当长链路第 6 个节点因网络闪断报错时，禁止强制从节点 1 全盘重跑；
-* **执行机制**：
-  * 节点右上角或右侧属性面板显示 **`↺ 就地重试 (Retry Node)`** 按钮（仅在节点处于 `error` 或 `success` 且上游数据有效时可用）；
-  * **缓存解析器 (Cache Resolver)**：从 Store 中提取该节点所有直系上游父节点已存在的输出快照，合成输入数据；
-  * **单点独立调度**：单独将该节点置为 `running`，通过引擎的 `executeSingleNode()` 发起调用；
-  * 执行成功后，更新该节点数据并产生日志，下游依赖节点标记为待执行，提供一键级联推进选项。
+##### 3. 单节点就地局部重试与并行故障恢复 (In-Place Local Retry & Parallel Failure Recovery)
+* **核心业务痛点**：当长链路第 6 个节点因网络闪断或参数小改报错时，禁止强制从节点 1 全盘重跑，杜绝前序已成功节点的数十秒等待与成千上万 Token 浪费。
+* **重跑目标定界（跑自身 vs 跑前一个）**：
+  * **默认严格直接重跑报错节点自身 (In-Place Self-Retry)**：
+    - **原理**：直接上游所有父节点的输出（`node.data.outputs`）在内存中已确切存在且有效。当前节点重试时，缓存解析器（Cache Resolver）直接将这些已缓存数据注入当前节点作为入参。
+    - **为何不从前一个节点开始执行？**
+      1. **防范 Token 浪费与等待惩罚**：前一个节点若为消耗 2000 Tokens 的大模型或深度 RAG 检索，无谓重跑会导致巨额算力与时间浪费；
+      2. **保持输入确定性，杜绝随机性漂移**：大语言模型生成具有采样温度发散性（Temperature），重跑前序模型节点会导致下游 Prompt 上下文发生变化，破坏用户当前的排错基准。
+    - **何时才会从前序节点跑？** 若用户发现“报错是因为前一个节点的 Prompt 写得不好”，用户只需**直接在该前序节点卡片上点击“就地重试”**，系统会以该前序节点为源头重新计算并向后级联刷新。
+* **多节点并行报错处理机制 (Parallel Multi-Node Failure Handling)**：
+  * **拓扑场景**：例如 Node A 扇出到 Node B (DeepSeek) 与 Node C (Gemini) 并行执行，下游汇聚于 Node D (Aggregator)。若波次 2 中 B 遭遇 HTTP 429 速率限制报错，C 遭遇超时报错：
+  * **1. 节点级故障隔离 (Node-Level State Isolation)**：
+    - Node B 与 Node C 分别独立记录各自的 `status = 'error'` 与独立错误报文；
+    - 下游 Node D 因依赖项未完全就绪，保持 `blocked / waiting` 挂起状态，不会发生非预期异常。
+  * **2. 细粒度单点各个击破**：
+    - 用户可在 Node B 卡片上单独点击 `↺ 重试`，排查其 Key 或并发配置；
+    - 亦可在 Node C 卡片上单独点击 `↺ 重试`，两者独立并发调度，互不干扰。
+  * **3. 顶栏一键批量重试所有失败节点 (Batch Retry All Failed Nodes)**：
+    - 当整图中存在 $\ge 2$ 个报错节点时，顶栏控制区与警报条动态显式提供：`[ 2 个节点执行失败 ]  [ ↺ 重试所有失败节点 (Retry All Failed) ]`；
+    - 引擎一键筛选所有 `status === 'error'` 且上游输入已就绪的节点，以独立并行波次发起并发重跑，**已成功的 Node A 绝不重新执行**。
+  * **4. 下游汇聚自动接续流转 (Automatic Downstream Resumption)**：
+    - 当 Node B 和 Node C 通过重试全部转为 `status === 'success'` 后，下游处于挂起状态的 Node D 自动检测到所有上游依赖已全部就绪；
+    - 引擎自动唤醒 Node D 及其下游拓扑继续执行，最终平滑流向 Output 节点，形成无缝自愈闭环。
+
 
 ##### 4. 节点级 React ErrorBoundary 局部错误隔离
 * **防白屏底线**：在 `BaseNode` 外层统一包裹 `NodeErrorBoundary`；
@@ -236,31 +253,39 @@ stateDiagram-v2
     PushToUndoStack --> ApplySnapshot
 ```
 
-#### 4.2 单节点就地重试执行时序图 (In-Place Local Retry Execution)
+#### 4.2 就地重试与下游拓扑恢复时序图 (In-Place Retry & Downstream Continuation)
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as 用户 (User)
-    participant UI as 节点卡片 / 属性面板
+    participant UI as 节点卡片 / 顶栏控制区
     participant Store as WorkflowStore
     participant Engine as BrowserWorkflowEngine
-    participant Tool as 模型 / 沙箱 / 外部API
+    participant Upstream as 上游成功节点缓存
+    participant Downstream as 下游挂起等待节点
 
-    User->>UI: 点击 [↺ 就地重试 (Local Retry)]
-    UI->>Store: 请求提取上游有效输出缓存 (getUpstreamCachedOutputs)
-    Store-->>UI: 返回已解析的入参合集 (Inputs Payload)
-    UI->>Store: 设置节点状态为 running (setNodeStatus)
+    Note over UI,Upstream: 场景: 节点自身报错，或多并行分支中某节点失败
+    User->>UI: 点击 [↺ 就地重试] 或 [↺ 重试所有失败节点]
+    UI->>Store: 请求提取直接上游节点的输出缓存 (getUpstreamCachedOutputs)
+    Store->>Upstream: 读取已完成的 node.data.outputs (零重复消耗)
+    Upstream-->>Store: 返回结构化 inputs 载荷
+    Store-->>UI: 准备好当前失败节点的完整入参
+    UI->>Store: 设置目标失败节点为 running
     UI->>Engine: executeSingleNode(nodeId, inputs)
-    Engine->>Tool: 执行单步调用 (发起请求/计算)
     alt 执行成功 (Success)
-        Tool-->>Engine: 返回生成产物与 Token 遥测
-        Engine->>Store: 更新节点输出并标记为 success
-        Store-->>UI: 渲染成功绿框与耗时徽章 (无需重跑上游)
-    else 执行重试仍失败 (Failure)
-        Tool-->>Engine: 抛出异常 (Timeout / Error)
-        Engine->>Store: 记录异常并更新错误堆栈
-        Store-->>UI: 触发局部 Pop 提示并保持就地待命
+        Engine->>Store: 更新当前节点 outputs 并置为 success
+        Store-->>UI: 节点绿框常亮，呈现耗时与 Token 统计
+        Store->>Engine: 触发下游依赖就绪检测 (checkDownstreamDependents)
+        alt 下游依赖全部就绪 (All Parents Succeeded)
+            Engine->>Downstream: 自动解除挂起，激活下游节点继续执行
+            Downstream-->>Store: 驱动后续拓扑流向 Output
+        else 仍有其他并行上游分支未完成/失败
+            Note over Downstream: 下游保持等待，直至剩余失败节点全部修复重试成功
+        end
+    else 重试依然失败 (Failure)
+        Engine->>Store: 记录最新异常堆栈并保持 error 状态
+        Store-->>UI: 触发节点局部 Pop 呼吸告警，保持就地待命
     end
 ```
 
