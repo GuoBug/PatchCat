@@ -28,6 +28,24 @@ export const LLMNodeProperties: React.FC<LLMNodePropertiesProps> = ({
     activeProvider === 'ollama' ? true : Boolean(currentProvider?.apiKey?.trim());
   const availableModels = currentProvider?.availableModels || [];
 
+  const defaultModel =
+    currentProvider?.defaultModel || availableModels[0] || 'gpt-4o-mini';
+  const currentModel = (config['model'] as string) || defaultModel;
+
+  // Auto-sync node config model if it was undefined/empty
+  React.useEffect(() => {
+    if (!config['model'] && defaultModel) {
+      updateNodeConfig(nodeId, { model: defaultModel });
+    }
+  }, [config, defaultModel, nodeId, updateNodeConfig]);
+
+  // Ensure available options always contains currentModel so the select element never falls back or desyncs
+  const modelOptions = React.useMemo(() => {
+    if (!currentModel) return availableModels;
+    if (availableModels.includes(currentModel)) return availableModels;
+    return [currentModel, ...availableModels];
+  }, [availableModels, currentModel]);
+
   return (
     <div className="space-y-4">
       {/* Active Provider Banner */}
@@ -65,9 +83,9 @@ export const LLMNodeProperties: React.FC<LLMNodePropertiesProps> = ({
         <div className="flex items-center justify-between">
           <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
             <span>{t.propertyPanel.model}</span>
-            {availableModels.length > 0 && (
+            {modelOptions.length > 0 && (
               <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                ({availableModels.length})
+                ({modelOptions.length})
               </span>
             )}
           </label>
@@ -92,17 +110,13 @@ export const LLMNodeProperties: React.FC<LLMNodePropertiesProps> = ({
             </span>
           </button>
         </div>
-        {availableModels.length > 0 ? (
+        {modelOptions.length > 0 ? (
           <select
-            value={
-              availableModels.includes((config['model'] as string) || '')
-                ? (config['model'] as string)
-                : currentProvider?.defaultModel || availableModels[0]
-            }
+            value={currentModel}
             onChange={(e) => updateNodeConfig(nodeId, { model: e.target.value })}
             className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono cursor-pointer"
           >
-            {availableModels.map((m) => (
+            {modelOptions.map((m) => (
               <option
                 key={m}
                 value={m}
@@ -115,11 +129,7 @@ export const LLMNodeProperties: React.FC<LLMNodePropertiesProps> = ({
         ) : (
           <input
             type="text"
-            value={
-              (config['model'] as string) ||
-              currentProvider?.defaultModel ||
-              'gpt-4o-mini'
-            }
+            value={currentModel}
             onChange={(e) => updateNodeConfig(nodeId, { model: e.target.value })}
             className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
             placeholder={t.propertyPanel.customModelPlaceholder}

@@ -1,9 +1,9 @@
 # 🎯 Next Steps / 接续开发清单
 
-> **Current Version**: `v0.4.4` (Completed & Verified ✅)  
-> **Last Updated**: 2026-09-16  
-> **Previous Milestone**: Phase 4.1 Agent Runtime Hardening, Global Settings Architecture & Reliability Baseline (`v0.4.4` Shipped ✅)  
-> **Current Target Milestone**: **`v0.4.6` Canvas Ergonomics & High-Frequency Productivity**  
+> **Current Version**: `v0.4.6` (Completed & Verified ✅)  
+> **Last Updated**: 2026-09-17  
+> **Previous Milestone**: Phase 4.2 Canvas Ergonomics, Pinpoint Diagnostics & Productivity (`v0.4.6` Shipped ✅)  
+> **Current Target Milestone**: **`v0.4.8` Run Observability & Trace Inspection**  
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -67,16 +67,44 @@
 
 ---
 
-### 🚀 Upcoming Milestone: v0.4.6 Canvas Ergonomics & High-Frequency Productivity
+### ⚡ Completed Milestone: Phase 4.2 Canvas Ergonomics, Pinpoint Diagnostics & Productivity (v0.4.6)
 
-- [ ] **1. Multi-Node Copy & Paste (`Ctrl+C` / `Ctrl+V`)**:
-  - Box select multiple nodes on canvas and copy them with newly generated node IDs and preserved relative offsets.
-- [ ] **2. Canvas Undo & Redo History Stack (`Ctrl+Z` / `Ctrl+Y`)**:
-  - Implement temporal undo/redo state history for node add/delete and edge connection changes.
-- [ ] **3. In-Place Node Local Retry**:
-  - Allow re-executing an individual failed node using cached upstream outputs without re-running the entire graph.
-- [ ] **4. Node-Level ErrorBoundary Visual Isolation**:
-  - Prevent unexpected rendering errors in custom node cards from crashing the entire XYFlow canvas.
+- [x] **1. Comprehensive Tooltip Guidance System**:
+  - Concise 1-sentence (max 2 for complex) technical descriptions for all 12 nodes in both English and Chinese.
+  - Engineering conceptual tooltips for DAG, Topological Scheduling, Vector RAG, Token Budget Limiter, and Sampling Temperature.
+- [x] **2. Pinpoint Error Diagnostics & Visual Pop Focus**:
+  - Direct technical messages (e.g. `参数未就绪: {{var}} 未定义`) replacing low-information metaphors.
+  - `[🔍 Locate Node]` button in error notifications triggering smooth viewport centering (`setCenter(x, y, { zoom: 1.1 })`) and 1600ms visual pop pulse ring (`ring-4 ring-rose-500/80 scale-103`).
+  - Interactive cycle node chips in deadlock warnings to locate cyclic nodes with one click.
+- [x] **3. Bounded Canvas History Manager (`Ctrl+Z` / `Ctrl+Y` / `Ctrl+Shift+Z`)**:
+  - 25-depth snapshot queue using deep cloning to prevent memory leaks and infinite growth.
+  - Automatically records node add/delete, edge connect/delete, and node drag stops (`onNodeDragStop`).
+  - Safe suppression when typing in input, textarea, contentEditable, or Monaco editors.
+- [x] **4. Multi-Node Clipboard (`Ctrl+C` / `Ctrl+V`)**:
+  - Box select multiple nodes to copy, generating new unique IDs upon paste.
+  - Preserves internal connections between selected nodes while filtering out external connections.
+  - Cascades paste coordinates diagonally by `(+50px, +50px)`.
+- [x] **5. In-Place Node Local Retry & Parallel Recovery**:
+  - Re-run individual failed node using cached upstream outputs (`node.data.outputs`) without restarting the full workflow.
+  - Parallel failure resolution: multiple failed nodes remain isolated; top header offers `[ {count} Nodes Failed | ↺ Retry All Failed ]`.
+  - Downstream waiting nodes (like Aggregators) automatically unblock upon upstream success.
+- [x] **6. Node-Level React Error Boundary (`NodeErrorBoundary`)**:
+  - Wraps custom node children to isolate render exceptions, preventing canvas whiteout.
+- [x] **7. Flow Telemetry & Multi-Format Delivery**:
+  - GPU-accelerated animated running edge pulse (`react-flow-dash`).
+  - Quick multi-format copy toolbar: `[📋 MD]`, `[💾 TXT]`, and `[{ } JSON]`.
+- [x] **8. Verification**: 223/223 tests passing across 49 test suites, 0 typecheck errors, production build verified.
+
+---
+
+### 🚀 Upcoming Milestone: v0.4.8 Run Observability & Trace Inspection
+
+- [ ] **1. Run History Timeline Drawer**:
+  - Retain the most recent 10 workflow execution runs with timestamp, duration, status, and token expenditure.
+- [ ] **2. Step-by-Step Data Snapshot Inspector**:
+  - View exact inputs, outputs, and intermediate states for each node in a historical run.
+- [ ] **3. Structured Log Search & Filtering**:
+  - Real-time search by keyword, log level (Summary, Detailed, Dev), and node ID.
 
 ---
 
@@ -176,16 +204,44 @@ npm run build
 
 ---
 
-### 🚀 即将推进里程碑：v0.4.6 画布高频交互生产力
+### ⚡ 已交付里程碑：Phase 4.2 画布工效学、精准报错诊断与高频交互生产力 (v0.4.6)
 
-- [ ] **1. 节点批量复制与粘贴 (`Ctrl+C` / `Ctrl+V`)**：
-  - 支持画布框选多节点，快速复制并自动生成新 Node ID 与带偏移坐标粘贴。
-- [ ] **2. 画布撤销重做历史栈 (`Ctrl+Z` / `Ctrl+Y`)**：
-  - 实现节点增删、移动与连线动作的历史回退与重做。
-- [ ] **3. 单节点就地重新运行 (Local Retry)**：
-  - 允许只重跑某个报错节点，复用上游输出缓存，免去整画布从头调度的开销。
-- [ ] **4. 节点级 ErrorBoundary 局部错误隔离**：
-  - 单个自定义节点内部渲染异常时呈现优雅占位报错卡片，彻底避免整画布白屏。
+- [x] **1. 全节点与核心工程概念 1 句话精准悬停说明 ([PRD-012](docs/01-prd/PRD-012-Canvas-Ergonomics-and-Interactive-Productivity.md))**：
+  - 12 类全部节点中英文严格遵循一句话（复杂节点最多两句）标准说明，涵盖卡片标题、图标与添加菜单；
+  - 核心工程概念悬停说明：DAG（有向无环图）、拓扑调度排序、语义向量检索、Token 限额保护、模型采样温度。
+- [x] **2. 节点精准报错诊断与视口一键定焦**：
+  - 客观技术化报错信息（如 `参数未就绪: {{var}} 未定义`），杜绝低幼化比喻；
+  - 顶部通知直出 `[🔍 定位节点 (nodeId)]` 按钮，死锁警告中环路节点标签均支持点击定焦；
+  - 平滑视口飞渡居中（`setCenter`，缩放 1.1x，时长 600ms），并在目标节点触发 1600ms 强视觉光环呼吸动效（`ring-4 ring-rose-500/80 scale-103`）。
+- [x] **3. 画布撤销与重做历史栈 (`Ctrl+Z` / `Ctrl+Y` / `Ctrl+Shift+Z`)**：
+  - 25 步深拷贝快照历史栈，杜绝内存无限泄露；
+  - 自动捕获节点增删、连线增删以及拖拽移动完成（`onNodeDragStop`）；
+  - 输入框保护机制：在 input、textarea、contentEditable 或 Monaco 代码编辑器打字时自动屏蔽快捷键。
+- [x] **4. 多节点框选复制与粘贴 (`Ctrl+C` / `Ctrl+V`)**：
+  - 框选多节点按 `Ctrl+C` 复制，粘贴时自动赋予全新 UUID；
+  - 智能保留选中节点之间的内部连线（Internal Edges），过滤外部关联连线；
+  - 坐标对角线递增偏移（`+50px, +50px`），多次粘贴不叠放遮挡。
+- [x] **5. 单节点就地重试与并行故障恢复**：
+  - 单节点就地重试（`executeSingleNode`）：复用上游已缓存输出（`node.data.outputs`），不重新触发前序昂贵 LLM 调用，节省 Token 且避免结果发散；
+  - 并行故障隔离：多节点报错时相互独立；当失败节点 $\ge 2$ 时，顶部控制栏显性显示 `[ {count} 个节点执行失败 | ↺ 重试所有失败节点 ]`；
+  - 汇聚节点与下游等待节点在上游成功后自动解除等待继续向后执行。
+- [x] **6. 节点级渲染异常隔离保护 (`NodeErrorBoundary`)**：
+  - 封装独立 React Error Boundary，单节点异常时仅卡片内部降级提示，杜绝整画布白屏。
+- [x] **7. 运行流转动效与多格式交付**：
+  - GPU 硬件加速连线流动光效（`react-flow-dash`）；
+  - Output 节点卡片与属性抽屉输出区提供快速复制工具栏：`[📋 MD]`、`[💾 TXT]`、`[{ } JSON]`。
+- [x] **8. 质量验收**：223 项前端测试全部通过，0 类型错误，生产打包顺利完成。
+
+---
+
+### 🚀 即将推进里程碑：v0.4.8 运行可观测性与执行回溯
+
+- [ ] **1. 最近运行历史抽屉 (Run History Timeline)**：
+  - 保留最近 10 次画布执行历史快照，展示状态、触发时间、总耗时与 Token 消耗估算。
+- [ ] **2. 节点单步数据检查器 (Step Data Inspector)**：
+  - 查看历史运行中各节点的入参快照、实际产出与中间状态。
+- [ ] **3. 结构化日志搜索与多维过滤**：
+  - 支持按关键字、日志级别（Summary、Detailed、Dev）及关联节点 ID 快速过滤定位。
 
 ---
 

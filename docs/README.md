@@ -29,7 +29,7 @@
 | [PRD-009](01-prd/PRD-009-Chat-Debug-Panel-and-Workflow-API.md) | **Chat Debug Panel & Workflow API Publishing** | Phase 3 | ✅ Done |
 | [PRD-010](01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md) | **Conversation Memory & Persistent Storage** | Phase 3.1 | ✅ Done |
 | [PRD-011](01-prd/PRD-011-Agent-Capabilities-and-Tool-Use.md) | **AI Agent Capabilities, ReAct Autonomous Loop & Tool Calling** | Phase 4 | ✅ Done |
-| [PRD-012](01-prd/PRD-012-Canvas-Ergonomics-and-Interactive-Productivity.md) | **Canvas Ergonomics, Comprehensive Tooltip System & Interactive Productivity** | Phase 4.2 | 📝 In Review |
+| [PRD-012](01-prd/PRD-012-Canvas-Ergonomics-and-Interactive-Productivity.md) | **Canvas Ergonomics, Comprehensive Tooltip System & Interactive Productivity** | Phase 4.2 | ✅ Done |
 
 ---
 
@@ -116,7 +116,7 @@
 | [PRD-009](01-prd/PRD-009-Chat-Debug-Panel-and-Workflow-API.md) | **Chat 调试面板与工作流 API 发布** | Phase 3 | ✅ 已完成 |
 | [PRD-010](01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md) | **多轮会话记忆与端侧持久化存储架构** | Phase 3.1 | ✅ 已完成 |
 | [PRD-011](01-prd/PRD-011-Agent-Capabilities-and-Tool-Use.md) | **AI Agent 智能体能力层、ReAct 自主循环与多模态工具调用** | Phase 4 | ✅ 已完成 |
-| [PRD-012](01-prd/PRD-012-Canvas-Ergonomics-and-Interactive-Productivity.md) | **画布高频交互生产力、全节点精准说明与错误聚焦体系** | Phase 4.2 | 📝 评审中 |
+| [PRD-012](01-prd/PRD-012-Canvas-Ergonomics-and-Interactive-Productivity.md) | **画布高频交互生产力、全节点精准说明与错误聚焦体系** | Phase 4.2 | ✅ 已完成 |
 
 ---
 

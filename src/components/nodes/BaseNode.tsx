@@ -18,8 +18,12 @@ import {
   MinusCircle,
   Repeat,
   Layers,
+  RotateCcw,
 } from 'lucide-react';
 import type { NodeType, NodeStatus, NodeExecutionResult } from '../../engine/types.ts';
+import { useTranslation } from '../../i18n/useTranslation.ts';
+import { useWorkflowStore } from '../../stores/workflow-store.ts';
+import { NodeErrorBoundary } from './NodeErrorBoundary.tsx';
 
 export interface BaseNodeProps {
   id: string;
@@ -32,8 +36,10 @@ export interface BaseNodeProps {
   hasRightHandle?: boolean;
   leftHandleLabel?: string;
   rightHandleLabel?: string;
+  onRetry?: (nodeId: string) => void;
   children?: ReactNode;
 }
+
 
 const typeConfig: Record<
   NodeType,
@@ -184,16 +190,28 @@ export const BaseNode: React.FC<BaseNodeProps> = memo(
     hasRightHandle = true,
     leftHandleLabel,
     rightHandleLabel,
+    onRetry,
     children,
   }) => {
+    const { t } = useTranslation();
+    const highlightedNodeId = useWorkflowStore((s) => s.highlightedNodeId);
+    const retryNode = useWorkflowStore((s) => s.retryNode);
+    const isHighlighted = highlightedNodeId === id;
+    const handleRetry = onRetry ? () => onRetry(id) : () => retryNode(id);
+
     const currentType = typeConfig[type] || typeConfig.llm;
     const IconComponent = currentType.icon;
     const currentStatus = statusStyles[status] || statusStyles.idle;
 
+    const descKey = `${type}Desc` as keyof typeof t.nodeTypes;
+    const nodeTooltip = t.nodeTypes[descKey] || '';
+
     return (
       <div
-        className={`relative w-[280px] rounded-xl bg-white dark:bg-slate-900/95 backdrop-blur-md transition-all duration-200 border text-slate-900 dark:text-slate-200 font-sans shadow-sm dark:shadow-xl ${
-          currentStatus.border
+        className={`relative w-[280px] rounded-xl bg-white dark:bg-slate-900/95 backdrop-blur-md transition-all duration-300 border text-slate-900 dark:text-slate-200 font-sans shadow-sm dark:shadow-xl ${
+          isHighlighted
+            ? 'ring-4 ring-rose-500/80 shadow-2xl shadow-rose-500/40 scale-103 z-30 animate-pulse border-rose-500'
+            : currentStatus.border
         } ${selected ? 'ring-2 ring-blue-500/40 border-blue-500 shadow-md' : ''}`}
       >
         {/* Left Input Handle */}
@@ -227,13 +245,16 @@ export const BaseNode: React.FC<BaseNodeProps> = memo(
         )}
 
         {/* Node Header */}
-        <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-950/40 rounded-t-xl">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className={`p-1.5 rounded-lg border ${currentType.color}`}>
+        <div
+          className="flex items-center justify-between px-3.5 py-2.5 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-950/40 rounded-t-xl"
+          title={nodeTooltip}
+        >
+          <div className="flex items-center gap-2 min-w-0" title={nodeTooltip}>
+            <div className={`p-1.5 rounded-lg border ${currentType.color}`} title={nodeTooltip}>
               <IconComponent className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate tracking-wide">
+              <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate tracking-wide" title={nodeTooltip}>
                 {label}
               </h4>
               <span className="text-[9px] font-mono text-slate-400 dark:text-slate-500 block uppercase tracking-wider">
@@ -242,17 +263,38 @@ export const BaseNode: React.FC<BaseNodeProps> = memo(
             </div>
           </div>
 
-          {/* Status Badge */}
-          <div
-            className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium ${currentStatus.badge}`}
-          >
-            {currentStatus.icon}
-            <span className="capitalize">{status}</span>
+          {/* Status Badge & Local Retry Button */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {(status === 'error' || status === 'success') && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRetry();
+                }}
+                className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-blue-600 dark:hover:text-sky-400 transition-colors cursor-pointer"
+                title={t.ergonomics.retryNodeHint}
+              >
+                <RotateCcw className="w-3 h-3" />
+              </button>
+            )}
+            <div
+              className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium ${currentStatus.badge}`}
+            >
+              {currentStatus.icon}
+              <span className="capitalize">{status}</span>
+            </div>
           </div>
         </div>
 
-        {/* Node Content Body */}
-        <div className="p-3 text-xs text-slate-700 dark:text-slate-300 space-y-2">{children}</div>
+        {/* Node Content Body (Protected by ErrorBoundary) */}
+        <NodeErrorBoundary
+          nodeId={id}
+          fallbackTitle={t.ergonomics.nodeRenderError}
+          resetBtnLabel={t.ergonomics.resetNodeData}
+        >
+          <div className="p-3 text-xs text-slate-700 dark:text-slate-300 space-y-2">{children}</div>
+        </NodeErrorBoundary>
+
 
         {/* Node Telemetry Footer (Latency & Tokens) */}
         {executionResult && (

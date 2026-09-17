@@ -1,7 +1,7 @@
 ---
 title: "PRD-012: Canvas Ergonomics, Comprehensive Tooltip System & Interactive Productivity"
-version: "v0.4.6-draft"
-status: "Draft (Pending Review)"
+version: "v0.4.6"
+status: "Approved & Implemented"
 author: "PatchCat Architecture & Product Engineering Team"
 created: "2026-09-17"
 updated: "2026-09-17"

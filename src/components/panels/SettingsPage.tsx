@@ -524,26 +524,30 @@ export const SettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2 pt-1">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-500 dark:text-slate-400 font-medium">Debounce Delay</span>
-                    <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                      {editorPreferences?.autoSaveDebounceMs ?? 1000} ms
+                <div className="pt-2 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-600 dark:text-slate-300 font-medium">
+                      {language === 'zh' ? '防抖延迟时长 (Debounce Delay)' : 'Debounce Delay'}
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      {language === 'zh' ? '推荐: 800~1000ms' : 'Recommended: 800~1000ms'}
                     </span>
                   </div>
-                  <input
-                    type="range"
-                    min="500"
-                    max="5000"
-                    step="250"
-                    value={editorPreferences?.autoSaveDebounceMs ?? 1000}
-                    onChange={(e) => updateEditorPreferences({ autoSaveDebounceMs: parseInt(e.target.value, 10) })}
-                    className="w-full accent-indigo-600 cursor-pointer"
-                  />
-                  <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-                    <span>500ms (Fast)</span>
-                    <span>1000ms (Default)</span>
-                    <span>5000ms (Low Frequency)</span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={200}
+                      max={10000}
+                      step={100}
+                      value={editorPreferences?.autoSaveDebounceMs ?? 1000}
+                      onChange={(e) =>
+                        updateEditorPreferences({
+                          autoSaveDebounceMs: Math.max(200, parseInt(e.target.value, 10) || 1000),
+                        })
+                      }
+                      className="w-36 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                    />
+                    <span className="text-xs font-mono text-slate-500 dark:text-slate-400">ms</span>
                   </div>
                 </div>
               </div>
@@ -703,21 +707,28 @@ export const SettingsPage: React.FC = () => {
                       <span className="text-slate-600 dark:text-slate-300 font-medium">
                         {t.settings.toolTimeoutSecondsLabel}
                       </span>
-                      <span className="font-mono font-bold text-blue-600 dark:text-sky-400">
-                        {runtimeProtection.toolTimeoutSeconds}s
+                      <span className="text-[11px] text-slate-400 font-mono">
+                        {language === 'zh' ? '范围: 1 ~ 600 秒' : 'Range: 1 ~ 600s'}
                       </span>
                     </div>
-                    <input
-                      type="range"
-                      min="5"
-                      max="300"
-                      step="5"
-                      value={runtimeProtection.toolTimeoutSeconds}
-                      onChange={(e) =>
-                        updateRuntimeProtection({ toolTimeoutSeconds: parseInt(e.target.value, 10) })
-                      }
-                      className="w-full accent-blue-600 cursor-pointer"
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={1}
+                        max={600}
+                        step={1}
+                        value={runtimeProtection.toolTimeoutSeconds}
+                        onChange={(e) =>
+                          updateRuntimeProtection({
+                            toolTimeoutSeconds: Math.max(1, parseInt(e.target.value, 10) || 30),
+                          })
+                        }
+                        className="w-32 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500"
+                      />
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                        {language === 'zh' ? '秒 (Seconds)' : 'Seconds'}
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -741,21 +752,28 @@ export const SettingsPage: React.FC = () => {
                     <span className="text-slate-600 dark:text-slate-300 font-medium">
                       {t.settings.sandboxTimeoutSecondsLabel}
                     </span>
-                    <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                      {runtimeProtection.sandboxTimeoutSeconds}s
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      {language === 'zh' ? '范围: 1 ~ 300 秒' : 'Range: 1 ~ 300s'}
                     </span>
                   </div>
-                  <input
-                    type="range"
-                    min="2"
-                    max="60"
-                    step="1"
-                    value={runtimeProtection.sandboxTimeoutSeconds}
-                    onChange={(e) =>
-                      updateRuntimeProtection({ sandboxTimeoutSeconds: parseInt(e.target.value, 10) })
-                    }
-                    className="w-full accent-indigo-600 cursor-pointer"
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      max={300}
+                      step={1}
+                      value={runtimeProtection.sandboxTimeoutSeconds}
+                      onChange={(e) =>
+                        updateRuntimeProtection({
+                          sandboxTimeoutSeconds: Math.max(1, parseInt(e.target.value, 10) || 5),
+                        })
+                      }
+                      className="w-32 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                    />
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                      {language === 'zh' ? '秒 (Seconds)' : 'Seconds'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -819,21 +837,28 @@ export const SettingsPage: React.FC = () => {
                       <span className="text-slate-600 dark:text-slate-300 font-medium">
                         {t.settings.agentDefaultIterationsLabel}
                       </span>
-                      <span className="font-mono font-bold text-slate-600 dark:text-slate-300">
-                        {runtimeProtection.defaultMaxIterations}
+                      <span className="text-[11px] text-slate-400 font-mono">
+                        {language === 'zh' ? '范围: 1 ~ 100 轮' : 'Range: 1 ~ 100 rounds'}
                       </span>
                     </div>
-                    <input
-                      type="range"
-                      min="1"
-                      max="30"
-                      step="1"
-                      value={runtimeProtection.defaultMaxIterations}
-                      onChange={(e) =>
-                        updateRuntimeProtection({ defaultMaxIterations: parseInt(e.target.value, 10) })
-                      }
-                      className="w-full accent-blue-600 cursor-pointer"
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={1}
+                        max={100}
+                        step={1}
+                        value={runtimeProtection.defaultMaxIterations}
+                        onChange={(e) =>
+                          updateRuntimeProtection({
+                            defaultMaxIterations: Math.max(1, parseInt(e.target.value, 10) || 10),
+                          })
+                        }
+                        className="w-32 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500"
+                      />
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                        {language === 'zh' ? '轮 (Rounds)' : 'Rounds'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 

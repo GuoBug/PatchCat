@@ -38,10 +38,35 @@ export const HttpNodeProperties: React.FC<HttpNodePropertiesProps> = ({
     };
   };
 
+  function normalizeKeyValRecord(raw: unknown): Record<string, string> {
+    if (!raw) return {};
+    if (Array.isArray(raw)) {
+      const result: Record<string, string> = {};
+      for (const item of raw) {
+        if (item && typeof item === 'object' && 'key' in item) {
+          result[String((item as any).key || '')] = String((item as any).value ?? '');
+        }
+      }
+      return result;
+    }
+    if (typeof raw === 'object') {
+      const result: Record<string, string> = {};
+      for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+        if (v && typeof v === 'object' && 'key' in v) {
+          result[String((v as any).key || k)] = String((v as any).value ?? '');
+        } else {
+          result[k] = typeof v === 'string' ? v : String(v ?? '');
+        }
+      }
+      return result;
+    }
+    return {};
+  }
+
   const method = (httpConfig.method || 'GET').toUpperCase();
   const url = httpConfig.url || '';
-  const queryParams = httpConfig.queryParams || {};
-  const headers = httpConfig.headers || {};
+  const queryParams = normalizeKeyValRecord(httpConfig.queryParams);
+  const headers = normalizeKeyValRecord(httpConfig.headers);
   const bodyType = httpConfig.bodyType || 'none';
   const bodyContent = httpConfig.bodyContent || '';
   const timeout = httpConfig.timeout || 30000;

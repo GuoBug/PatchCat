@@ -6,6 +6,7 @@ import {
   Sliders,
   ChevronsLeft,
   ChevronsRight,
+  RotateCcw,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
@@ -36,6 +37,8 @@ export const PropertyPanel: React.FC = () => {
   const nodes = useWorkflowStore((s) => s.nodes);
   const updateNodeData = useWorkflowStore((s) => s.updateNodeData);
   const updateNodeConfig = useWorkflowStore((s) => s.updateNodeConfig);
+  const retryNode = useWorkflowStore((s) => s.retryNode);
+  const isExecuting = useWorkflowStore((s) => s.isExecuting);
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
@@ -287,18 +290,33 @@ export const PropertyPanel: React.FC = () => {
           status={data.status}
           outputs={outputs}
           executionResult={executionResult}
+          error={(data.error as string) || executionResult?.error}
         />
       </div>
 
       {/* Panel Footer Actions */}
       <div className="p-4 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/60 flex items-center justify-between">
-        <button
-          onClick={handleDeleteNode}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-xs font-medium transition-all shadow-xs cursor-pointer"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-          <span>{t.propertyPanel.deleteNode}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {(data.status === 'error' || data.status === 'success') && (
+            <button
+              onClick={() => retryNode(id)}
+              disabled={isExecuting}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-blue-600 dark:text-sky-400 hover:bg-blue-50 dark:hover:bg-sky-500/10 border border-blue-200 dark:border-sky-500/30 text-xs font-medium transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+              title={t.ergonomics.retryNodeHint}
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>{t.ergonomics.retryNode}</span>
+            </button>
+          )}
+
+          <button
+            onClick={handleDeleteNode}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-xs font-medium transition-all shadow-xs cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>{t.propertyPanel.deleteNode}</span>
+          </button>
+        </div>
 
         <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">ID: {id}</span>
       </div>

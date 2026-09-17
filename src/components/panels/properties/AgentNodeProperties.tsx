@@ -1,7 +1,8 @@
 import React from 'react';
-import { Bot, Plus, Trash2 } from 'lucide-react';
+import { Bot, Plus, Trash2, Cpu } from 'lucide-react';
 import type { AgentToolBinding, AgentToolType } from '../../../engine/types.ts';
 import { useTranslation } from '../../../i18n/useTranslation.ts';
+import { useSettingsStore } from '../../../stores/settings-store.ts';
 
 interface AgentNodePropertiesProps {
   nodeId: string;
@@ -15,6 +16,25 @@ export const AgentNodeProperties: React.FC<AgentNodePropertiesProps> = ({
   updateNodeConfig,
 }) => {
   const { t } = useTranslation();
+  const activeProvider = useSettingsStore((s) => s.activeProvider);
+  const providers = useSettingsStore((s) => s.providers);
+  const currentProvider = providers[activeProvider];
+  const availableModels = currentProvider?.availableModels || [];
+  const defaultModel = currentProvider?.defaultModel || availableModels[0] || 'gpt-4o';
+  const currentModel = (config.model as string) || defaultModel;
+
+  React.useEffect(() => {
+    if (!config.model && defaultModel) {
+      updateNodeConfig(nodeId, { model: defaultModel });
+    }
+  }, [config.model, defaultModel, nodeId, updateNodeConfig]);
+
+  const modelOptions = React.useMemo(() => {
+    if (!currentModel) return availableModels;
+    if (availableModels.includes(currentModel)) return availableModels;
+    return [currentModel, ...availableModels];
+  }, [availableModels, currentModel]);
+
   const systemPrompt = (config.systemPrompt as string) || '';
   const tools = (config.tools as AgentToolBinding[]) || [];
   const maxIterations = (config.maxIterations as number) ?? 10;
@@ -25,6 +45,38 @@ export const AgentNodeProperties: React.FC<AgentNodePropertiesProps> = ({
 
   return (
     <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800/80">
+      {/* Model Selector */}
+      <div className="space-y-2">
+        <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+          <Cpu className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
+          <span>{t.propertyPanel.model}</span>
+        </label>
+        {modelOptions.length > 0 ? (
+          <select
+            value={currentModel}
+            onChange={(e) => updateNodeConfig(nodeId, { model: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 font-mono cursor-pointer"
+          >
+            {modelOptions.map((m) => (
+              <option
+                key={m}
+                value={m}
+                className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-200"
+              >
+                {m}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            type="text"
+            value={currentModel}
+            onChange={(e) => updateNodeConfig(nodeId, { model: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 font-mono"
+            placeholder={t.propertyPanel.customModelPlaceholder}
+          />
+        )}
+      </div>
       {/* System Prompt */}
       <div className="space-y-2">
         <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">

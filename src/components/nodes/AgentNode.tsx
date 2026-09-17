@@ -3,9 +3,14 @@ import type { NodeProps } from '@xyflow/react';
 import { BaseNode } from './BaseNode';
 import type { WorkflowNode } from '../../engine/types.ts';
 import { Wrench, Repeat2, Cpu } from 'lucide-react';
+import { useSettingsStore } from '../../stores/settings-store.ts';
 
 export const AgentNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, selected }) => {
-  const model = (data.config?.['model'] as string) || 'gpt-4o';
+  const activeProvider = useSettingsStore((s) => s.activeProvider);
+  const providers = useSettingsStore((s) => s.providers);
+  const currentProvider = providers[activeProvider];
+  const defaultModel = currentProvider?.defaultModel || 'gpt-4o';
+  const model = (data.config?.['model'] as string) || defaultModel;
   const tools = (data.config?.['tools'] as unknown[]) || [];
   const maxIterations = (data.config?.['maxIterations'] as number) || 10;
   

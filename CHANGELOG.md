@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.6] - 2026-09-17
+
+### Added
+- **Canvas Ergonomics & Bounded History Management (`HistoryManager`, `workflow-store.ts`)**:
+  - Implemented 25-step bounded Undo / Redo history ring buffer (`Ctrl+Z`, `Ctrl+Y`, `Ctrl+Shift+Z`) with deep cloning and action deduplication.
+  - Automatic suppression of undo/redo capture during active form input editing to prevent keyboard collision.
+- **Multi-Node Clipboard & Subgraph Duplication (`workflow-store.ts`)**:
+  - Clipboard copy/paste (`Ctrl+C`, `Ctrl+V`) supporting single and multiple node selections.
+  - Subgraph preservation: internal connecting edges between copied nodes are duplicated and remapped to new node IDs with a cascading `(+50px, +50px)` positional offset.
+- **Pinpoint Error Focus & Canvas Visual Pop (`WorkflowCanvas.tsx`, `ControlHeader.tsx`)**:
+  - Auto-scrolling and smooth viewport centering (`zoom: 1.1x`) to the first failed node upon execution failure.
+  - CSS keyframe pulse highlight ring (`node-error-pulse`) drawing immediate user attention to error origins.
+  - Clickable cycle node badges in DAG error alerts for instantaneous canvas navigation to offending nodes.
+- **In-Place Node Local Retry & Parallel Failure Recovery (`browser-engine.ts`, `workflow-store.ts`)**:
+  - Isolated single-node execution (`executeSingleNode`) directly from node property panel without restarting the entire workflow.
+  - Upstream dependency resolution and context synthesis for accurate isolated re-runs.
+  - Smart global retry (`resumeFromExisting`) to rerun only failed nodes while preserving outputs of successfully executed upstream nodes.
+- **Node-Level React Error Boundary (`NodeErrorBoundary.tsx`)**:
+  - Isolated component crash protection wrapping every canvas node, rendering a compact recovery fallback badge and preventing canvas whiteout.
+- **Universal Bilingual Node Tooltip System (`BaseNode.tsx`, `translations.ts`)**:
+  - High-precision 1-2 sentence hover tooltips across all 12 canvas node types in English and Simplified Chinese, explaining function, inputs, and outputs.
+- **Multi-Format Delivery Copier (`OutputNode.tsx`)**:
+  - Quick export buttons on Output nodes for 1-click clipboard copying in Markdown (`📋 MD`), Plain Text (`💾 TXT`), and Structured JSON (`{ } JSON`).
+- **Targeted UX & Ergonomic Refinements**:
+  - **Quick Add Palette Outside Click Dismissal**: Integrated capture-phase pointerdown listener and Escape key dismiss in `ControlHeader.tsx`, bypassing canvas pane event stopping.
+  - **Precise Numerical Inputs in Settings**: Replaced imprecise range sliders with direct numerical input boxes (`<input type="number">`) for auto-save debounce, watchdog timeout, sandbox timeout, and agent max iterations.
+  - **Property Drawer Live Error Inspection**: Error banners with detailed error trace and `[复制报错]` (Copy Error) button now display directly in `ExecutionResultViewer.tsx`.
+  - **HTTP Query Parameters Normalization**: Added support for both key-value records and `[{key, value}]` arrays in HTTP nodes, eliminating `[object Object]` formatting distortion.
+  - **Permanent Node & Drawer Model Synchronization**: Fixed desync between canvas node model tags and property panel model select dropdowns across LLM and Agent nodes, auto-injecting configured models into options and inheriting active provider defaults on creation.
+- **Comprehensive Ergonomics Automated Test Suite**:
+  - Added `tests/canvas-ergonomics.node.test.ts` (14 new tests covering history stack, form suppression, clipboard subgraph duplication, and in-place retry), bringing total tests to 229 passing 100%.
+
 ## [0.4.4] - 2026-09-16
 
 ### Added

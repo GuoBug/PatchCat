@@ -1,10 +1,10 @@
 ---
 title: "Visual Canvas & Component User Manual"
-version: "0.4.4"
+version: "0.4.6"
 status: "Active"
 author: "AI Orchestrator Product & Engineering Team"
 created: "2026-08-28"
-updated: "2026-09-16"
+updated: "2026-09-17"
 ---
 
 # Visual Canvas & Component User Manual / 可视化画布与组件功能说明手册
@@ -74,8 +74,10 @@ Every node is rendered as a responsive, hardware-accelerated SVG/DOM card with d
   - `+` / `-`: Zoom in / Zoom out.
   - `[Fit View]`: Automatically frame all nodes in the center of the viewport with optimal padding.
   - `[Lock/Unlock]`: Toggle canvas panning lock.
-- **MiniMap**: Live visual overview with node-type specific color coding:
-  - 🟢 Green = Input | 🟣 Purple = Prompt | 🔵 Blue = LLM | 🟡 Amber = Code | 🌸 Pink = Output
+- **MiniMap**: Live visual overview with node-type specific color coding across all 12 node types:
+  - 🟢 Green = Input (`#10B981`) | 🟣 Purple = Prompt (`#8B5CF6`) | 🔵 Sky = LLM (`#3B82F6`) | 🟡 Amber = Code (`#F59E0B`)
+  - 🌸 Pink = Output (`#F43F5E`) | 🪸 Cyan = Knowledge (`#06B6D4`) | 🟠 Orange = Condition (`#F97316`) | 🔮 Violet = Aggregator (`#A855F7`)
+  - 🌐 Teal = HTTP (`#14B8A6`) | 🤖 Indigo = Agent (`#6366F1`) | 🔄 Blue = Loop (`#0EA5E9`) | 🌺 Rose = SubWorkflow (`#EC4899`)
 
 ---
 
@@ -94,7 +96,8 @@ The fixed 380px inspector provides live reactive controls:
    - System Prompt textarea.
 5. **Code Sandbox Editor**: Script editing with automatic syntax-safe wrapping.
 6. **Output Inspector**: Scrollable formatted JSON preview and quick copy-to-clipboard button.
-7. **Delete Node Button**: Safely removes the active node and cascades edge cleanup.
+7. **In-Place Local Retry**: Re-run the active node directly using cached upstream parameters without re-executing previous nodes.
+8. **Delete Node Button**: Safely removes the active node and cascades edge cleanup.
 
 ---
 
@@ -104,19 +107,46 @@ The fixed 380px inspector provides live reactive controls:
   1. *Customer Support Routing* (Intent classification & ticket dispatch).
   2. *Report Generator with Critic* (Self-reflective research generator with expert critique loop).
   3. *Multi-LLM Arena & Judge* (Side-by-side multi-model benchmark with neutral judge scoring).
-- **Add Node Menu**: Quick dropdown to inject new `Input`, `Prompt`, `LLM`, `Code`, or `Output` nodes with automatic staggered coordinates.
+- **Add Node Menu**: Quick dropdown to inject any of the 12 node types with hover tooltips and automatic staggered coordinates.
 - **Execution Controls**:
   - `▶ Run Workflow`: Executes Kahn topological layering and consumes the asynchronous event stream (`AsyncGenerator<ExecutionEvent>`), updating node states and telemetry frame-by-frame.
   - `⏹ Stop`: Triggers W3C `AbortSignal` cooperative cancellation to instantly abort all in-flight promises and timers.
   - `↺ Reset`: Reverts all node statuses to `idle` and clears cached outputs while strictly preserving the graph topology.
+  - `↺ Retry All Failed`: Appears when $\ge 2$ nodes have failed, allowing one-click concurrent/sequential recovery.
 - **Live Clock**: Precision milliseconds ticker tracking total workflow execution time.
+
+---
+
+### 6. Canvas Ergonomics & High-Frequency Productivity (v0.4.6)
+
+PatchCat v0.4.6 introduces a full suite of productivity tools for high-frequency canvas operations:
+
+- **Bounded Undo / Redo History Stack (`Ctrl+Z` / `Ctrl+Y` / `Ctrl+Shift+Z`)**:
+  - Automatically captures snapshots on node creation, deletion, edge reconnection, and node drag stops.
+  - Bounded to 25 history steps using deep clone snapshots to prevent memory leaks.
+  - Input field guard: Safely suppressed when typing inside inputs, textareas, contentEditable fields, or Monaco editors.
+- **Multi-Node Clipboard (`Ctrl+C` / `Ctrl+V`)**:
+  - Box-select or multi-select nodes and press `Ctrl+C`.
+  - Press `Ctrl+V` to duplicate selected nodes with new unique IDs, preserved internal edge connections, and cascading diagonal offsets (`+50px, +50px`).
+- **Pinpoint Error Diagnostics & Visual Pop Focus**:
+  - Click `[🔍 Locate Node]` in alert notifications to smoothly pan and zoom (`setCenter(x, y, { zoom: 1.1 })`) directly to the offending node.
+  - Offending node emits a 1600ms high-visibility pulse ring (`ring-4 ring-rose-500/80 scale-103`).
+  - Interactive cycle chips in deadlock alerts allow clicking any node ID in the cycle loop to locate it instantly.
+- **In-Place Node Local Retry & Parallel Failure Recovery**:
+  - Click `↺` on any failed or completed node card or in the Property Drawer to re-run only that node using cached upstream outputs (`node.data.outputs`).
+  - Saves LLM tokens and avoids temperature drift from upstream nodes.
+  - When upstream retries succeed, downstream waiting nodes (such as Aggregators) automatically unblock and resume.
+- **Node-Level React Error Boundary (`NodeErrorBoundary`)**:
+  - Wraps each node's body content in an isolated Error Boundary. If malformed data causes a rendering crash, only the specific card displays a fallback recovery box, preventing canvas-wide whiteouts.
+- **Multi-Format Delivery Copier**:
+  - Quick-copy toolbar on Output Node cards and Property Drawer: `[📋 MD]` (Markdown), `[💾 TXT]` (Plain text stripped of Markdown syntax), and `[{ } JSON]` (Raw structured data).
 
 ---
 
 <a name="中文版本"></a>
 ## 中文版本
 
-### PATCHCAT v0.4.4 — AI 提示流编排器 用户手册与组件说明指南
+### PATCHCAT v0.4.6 — AI 提示流编排器 用户手册与组件说明指南
 
 **AI 提示流编排器 (AI Prompt Flow Orchestrator)** 采用现代暗黑工业风（Dark Slate）设计，基于 `@xyflow/react` (React Flow v12)、Tailwind CSS、Lucide 图标库与 Zustand + Immer 打造全响应式交互。
 
@@ -179,10 +209,37 @@ The fixed 380px inspector provides live reactive controls:
    - `▶ Run Workflow`：触发 Kahn 拓扑排序并逐帧流式驱动节点光效与数据填充。
    - `⏹ Stop`：触发 AbortSignal 秒级强行终止等待中的任务。
    - `↺ Reset`：一键重置节点状态为 `idle`。
+   - `↺ 重试所有失败节点`：当检测到存在 $\ge 2$ 个错误节点时自动浮现，支持一键批量就地并发重试。
 
 ---
 
-### 6. 本地运行与验证指令
+### 6. 画布工效学与高频生产力交互 (v0.4.6)
+
+PatchCat v0.4.6 为高频画布搭建场景引入了完备的工效学与生产力工具体系：
+
+- **撤销与重做历史管理器 (`Ctrl+Z` / `Ctrl+Y` / `Ctrl+Shift+Z`)**：
+  - 自动记录节点增删、连线增删、连线拖拽构建与节点拖拽位移（`onNodeDragStop`）；
+  - 队列深度严格限制 25 步上限并基于深拷贝快照，彻底阻断内存无限泄露风险；
+  - 表单输入防护：在 input、textarea、contentEditable 或 Monaco 代码编辑器中输入时自动屏蔽画布快捷键，杜绝打字被误判为撤销。
+- **多节点框选复制与粘贴 (`Ctrl+C` / `Ctrl+V`)**：
+  - 框选或多选节点并按 `Ctrl+C`；
+  - 按 `Ctrl+V` 粘贴时自动生成全新唯一 UUID，并智能保留选中节点之间的内部连线（Internal Edges），滤除与未选中外部节点的连线；
+  - 粘贴卡片自动呈对角线级联递增偏移（`+50px, +50px`），多次粘贴不叠放遮挡。
+- **节点精准报错诊断与视口一键定焦 (Pinpoint Diagnostics & Visual Pop Focus)**：
+  - 顶部报错通知条直出 `[🔍 定位节点 (nodeId)]` 按钮；拓扑环路死锁警告中的循环节点 Chip 亦支持一键点击定焦；
+  - 视口平滑居中飞渡（`setCenter` 居中并缩放至 1.1x），并在目标节点卡片触发 1600ms 高亮呼吸光环动效（`ring-4 ring-rose-500/80 scale-103`）。
+- **单节点就地重试与并行故障恢复**：
+  - 点击节点卡片右上角或属性抽屉底部的 `↺` 按钮即可就地重跑该节点，直接复用父节点已缓存的入参输出数据（`node.data.outputs`），无需全盘重跑整条工作流，杜绝昂贵前序 Token 浪费与温度采样发散；
+  - 并行分支多节点报错时相互隔离；当失败节点 $\ge 2$ 时，顶部控制栏显性显示 `[ {count} 个节点执行失败 | ↺ 重试所有失败节点 ]`；
+  - 重试成功后，汇聚节点与下游等待节点自动解除等待继续向后执行。
+- **节点级渲染异常隔离保护 (`NodeErrorBoundary`)**：
+  - 封装独立 React Error Boundary 包裹自定义节点内容，单节点因数据脏污导致 React 崩溃时仅在卡片内部显示局部降级重置卡片，彻底避免整画布白屏（Whiteout）。
+- **多格式一键交付复制栏**：
+  - Output 节点卡片与属性抽屉输出区提供快速复制工具栏：`[📋 MD]`（Markdown）、`[💾 TXT]`（纯文本自动剥离标签）、`[{ } JSON]`（原始数据结构）。
+
+---
+
+### 7. 本地运行与验证指令
 
 ```bash
 # 1. 启动前端 Vite 本地可视化开发服务器 (http://localhost:5173)

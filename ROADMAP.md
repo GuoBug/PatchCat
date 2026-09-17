@@ -1,6 +1,6 @@
 # 🗺️ PatchCat Product Roadmap
 
-> **Current Stage**: `v0.4.4` (Released ✅)  
+> **Current Stage**: `v0.4.6` (Released ✅)  
 > **Last Updated**: 2026-09-17  
 > **Positioning**: A local-first, zero-setup, visual high-performance AI prompt workflow orchestrator  
 
@@ -16,11 +16,11 @@
 PatchCat adheres to a **Micro-Milestone cadence (~0.0.2 version increments)** and a **Local-First, Progressive Enhancement** architecture. Each micro-release focuses on a tightly scoped, fully verified feature slice with zero regressions, ironclad reliability watchdogs, and zero superficial testing theater.
 
 ```
-v0.4.4 (Current) ──► v0.4.6 (Ergonomics) ──► v0.4.8 (Trace History) ──► v0.5.0 (Local BM25)
+v0.4.6 (Current) ──► v0.4.8 (Trace History) ──► v0.5.0 (Local BM25) ──► v0.5.2 (Reranker)
                                                                                   │
-v0.5.8 (Snapshots) ◄── v0.5.6 (Memory Node) ◄── v0.5.4 (Rolling Summary) ◄── v0.5.2 (Reranker)
+v0.6.0 (Docker Deployment) ◄── v0.5.8 (Snapshots) ◄── v0.5.6 (Memory Node) ◄── v0.5.4 (Rolling Summary)
         │
-        └──► v0.6.0 (Docker Deployment) ──► v1.0.0 (Enterprise Ready)
+        └──► v1.0.0 (Enterprise Ready)
 ```
 
 
@@ -54,6 +54,7 @@ v0.5.8 (Snapshots) ◄── v0.5.6 (Memory Node) ◄── v0.5.4 (Rolling Summ
 - [x] **Phase 3.1**: Multi-Turn Conversation Memory & Dual-Tier Storage Architecture (2026-09-11)
 - [x] **Phase 4 (v0.4.2)**: Agent Capabilities, ReAct Autonomous Loop & Multi-Modal Tool Calling (2026-09-13)
 - [x] **Phase 4.1 (v0.4.4)**: Agent Runtime Hardening, Global Settings Architecture & Reliability Baseline (2026-09-16)
+- [x] **Phase 4.2 (v0.4.6)**: Canvas Ergonomics, Comprehensive Tooltip System, Pinpoint Error Diagnostics & Interactive Productivity (2026-09-17)
 
 ---
 
@@ -67,11 +68,11 @@ v0.5.8 (Snapshots) ◄── v0.5.6 (Memory Node) ◄── v0.5.4 (Rolling Summ
 PatchCat 坚守 **`0.0.2` 微步演进路线（Micro-Milestone Cadence）** 与 **Local-First 纯本地免配置渐进增强** 原则。每个微版本聚焦于一个定义明确、边界清晰且彻底验证的特性切片，坚决杜绝“大版本跳跃与功能堆叠”，淘汰形式主义测试，死守零崩溃、零死锁、零假死底线。
 
 ```
-v0.4.4 (当前版本) ──► v0.4.6 (画布高频生产力) ──► v0.4.8 (运行历史回溯) ──► v0.5.0 (纯本地BM25)
+v0.4.6 (当前版本) ──► v0.4.8 (运行历史回溯) ──► v0.5.0 (纯本地BM25) ──► v0.5.2 (Reranker重排)
                                                                                           │
-v0.5.8 (快照与归档) ◄── v0.5.6 (显式Memory节点) ◄── v0.5.4 (滚动后台摘要) ◄── v0.5.2 (Reranker重排)
+v0.6.0 (Docker私有部署大考) ◄── v0.5.8 (快照与归档) ◄── v0.5.6 (显式Memory节点) ◄── v0.5.4 (滚动后台摘要)
         │
-        └──► v0.6.0 (Docker私有部署大考) ──► v1.0.0 (企业生产交付)
+        └──► v1.0.0 (企业生产交付)
 ```
 
 ---
@@ -104,3 +105,4 @@ v0.5.8 (快照与归档) ◄── v0.5.6 (显式Memory节点) ◄── v0.5.4 
 - [x] **Phase 3.1**：多轮会话记忆与底层存储持久化架构 (2026-09-11)
 - [x] **Phase 4 (v0.4.2)**：AI 智能体能力层、ReAct 自主循环与多模态工具调用 (2026-09-13)
 - [x] **Phase 4.1 (v0.4.4)**：Agent 运行时加固、配置规范化与可靠性基线 (2026-09-16)
+- [x] **Phase 4.2 (v0.4.6)**：画布工效学、全节点 1 句话精准悬停说明、精准报错诊断定焦与高频交互生产力 (2026-09-17)

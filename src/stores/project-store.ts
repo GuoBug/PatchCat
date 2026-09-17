@@ -1062,50 +1062,51 @@ export const useProjectStore = create<ProjectStoreState>()(
   }),
 );
 
-// Subscribe to language changes so preset titles and folder names update automatically
+// Defer subscriptions to microtask so all circular module dependencies are fully evaluated
 if (typeof window !== 'undefined') {
-  useSettingsStore.subscribe((state, prevState) => {
-    if (state.language !== prevState.language) {
-      useProjectStore.getState().seedPresetsIfEmpty(state.language);
-      // If current active workflow is a preset, immediately reload localized nodes to canvas
-      const activeId = useProjectStore.getState().activeWorkflowId;
-      const activeWf = useProjectStore.getState().workflows.find((w) => w.id === activeId);
-      if (activeWf && activeWf.isPreset) {
-        useWorkflowStore.getState().loadPreset({
-          nodes: activeWf.nodes,
-          edges: activeWf.edges,
-        });
+  queueMicrotask(() => {
+    // Subscribe to language changes so preset titles and folder names update automatically
+    useSettingsStore.subscribe((state, prevState) => {
+      if (state.language !== prevState.language) {
+        useProjectStore.getState().seedPresetsIfEmpty(state.language);
+        // If current active workflow is a preset, immediately reload localized nodes to canvas
+        const activeId = useProjectStore.getState().activeWorkflowId;
+        const activeWf = useProjectStore.getState().workflows.find((w) => w.id === activeId);
+        if (activeWf && activeWf.isPreset) {
+          useWorkflowStore.getState().loadPreset({
+            nodes: activeWf.nodes,
+            edges: activeWf.edges,
+          });
+        }
       }
-    }
-  });
-}
+    });
 
-// Auto-save subscription: monitor canvas changes and debounced-save if workflow is not locked
-if (typeof window !== 'undefined') {
-  let prevNodes = useWorkflowStore.getState().nodes;
-  let prevEdges = useWorkflowStore.getState().edges;
-  let prevInputs = useWorkflowStore.getState().globalInputs;
+    // Auto-save subscription: monitor canvas changes and debounced-save if workflow is not locked
+    let prevNodes = useWorkflowStore.getState().nodes;
+    let prevEdges = useWorkflowStore.getState().edges;
+    let prevInputs = useWorkflowStore.getState().globalInputs;
 
-  useWorkflowStore.subscribe((state) => {
-    if (
-      state.nodes !== prevNodes ||
-      state.edges !== prevEdges ||
-      state.globalInputs !== prevInputs
-    ) {
-      prevNodes = state.nodes;
-      prevEdges = state.edges;
-      prevInputs = state.globalInputs;
+    useWorkflowStore.subscribe((state) => {
+      if (
+        state.nodes !== prevNodes ||
+        state.edges !== prevEdges ||
+        state.globalInputs !== prevInputs
+      ) {
+        prevNodes = state.nodes;
+        prevEdges = state.edges;
+        prevInputs = state.globalInputs;
 
-      // Do not auto-save during execution
-      if (state.isExecuting) return;
+        // Do not auto-save during execution
+        if (state.isExecuting) return;
 
-      const projectStore = useProjectStore.getState();
-      const activeId = projectStore.activeWorkflowId;
-      if (!activeId) return;
-      const currentWf = projectStore.workflows.find((w) => w.id === activeId);
-      if (!currentWf || currentWf.isLocked) return;
+        const projectStore = useProjectStore.getState();
+        const activeId = projectStore.activeWorkflowId;
+        if (!activeId) return;
+        const currentWf = projectStore.workflows.find((w) => w.id === activeId);
+        if (!currentWf || currentWf.isLocked) return;
 
-      scheduleAutoSave();
-    }
+        scheduleAutoSave();
+      }
+    });
   });
 }

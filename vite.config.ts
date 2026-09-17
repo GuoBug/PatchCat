@@ -19,10 +19,24 @@ export default defineConfig({
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-flow': ['@xyflow/react'],
-          'vendor-ui': ['lucide-react', 'zustand', 'immer'],
+        manualChunks(id) {
+          if (
+            id.includes('node_modules/react/') ||
+            id.includes('node_modules/react-dom/') ||
+            id.includes('node_modules/scheduler/')
+          ) {
+            return 'vendor-react';
+          }
+          if (id.includes('node_modules/@xyflow/react')) {
+            return 'vendor-flow';
+          }
+          if (
+            id.includes('node_modules/lucide-react') ||
+            id.includes('node_modules/zustand') ||
+            id.includes('node_modules/immer')
+          ) {
+            return 'vendor-ui';
+          }
         },
       },
     },

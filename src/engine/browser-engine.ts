@@ -325,6 +325,17 @@ export class BrowserWorkflowEngine {
 
     // Execution context: maps nodeId → resolved output bag
     const context: Record<string, Record<string, unknown>> = {};
+    const reexecutedNodes = new Set<string>();
+
+    // In resume mode, pre-populate context with cached outputs from existing nodes
+    if (options.resumeFromExisting) {
+      for (const node of graph.nodes) {
+        if (node.data?.outputs && typeof node.data.outputs === 'object') {
+          context[node.id] = node.data.outputs as Record<string, unknown>;
+        }
+      }
+    }
+
     if (options.inputs) {
       context['global_input'] = options.inputs;
     }
@@ -437,6 +448,36 @@ export class BrowserWorkflowEngine {
                 };
               }
 
+              // In resume mode, reuse cached outputs if node was already successful, has outputs,
+              // is not an explicit target, not in error, and none of its incoming parents were re-executed.
+              if (options.resumeFromExisting) {
+                const isExplicitTarget = options.targetNodeIds
+                  ? options.targetNodeIds.includes(node.id)
+                  : false;
+                const isErrorStatus = node.data.status === 'error';
+                const hasReexecutedParent = incoming.some((edge) => reexecutedNodes.has(edge.source));
+                const hasValidCachedOutput =
+                  node.data.status === 'success' &&
+                  node.data.outputs &&
+                  Object.keys(node.data.outputs).length > 0;
+
+                if (hasValidCachedOutput && !isExplicitTarget && !isErrorStatus && !hasReexecutedParent) {
+                  logger.detailed(
+                    'WorkflowEngine',
+                    `节点 [${node.id}] (${node.data.label}) 复用已缓存的执行结果，跳过重跑`,
+                    { nodeType: node.data.type },
+                    node.id,
+                  );
+                  context[node.id] = (node.data.outputs as Record<string, unknown>) || {};
+                  return {
+                    nodeId: node.id,
+                    status: 'success' as const,
+                    output: context[node.id]!,
+                    durationMs: 0,
+                  };
+                }
+              }
+
               logger.detailed(
                 'WorkflowEngine',
                 `节点 [${node.id}] (${node.data.label}) 开始运行`,
@@ -503,6 +544,7 @@ export class BrowserWorkflowEngine {
                 });
               } else {
                 context[result.nodeId] = result.output;
+                reexecutedNodes.add(result.nodeId);
 
                 // If condition node, record active branch handle
                 if (node.data.type === 'condition' || node.type === 'condition') {
@@ -598,6 +640,140 @@ export class BrowserWorkflowEngine {
         },
       };
     }
+  }
+
+  /**
+   * Executes a single node in-place, reading cached outputs from upstream parents
+   * in the workflow graph without restarting previous steps (PRD-012 Section 4.5).
+   */
+  public async *executeSingleNode(
+    graph: GraphInput,
+    nodeId: string,
+    options: WorkflowRunOptions = {},
+  ): AsyncGenerator<ExecutionEvent> {
+    if (options.resumeDownstream) {
+      for await (const event of this.executeWorkflow(graph, {
+        ...options,
+        resumeFromExisting: true,
+        targetNodeIds: [nodeId],
+      })) {
+        yield event;
+      }
+      return;
+    }
+
+    const nodeMap = new Map(graph.nodes.map((n) => [n.id, n]));
+    const targetNode = nodeMap.get(nodeId);
+    if (!targetNode) {
+      yield {
+        type: 'NODE_ERROR',
+        payload: {
+          nodeId,
+          error: `Node ${nodeId} not found in graph`,
+          durationMs: 0,
+        },
+      };
+      return;
+    }
+
+    this.abortController = new AbortController();
+    const signal = options.signal ?? this.abortController.signal;
+
+    // Build context from cached outputs of other nodes in the graph
+    const context: Record<string, Record<string, unknown>> = {};
+    for (const node of graph.nodes) {
+      if (node.data?.outputs && typeof node.data.outputs === 'object') {
+        context[node.id] = node.data.outputs as Record<string, unknown>;
+      }
+    }
+    if (options.inputs) {
+      context['global_input'] = options.inputs;
+    }
+
+    const incomingEdges = graph.edges.filter((e) => e.target === nodeId);
+    const skippedNodes = new Set<string>();
+
+    logger.summary(
+      'WorkflowEngine',
+      `单节点就地重试启动: [${targetNode.id}] (${targetNode.data.label})`,
+      { nodeId, nodeType: targetNode.data.type },
+    );
+
+    yield {
+      type: 'NODE_START',
+      payload: {
+        nodeId: targetNode.id,
+        nodeType: targetNode.data.type,
+        timestamp: Date.now(),
+        inputs: targetNode.data.inputs || {},
+      },
+    };
+
+    const eventQueue = new AsyncEventQueue<ExecutionEvent>();
+
+    const executionPromise = (async () => {
+      try {
+        const result = await this.executeNodeInternal(
+          targetNode,
+          context,
+          signal,
+          (chunk) => {
+            eventQueue.push({
+              type: 'NODE_CHUNK',
+              payload: {
+                nodeId: targetNode.id,
+                delta: chunk.delta,
+                fullContent: chunk.fullContent,
+                reasoningDelta: chunk.reasoningDelta,
+                fullReasoning: chunk.fullReasoning,
+              },
+            });
+          },
+          options,
+          incomingEdges,
+          skippedNodes,
+          nodeMap,
+        );
+
+        if (result.status === 'error') {
+          eventQueue.push({
+            type: 'NODE_ERROR',
+            payload: {
+              nodeId: result.nodeId,
+              error: result.error ?? 'Unknown error',
+              durationMs: result.durationMs,
+            },
+          });
+        } else {
+          eventQueue.push({
+            type: 'NODE_COMPLETE',
+            payload: {
+              nodeId: result.nodeId,
+              output: result.output,
+              durationMs: result.durationMs,
+            },
+          });
+        }
+      } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        eventQueue.push({
+          type: 'NODE_ERROR',
+          payload: {
+            nodeId: targetNode.id,
+            error: errMsg,
+            durationMs: 0,
+          },
+        });
+      } finally {
+        eventQueue.close();
+      }
+    })();
+
+    for await (const event of eventQueue) {
+      yield event;
+    }
+
+    await executionPromise;
   }
 
   // ───────────────────────────────────────────────────────────────────────
@@ -1079,16 +1255,60 @@ export class BrowserWorkflowEngine {
           }
 
           const urlObj = new URL(rawUrl);
-          const queryParams = { ...(config.queryParams || {}) };
-          for (const [k, v] of Object.entries(queryParams)) {
-            if (v) urlObj.searchParams.set(k, String(v));
+
+          // Normalize and resolve query parameters (supports both Array<{key, value}> and Record<string, unknown>)
+          const rawQueryParams: Record<string, unknown> = {};
+          if (Array.isArray(config.queryParams)) {
+            for (const item of config.queryParams) {
+              if (item && typeof item === 'object' && 'key' in item) {
+                rawQueryParams[String((item as any).key)] = (item as any).value ?? '';
+              }
+            }
+          } else if (config.queryParams && typeof config.queryParams === 'object') {
+            for (const [k, v] of Object.entries(config.queryParams as Record<string, unknown>)) {
+              if (v && typeof v === 'object' && 'key' in v) {
+                rawQueryParams[String((v as any).key || k)] = (v as any).value ?? '';
+              } else {
+                rawQueryParams[k] = v;
+              }
+            }
+          }
+
+          const resolvedQueryParams = resolveObjectVariables(rawQueryParams, context) as Record<string, unknown>;
+          for (const [k, v] of Object.entries(resolvedQueryParams)) {
+            if (v !== undefined && v !== null && v !== '') {
+              urlObj.searchParams.set(k, String(v));
+            }
           }
           const targetUrl = urlObj.toString();
 
+          // Normalize and resolve headers
+          const rawHeaders: Record<string, unknown> = {};
+          if (Array.isArray(config.headers)) {
+            for (const item of config.headers) {
+              if (item && typeof item === 'object' && 'key' in item) {
+                rawHeaders[String((item as any).key)] = (item as any).value ?? '';
+              }
+            }
+          } else if (config.headers && typeof config.headers === 'object') {
+            for (const [k, v] of Object.entries(config.headers as Record<string, unknown>)) {
+              if (v && typeof v === 'object' && 'key' in v) {
+                rawHeaders[String((v as any).key || k)] = (v as any).value ?? '';
+              } else {
+                rawHeaders[k] = v;
+              }
+            }
+          }
+
+          const resolvedHeaders = resolveObjectVariables(rawHeaders, context) as Record<string, unknown>;
           const reqHeaders: Record<string, string> = {
             'Content-Type': 'application/json',
-            ...(config.headers || {}),
           };
+          for (const [hk, hv] of Object.entries(resolvedHeaders)) {
+            if (hv !== undefined && hv !== null && hv !== '') {
+              reqHeaders[hk] = String(hv);
+            }
+          }
 
           const authType = config.authType || 'none';
           const authConfig = config.authConfig || {};

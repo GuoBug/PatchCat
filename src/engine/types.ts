@@ -361,6 +361,12 @@ export interface WorkflowRunOptions {
   skipLLM?: boolean;
   /** When true, runs in validation-only mode. */
   validationOnly?: boolean;
+  /** When true, re-uses cached node.data.outputs from successful nodes and only executes target/failed nodes and their downstream dependents. */
+  resumeFromExisting?: boolean;
+  /** Explicit list of target node IDs to re-execute in resume mode. */
+  targetNodeIds?: string[];
+  /** When executing a single node, whether to continue executing downstream dependent nodes upon success. */
+  resumeDownstream?: boolean;
   /** Context dependency injection for headless/Worker/testing execution without React Zustand stores */
   context?: {
     settings?: {

@@ -64,8 +64,14 @@ interface KnowledgeState {
 const getErrorMessage = (err: unknown, fallback: string) =>
   err instanceof Error ? err.message : fallback;
 
-// Global active adapter instance
-let activeAdapter: IKnowledgeAdapter = new LocalKnowledgeAdapter();
+// Global active adapter instance (lazily initialized to break circular import TDZ)
+let activeAdapter: IKnowledgeAdapter | null = null;
+function getActiveAdapter(): IKnowledgeAdapter {
+  if (!activeAdapter) {
+    activeAdapter = new LocalKnowledgeAdapter();
+  }
+  return activeAdapter;
+}
 
 export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
   knowledgeBases: [],
@@ -97,7 +103,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const search = get().searchQuery;
-      const kbs = await activeAdapter.getKnowledgeBases(search);
+      const kbs = await getActiveAdapter().getKnowledgeBases(search);
       set({ knowledgeBases: kbs, isLoading: false });
 
       // Auto-select first KB if none selected
@@ -121,7 +127,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
 
     set({ isLoading: true });
     try {
-      const docs = await activeAdapter.getDocuments(kbId);
+      const docs = await getActiveAdapter().getDocuments(kbId);
       set({ documents: docs, isLoading: false });
 
       if (docs.length > 0 && docs[0]) {
@@ -135,7 +141,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
   createKnowledgeBase: async (payload: KnowledgeBaseCreate) => {
     set({ isLoading: true, error: null });
     try {
-      const newKb = await activeAdapter.createKnowledgeBase(payload);
+      const newKb = await getActiveAdapter().createKnowledgeBase(payload);
       await get().loadKnowledgeBases();
       await get().selectKnowledgeBase(newKb.id);
       set({ isLoading: false });
@@ -149,7 +155,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
   deleteKnowledgeBase: async (kbId: string) => {
     set({ isLoading: true, error: null });
     try {
-      await activeAdapter.deleteKnowledgeBase(kbId);
+      await getActiveAdapter().deleteKnowledgeBase(kbId);
       await get().loadKnowledgeBases();
       set({ isLoading: false });
     } catch (err: unknown) {
@@ -166,7 +172,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
     }
 
     try {
-      const chunks = await activeAdapter.getDocumentChunks(docId);
+      const chunks = await getActiveAdapter().getDocumentChunks(docId);
       set({ chunks });
     } catch (err: unknown) {
       set({ error: getErrorMessage(err, 'Failed to load document chunks') });
@@ -176,10 +182,10 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
   uploadDocument: async (kbId, file, options) => {
     set({ isUploading: true, error: null });
     try {
-      const newDoc = await activeAdapter.uploadDocument(kbId, file, options);
+      const newDoc = await getActiveAdapter().uploadDocument(kbId, file, options);
       // Reload documents and update active KB count
-      const docs = await activeAdapter.getDocuments(kbId);
-      const kbs = await activeAdapter.getKnowledgeBases(get().searchQuery);
+      const docs = await getActiveAdapter().getDocuments(kbId);
+      const kbs = await getActiveAdapter().getKnowledgeBases(get().searchQuery);
       set({
         documents: docs,
         knowledgeBases: kbs,
@@ -198,10 +204,10 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const kbId = get().activeKbId;
-      await activeAdapter.deleteDocument(docId);
+      await getActiveAdapter().deleteDocument(docId);
       if (kbId) {
-        const docs = await activeAdapter.getDocuments(kbId);
-        const kbs = await activeAdapter.getKnowledgeBases(get().searchQuery);
+        const docs = await getActiveAdapter().getDocuments(kbId);
+        const kbs = await getActiveAdapter().getKnowledgeBases(get().searchQuery);
         set({ documents: docs, knowledgeBases: kbs });
         const remainingDoc = docs[0]?.id || null;
         await get().selectDocument(remainingDoc);
@@ -215,7 +221,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
 
   toggleChunk: async (chunkId: string, isActive?: boolean) => {
     try {
-      const updated = await activeAdapter.toggleChunkActive(chunkId, isActive);
+      const updated = await getActiveAdapter().toggleChunkActive(chunkId, isActive);
       set((state) => ({
         chunks: state.chunks.map((c) => (c.id === chunkId ? updated : c)),
       }));
@@ -226,11 +232,11 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
   },
 
   previewChunks: async (content: string, options?: ChunkOptions) => {
-    return activeAdapter.previewChunks(content, options);
+    return getActiveAdapter().previewChunks(content, options);
   },
 
   retrieve: async (kbId: string, query: string, topK?: number, scoreThreshold?: number) => {
-    return activeAdapter.retrieve(kbId, query, topK, scoreThreshold);
+    return getActiveAdapter().retrieve(kbId, query, topK, scoreThreshold);
   },
 
   setSearchQuery: (query: string) => {

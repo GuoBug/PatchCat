@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useEffect } from 'react';
 import {
   ReactFlow,
   Background,
@@ -9,6 +9,7 @@ import {
   OnNodesChange,
   OnEdgesChange,
   OnConnect,
+  useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -25,6 +26,76 @@ export const WorkflowCanvas: React.FC = () => {
   const onConnect = useWorkflowStore((s) => s.onConnect);
   const setSelectedNodeId = useWorkflowStore((s) => s.setSelectedNodeId);
   const theme = useWorkflowStore((s) => s.theme);
+
+  const centerTargetNodeId = useWorkflowStore((s) => s.centerTargetNodeId);
+  const clearCenterTarget = useWorkflowStore((s) => s.clearCenterTarget);
+  const captureSnapshot = useWorkflowStore((s) => s.captureSnapshot);
+  const undo = useWorkflowStore((s) => s.undo);
+  const redo = useWorkflowStore((s) => s.redo);
+  const copySelectedNodes = useWorkflowStore((s) => s.copySelectedNodes);
+  const pasteNodes = useWorkflowStore((s) => s.pasteNodes);
+
+  const { setCenter, getNode } = useReactFlow();
+
+  // Smoothly center and focus on target node (e.g. from error diagnostics)
+  useEffect(() => {
+    if (centerTargetNodeId) {
+      const target = getNode(centerTargetNodeId);
+      if (target) {
+        setCenter(target.position.x + 140, target.position.y + 100, {
+          zoom: 1.1,
+          duration: 600,
+        });
+      }
+      clearCenterTarget();
+    }
+  }, [centerTargetNodeId, getNode, setCenter, clearCenterTarget]);
+
+  // Global canvas keyboard shortcuts (Ctrl+C, Ctrl+V, Ctrl+Z, Ctrl+Y)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore when user is typing in form controls
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable ||
+          target.closest('.monaco-editor'))
+      ) {
+        return;
+      }
+
+      const isModifier = e.ctrlKey || e.metaKey;
+      if (!isModifier) return;
+
+      const key = e.key.toLowerCase();
+
+      // Ctrl+Z (Undo) / Ctrl+Shift+Z (Redo)
+      if (key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+      } else if (key === 'y') {
+        // Ctrl+Y (Redo)
+        e.preventDefault();
+        redo();
+      } else if (key === 'c') {
+        // Ctrl+C (Copy Selected Nodes)
+        copySelectedNodes();
+      } else if (key === 'v') {
+        // Ctrl+V (Paste Nodes)
+        e.preventDefault();
+        pasteNodes();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo, copySelectedNodes, pasteNodes]);
 
   const edgeTypes = useMemo(
     () => ({
@@ -48,7 +119,7 @@ export const WorkflowCanvas: React.FC = () => {
     }
   }, [setSelectedNodeId]);
 
-  // Node color helper for MiniMap
+  // Node color helper for MiniMap (all 12 node types)
   const nodeColor = useCallback((node: Node) => {
     switch (node.type) {
       case 'input':
@@ -61,12 +132,20 @@ export const WorkflowCanvas: React.FC = () => {
         return '#F59E0B';
       case 'output':
         return '#F43F5E';
+      case 'knowledge':
+        return '#06B6D4';
+      case 'condition':
+        return '#F97316';
+      case 'aggregator':
+        return '#A855F7';
+      case 'http':
+        return '#14B8A6';
       case 'agent':
-        return '#8B5CF6'; // violet
+        return '#6366F1';
       case 'loop':
-        return '#10B981'; // emerald
-      case 'subworkflow':
-        return '#F59E0B'; // amber
+        return '#0EA5E9';
+      case 'sub_workflow':
+        return '#EC4899';
       default:
         return '#64748B';
     }
@@ -85,6 +164,7 @@ export const WorkflowCanvas: React.FC = () => {
         onNodesChange={onNodesChange as OnNodesChange<WorkflowNode>}
         onEdgesChange={onEdgesChange as OnEdgesChange<WorkflowEdge>}
         onConnect={onConnect as OnConnect}
+        onNodeDragStop={() => captureSnapshot()}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodeClick={handleNodeClick}

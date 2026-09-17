@@ -130,3 +130,18 @@ html:not(.dark) .react-flow__minimap {
   color: inherit !important;
   text-align: left !important;
 }
+
+/* GPU-accelerated Edge Dash Animation during Execution */
+.react-flow__edge-path.animated {
+  stroke-dasharray: 6 6 !important;
+  animation: react-flow-dash 0.8s linear infinite !important;
+}
+
+@keyframes react-flow-dash {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}

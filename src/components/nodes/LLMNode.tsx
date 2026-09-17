@@ -3,9 +3,14 @@ import type { NodeProps } from '@xyflow/react';
 import { BaseNode } from './BaseNode';
 import type { WorkflowNode } from '../../engine/types.ts';
 import { Cpu, Thermometer, CheckCircle2 } from 'lucide-react';
+import { useSettingsStore } from '../../stores/settings-store.ts';
 
 export const LLMNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, selected }) => {
-  const model = (data.config?.['model'] as string) || 'gpt-4o-mini';
+  const activeProvider = useSettingsStore((s) => s.activeProvider);
+  const providers = useSettingsStore((s) => s.providers);
+  const currentProvider = providers[activeProvider];
+  const defaultModel = currentProvider?.defaultModel || 'gpt-4o-mini';
+  const model = (data.config?.['model'] as string) || defaultModel;
   const temperature =
     typeof data.config?.['temperature'] === 'number' ? data.config['temperature'] : 0.7;
   const outputs = data.outputs || {};

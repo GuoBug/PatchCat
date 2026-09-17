@@ -523,6 +523,28 @@ export interface Translations {
     copyCode: string;
     noKey: string;
   };
+  ergonomics: {
+    undo: string;
+    redo: string;
+    copySelected: string;
+    pasteNodes: string;
+    retryNode: string;
+    retryAllFailed: string;
+    retryNodeHint: string;
+    failedNodesCount: string;
+    locateNode: string;
+    copyMarkdown: string;
+    copyPlainText: string;
+    copyRawJson: string;
+    copySuccess: string;
+    nodeRenderError: string;
+    resetNodeData: string;
+    dagTooltip: string;
+    topologicalTooltip: string;
+    vectorRAGTooltip: string;
+    tokenBudgetTooltip: string;
+    temperatureTooltip: string;
+  };
 }
 
 export const translations: Record<Language, Translations> = {
@@ -596,18 +618,18 @@ export const translations: Record<Language, Translations> = {
       agent: 'AI Agent',
       loop: 'Loop Iterator',
       sub_workflow: 'Sub-Workflow',
-      inputDesc: 'Inject entry parameters into workflow',
-      promptDesc: 'Dynamic prompt template assembly',
-      llmDesc: 'Execute LLM inference call',
-      codeDesc: 'Execute JavaScript code transformation',
-      outputDesc: 'Format and display final outputs',
-      knowledgeDesc: 'Semantic retrieval from knowledge base (RAG)',
-      conditionDesc: 'Multi-branch conditional routing with dynamic skipping',
-      aggregatorDesc: 'Reconverge multiple branches and aggregate values',
-      httpDesc: 'Send external HTTP API requests with auth & retries',
-      agentDesc: 'AI Agent that can use tools',
-      loopDesc: 'Iterate over array inputs',
-      sub_workflowDesc: 'Call another workflow',
+      inputDesc: 'Defines initial workflow input parameters and default values as the data source.',
+      promptDesc: 'Composes structured prompt templates, dynamically resolving {{nodeId.outputKey}} variables.',
+      llmDesc: 'Calls cloud or local LLMs to generate streaming responses from composed prompts.',
+      codeDesc: 'Runs lightweight JavaScript in an isolated sandbox for data transformation and cleaning.',
+      outputDesc: 'Formats and displays final deliverables with Markdown preview and one-click export.',
+      knowledgeDesc: 'Semantically searches vector knowledge bases for top-K text chunks to ground LLM reasoning (RAG).',
+      conditionDesc: 'Evaluates input rules to dynamically route execution and prune inactive downstream branches.',
+      aggregatorDesc: 'Synchronizes multiple incoming branches and merges their outputs into a single consolidated payload.',
+      httpDesc: 'Sends external HTTP REST requests with custom headers, query params, and JSON payloads.',
+      agentDesc: 'Runs an autonomous ReAct loop where the model plans, calls tools, and synthesizes results. Includes built-in loop deadlock breakers and execution watchdogs.',
+      loopDesc: 'Iterates through array items to execute batch sub-topologies, bounded by maximum iteration safety caps.',
+      sub_workflowDesc: 'Encapsulates an entire workflow as a nested node with isolated variable scope for modular orchestration.',
     },
     propertyPanel: {
       title: 'Node Properties',
@@ -1079,6 +1101,28 @@ export const translations: Record<Language, Translations> = {
       copyCode: 'Copy Code',
       noKey: 'No API key generated',
     },
+    ergonomics: {
+      undo: 'Undo (Ctrl+Z)',
+      redo: 'Redo (Ctrl+Y)',
+      copySelected: 'Copy Selected (Ctrl+C)',
+      pasteNodes: 'Paste Nodes (Ctrl+V)',
+      retryNode: 'Retry Node',
+      retryAllFailed: 'Retry All Failed Nodes',
+      retryNodeHint: 'Re-runs this node using cached upstream outputs without restarting the full workflow.',
+      failedNodesCount: '{count} Nodes Failed',
+      locateNode: 'Locate Node',
+      copyMarkdown: 'Copy Markdown',
+      copyPlainText: 'Copy Plain Text',
+      copyRawJson: 'Copy Raw JSON',
+      copySuccess: 'Copied to clipboard!',
+      nodeRenderError: 'Node Rendering Error',
+      resetNodeData: 'Reset Node Data',
+      dagTooltip: 'Directed Acyclic Graph: Unidirectional workflow execution structure where nodes are sequenced strictly by dependencies to prevent deadlock loops.',
+      topologicalTooltip: 'Topological Scheduling: Automatically determines dependencies and waves for optimal parallel node execution.',
+      vectorRAGTooltip: 'Semantic Vector Retrieval: Dense vector distance matching to retrieve relevant knowledge chunks beyond literal keyword search.',
+      tokenBudgetTooltip: 'Token Budget Limiter: Hard limit on total tokens consumed in a single execution to prevent unexpected costs.',
+      temperatureTooltip: 'Sampling Temperature: Controls output variance. Lower values yield deterministic, focused responses; higher values encourage creativity.',
+    },
   },
   zh: {
     common: {
@@ -1149,18 +1193,18 @@ export const translations: Record<Language, Translations> = {
       agent: 'AI 智能体',
       loop: '循环迭代器',
       sub_workflow: '子工作流',
-      inputDesc: '向工作流注入入参变量',
-      promptDesc: '动态组装提示词模板',
-      llmDesc: '执行大模型推理调用',
-      codeDesc: '运行 JavaScript 数据处理与路由',
-      outputDesc: '汇总并展示最终生成结果',
-      knowledgeDesc: '从私有知识库中语义召回相关切片 (RAG)',
-      conditionDesc: '多路条件分支路由，动态跳过未命中下游分支',
-      aggregatorDesc: '汇聚收拢多路分支变量并按模式聚合输出',
-      httpDesc: '调用外部三方 REST API 接口，支持重试与鉴权',
-      agentDesc: 'AI 智能体，可绑定多种工具自主推理执行',
-      loopDesc: '对数组对象进行高并发批量循环迭代处理',
-      sub_workflowDesc: '复用调用另一个子工作流并返回结果',
+      inputDesc: '定义工作流的初始输入参数与默认值，作为整条流水线的数据源头。',
+      promptDesc: '编写结构化提示词模板，支持通过 {{nodeId.outputKey}} 动态注入上游数据。',
+      llmDesc: '接入主流大语言模型，将提示词发送至云端或本地端点并流式生成回答。',
+      codeDesc: '在隔离沙箱中运行轻量 JavaScript 脚本，用于复杂数据清洗、格式转换与逻辑计算。',
+      outputDesc: '汇聚并格式化展示最终运行产物，支持 Markdown 实时渲染与一键导出。',
+      knowledgeDesc: '基于语义相似度在向量知识库中检索高相关度文本切片（RAG），为后续模型推理提供背景依据。',
+      conditionDesc: '基于规则表达式判断输入数据，动态分流下游执行路径并自动对无效分支进行跳过剪枝。',
+      aggregatorDesc: '汇聚并等待多个并行或条件分支的输出数据，按优先级合并为单一标准输出。',
+      httpDesc: '发起标准 HTTP REST API 请求，支持自定义 Headers、Query 参数与 JSON 报文以打通外部系统。',
+      agentDesc: '运行 ReAct 目标规划自主循环，模型根据任务自主决定思考并动态调用工具，直至输出最终成果。内置循环死锁监测与单步超时看门狗。',
+      loopDesc: '对输入数组或批处理列表逐项执行子拓扑处理并聚合结果，内置最大迭代次数保护以防无限循环。',
+      sub_workflowDesc: '将另一个完整工作流封装为当前画布的黑盒节点，具备独立作用域隔离，实现大型复杂工程的模块化解耦。',
     },
     propertyPanel: {
       title: '节点属性配置',
@@ -1621,5 +1665,28 @@ export const translations: Record<Language, Translations> = {
       copyCode: '复制代码',
       noKey: '暂未生成密钥',
     },
+    ergonomics: {
+      undo: '撤销操作 (Ctrl+Z)',
+      redo: '重做操作 (Ctrl+Y)',
+      copySelected: '复制选中节点 (Ctrl+C)',
+      pasteNodes: '粘贴节点 (Ctrl+V)',
+      retryNode: '就地重试该节点',
+      retryAllFailed: '重试所有失败节点',
+      retryNodeHint: '复用上游已缓存的入参就地重试此节点，无需从头重跑整条工作流。',
+      failedNodesCount: '{count} 个节点执行失败',
+      locateNode: '定位节点',
+      copyMarkdown: '复制 Markdown',
+      copyPlainText: '复制纯文本',
+      copyRawJson: '复制原始 JSON',
+      copySuccess: '已成功复制到剪贴板！',
+      nodeRenderError: '节点组件渲染异常',
+      resetNodeData: '重置节点数据',
+      dagTooltip: '有向无环图 (DAG)：单向流动的拓扑执行网络。任务按前后依赖关系严格依次调度，杜绝闭环死锁与无限循环。',
+      topologicalTooltip: '拓扑调度排序：根据连线自动计算依赖权重，将所有节点排布为最优并行波次依次执行的算法。',
+      vectorRAGTooltip: '语义向量检索：基于高维语义相似度计算的检索技术。超越传统死板字面匹配，能够按意图查找意思相近的知识切片。',
+      tokenBudgetTooltip: 'Token 限额保护：单次执行允许消耗的最大 Token 总量。超出设定值后立即触发安全硬熔断，防范费用失控。',
+      temperatureTooltip: '模型采样温度：控制模型输出的发散度 (0.0~2.0)。数值越低输出越确定严谨，数值越高回答越丰富多样。',
+    },
   },
 };
+
