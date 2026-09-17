@@ -1,7 +1,7 @@
 # 🗺️ PatchCat Product Roadmap
 
-> **Current Stage**: `v0.4.2` (Released ✅)  
-> **Last Updated**: 2026-09-16  
+> **Current Stage**: `v0.4.4` (Released ✅)  
+> **Last Updated**: 2026-09-17  
 > **Positioning**: A local-first, zero-setup, visual high-performance AI prompt workflow orchestrator  
 
 [English](#english) | [简体中文](#简体中文)
@@ -16,12 +16,13 @@
 PatchCat adheres to a **Micro-Milestone cadence (~0.0.2 version increments)** and a **Local-First, Progressive Enhancement** architecture. Each micro-release focuses on a tightly scoped, fully verified feature slice with zero regressions, ironclad reliability watchdogs, and zero superficial testing theater.
 
 ```
-v0.4.2 (Current) ──► v0.4.4 (Agent & Settings) ──► v0.4.6 (Ergonomics) ──► v0.4.8 (Trace History)
+v0.4.4 (Current) ──► v0.4.6 (Ergonomics) ──► v0.4.8 (Trace History) ──► v0.5.0 (Local BM25)
                                                                                   │
-v0.5.6 (Memory Node) ◄── v0.5.4 (Rolling Summary) ◄── v0.5.2 (Reranker) ◄── v0.5.0 (Local BM25)
+v0.5.8 (Snapshots) ◄── v0.5.6 (Memory Node) ◄── v0.5.4 (Rolling Summary) ◄── v0.5.2 (Reranker)
         │
-        └──► v0.5.8 (Snapshots & Bundle) ──► v0.6.0 (Docker Deployment) ──► v1.0.0 (Enterprise Ready)
+        └──► v0.6.0 (Docker Deployment) ──► v1.0.0 (Enterprise Ready)
 ```
+
 
 ---
 
@@ -66,11 +67,11 @@ v0.5.6 (Memory Node) ◄── v0.5.4 (Rolling Summary) ◄── v0.5.2 (Rerank
 PatchCat 坚守 **`0.0.2` 微步演进路线（Micro-Milestone Cadence）** 与 **Local-First 纯本地免配置渐进增强** 原则。每个微版本聚焦于一个定义明确、边界清晰且彻底验证的特性切片，坚决杜绝“大版本跳跃与功能堆叠”，淘汰形式主义测试，死守零崩溃、零死锁、零假死底线。
 
 ```
-v0.4.2 (当前版本) ──► v0.4.4 (智能体加固与配置规范) ──► v0.4.6 (画布高频生产力) ──► v0.4.8 (运行历史回溯)
+v0.4.4 (当前版本) ──► v0.4.6 (画布高频生产力) ──► v0.4.8 (运行历史回溯) ──► v0.5.0 (纯本地BM25)
                                                                                           │
-v0.5.6 (显式Memory节点) ◄── v0.5.4 (滚动后台摘要) ◄── v0.5.2 (Reranker重排) ◄── v0.5.0 (纯本地BM25)
+v0.5.8 (快照与归档) ◄── v0.5.6 (显式Memory节点) ◄── v0.5.4 (滚动后台摘要) ◄── v0.5.2 (Reranker重排)
         │
-        └──► v0.5.8 (快照与绿色归档包) ──► v0.6.0 (Docker私有部署大考) ──► v1.0.0 (企业生产交付)
+        └──► v0.6.0 (Docker私有部署大考) ──► v1.0.0 (企业生产交付)
 ```
 
 ---
