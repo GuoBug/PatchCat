@@ -13,3 +13,5 @@ export { WorkflowSidebar } from './WorkflowSidebar';
 export { KnowledgeDetailDrawer } from './KnowledgeDetailDrawer';
 export { ChatDebugPanel } from './ChatDebugPanel';
 export { PublishApiModal } from './PublishApiModal';
+export { SaveStatusBadge } from './SaveStatusBadge';
+export { ShadowDraftRecoveryBanner } from './ShadowDraftRecoveryBanner';

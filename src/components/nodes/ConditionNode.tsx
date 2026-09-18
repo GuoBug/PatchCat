@@ -10,24 +10,45 @@ export const ConditionNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data
   const isZh = language === 'zh';
 
   const config = (data.config || {}) as unknown as ConditionNodeConfig;
+  const isExpression = config.mode === 'expression';
   const conditions: ConditionRule[] = config.conditions || [
     { id: 'rule_1', variable: '', operator: 'equals', value: '', targetHandle: 'if_true' },
   ];
   const defaultBranch = config.defaultBranch || 'else';
+  const expressionTarget = config.expressionTargetHandle || 'if_true';
 
-  // Build list of all branch targets: each condition's targetHandle + defaultBranch
-  const branches = [
-    ...conditions.map((c, i) => ({
-      id: c.targetHandle || `branch_${i + 1}`,
-      label: c.targetHandle || `IF (#${i + 1})`,
-      rule: `${c.variable || 'var'} ${c.operator} "${c.value}"`,
-    })),
-    {
-      id: defaultBranch,
-      label: defaultBranch.toUpperCase(),
-      rule: isZh ? '默认兜底分支' : 'Fallback / Default',
-    },
-  ];
+  // Build list of all branch targets based on mode
+  const branches = isExpression
+    ? [
+        {
+          id: expressionTarget,
+          label: expressionTarget.toUpperCase(),
+          rule: config.expression
+            ? config.expression.length > 25
+              ? `${config.expression.slice(0, 22)}...`
+              : config.expression
+            : isZh
+              ? '条件为真 (Truthy)'
+              : 'If True',
+        },
+        {
+          id: defaultBranch,
+          label: defaultBranch.toUpperCase(),
+          rule: isZh ? '默认兜底 (Else)' : 'Fallback / Else',
+        },
+      ]
+    : [
+        ...conditions.map((c, i) => ({
+          id: c.targetHandle || `branch_${i + 1}`,
+          label: c.targetHandle || `IF (#${i + 1})`,
+          rule: `${c.variable || 'var'} ${c.operator} "${c.value}"`,
+        })),
+        {
+          id: defaultBranch,
+          label: defaultBranch.toUpperCase(),
+          rule: isZh ? '默认兜底分支' : 'Fallback / Default',
+        },
+      ];
 
   return (
     <BaseNode
@@ -46,9 +67,13 @@ export const ConditionNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data
           <span className="flex items-center gap-1 font-semibold">
             <GitBranch className="w-3 h-3 text-amber-600 dark:text-amber-400" />
             <span>
-              {isZh
-                ? `${conditions.length} 条判断规则`
-                : `${conditions.length} RULE${conditions.length > 1 ? 'S' : ''}`}
+              {isExpression
+                ? isZh
+                  ? '⚡ JS 表达式'
+                  : '⚡ Expression'
+                : isZh
+                  ? `${conditions.length} 条判断规则`
+                  : `${conditions.length} RULE${conditions.length > 1 ? 'S' : ''}`}
             </span>
           </span>
           <span className="text-slate-400 dark:text-slate-500 font-sans">

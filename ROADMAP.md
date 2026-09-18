@@ -55,6 +55,7 @@ v0.6.0 (Docker Deployment) ◄── v0.5.8 (Snapshots) ◄── v0.5.6 (Memory
 - [x] **Phase 4 (v0.4.2)**: Agent Capabilities, ReAct Autonomous Loop & Multi-Modal Tool Calling (2026-09-13)
 - [x] **Phase 4.1 (v0.4.4)**: Agent Runtime Hardening, Global Settings Architecture & Reliability Baseline (2026-09-16)
 - [x] **Phase 4.2 (v0.4.6)**: Canvas Ergonomics, Comprehensive Tooltip System, Pinpoint Error Diagnostics & Interactive Productivity (2026-09-17)
+- [x] **Phase 4.3 (v0.4.6)**: Empty Canvas Guidance, Template Showcase Gallery, Progressive Low-Code Node Suite & Draft Recovery Safeguards (2026-09-17)
 
 ---
 
@@ -69,7 +70,7 @@ PatchCat 坚守 **`0.0.2` 微步演进路线（Micro-Milestone Cadence）** 与 
 
 ```
 v0.4.6 (当前版本) ──► v0.4.8 (运行历史回溯) ──► v0.5.0 (纯本地BM25) ──► v0.5.2 (Reranker重排)
-                                                                                          │
+                                                                                              │
 v0.6.0 (Docker私有部署大考) ◄── v0.5.8 (快照与归档) ◄── v0.5.6 (显式Memory节点) ◄── v0.5.4 (滚动后台摘要)
         │
         └──► v1.0.0 (企业生产交付)
@@ -82,7 +83,7 @@ v0.6.0 (Docker私有部署大考) ◄── v0.5.8 (快照与归档) ◄── v
 | 版本号 | 核心主题 | 关键交付内容 |
 |:---|:---|:---|
 | **`v0.4.4`** | **Agent 运行时加固、配置规范化与可靠性基线** | • Token 消耗硬熔断（`0` 为不限，正数生效，拦截负数）<br>• 重复工具调用死锁打破器（连续 2 次纠偏，连续 3 次熔断保护）<br>• 全局可选工具单步执行超时看门狗（默认关闭，防范外部挂起）<br>• 集中运行时默认值中枢（`src/config/runtime-defaults.ts`），彻底消灭魔法数字<br>• 全局设置 5 栏重构与一键配置导出/导入备份（支持脱敏与完整模式）<br>• 危险区二次输入确认根据当前界面语言智能单语匹配（中文只输中文，英文只输英文）<br>• 建立官方配置参考文档目录（`docs/05-configuration/`） |
-| **`v0.4.6`** | **画布高频交互生产力** | • 节点多选与快捷复制粘贴（`Ctrl+C` / `Ctrl+V`）<br>• 画布级撤销与重做历史栈（`Ctrl+Z` / `Ctrl+Y`）<br>• 单节点就地重试（Local Retry），无需整画布从头重跑<br>• 节点级 ErrorBoundary 局部错误隔离，杜绝整画布白屏 |
+| **`v0.4.6`** | **画布高频交互生产力、空画布引导与节点工效** | • 节点多选与快捷复制粘贴（`Ctrl+C` / `Ctrl+V`）<br>• 画布级撤销与重做历史栈（`Ctrl+Z` / `Ctrl+Y`）<br>• 单节点就地重试（Local Retry）与 ErrorBoundary 局部错误隔离<br>• 双态空画布英雄卡（新用户灵感引导 / 资深用户快速起手）<br>• 8 大业务场景模板画廊一键装配与 `fitView` 居中<br>• 松手即建连（Drop-to-Add）与 AABB 空间防碰撞算法（$\ge 40px$）<br>• 渐进式节点套件（Code 片段卡折叠、Prompt 静态契约 `@` 补全、Condition 规则 ⇄ JS 表达式双模）<br>• 实时保存状态灯、`beforeunload` 离开拦截与影子草稿崩溃恢复 |
 | **`v0.4.8`** | **运行可观测性与排错审计** | • 最近 10 次画布执行历史面板，展示状态、总耗时与 Token 消耗估算<br>• 节点单步输入/输出真实数据快照检查器<br>• 日志面板关键词、级别与节点 ID 结构化过滤 |
 | **`v0.5.0`** | **纯本地轻量混合检索 (BM25 + 稠密向量)** | • 纯前端轻量内存分词与倒排索引（Local 模式零依赖）<br>• RRF (Reciprocal Rank Fusion) 倒排与向量加权融合召回算法<br>• 检索结果匹配分值与命中关键词可视化高亮 |
 | **`v0.5.2`** | **交叉重排 Reranker API 深度集成** | • 接入 SiliconFlow、Cohere、Jina 等主流轻量重排 API<br>• 知识库检索节点新增 Rerank 开关与 Top-N 最终阈值滑块<br>• 上下文去噪与压缩基准验证 |
@@ -106,3 +107,4 @@ v0.6.0 (Docker私有部署大考) ◄── v0.5.8 (快照与归档) ◄── v
 - [x] **Phase 4 (v0.4.2)**：AI 智能体能力层、ReAct 自主循环与多模态工具调用 (2026-09-13)
 - [x] **Phase 4.1 (v0.4.4)**：Agent 运行时加固、配置规范化与可靠性基线 (2026-09-16)
 - [x] **Phase 4.2 (v0.4.6)**：画布工效学、全节点 1 句话精准悬停说明、精准报错诊断定焦与高频交互生产力 (2026-09-17)
+- [x] **Phase 4.3 (v0.4.6)**：空画布灵感引导、场景模板画廊、节点渐进式无代码与草稿安全体系 (2026-09-17)

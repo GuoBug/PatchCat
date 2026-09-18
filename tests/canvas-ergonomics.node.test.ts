@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { HistoryManager } from '../src/engine/history-manager.ts';
 import { BrowserWorkflowEngine } from '../src/engine/browser-engine.ts';
 import type { WorkflowNode, WorkflowEdge, ExecutionEvent } from '../src/engine/types.ts';
+import { resolveAABBCollision } from '../src/stores/workflow-store.ts';
+import { TEMPLATES_META, TEMPLATE_CATEGORIES } from '../src/presets/preset-meta.ts';
 
 async function collectEvents(generator: AsyncGenerator<ExecutionEvent>): Promise<ExecutionEvent[]> {
   const events: ExecutionEvent[] = [];
@@ -210,9 +212,88 @@ describe('v0.4.6 Canvas Ergonomics & Productivity Tests', () => {
       assert.ok(!startedNodeIds.includes('node_start'));
       assert.ok(startedNodeIds.includes('node_failed_branch'));
       assert.ok(startedNodeIds.includes('node_output'));
-
       const workflowComplete = events.find((e) => e.type === 'WORKFLOW_COMPLETE');
       assert.ok(workflowComplete);
+    });
+  });
+
+  describe('v0.4.8 (PRD-013) Drop-to-Add AABB Collision Avoidance', () => {
+    it('preserves target position when no overlapping nodes exist', () => {
+      const existing = [
+        { position: { x: 100, y: 100 }, width: 280, height: 180 },
+      ];
+      // Far away coordinates
+      const res = resolveAABBCollision({ x: 500, y: 500 }, existing);
+      assert.strictEqual(res.x, 500);
+      assert.strictEqual(res.y, 500);
+    });
+
+    it('shifts target position rightwards along DAG vector when colliding with an existing node', () => {
+      const existing = [
+        { position: { x: 100, y: 100 }, width: 280, height: 180 },
+      ];
+      // Overlaps directly at (120, 120)
+      const res = resolveAABBCollision({ x: 120, y: 120 }, existing, 280, 180, 40);
+      // nx (100) + nw (280) + gap (40) = 420
+      assert.strictEqual(res.x, 420);
+      assert.strictEqual(res.y, 120);
+    });
+
+    it('cascades multiple collisions sequentially until clear', () => {
+      const existing = [
+        { position: { x: 100, y: 100 }, width: 280, height: 180 },
+        { position: { x: 420, y: 100 }, width: 280, height: 180 },
+      ];
+      const res = resolveAABBCollision({ x: 100, y: 100 }, existing, 280, 180, 40);
+      // First shift to 420, which also collides, so second shift to 420 + 280 + 40 = 740
+      assert.strictEqual(res.x, 740);
+      assert.strictEqual(res.y, 100);
+    });
+
+    it('wraps downwards when right boundary (> 1800) is reached', () => {
+      const existing = [
+        { position: { x: 1700, y: 100 }, width: 280, height: 180 },
+      ];
+      const res = resolveAABBCollision({ x: 1750, y: 100 }, existing, 280, 180, 40);
+      // Shifting right would put it at 1700 + 280 + 40 = 2020 > 1800, so it wraps to targetPos.x (1750) and y = 100 + 180 + 40 = 320
+      assert.strictEqual(res.x, 1750);
+      assert.strictEqual(res.y, 320);
+    });
+  });
+
+  describe('v0.4.8 (PRD-013) Scenario Template Gallery Metadata Integrity', () => {
+    it('verifies all 8 scenario templates have complete metadata, tags, and pipelines in both languages', () => {
+      const zhKeys = Object.keys(TEMPLATES_META.zh);
+      const enKeys = Object.keys(TEMPLATES_META.en);
+      assert.strictEqual(zhKeys.length, 8);
+      assert.strictEqual(enKeys.length, 8);
+
+      for (const lang of ['zh', 'en'] as const) {
+        for (const [key, tpl] of Object.entries(TEMPLATES_META[lang])) {
+          assert.strictEqual(tpl.key, key);
+          assert.ok(tpl.name, `Template ${key} missing name in ${lang}`);
+          assert.ok(tpl.shortDesc, `Template ${key} missing shortDesc in ${lang}`);
+          assert.ok(tpl.scenario, `Template ${key} missing scenario in ${lang}`);
+          assert.ok(tpl.category, `Template ${key} missing category in ${lang}`);
+          assert.ok(Array.isArray(tpl.pipelineCapsules), `Template ${key} pipelineCapsules must be array`);
+          assert.ok(tpl.pipelineCapsules.length >= 3, `Template ${key} should have at least 3 pipeline nodes`);
+          assert.ok(tpl.difficulty, `Template ${key} difficulty must exist`);
+        }
+      }
+    });
+
+    it('verifies all categories in TEMPLATE_CATEGORIES are unique and have labels', () => {
+      for (const lang of ['zh', 'en'] as const) {
+        const categories = TEMPLATE_CATEGORIES[lang];
+        assert.ok(categories.length >= 6);
+        const catIds = categories.map((c) => c.id);
+        const uniqueIds = new Set(catIds);
+        assert.strictEqual(catIds.length, uniqueIds.size);
+        for (const c of categories) {
+          assert.ok(c.name);
+          assert.ok(c.icon);
+        }
+      }
     });
   });
 });

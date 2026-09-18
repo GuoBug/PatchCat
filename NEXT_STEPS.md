@@ -2,7 +2,7 @@
 
 > **Current Version**: `v0.4.6` (Completed & Verified ✅)  
 > **Last Updated**: 2026-09-17  
-> **Previous Milestone**: Phase 4.2 Canvas Ergonomics, Pinpoint Diagnostics & Productivity (`v0.4.6` Shipped ✅)  
+> **Previous Milestone**: Phase 4.2 Canvas Ergonomics & Phase 4.3 Node Ergonomics (`v0.4.6` Shipped ✅)  
 > **Current Target Milestone**: **`v0.4.8` Run Observability & Trace Inspection**  
 
 [English](#english) | [简体中文](#简体中文)
@@ -94,6 +94,33 @@
   - GPU-accelerated animated running edge pulse (`react-flow-dash`).
   - Quick multi-format copy toolbar: `[📋 MD]`, `[💾 TXT]`, and `[{ } JSON]`.
 - [x] **8. Verification**: 223/223 tests passing across 49 test suites, 0 typecheck errors, production build verified.
+
+---
+
+### ⚡ Completed Milestone: Phase 4.3 Empty Canvas Guidance, Scenario Template Gallery, Progressive Low-Code & Draft Recovery Safeguards (v0.4.6)
+
+- [x] **1. Adaptive Empty Canvas Hero Inspiration Card (`EmptyCanvasHero.tsx`)**:
+  - Automatically activates when canvas has 0 nodes, distinguishing first-time explorers from returning users.
+  - Newcomer State: Visual scenario templates entry and guidance for understanding node topologies.
+  - Returning User State: 1-click starter pipeline (`Input ➔ Prompt ➔ LLM`), JSON import, and 300ms smooth fade-out.
+- [x] **2. Categorized Scenario Template Showcase Gallery (`TemplateShowcaseModal.tsx` & `preset-meta.ts`)**:
+  - Curated 8 production scenarios across RAG, routing, arena eval, API, and agent tools.
+  - Visual pipeline capsules (e.g. `Input ➔ Knowledge ➔ Draft ➔ Auditor ➔ Output`), category chips, and search.
+  - One-click full graph population with `fitView` viewport centering.
+- [x] **3. Drop-to-Add Connection & AABB Collision Avoidance Algorithm (`DropToAddMenu.tsx` & `workflow-store.ts`)**:
+  - Releasing in-flight connection on empty canvas brings up an in-place micro-palette.
+  - AABB bounding box collision avoidance guarantees $\ge 40px$ spacing along the DAG vector with boundary wrapping.
+- [x] **4. Progressive Low-Code Node Suite**:
+  - **Code Node (`CodeNodeProperties.tsx`)**: 4 curated production snippets (`markdown_json`, `line_split`, `strip_whitespace`, `merge_dicts`). Folds raw editor by default into a clean card with `[ 🛠️ 高级编辑 ]` toggle for engineers.
+  - **Prompt Node (`PromptNodeProperties.tsx`)**: Static output schema contract derivation at design time without pre-run dependency, `@` popover autocomplete, and fallback syntax (`{{var | 'default'}}`).
+  - **Condition Node (`ConditionNode.tsx`, `ConditionNodeProperties.tsx`, `browser-engine.ts`)**: Dual-mode toggle between Visual Rules Builder and Single-Line JS Expression sandbox with fallback routing.
+- [x] **5. Draft Safety, Save Status & Shadow Recovery Guard (`shadow-draft-manager.ts`, `SaveStatusBadge.tsx`, `ShadowDraftRecoveryBanner.tsx`, `App.tsx`)**:
+  - Real-time save status badge (`🟢 Saved / 🟡 Syncing...`).
+  - Browser `beforeunload` guard during active workflow execution.
+  - Scheme B Shadow Draft time-delta diffing on mount/refresh to restore uncommitted edits with zero data loss.
+- [x] **6. Verification & Automated Test Suite**:
+  - 245 frontend unit tests passing 100% across 57 test suites with 0 typecheck errors and production build verified.
+  - Strictly enforced respectful professional copy across all UI and docs (zero occurrences of '小白').
 
 ---
 
@@ -231,6 +258,32 @@ npm run build
   - GPU 硬件加速连线流动光效（`react-flow-dash`）；
   - Output 节点卡片与属性抽屉输出区提供快速复制工具栏：`[📋 MD]`、`[💾 TXT]`、`[{ } JSON]`。
 - [x] **8. 质量验收**：223 项前端测试全部通过，0 类型错误，生产打包顺利完成。
+
+---
+
+### ⚡ 已交付里程碑：Phase 4.3 空画布灵感引导、场景模板画廊、节点渐进式无代码与草稿安全体系 (v0.4.6)
+
+- [x] **1. 双态自适应空画布英雄卡 (`EmptyCanvasHero.tsx`)**：
+  - 0 节点空画布时中央常驻，智能感知用户类型：
+    - 初次探索者状态：场景化模板画廊入口与认知引导，快速理解节点拓扑；
+    - 资深构建者状态：1 键极速起手常用脚手架（`Input ➔ Prompt ➔ LLM`）、本地 JSON 一键导入、300ms 平滑淡出。
+- [x] **2. 场景化工作流模板画廊 (`TemplateShowcaseModal.tsx` & `preset-meta.ts`)**：
+  - 收录 RAG 事实质检、智能客服分流、模型竞技场、三方 API、智能体工具调用等 8 大精选生产场景；
+  - 胶囊拓扑徽章直观呈现流转管道，支持场景搜索与分类过滤，一键全图装配并自动 `fitView` 聚焦居中。
+- [x] **3. 拖拽松手即建连与 AABB 空间防碰撞算法 (`DropToAddMenu.tsx` & `workflow-store.ts`)**：
+  - 拖拽手柄在空白画布松手弹出就地微型节点选单；
+  - 空间 AABB 碰撞检测与躲避算法，沿 DAG 流向平移并保证 $\ge 40px$ 安全间距，画布右边界智能换行。
+- [x] **4. 节点渐进式低代码套件**：
+  - **Code 节点 (`CodeNodeProperties.tsx`)**：内置 Markdown JSON 提取、单行切分等 4 大生产代码片段，默认折叠为友好状态卡，提供 `[ 🛠️ 高级编辑 ]` 展开 Monaco 原生代码编辑器；
+  - **Prompt 节点 (`PromptNodeProperties.tsx`)**：设计期静态契约推导（无需运行即可感知上游输入字段），光标处 `@` 触发智能候选补全，支持 `{{var | 'fallback'}}` 管道符优雅降级；
+  - **Condition 节点 (`ConditionNode.tsx`, `ConditionNodeProperties.tsx`, `browser-engine.ts`)**：可视规则表单 ⇄ 单行 JS 表达式安全沙箱双模一键切换，错误自动兜底至 fallback 分支。
+- [x] **5. 草稿安全、离开拦截与影子草稿崩溃恢复 (`shadow-draft-manager.ts`, `SaveStatusBadge.tsx`, `ShadowDraftRecoveryBanner.tsx`, `App.tsx`)**：
+  - 顶栏实时保存状态呼吸灯（🟢 已保存 / 🟡 正在同步）；
+  - 画布执行期间原生 `beforeunload` 退出挽留拦截；
+  - 方案 B 影子草稿时序比对，检测到非正常退出时顶部滑出恢复浮条，死守数据 0 丢失。
+- [x] **6. 质量验收与测试体系**：
+  - 全量 245 项前端测试通过率 100%，57 个测试套件，0 类型错误，生产打包顺利完成；
+  - 严格遵循平权叙事规范，全代码库与文档零“小白”字样。
 
 ---
 

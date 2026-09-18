@@ -42,6 +42,7 @@ import { getDefaultNodeConfig, getDefaultNodeLabel } from '../engine/types.ts';
 import { HistoryManager } from '../engine/history-manager.ts';
 import { BrowserWorkflowEngine } from '../engine/browser-engine.ts';
 import { useSettingsStore } from './settings-store.ts';
+import { saveShadowDraft } from '../services/storage/shadow-draft-manager.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Store Interface
@@ -150,6 +151,14 @@ export interface WorkflowStoreState {
   // ── In-Place Local Retry ─────────────────────────────────────────────────
   retryNode: (nodeId: string, options?: { resumeDownstream?: boolean }) => Promise<void>;
   retryAllFailedNodes: () => Promise<void>;
+
+  // ── Drop-to-Add Connection with AABB Collision Avoidance ──────────────────
+  addNodeAndConnect: (params: {
+    type: NodeType;
+    position: { x: number; y: number };
+    sourceNodeId: string;
+    sourceHandle?: string | null;
+  }) => string;
 }
 
 
@@ -189,6 +198,51 @@ const nodeCounters: Record<NodeType, number> = {
  * const addNode = useWorkflowStore(s => s.addNode);
  * ```
  */
+/**
+ * AABB Bounding-box spatial collision detection and avoidance algorithm.
+ * Guarantees a minimum gap (default 40px) between candidate node box and all existing nodes.
+ */
+export function resolveAABBCollision(
+  targetPos: { x: number; y: number },
+  existingNodes: Array<{ position: { x: number; y: number }; width?: number; height?: number }>,
+  nodeWidth = 280,
+  nodeHeight = 180,
+  gap = 40,
+): { x: number; y: number } {
+  let { x, y } = targetPos;
+  let hasCollision = true;
+  let attempts = 0;
+  const maxAttempts = 20;
+
+  while (hasCollision && attempts < maxAttempts) {
+    hasCollision = false;
+    for (const node of existingNodes) {
+      const nw = node.width || nodeWidth;
+      const nh = node.height || nodeHeight;
+      const nx = node.position.x;
+      const ny = node.position.y;
+
+      const overlapX = x < nx + nw + gap && x + nodeWidth + gap > nx;
+      const overlapY = y < ny + nh + gap && y + nodeHeight + gap > ny;
+
+      if (overlapX && overlapY) {
+        hasCollision = true;
+        // Offset along DAG pipeline vector (shift rightwards)
+        x = nx + nw + gap;
+        // Wrap down if shifted too far right
+        if (x > 1800) {
+          x = targetPos.x;
+          y = ny + nh + gap;
+        }
+        break;
+      }
+    }
+    attempts++;
+  }
+
+  return { x: Math.round(x), y: Math.round(y) };
+}
+
 const historyManager = new HistoryManager(25);
 
 export const useWorkflowStore = create<WorkflowStoreState>()(
@@ -344,6 +398,62 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
       return id;
     },
 
+    addNodeAndConnect: (params) => {
+      const { type, position, sourceNodeId, sourceHandle } = params;
+      get().captureSnapshot();
+
+      const adjustedPos = resolveAABBCollision(position, get().nodes);
+
+      nodeCounters[type] += 1;
+      const id = `${type}_${nanoid(8)}`;
+      const label = `${getDefaultNodeLabel(type)} #${nodeCounters[type]}`;
+
+      const nodeConfig = getDefaultNodeConfig(type);
+      if (type === 'llm' || type === 'agent') {
+        try {
+          const settings = useSettingsStore.getState();
+          const activeProv = settings.providers[settings.activeProvider];
+          if (activeProv?.defaultModel) {
+            nodeConfig['model'] = activeProv.defaultModel;
+          }
+        } catch {
+          // Keep default
+        }
+      }
+
+      const newNode: WorkflowNode = {
+        id,
+        type,
+        position: adjustedPos,
+        data: {
+          label,
+          type,
+          status: 'idle',
+          inputs: {},
+          outputs: {},
+          config: nodeConfig,
+        },
+      };
+
+      const newEdge: WorkflowEdge = {
+        id: `edge-${nanoid(8)}`,
+        source: sourceNodeId,
+        sourceHandle: sourceHandle || null,
+        target: id,
+        targetHandle: 'input',
+        animated: false,
+        type: 'default',
+      };
+
+      set((state) => {
+        state.nodes.push(newNode);
+        state.edges.push(newEdge);
+        state.selectedNodeId = id;
+      });
+
+      return id;
+    },
+
     updateNodeData: (nodeId, data) => {
       set((state) => {
         const node = state.nodes.find((n) => n.id === nodeId);
@@ -351,6 +461,13 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
           Object.assign(node.data, data);
         }
       });
+      const activeWorkflowId =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('patchcat_active_workflow_v2')
+          : null;
+      if (activeWorkflowId) {
+        saveShadowDraft(activeWorkflowId, nodeId, data);
+      }
     },
 
     updateNodeConfig: (nodeId, config) => {
@@ -360,6 +477,13 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
           node.data.config = { ...node.data.config, ...config };
         }
       });
+      const activeWorkflowId =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('patchcat_active_workflow_v2')
+          : null;
+      if (activeWorkflowId) {
+        saveShadowDraft(activeWorkflowId, nodeId, { config });
+      }
     },
 
     // ── Execution Control ──────────────────────────────────────────────────

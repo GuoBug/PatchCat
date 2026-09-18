@@ -9,16 +9,22 @@ import {
   KnowledgeDetailDrawer,
   ChatDebugPanel,
   PublishApiModal,
+  ShadowDraftRecoveryBanner,
 } from './components/panels';
 import { WorkflowCanvas } from './components/canvas';
 import { useWorkflowStore } from './stores/workflow-store.ts';
 import { useSettingsStore } from './stores/settings-store.ts';
 import { useProjectStore } from './stores/project-store.ts';
 import { useKnowledgeStore } from './stores/knowledge-store.ts';
+import {
+  ShadowDraftManager,
+  type ShadowDraft,
+} from './services/storage/shadow-draft-manager.ts';
 
 export const App: React.FC = () => {
   const loadPreset = useWorkflowStore((s) => s.loadPreset);
   const theme = useWorkflowStore((s) => s.theme);
+  const isExecuting = useWorkflowStore((s) => s.isExecuting);
   const currentView = useSettingsStore((s) => s.currentView);
   const language = useSettingsStore((s) => s.language);
   const storageMode = useSettingsStore((s) => s.storageMode);
@@ -59,6 +65,37 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Page leave guard: Prevent unload when isExecuting is true
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isExecuting) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isExecuting]);
+
+  // Check whether an unsynced shadow draft exists for active workflow
+  const [recoveryDraft, setRecoveryDraft] = useState<ShadowDraft | null>(null);
+
+  useEffect(() => {
+    if (!activeWorkflowId) return;
+    const currentWf = workflows.find((w) => w.id === activeWorkflowId);
+    const currentUpdatedAt = currentWf?.updatedAt || 0;
+    const { needed, draft } = ShadowDraftManager.checkRecoveryNeeded(
+      activeWorkflowId,
+      currentUpdatedAt,
+    );
+    if (needed && draft) {
+      setRecoveryDraft(draft);
+    } else {
+      setRecoveryDraft(null);
+    }
+  }, [activeWorkflowId, workflows]);
+
   // Seed / load initial workflow from project store on mount
   useEffect(() => {
     if (!initialLoadedRef.current) {
@@ -81,6 +118,14 @@ export const App: React.FC = () => {
           theme === 'dark' ? 'dark bg-[#0B0F17] text-slate-100' : 'bg-slate-50 text-slate-900'
         }`}
       >
+        {/* Unsynced Shadow Draft Recovery Banner */}
+        {recoveryDraft && (
+          <ShadowDraftRecoveryBanner
+            draft={recoveryDraft}
+            onRestore={() => setRecoveryDraft(null)}
+            onDiscard={() => setRecoveryDraft(null)}
+          />
+        )}
         {currentView === 'canvas' ? (
           <>
             {/* Top Navigation & Controls */}

@@ -15,6 +15,7 @@ import { useSettingsStore } from './settings-store.ts';
 import { PRESETS_DATA } from '../presets/index.ts';
 import { getStorageAdapter } from '../services/storage/storage-adapter.ts';
 import { RUNTIME_DEFAULTS } from '../config/runtime-defaults.ts';
+import { clearShadowDraft } from '../services/storage/shadow-draft-manager.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Types & Interfaces
@@ -56,8 +57,10 @@ export interface ProjectStoreState {
   isSidebarOpen: boolean;
   searchQuery: string;
   isLoading: boolean;
+  saveStatus: 'saved' | 'saving';
 
   // Actions
+  setSaveStatus: (status: 'saved' | 'saving') => void;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
   setSearchQuery: (query: string) => void;
@@ -360,6 +363,7 @@ export function cancelAutoSaveTimer(): void {
 
 export function scheduleAutoSave(): void {
   cancelAutoSaveTimer();
+  useProjectStore.getState().setSaveStatus('saving');
   const debounceMs =
     useSettingsStore.getState().editorPreferences?.autoSaveDebounceMs ??
     RUNTIME_DEFAULTS.AUTOSAVE_DEBOUNCE_MS;
@@ -394,6 +398,13 @@ export const useProjectStore = create<ProjectStoreState>()(
       isSidebarOpen: initialSidebarOpen,
       searchQuery: '',
       isLoading: false,
+      saveStatus: 'saved',
+
+      setSaveStatus: (status) => {
+        set((state) => {
+          state.saveStatus = status;
+        });
+      },
 
       setSidebarOpen: (open) => {
         if (typeof window !== 'undefined') {
@@ -552,6 +563,7 @@ export const useProjectStore = create<ProjectStoreState>()(
 
         set((state) => {
           state.activeWorkflowId = id;
+          state.saveStatus = 'saved';
         });
 
         // If nodes/edges are empty (lazy-loaded from server), fetch details from adapter
@@ -596,6 +608,7 @@ export const useProjectStore = create<ProjectStoreState>()(
         const currentInputs = useWorkflowStore.getState().globalInputs;
 
         set((state) => {
+          state.saveStatus = 'saved';
           const wf = state.workflows.find((w) => w.id === targetId);
           if (wf && !wf.isLocked) {
             wf.nodes = currentNodes;
@@ -604,6 +617,8 @@ export const useProjectStore = create<ProjectStoreState>()(
             wf.updatedAt = Date.now();
           }
         });
+
+        clearShadowDraft();
 
         persistToLocalStorage(get().folders, get().workflows, get().activeWorkflowId);
 

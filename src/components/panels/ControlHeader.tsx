@@ -30,6 +30,7 @@ import { validateGraphTopology } from '../../engine/topological-sort.ts';
 import type { NodeType, TokenUsage } from '../../engine/types.ts';
 import { CatLogo } from '../icons/CatLogo.tsx';
 import { PROJECT_VERSION } from '../../config/project.ts';
+import { SaveStatusBadge } from './SaveStatusBadge.tsx';
 
 export interface AlertNotification {
   type: 'error' | 'warning';
@@ -616,6 +617,9 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
               <Moon className="w-4 h-4 text-slate-600" />
             )}
           </button>
+
+          {/* Real-time Save Status Badge */}
+          <SaveStatusBadge />
 
           {/* Real-time execution timer badge */}
           {executionTimeMs !== null && (

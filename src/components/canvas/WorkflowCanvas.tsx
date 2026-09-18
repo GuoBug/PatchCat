@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useEffect } from 'react';
+import React, { useCallback, useMemo, useEffect, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -9,14 +9,19 @@ import {
   OnNodesChange,
   OnEdgesChange,
   OnConnect,
+  OnConnectStart,
+  OnConnectEnd,
   useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import { nodeTypes } from '../nodes';
 import { DeletableEdge } from './DeletableEdge';
+import { EmptyCanvasHero } from './EmptyCanvasHero';
+import { DropToAddMenu } from './DropToAddMenu';
+import { TemplateShowcaseModal } from '../panels/TemplateShowcaseModal';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
-import type { WorkflowNode, WorkflowEdge } from '../../engine/types.ts';
+import type { WorkflowNode, WorkflowEdge, NodeType } from '../../engine/types.ts';
 
 export const WorkflowCanvas: React.FC = () => {
   const nodes = useWorkflowStore((s) => s.nodes);
@@ -24,6 +29,7 @@ export const WorkflowCanvas: React.FC = () => {
   const onNodesChange = useWorkflowStore((s) => s.onNodesChange);
   const onEdgesChange = useWorkflowStore((s) => s.onEdgesChange);
   const onConnect = useWorkflowStore((s) => s.onConnect);
+  const addNodeAndConnect = useWorkflowStore((s) => s.addNodeAndConnect);
   const setSelectedNodeId = useWorkflowStore((s) => s.setSelectedNodeId);
   const theme = useWorkflowStore((s) => s.theme);
 
@@ -35,7 +41,20 @@ export const WorkflowCanvas: React.FC = () => {
   const copySelectedNodes = useWorkflowStore((s) => s.copySelectedNodes);
   const pasteNodes = useWorkflowStore((s) => s.pasteNodes);
 
-  const { setCenter, getNode } = useReactFlow();
+  const { setCenter, getNode, screenToFlowPosition } = useReactFlow();
+
+  // Template Showcase Modal state
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+
+  // Drop-to-Add Connection state
+  const connectingNodeRef = useRef<{ nodeId: string; handleId: string | null } | null>(null);
+  const [dropMenu, setDropMenu] = useState<{
+    isOpen: boolean;
+    screenPos: { x: number; y: number };
+    flowPos: { x: number; y: number };
+    sourceNodeId: string;
+    sourceHandle?: string | null;
+  } | null>(null);
 
   // Smoothly center and focus on target node (e.g. from error diagnostics)
   useEffect(() => {
@@ -153,6 +172,74 @@ export const WorkflowCanvas: React.FC = () => {
 
   const isDark = theme === 'dark';
 
+  // Track start of edge connection
+  const handleConnectStart: OnConnectStart = useCallback((_, params) => {
+    if (params.nodeId && params.handleType === 'source') {
+      connectingNodeRef.current = { nodeId: params.nodeId, handleId: params.handleId };
+    } else {
+      connectingNodeRef.current = null;
+    }
+  }, []);
+
+  // When connection completes onto a valid handle
+  const handleConnect: OnConnect = useCallback(
+    (connection) => {
+      connectingNodeRef.current = null;
+      onConnect(connection);
+    },
+    [onConnect],
+  );
+
+  // When edge is dropped on empty canvas space
+  const handleConnectEnd: OnConnectEnd = useCallback(
+    (event) => {
+      if (!connectingNodeRef.current) return;
+
+      const target = event.target as HTMLElement | null;
+      const isHandle = target?.closest('.react-flow__handle');
+
+      if (!isHandle) {
+        const clientX =
+          'clientX' in event
+            ? event.clientX
+            : (event as unknown as TouchEvent).changedTouches?.[0]?.clientX;
+        const clientY =
+          'clientY' in event
+            ? event.clientY
+            : (event as unknown as TouchEvent).changedTouches?.[0]?.clientY;
+
+        if (clientX !== undefined && clientY !== undefined) {
+          const flowPos = screenToFlowPosition({ x: clientX, y: clientY });
+          setDropMenu({
+            isOpen: true,
+            screenPos: { x: clientX, y: clientY },
+            flowPos,
+            sourceNodeId: connectingNodeRef.current.nodeId,
+            sourceHandle: connectingNodeRef.current.handleId,
+          });
+        }
+      }
+
+      connectingNodeRef.current = null;
+    },
+    [screenToFlowPosition],
+  );
+
+  // When node is selected from DropToAddMenu
+  const handleDropSelectNode = useCallback(
+    (type: NodeType) => {
+      if (!dropMenu) return;
+      addNodeAndConnect({
+        type,
+        position: dropMenu.flowPos,
+        sourceNodeId: dropMenu.sourceNodeId,
+        sourceHandle: dropMenu.sourceHandle,
+      });
+      setDropMenu(null);
+    },
+    [dropMenu, addNodeAndConnect],
+  );
+
   return (
     <div
       className={`w-full h-full relative transition-colors duration-200 ${isDark ? 'bg-[#0B0F17]' : 'bg-slate-50'}`}
@@ -163,7 +250,9 @@ export const WorkflowCanvas: React.FC = () => {
         edges={edges}
         onNodesChange={onNodesChange as OnNodesChange<WorkflowNode>}
         onEdgesChange={onEdgesChange as OnEdgesChange<WorkflowEdge>}
-        onConnect={onConnect as OnConnect}
+        onConnect={handleConnect}
+        onConnectStart={handleConnectStart}
+        onConnectEnd={handleConnectEnd}
         onNodeDragStop={() => captureSnapshot()}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
@@ -209,6 +298,24 @@ export const WorkflowCanvas: React.FC = () => {
           maskColor={isDark ? 'rgba(11, 15, 23, 0.75)' : 'rgba(248, 250, 252, 0.75)'}
         />
       </ReactFlow>
+
+      {/* Empty Canvas Hero (shown when nodes.length === 0) */}
+      <EmptyCanvasHero onOpenTemplateGallery={() => setIsTemplateModalOpen(true)} />
+
+      {/* Drop to Add Micro Palette */}
+      {dropMenu?.isOpen && (
+        <DropToAddMenu
+          position={dropMenu.screenPos}
+          onSelectNodeType={handleDropSelectNode}
+          onClose={() => setDropMenu(null)}
+        />
+      )}
+
+      {/* Template Showcase Gallery Modal */}
+      <TemplateShowcaseModal
+        isOpen={isTemplateModalOpen}
+        onClose={() => setIsTemplateModalOpen(false)}
+      />
     </div>
   );
 };

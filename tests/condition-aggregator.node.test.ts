@@ -1,4 +1,4 @@
-﻿import { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { evaluateCondition, BrowserWorkflowEngine } from "../src/engine/browser-engine.ts";
 import { getDefaultNodeConfig } from "../src/engine/types.ts";
@@ -260,6 +260,198 @@ describe("Phase 3: Condition Node & Variable Aggregator Node", () => {
 
       assert.ok(outputs["agg_1"]?.all_inputs);
       assert.deepStrictEqual(outputs["agg_1"]?.all_inputs["input_a"], { val: "First" });
+    });
+  });
+
+  describe("PRD-013 Module 3: Condition Node Dual-Mode (Advanced JS Expression)", () => {
+    function makeNode(
+      id: string,
+      type: any,
+      inputs: Record<string, unknown> = {},
+      config: Record<string, unknown> = {},
+    ): WorkflowNode {
+      return {
+        id,
+        type,
+        position: { x: 0, y: 0 },
+        data: {
+          label: id,
+          type,
+          status: "idle",
+          inputs,
+          outputs: {},
+          config: { ...getDefaultNodeConfig(type), ...config },
+        },
+      };
+    }
+
+    it("evaluates truthy JS expression and routes to expressionTargetHandle", async () => {
+      const nodes: WorkflowNode[] = [
+        makeNode("input_1", "input", { urgency: 5, sentiment: "negative" }),
+        makeNode(
+          "cond_expr",
+          "condition",
+          {
+            urgency: "{{input_1.urgency}}",
+            sentiment: "{{input_1.sentiment}}",
+          },
+          {
+            mode: "expression",
+            expression: "inputs.urgency >= 4 && inputs.sentiment === 'negative'",
+            expressionTargetHandle: "escalate_tier2",
+            defaultBranch: "standard_routing",
+          },
+        ),
+        makeNode("prompt_escalate", "prompt", { template: "Escalate Prompt" }),
+        makeNode("prompt_standard", "prompt", { template: "Standard Prompt" }),
+        makeNode("agg_1", "aggregator", {}, { mode: "first_available" }),
+      ];
+
+      const edges: WorkflowEdge[] = [
+        { id: "e1", source: "input_1", target: "cond_expr" },
+        { id: "e2", source: "cond_expr", sourceHandle: "escalate_tier2", target: "prompt_escalate" },
+        { id: "e3", source: "cond_expr", sourceHandle: "standard_routing", target: "prompt_standard" },
+        { id: "e4", source: "prompt_escalate", target: "agg_1" },
+        { id: "e5", source: "prompt_standard", target: "agg_1" },
+      ];
+
+      const engine = new BrowserWorkflowEngine();
+      const events = await collectEvents(engine.executeWorkflow({ nodes, edges }));
+
+      const finalEv = events.find((e) => e.type === "WORKFLOW_COMPLETE");
+      assert.ok(finalEv);
+      const outputs = (finalEv.payload as any).outputs;
+
+      // Active branch should be escalate_tier2
+      assert.strictEqual(outputs["cond_expr"]?.activeBranch, "escalate_tier2");
+      assert.strictEqual(outputs["prompt_escalate"]?.promptText, "Escalate Prompt");
+      assert.strictEqual(outputs["prompt_standard"], undefined);
+      assert.strictEqual(outputs["agg_1"]?.result, "Escalate Prompt");
+
+      // Verify standard branch was skipped
+      const skippedEvents = events.filter((e) => e.type === "NODE_SKIPPED");
+      const skippedIds = skippedEvents.map((e) => (e.payload as any).nodeId);
+      assert.ok(skippedIds.includes("prompt_standard"));
+    });
+
+    it("evaluates falsy JS expression and routes to defaultBranch (else)", async () => {
+      const nodes: WorkflowNode[] = [
+        makeNode("input_1", "input", { urgency: 2, sentiment: "positive" }),
+        makeNode(
+          "cond_expr",
+          "condition",
+          {
+            urgency: "{{input_1.urgency}}",
+            sentiment: "{{input_1.sentiment}}",
+          },
+          {
+            mode: "expression",
+            expression: "inputs.urgency >= 4 && inputs.sentiment === 'negative'",
+            expressionTargetHandle: "escalate_tier2",
+            defaultBranch: "standard_routing",
+          },
+        ),
+        makeNode("prompt_escalate", "prompt", { template: "Escalate Prompt" }),
+        makeNode("prompt_standard", "prompt", { template: "Standard Prompt" }),
+        makeNode("agg_1", "aggregator", {}, { mode: "first_available" }),
+      ];
+
+      const edges: WorkflowEdge[] = [
+        { id: "e1", source: "input_1", target: "cond_expr" },
+        { id: "e2", source: "cond_expr", sourceHandle: "escalate_tier2", target: "prompt_escalate" },
+        { id: "e3", source: "cond_expr", sourceHandle: "standard_routing", target: "prompt_standard" },
+        { id: "e4", source: "prompt_escalate", target: "agg_1" },
+        { id: "e5", source: "prompt_standard", target: "agg_1" },
+      ];
+
+      const engine = new BrowserWorkflowEngine();
+      const events = await collectEvents(engine.executeWorkflow({ nodes, edges }));
+
+      const finalEv = events.find((e) => e.type === "WORKFLOW_COMPLETE");
+      assert.ok(finalEv);
+      const outputs = (finalEv.payload as any).outputs;
+
+      // Active branch should be standard_routing
+      assert.strictEqual(outputs["cond_expr"]?.activeBranch, "standard_routing");
+      assert.strictEqual(outputs["prompt_escalate"], undefined);
+      assert.strictEqual(outputs["prompt_standard"]?.promptText, "Standard Prompt");
+      assert.strictEqual(outputs["agg_1"]?.result, "Standard Prompt");
+
+      const skippedEvents = events.filter((e) => e.type === "NODE_SKIPPED");
+      const skippedIds = skippedEvents.map((e) => (e.payload as any).nodeId);
+      assert.ok(skippedIds.includes("prompt_escalate"));
+    });
+
+    it("safely catches syntax or runtime errors in JS expression and routes to defaultBranch", async () => {
+      const nodes: WorkflowNode[] = [
+        makeNode("input_1", "input", { score: 95 }),
+        makeNode(
+          "cond_expr",
+          "condition",
+          { score: "{{input_1.score}}" },
+          {
+            mode: "expression",
+            expression: "inputs.nonExistent.badProperty.deeper >= 100", // Throws TypeError
+            expressionTargetHandle: "if_true",
+            defaultBranch: "else",
+          },
+        ),
+        makeNode("prompt_true", "prompt", { template: "True Prompt" }),
+        makeNode("prompt_else", "prompt", { template: "Else Prompt" }),
+      ];
+
+      const edges: WorkflowEdge[] = [
+        { id: "e1", source: "input_1", target: "cond_expr" },
+        { id: "e2", source: "cond_expr", sourceHandle: "if_true", target: "prompt_true" },
+        { id: "e3", source: "cond_expr", sourceHandle: "else", target: "prompt_else" },
+      ];
+
+      const engine = new BrowserWorkflowEngine();
+      const events = await collectEvents(engine.executeWorkflow({ nodes, edges }));
+
+      const finalEv = events.find((e) => e.type === "WORKFLOW_COMPLETE");
+      assert.ok(finalEv);
+      const outputs = (finalEv.payload as any).outputs;
+
+      // Safe fallback to else branch without crashing workflow
+      assert.strictEqual(outputs["cond_expr"]?.activeBranch, "else");
+      assert.strictEqual(outputs["prompt_else"]?.promptText, "Else Prompt");
+      assert.strictEqual(outputs["prompt_true"], undefined);
+    });
+
+    it("supports access to context in JS expression mode", async () => {
+      const nodes: WorkflowNode[] = [
+        makeNode("input_1", "input", { userRole: "admin" }),
+        makeNode(
+          "cond_expr",
+          "condition",
+          {},
+          {
+            mode: "expression",
+            expression: "context['input_1']?.userRole === 'admin'",
+            expressionTargetHandle: "admin_route",
+            defaultBranch: "guest_route",
+          },
+        ),
+        makeNode("prompt_admin", "prompt", { template: "Admin Dashboard" }),
+        makeNode("prompt_guest", "prompt", { template: "Guest Portal" }),
+      ];
+
+      const edges: WorkflowEdge[] = [
+        { id: "e1", source: "input_1", target: "cond_expr" },
+        { id: "e2", source: "cond_expr", sourceHandle: "admin_route", target: "prompt_admin" },
+        { id: "e3", source: "cond_expr", sourceHandle: "guest_route", target: "prompt_guest" },
+      ];
+
+      const engine = new BrowserWorkflowEngine();
+      const events = await collectEvents(engine.executeWorkflow({ nodes, edges }));
+
+      const finalEv = events.find((e) => e.type === "WORKFLOW_COMPLETE");
+      assert.ok(finalEv);
+      const outputs = (finalEv.payload as any).outputs;
+
+      assert.strictEqual(outputs["cond_expr"]?.activeBranch, "admin_route");
+      assert.strictEqual(outputs["prompt_admin"]?.promptText, "Admin Dashboard");
     });
   });
 });

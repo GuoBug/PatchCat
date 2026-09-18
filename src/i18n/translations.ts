@@ -156,6 +156,17 @@ export interface Translations {
     fallbackBranchTitle: string;
     fallbackBranchPlaceholder: string;
     fallbackBranchHint: string;
+    // Condition Node Dual-Mode
+    conditionModeVisual: string;
+    conditionModeExpression: string;
+    expressionCodeLabel: string;
+    expressionPlaceholder: string;
+    expressionTemplatesLabel: string;
+    expressionTargetHandleLabel: string;
+    expressionTargetHandleHint: string;
+    logicalOperatorLabel: string;
+    logicalOperatorAnd: string;
+    logicalOperatorOr: string;
     // Aggregator Node
     aggregatorModeTitle: string;
     aggFirstAvailableLabel: string;
@@ -545,6 +556,46 @@ export interface Translations {
     tokenBudgetTooltip: string;
     temperatureTooltip: string;
   };
+  emptyCanvas: {
+    newcomerTitle: string;
+    newcomerDesc: string;
+    newcomerCta: string;
+    returningTitle: string;
+    returningDesc: string;
+    returningCta: string;
+    quickStarter: string;
+    importJson: string;
+    addBlankNode: string;
+  };
+  templateGallery: {
+    title: string;
+    subtitle: string;
+    searchPlaceholder: string;
+    allCategories: string;
+    useTemplateBtn: string;
+    scenarioLabel: string;
+    topologyLabel: string;
+    tagsLabel: string;
+    difficultyLabel: string;
+    nodesCount: string;
+    importedToast: string;
+  };
+  saveStatus: {
+    saved: string;
+    saving: string;
+    justNow: string;
+  };
+  draftRecovery: {
+    bannerTitle: string;
+    bannerDesc: string;
+    restoreBtn: string;
+    discardBtn: string;
+  };
+  dropToAdd: {
+    title: string;
+    subtitle: string;
+    searchPlaceholder: string;
+  };
 }
 
 export const translations: Record<Language, Translations> = {
@@ -707,6 +758,17 @@ export const translations: Record<Language, Translations> = {
       fallbackBranchTitle: 'Fallback / Else Branch:',
       fallbackBranchPlaceholder: 'else',
       fallbackBranchHint: 'Activated if none of the above conditions evaluate to true.',
+      // Condition Node Dual-Mode
+      conditionModeVisual: 'Visual Rules (Low-Code)',
+      conditionModeExpression: 'Advanced JS Expression',
+      expressionCodeLabel: 'JavaScript Expression (Single-line):',
+      expressionPlaceholder: "e.g. inputs.urgency >= 4 && inputs.sentiment === 'negative'",
+      expressionTemplatesLabel: 'Quick Templates:',
+      expressionTargetHandleLabel: 'Truthy Target Branch:',
+      expressionTargetHandleHint: 'Activated when expression evaluates to truthy.',
+      logicalOperatorLabel: 'Multi-rule Relation:',
+      logicalOperatorAnd: 'AND (Match All)',
+      logicalOperatorOr: 'OR (Match Any)',
       // Aggregator Node
       aggregatorModeTitle: 'Variable Reconvergence Mode',
       aggFirstAvailableLabel: 'First Available',
@@ -1123,6 +1185,46 @@ export const translations: Record<Language, Translations> = {
       tokenBudgetTooltip: 'Token Budget Limiter: Hard limit on total tokens consumed in a single execution to prevent unexpected costs.',
       temperatureTooltip: 'Sampling Temperature: Controls output variance. Lower values yield deterministic, focused responses; higher values encourage creativity.',
     },
+    emptyCanvas: {
+      newcomerTitle: 'Build Your First AI Automation Workflow',
+      newcomerDesc: 'Zero learning curve. Explore the power of LLM orchestration through battle-tested industrial scenario templates.',
+      newcomerCta: 'Start from Scenario Templates (Recommended)',
+      returningTitle: 'Start Orchestrating New Workflow',
+      returningDesc: 'Pick a scenario scaffolding template to accelerate delivery, or insert starter nodes directly.',
+      returningCta: 'Browse Scenario Scaffolds',
+      quickStarter: 'Quick Start: Starter Flow (Input ➔ Prompt ➔ LLM)',
+      importJson: 'Import Workflow (JSON)',
+      addBlankNode: 'Add Blank Starting Node',
+    },
+    templateGallery: {
+      title: 'Workflow Scenario Showcase Gallery',
+      subtitle: 'Select from battle-tested production scenarios. Automatically imports full pipeline topology with fit-to-view.',
+      searchPlaceholder: 'Search templates by scenario, keywords, or tags...',
+      allCategories: 'All Scenarios',
+      useTemplateBtn: 'Use Template & Load to Canvas',
+      scenarioLabel: 'Business Scenario',
+      topologyLabel: 'Data Pipeline Topology',
+      tagsLabel: 'Key Capabilities',
+      difficultyLabel: 'Complexity',
+      nodesCount: '{count} nodes',
+      importedToast: 'Template successfully loaded onto canvas',
+    },
+    saveStatus: {
+      saved: 'Saved to local storage',
+      saving: 'Syncing changes...',
+      justNow: 'just now',
+    },
+    draftRecovery: {
+      bannerTitle: 'Unsaved Edit Draft Detected',
+      bannerDesc: 'A newer editing draft was found from an unsaved session. Would you like to restore it?',
+      restoreBtn: 'Restore Draft',
+      discardBtn: 'Discard Draft',
+    },
+    dropToAdd: {
+      title: 'Connect to New Node',
+      subtitle: 'Select a downstream node to create and connect automatically',
+      searchPlaceholder: 'Search node types...',
+    },
   },
   zh: {
     common: {
@@ -1282,6 +1384,17 @@ export const translations: Record<Language, Translations> = {
       fallbackBranchTitle: '默认兜底分支 (Else):',
       fallbackBranchPlaceholder: 'else',
       fallbackBranchHint: '当上方所有条件均未命中时将走此分支。',
+      // Condition Node Dual-Mode
+      conditionModeVisual: '可视规则表单 (轻代码)',
+      conditionModeExpression: '高级 JS 表达式 (极客模式)',
+      expressionCodeLabel: 'JavaScript 表达式 (单行执行):',
+      expressionPlaceholder: "例如: inputs.urgency >= 4 && inputs.sentiment === 'negative'",
+      expressionTemplatesLabel: '常用模板胶囊:',
+      expressionTargetHandleLabel: '条件为真 (Truthy) 命中端口:',
+      expressionTargetHandleHint: '当表达式计算结果为真 (true / truthy) 时激活该分支。',
+      logicalOperatorLabel: '多规则逻辑关系:',
+      logicalOperatorAnd: 'AND (全部满足)',
+      logicalOperatorOr: 'OR (满足其一)',
       // Aggregator Node
       aggregatorModeTitle: '多路分支汇聚重敛模式',
       aggFirstAvailableLabel: '首个有效分支 (First Available)',
@@ -1686,6 +1799,46 @@ export const translations: Record<Language, Translations> = {
       vectorRAGTooltip: '语义向量检索：基于高维语义相似度计算的检索技术。超越传统死板字面匹配，能够按意图查找意思相近的知识切片。',
       tokenBudgetTooltip: 'Token 限额保护：单次执行允许消耗的最大 Token 总量。超出设定值后立即触发安全硬熔断，防范费用失控。',
       temperatureTooltip: '模型采样温度：控制模型输出的发散度 (0.0~2.0)。数值越低输出越确定严谨，数值越高回答越丰富多样。',
+    },
+    emptyCanvas: {
+      newcomerTitle: '开始构建你的第一个 AI 自动化工作流',
+      newcomerDesc: '零门槛开箱即用，通过工业级场景模板探索大模型编排的威力',
+      newcomerCta: '从成熟场景模板起步 (推荐)',
+      returningTitle: '开始编排新工作流',
+      returningDesc: '挑选业务脚手架模板加速开发，或一键放置基础节点起手',
+      returningCta: '浏览场景脚手架模板',
+      quickStarter: '快速起手: 插入基础流 (Input ➔ Prompt ➔ LLM)',
+      importJson: '导入本地工作流 JSON',
+      addBlankNode: '放置空白起始节点',
+    },
+    templateGallery: {
+      title: '工作流场景灵感画廊',
+      subtitle: '挑选经过实战检验的工业级生产场景模板，一键载入全图拓扑并自动居中聚焦。',
+      searchPlaceholder: '按场景业务、关键词或标签搜索模板...',
+      allCategories: '全部场景',
+      useTemplateBtn: '使用此模板并载入画布',
+      scenarioLabel: '业务场景说明',
+      topologyLabel: '节点数据流转链路',
+      tagsLabel: '核心能力标签',
+      difficultyLabel: '复杂度',
+      nodesCount: '{count} 个节点',
+      importedToast: '场景模板已成功导入画布',
+    },
+    saveStatus: {
+      saved: '所有修改已保存至本地',
+      saving: '正在同步保存...',
+      justNow: '刚刚',
+    },
+    draftRecovery: {
+      bannerTitle: '检测到上次未正常同步的编辑草稿',
+      bannerDesc: '草稿比当前已存版本拥有更新的节点配置内容，是否立即一键恢复？',
+      restoreBtn: '一键恢复草稿',
+      discardBtn: '放弃并使用当前版本',
+    },
+    dropToAdd: {
+      title: '快速连线至新节点',
+      subtitle: '选择目标节点，系统将就地生成并自动完成连线',
+      searchPlaceholder: '搜索节点类型...',
     },
   },
 };

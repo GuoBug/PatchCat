@@ -405,6 +405,9 @@ export interface ConditionRule {
 }
 
 export interface ConditionNodeConfig {
+  mode?: 'rules' | 'expression';
+  expression?: string;
+  expressionTargetHandle?: string;
   conditions: ConditionRule[];
   logicalOperator?: 'AND' | 'OR';
   defaultBranch?: string;
@@ -531,6 +534,9 @@ export function getDefaultNodeConfig(type: NodeType): Record<string, unknown> {
       return { knowledgeBaseId: '', query: '', topK: 3, scoreThreshold: 0.0 };
     case 'condition':
       return {
+        mode: 'rules',
+        expression: '',
+        expressionTargetHandle: 'if_true',
         conditions: [
           {
             id: 'rule_1',

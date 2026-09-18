@@ -1143,27 +1143,75 @@ export class BrowserWorkflowEngine {
             actualValue: unknown;
           }> = [];
 
-          for (const rule of conditions) {
-            let val: unknown = undefined;
-            if (rule.variable) {
-              const trimmedVar = rule.variable.trim();
-              if (trimmedVar.startsWith('{{') && trimmedVar.endsWith('}}')) {
-                const resolved = resolveObjectVariables({ v: trimmedVar }, context);
-                val = resolved['v'];
-              } else {
-                val = resolvedInputs[trimmedVar] ?? context[trimmedVar];
+          if (config.mode === 'expression') {
+            const rawExpr = typeof config.expression === 'string' ? config.expression.trim() : '';
+            let isTruthy = false;
+            let actualValue: unknown = undefined;
+
+            if (rawExpr.length > 0) {
+              try {
+                // Safe new Function sandbox evaluating single-line JS expression
+                const code = rawExpr.startsWith('return ') ? rawExpr : `return Boolean(${rawExpr});`;
+                const evaluator = new Function('inputs', 'context', `"use strict"; ${code}`);
+                const evalResult = evaluator(resolvedInputs, context);
+                isTruthy = Boolean(evalResult);
+                actualValue = evalResult;
+              } catch (err: unknown) {
+                isTruthy = false;
+                actualValue = err instanceof Error ? err.message : String(err);
               }
             } else {
-              const firstKey = Object.keys(resolvedInputs)[0];
-              if (firstKey) val = resolvedInputs[firstKey];
+              isTruthy = false;
+              actualValue = 'empty_expression';
             }
 
-            const isMatch = evaluateCondition(rule, val);
-            evaluatedConditions.push({ rule, matched: isMatch, actualValue: val });
-            if (isMatch && !matchedRule) {
-              matchedRule = rule;
-              matchedBranch = rule.targetHandle || 'if_true';
-              break;
+            if (isTruthy) {
+              matchedBranch = config.expressionTargetHandle || 'if_true';
+            } else {
+              matchedBranch = defaultBranch || 'else';
+            }
+
+            const exprRule: ConditionRule = {
+              id: 'expression_rule',
+              variable: rawExpr,
+              operator: 'regex_match',
+              value: 'truthy',
+              targetHandle: config.expressionTargetHandle || 'if_true',
+            };
+
+            if (isTruthy) {
+              matchedRule = exprRule;
+            }
+
+            evaluatedConditions.push({
+              rule: exprRule,
+              matched: isTruthy,
+              actualValue,
+            });
+          } else {
+            // Traditional visual rules (conditions array)
+            for (const rule of conditions) {
+              let val: unknown = undefined;
+              if (rule.variable) {
+                const trimmedVar = rule.variable.trim();
+                if (trimmedVar.startsWith('{{') && trimmedVar.endsWith('}}')) {
+                  const resolved = resolveObjectVariables({ v: trimmedVar }, context);
+                  val = resolved['v'];
+                } else {
+                  val = resolvedInputs[trimmedVar] ?? context[trimmedVar];
+                }
+              } else {
+                const firstKey = Object.keys(resolvedInputs)[0];
+                if (firstKey) val = resolvedInputs[firstKey];
+              }
+
+              const isMatch = evaluateCondition(rule, val);
+              evaluatedConditions.push({ rule, matched: isMatch, actualValue: val });
+              if (isMatch && !matchedRule) {
+                matchedRule = rule;
+                matchedBranch = rule.targetHandle || 'if_true';
+                break;
+              }
             }
           }
 
