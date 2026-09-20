@@ -20,7 +20,7 @@
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" alt="React 18" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-223%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-269%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
@@ -211,13 +211,14 @@ PatchCat comes with ready-to-use industrial presets:
 
 | Layer | Technology |
 | :--- | :--- |
-| **Frontend Framework** | [React 19](https://react.dev/) + [TypeScript 5.8](https://www.typescriptlang.org/) |
+| **Frontend Framework** | [React 18](https://react.dev/) + [TypeScript 5.7+](https://www.typescriptlang.org/) |
 | **Build & Tooling** | [Vite 6](https://vite.dev/) |
 | **Canvas & Nodes** | [@xyflow/react (React Flow v12)](https://reactflow.dev/) |
 | **State Management** | [Zustand](https://github.com/pmndrs/zustand) + [Immer](https://immerjs.github.io/immer/) |
 | **Styling & UI** | [Tailwind CSS v4](https://tailwindcss.com/) + [Lucide Icons](https://lucide.dev/) |
 | **Execution Engine** | Native In-Browser Kahn's DAG Scheduler + SSE Stream Client |
-| **Testing** | Node.js Native Test Runner (`node --test`) |
+| **Backend & Storage** | [FastAPI](https://fastapi.tiangolo.com/) + [SQLAlchemy 2.0](https://www.sqlalchemy.org/) (SQLite / PostgreSQL + pgvector) |
+| **Testing** | Node.js Native Test Runner (`node --test`) + Pytest |
 
 ---
 
@@ -229,10 +230,10 @@ PatchCat comes with ready-to-use industrial presets:
 - [x] Dynamic JavaScript Code Node & Real-Time Transformation Sandbox
 - [x] 3-Tier Enterprise Logging Console & Secret Sanitization
 - [x] Template Import & Export (JSON Schema Draft-07)
-- [ ] RAG & Vector Knowledge Base Node Integration
-- [ ] Multi-Agent Autonomous Conversation Loops
-- [ ] One-Click Workflow Export as Standalone REST API Endpoint
-- [ ] Local Python Server Backend (FastAPI + vLLM Sandbox)
+- [x] RAG & Vector Knowledge Base Node Integration (Zero-setup SQLite / PGVector)
+- [x] Multi-Agent Autonomous Tool Calling Loop (ReAct Agent)
+- [x] One-Click Workflow Export as Standalone REST API Endpoint
+- [x] Local Python Server Backend (FastAPI + Async Engine + Alembic Migrations)
 
 ---
 

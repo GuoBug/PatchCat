@@ -35,6 +35,26 @@ describe('Logger Security Sanitization', () => {
     assert.doesNotMatch(sanitized as string, /eyJhbGci/);
   });
 
+  it('should mask Anthropic API key strings', () => {
+    const raw = 'Client configured with sk-ant-api03-abcdef1234567890qwertyuiop-1234';
+    const sanitized = sanitizeData(raw);
+    assert.match(sanitized as string, /sk-ant-api0\*\*\*\[MASKED\]\*\*\*1234/);
+    assert.doesNotMatch(sanitized as string, /abcdef1234567890qwertyuiop/);
+  });
+
+  it('should mask Cohere API key strings', () => {
+    const raw = 'Cohere client token co-1234abcd5678ef901234abcd5678ef90';
+    const sanitized = sanitizeData(raw);
+    assert.match(sanitized as string, /co-1234\*\*\*\[MASKED\]\*\*\*ef90/);
+  });
+
+  it('should mask Azure and multi-provider headers and assignments', () => {
+    const raw = 'Ocp-Apim-Subscription-Key: 1234567890abcdef1234567890abcdef in request';
+    const sanitized = sanitizeData(raw);
+    assert.match(sanitized as string, /Ocp-Apim-Subscription-Key:\s*\*\*\*\[MASKED\]\*\*\*/i);
+    assert.doesNotMatch(sanitized as string, /1234567890abcdef1234567890abcdef/);
+  });
+
   it('should recursively mask sensitive keys in nested objects and arrays', () => {
     const payload = {
       model: 'gemini-2.5-flash',

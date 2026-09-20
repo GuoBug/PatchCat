@@ -69,6 +69,8 @@ function runInBrowserWorker(
       '  try { self.Worker = undefined; } catch(e) {}',
       '  try { self.SharedWorker = undefined; } catch(e) {}',
       '  try { self.indexedDB = undefined; } catch(e) {}',
+      '  try { self.navigator = undefined; } catch(e) {}',
+      '  try { self.performance = undefined; } catch(e) {}',
       '',
       '  self.onmessage = function(event) {',
       '    var payload = event.data;',

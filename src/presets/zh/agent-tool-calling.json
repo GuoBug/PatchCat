@@ -1,4 +1,4 @@
-﻿{
+{
   "version": "1.0.0",
   "metadata": {
     "id": "f1a2b3c4-0004-4000-a000-000000000002",
@@ -71,7 +71,7 @@
               "name": "calculate",
               "description": "高精度执行代数运算、乘法及手续费折算",
               "type": "builtin_code",
-              "implementation": "return { result: eval(inputs.expression) };",
+              "implementation": "const clean = String(inputs.expression || '').replace(/[^0-9+*\\/().\\s-]/g, ''); return { result: clean ? new Function('return (' + clean + ')')() : 0 };",
               "schema": {
                 "type": "object",
                 "properties": {

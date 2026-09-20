@@ -20,7 +20,7 @@
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" alt="React 18" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/自动化测试-223项全部通过-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/自动化测试-269项全部通过-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
@@ -219,13 +219,14 @@ PatchCat 内置了开箱即用的工业级场景模板：
 
 | 分层 | 采用技术 |
 | :--- | :--- |
-| **前端核心** | [React 19](https://react.dev/) + [TypeScript 5.8](https://www.typescriptlang.org/) |
+| **前端核心** | [React 18](https://react.dev/) + [TypeScript 5.7+](https://www.typescriptlang.org/) |
 | **构建工具** | [Vite 6](https://vite.dev/) |
 | **画布引擎** | [@xyflow/react (React Flow v12)](https://reactflow.dev/) |
 | **状态管理** | [Zustand](https://github.com/pmndrs/zustand) + [Immer](https://immerjs.github.io/immer/) |
 | **样式与组件** | [Tailwind CSS v4](https://tailwindcss.com/) + [Lucide Icons](https://lucide.dev/) |
 | **执行内核** | 纯浏览器端 Kahn 拓扑 DAG 调度器 + SSE 流式解析器 |
-| **自动化测试** | Node.js 原生测试套件 (`node --test`) |
+| **后端与存储** | [FastAPI](https://fastapi.tiangolo.com/) + [SQLAlchemy 2.0](https://www.sqlalchemy.org/) (SQLite / PostgreSQL + pgvector) |
+| **自动化测试** | Node.js 原生测试套件 (`node --test`) + Pytest |
 
 ---
 
@@ -237,10 +238,10 @@ PatchCat 内置了开箱即用的工业级场景模板：
 - [x] 动态 JavaScript 代码节点与沙箱执行
 - [x] 三级企业级日志系统与严格密钥脱敏清洗
 - [x] 工作流模板导入/导出（遵循 JSON Schema Draft-07 标准）
-- [ ] RAG 检索增强与向量知识库节点集成
-- [ ] 多智能体自主协同与多轮会话回路
-- [ ] 一键将可视化工作流发布为独立 REST API 端点
-- [ ] 本地 Python 后端服务支持（FastAPI + vLLM 代码沙箱）
+- [x] RAG 检索增强与向量知识库节点集成（支持本地 SQLite 与 PGVector）
+- [x] 多智能体自主协同与 ReAct 工具调用循环
+- [x] 一键将可视化工作流发布为独立 REST API 端点
+- [x] 本地 Python 后端服务支持（FastAPI + 异步引擎 + Alembic 数据迁移）
 
 ---
 

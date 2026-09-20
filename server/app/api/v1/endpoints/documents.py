@@ -11,6 +11,7 @@ from pypdf import PdfReader
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.models.knowledge import DocumentChunkORM, DocumentORM, KnowledgeBaseORM
 from app.schemas.knowledge import (
@@ -297,7 +298,35 @@ async def upload_document_file(
     _, ext = os.path.splitext(filename)
     ext_lower = ext.lower().lstrip(".")
 
-    file_bytes = await file.read()
+    # Whitelist extension validation
+    if ext_lower not in settings.ALLOWED_UPLOAD_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Unsupported file type '.{ext_lower}'. "
+                f"Allowed extensions: {', '.join(settings.ALLOWED_UPLOAD_EXTENSIONS)}"
+            ),
+        )
+
+    # Stream read with size limit guard against OOM / DoS
+    chunk_read_size = 64 * 1024  # 64 KB
+    chunks = []
+    total_size = 0
+
+    while True:
+        chunk = await file.read(chunk_read_size)
+        if not chunk:
+            break
+        total_size += len(chunk)
+        if total_size > settings.MAX_UPLOAD_SIZE:
+            max_mb = settings.MAX_UPLOAD_SIZE // (1024 * 1024)
+            raise HTTPException(
+                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                detail=f"File exceeds maximum allowed upload size ({max_mb} MB).",
+            )
+        chunks.append(chunk)
+
+    file_bytes = b"".join(chunks)
     raw_text = ""
 
     if ext_lower == "pdf":

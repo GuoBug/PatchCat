@@ -126,3 +126,46 @@ async def test_upload_blank_and_corrupt_pdf(client: AsyncClient):
         files=corrupt_files,
     )
     assert corrupt_resp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_upload_disallowed_extension_fails(client: AsyncClient):
+    kb_resp = await client.post(
+        "/api/v1/knowledge-bases",
+        json={"name": "Extension Guard KB"},
+    )
+    assert kb_resp.status_code == 201
+    kb_id = kb_resp.json()["id"]
+
+    # Upload an unauthorized executable / python file
+    files = {"file": ("exploit.py", b"import os; os.system('echo 1')", "text/x-python")}
+    upload_resp = await client.post(
+        f"/api/v1/knowledge-bases/{kb_id}/upload",
+        files=files,
+    )
+    assert upload_resp.status_code == 400
+    assert "Unsupported file type" in upload_resp.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_upload_file_exceeds_max_size_limit(client: AsyncClient, monkeypatch):
+    from app.core.config import settings
+
+    kb_resp = await client.post(
+        "/api/v1/knowledge-bases",
+        json={"name": "Size Guard KB"},
+    )
+    assert kb_resp.status_code == 201
+    kb_id = kb_resp.json()["id"]
+
+    # Temporarily set max upload size to 256 bytes for test verification
+    monkeypatch.setattr(settings, "MAX_UPLOAD_SIZE", 256)
+
+    large_payload = b"A" * 1024  # 1 KB exceeds 256 bytes
+    files = {"file": ("large_doc.txt", large_payload, "text/plain")}
+    upload_resp = await client.post(
+        f"/api/v1/knowledge-bases/{kb_id}/upload",
+        files=files,
+    )
+    assert upload_resp.status_code == 413
+    assert "maximum allowed upload size" in upload_resp.json()["detail"]

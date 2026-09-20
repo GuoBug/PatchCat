@@ -33,6 +33,9 @@ jobs:
       - name: Run TypeScript Type Check
         run: npm run typecheck
 
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+
   test-frontend:
     name: Frontend Tests
     runs-on: ubuntu-latest

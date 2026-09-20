@@ -22,6 +22,11 @@ from ....schemas.workflow import (
 router = APIRouter()
 
 
+def escape_like(val: str) -> str:
+    """Escapes LIKE wildcard characters (% and _) and backslash."""
+    return val.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 @router.get("", response_model=List[WorkflowSummaryResponse], summary="List Workflows")
 async def list_workflows(
     folder_id: Optional[str] = Query(None, description="Filter by folder ID"),
@@ -37,7 +42,7 @@ async def list_workflows(
         stmt = stmt.where(WorkflowORM.folder_id == folder_id)
 
     if search:
-        stmt = stmt.where(WorkflowORM.name.ilike(f"%{search}%"))
+        stmt = stmt.where(WorkflowORM.name.ilike(f"%{escape_like(search.strip())}%", escape="\\"))
 
     result = await db.execute(stmt)
     workflows = result.scalars().all()

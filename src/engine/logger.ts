@@ -47,6 +47,15 @@ const SENSITIVE_KEY_PATTERNS = [
   /bearer/i,
   /access[_-]?token/i,
   /private[_-]?key/i,
+  /azure/i,
+  /subscription[_-]?key/i,
+  /cohere/i,
+  /anthropic/i,
+  /openai/i,
+  /gemini/i,
+  /deepseek/i,
+  /credential/i,
+  /session[_-]?token/i,
 ];
 
 /**
@@ -60,12 +69,22 @@ export function sanitizeData(value: unknown, seen = new WeakSet()): unknown {
 
   if (typeof value === 'string') {
     let sanitized = value;
-    // Mask sk-*** keys
+    // Mask Anthropic keys (sk-ant-...)
+    sanitized = sanitized.replace(
+      /(sk-ant-[a-zA-Z0-9_-]{4})[a-zA-Z0-9_-]+([a-zA-Z0-9_-]{4})/g,
+      '$1***[MASKED]***$2',
+    );
+    // Mask sk-*** keys (OpenAI, DeepSeek, etc.)
     sanitized = sanitized.replace(
       /(sk-[a-zA-Z0-9_-]{4})[a-zA-Z0-9_-]+([a-zA-Z0-9_-]{4})/g,
       '$1***[MASKED]***$2',
     );
-    // Mask AIzaSy*** keys
+    // Mask Cohere co-*** keys
+    sanitized = sanitized.replace(
+      /(co-[a-zA-Z0-9_-]{4})[a-zA-Z0-9_-]+([a-zA-Z0-9_-]{4})/g,
+      '$1***[MASKED]***$2',
+    );
+    // Mask AIzaSy*** keys (Google Gemini)
     sanitized = sanitized.replace(
       /(AIzaSy[a-zA-Z0-9_-]{4})[a-zA-Z0-9_-]+([a-zA-Z0-9_-]{4})/g,
       '$1***[MASKED]***$2',
@@ -77,9 +96,14 @@ export function sanitizeData(value: unknown, seen = new WeakSet()): unknown {
       /(AKIA[0-9A-Z]{4})[0-9A-Z]{8,}([0-9A-Z]{4})/g,
       '$1***[MASKED]***$2',
     );
-    // Mask explicit key assignments in config/error strings (e.g. api_key="xxx")
+    // Mask Azure 32-hex keys in headers
     sanitized = sanitized.replace(
-      /((?:api[_-]?key|secret[_-]?key|access[_-]?token)["']?\s*[:=]\s*["']?)([a-zA-Z0-9_-]{8,})(["']?)/gi,
+      /(ocp-apim-subscription-key\s*[:=]\s*["']?)([a-fA-F0-9]{32})(["']?)/gi,
+      '$1***[MASKED]***$3',
+    );
+    // Mask explicit key assignments in config/error strings (e.g. api_key="xxx", subscription_key="xxx")
+    sanitized = sanitized.replace(
+      /((?:api[_-]?key|secret[_-]?key|access[_-]?token|subscription[_-]?key|private[_-]?key)["']?\s*[:=]\s*["']?)([a-zA-Z0-9._-]{8,})(["']?)/gi,
       '$1***[MASKED]***$3',
     );
     return sanitized;

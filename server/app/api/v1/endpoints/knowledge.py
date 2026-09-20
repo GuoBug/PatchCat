@@ -25,6 +25,11 @@ logger = logging.getLogger("patchcat.api.knowledge")
 router = APIRouter()
 
 
+def escape_like(val: str) -> str:
+    """Escapes LIKE wildcard characters (% and _) and backslash."""
+    return val.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 @router.get(
     "",
     response_model=List[KnowledgeBaseSummaryResponse],
@@ -37,7 +42,7 @@ async def list_knowledge_bases(
 ):
     stmt = select(KnowledgeBaseORM).order_by(desc(KnowledgeBaseORM.created_at))
     if search:
-        stmt = stmt.where(KnowledgeBaseORM.name.ilike(f"%{search.strip()}%"))
+        stmt = stmt.where(KnowledgeBaseORM.name.ilike(f"%{escape_like(search.strip())}%", escape="\\"))
 
     result = await db.execute(stmt)
     return result.scalars().all()

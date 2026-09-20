@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     )
 
     APP_NAME: str = "PatchCat Backend"
-    APP_VERSION: str = "0.1.0"
+    APP_VERSION: str = "0.4.6"
     APP_ENV: str = "development"
     DEBUG: bool = True
     API_V1_STR: str = "/api/v1"
@@ -32,6 +32,10 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ]
+
+    # File Upload Security Limits
+    MAX_UPLOAD_SIZE: int = 50 * 1024 * 1024  # 50 MB
+    ALLOWED_UPLOAD_EXTENSIONS: List[str] = ["pdf", "txt", "md"]
 
     # Database Configuration (Default: zero-setup local SQLite; or PostgreSQL with asyncpg)
     DATABASE_URL: str = "sqlite+aiosqlite:///./patchcat.db"

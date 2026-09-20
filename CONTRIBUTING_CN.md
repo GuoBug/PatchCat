@@ -19,7 +19,7 @@
 - **Node.js**: `v20.0.0` 或更高（推荐 `v22.x`）
 - **包管理器**: `npm`
 - **Python**: `3.10` 或更高（仅用于可选的 FastAPI 后端）
-- **前端技术栈**: React 19、TypeScript 5.8、XYFlow / React Flow v12、Zustand、Tailwind CSS、Vite
+- **前端技术栈**: React 18、TypeScript 5.7+、XYFlow / React Flow v12、Zustand、Tailwind CSS、Vite
 - **后端技术栈**: FastAPI、SQLAlchemy 2.0 (Async)、SQLite / PostgreSQL (`pgvector`)、Pytest
 
 ---

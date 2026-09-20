@@ -19,7 +19,7 @@ We welcome all kinds of contributions: bug reports, documentation enhancements, 
 - **Node.js**: `v20.0.0` or higher (Recommended: `v22.x`)
 - **Package Manager**: `npm`
 - **Python**: `3.10` or higher (for the optional FastAPI backend)
-- **Frontend Core**: React 19, TypeScript 5.8, XYFlow / React Flow v12, Zustand, Tailwind CSS, Vite
+- **Frontend Core**: React 18, TypeScript 5.7+, XYFlow / React Flow v12, Zustand, Tailwind CSS, Vite
 - **Backend Core**: FastAPI, SQLAlchemy 2.0 (Async), SQLite / PostgreSQL (`pgvector`), Pytest
 
 ---

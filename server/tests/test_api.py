@@ -176,3 +176,34 @@ async def test_delete_folder_preserves_workflows_to_default(client: AsyncClient)
     assert get_wf_res.status_code == 200
     wf_data = get_wf_res.json()
     assert wf_data["folder_id"] == "default"
+
+
+@pytest.mark.asyncio
+async def test_search_workflow_escapes_wildcards(client: AsyncClient):
+    """Verify that search terms containing % and _ are escaped properly."""
+    # 1. Create two distinct workflows
+    w1_res = await client.post(
+        "/api/v1/workflows",
+        json={"name": "Special 100% Guaranteed_Flow", "nodes": [], "edges": []},
+    )
+    assert w1_res.status_code == 201
+
+    w2_res = await client.post(
+        "/api/v1/workflows",
+        json={"name": "Special Other Flow", "nodes": [], "edges": []},
+    )
+    assert w2_res.status_code == 201
+
+    # 2. Search for exact '%' literal - should only match w1
+    search_pct = await client.get("/api/v1/workflows?search=100%")
+    assert search_pct.status_code == 200
+    pct_results = [w["name"] for w in search_pct.json()]
+    assert "Special 100% Guaranteed_Flow" in pct_results
+    assert "Special Other Flow" not in pct_results
+
+    # 3. Search for exact '_' literal - should only match w1
+    search_under = await client.get("/api/v1/workflows?search=Guaranteed_")
+    assert search_under.status_code == 200
+    under_results = [w["name"] for w in search_under.json()]
+    assert "Special 100% Guaranteed_Flow" in under_results
+    assert "Special Other Flow" not in under_results

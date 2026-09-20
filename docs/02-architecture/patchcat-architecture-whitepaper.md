@@ -26,7 +26,7 @@ PatchCat 是一套面向 Agentic AI 复杂任务流编排的高性能、低延�
 
 ```mermaid
 flowchart TB
-    subgraph Client_Presentation["客户端表现层 (React 19 + React Flow 12)"]
+    subgraph Client_Presentation["客户端表现层 (React 18 + React Flow 12)"]
         Canvas["视口虚拟化画布 (@xyflow/react)"]
         Header["ControlHeader (SSE rAF 垂直同步批处理器)"]
         Properties["PropertyPanel 模块化微组件 (11 领域独立组件)"]
