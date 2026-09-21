@@ -1,0 +1,58 @@
+name: Build Merlin Router Package (ARM64)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-merlin:
+    name: Build ASUS Merlin Koolshare Package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Frontend SPA
+        run: npm run build
+        env:
+          VITE_BASE_PATH: './'
+
+      - name: Compile Go Gateway (ARM64 for AX86U)
+        run: |
+          mkdir -p merlin_pkg/bin
+          mkdir -p merlin_pkg/dist
+          cp -rf dist/* merlin_pkg/dist/
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o merlin_pkg/bin/patchcat-server ./gateway/main.go
+          chmod +x merlin_pkg/bin/patchcat-server
+          chmod +x merlin_pkg/scripts/*.sh
+          chmod +x merlin_pkg/install.sh
+
+      - name: Package Merlin Offline Archive
+        run: |
+          cd merlin_pkg
+          tar -czf ../patchcat-merlin-arm64.tar.gz .
+          cd ..
+          ls -lh patchcat-merlin-arm64.tar.gz
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: patchcat-merlin-arm64
+          path: patchcat-merlin-arm64.tar.gz
