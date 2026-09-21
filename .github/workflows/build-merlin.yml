@@ -41,7 +41,9 @@ jobs:
           mkdir -p merlin_pkg/bin
           mkdir -p merlin_pkg/dist
           cp -rf dist/* merlin_pkg/dist/
-          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o merlin_pkg/bin/patchcat-server ./gateway/main.go
+          cd gateway
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o ../merlin_pkg/bin/patchcat-server .
+          cd ..
           chmod +x merlin_pkg/bin/patchcat-server
           chmod +x merlin_pkg/scripts/*.sh
           chmod +x merlin_pkg/install.sh
