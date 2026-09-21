@@ -29,11 +29,11 @@ chmod +x /koolshare/scripts/patchcat_*.sh
 ln -sf /koolshare/scripts/patchcat_config.sh /koolshare/init.d/S99patchcat.sh
 
 # 4. 初始化与注册软件中心 dbus 变量
-dbus set patchcat_version="0.4.6"
+dbus set patchcat_version="0.4.7"
 dbus set softcenter_module_patchcat_install="1"
 dbus set softcenter_module_patchcat_name="patchcat"
 dbus set softcenter_module_patchcat_title="PatchCat"
-dbus set softcenter_module_patchcat_version="0.4.6"
+dbus set softcenter_module_patchcat_version="0.4.7"
 dbus set softcenter_module_patchcat_description="专为 AI Builder 打造的 Prompt 拓扑编排网关"
 dbus set softcenter_module_patchcat_home_url="Module_patchcat.asp"
 [ -z "$(dbus get patchcat_port)" ] && dbus set patchcat_port="8899"
@@ -43,6 +43,12 @@ dbus set softcenter_module_patchcat_home_url="Module_patchcat.asp"
 
 # 5. 清理安装临时目录
 rm -rf /tmp/patchcat* >/dev/null 2>&1
+
+# 6. 立即启动网关服务
+if [ "$(dbus get patchcat_enable)" = "1" ]; then
+    echo_date "正在启动 PatchCat 网关服务..."
+    sh /koolshare/scripts/patchcat_start.sh
+fi
 
 echo_date "PatchCat 插件安装完成！默认访问端口为 8899。"
 exit 0

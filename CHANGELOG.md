@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.7] - 2026-09-21
+
+### Added
+- **Asuswrt-Merlin Router Plugin & Lightweight Go Gateway (`gateway/`, `merlin_pkg/`)**:
+  - Native Koolcenter (ASUSGO) plugin package for ASUS RT-AX86U (Broadcom BCM4908 ARM64) and HND architecture.
+  - Zero-dependency, ultra-lightweight Go Gateway server (`patchcat-server`) compiled for `linux/arm64` (~5.5MB uncompressed, ~3MB tarball).
+  - Transparent upstream LLM reverse proxy (`/api/proxy`) with SSE streaming support, eliminating browser CORS limitations and utilizing router network gateway.
+  - **Flash Wear-out Protection**: Router NAND flash `/jffs` write safety with `storage.enabled = false` default and strict warning modals.
+  - Unified web management panel (`Module_patchcat.asp`) and seamless background service daemon registration.
+- **Automated Multi-Target CI/CD (`.github/workflows/build-merlin.yml`, `scripts/build-target.mjs`)**:
+  - GitHub Actions workflow for building frontend SPA, cross-compiling ARM64 Go Gateway, generating SHA256 checksums, and attaching release archives.
+  - Local multi-target build script supporting `--target=merlin --arch=arm64` and standard modes.
+
+---
+
 ## [0.4.6] - 2026-09-17
 
 ### Added

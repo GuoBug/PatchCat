@@ -94,3 +94,11 @@ docs/安全TODO/
 scratch_*.png
 github_mark.png
 github_mark.svg
+
+# Merlin Router Packaging Artifacts
+merlin_pkg/bin/
+merlin_pkg/dist/
+merlin_staging/
+patchcat-merlin-*.tar.gz
+patchcat-merlin-*.tar.gz.sha256
+patchcat/

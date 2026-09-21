@@ -103,8 +103,8 @@ if (target === 'merlin') {
     const goArch = arch === 'arm64' ? 'arm64' : (arch === 'arm' || arch === 'armv7') ? 'arm' : arch;
     const goArm = (arch === 'arm' || arch === 'armv7') ? 'GOARM=7' : '';
     const goCmd = process.platform === 'win32'
-      ? `set GOOS=linux&& set GOARCH=${goArch}&& set CGO_ENABLED=0&& go build -ldflags="-s -w" -o "${targetBinPath}" ./gateway/main.go`
-      : `GOOS=linux GOARCH=${goArch} ${goArm} CGO_ENABLED=0 go build -ldflags="-s -w" -o "${targetBinPath}" ./gateway/main.go`;
+      ? `cd gateway && set GOOS=linux&& set GOARCH=${goArch}&& set CGO_ENABLED=0&& go build -ldflags="-s -w" -o "${targetBinPath}" .`
+      : `cd gateway && GOOS=linux GOARCH=${goArch} ${goArm} CGO_ENABLED=0 go build -ldflags="-s -w" -o "${targetBinPath}" .`;
 
     try {
       run(goCmd);

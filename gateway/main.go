@@ -19,7 +19,7 @@ import (
 
 // Version constants
 const (
-	AppVersion = "0.4.6-merlin"
+	AppVersion = "0.4.7-merlin"
 	AppName    = "PatchCat-Merlin-Gateway"
 )
 

@@ -165,8 +165,7 @@ function open_canvas() {
         if (p && p.value) port = p.value;
     } catch(e) {}
 
-    // 默认直接打开华硕系统原生托管的画布路径，100% 必定能够直达！
-    var url = "http://" + host + "/patchcat/index.html";
+    var url = "http://" + host + ":" + port;
     window.open(url, "_blank");
 }
 
@@ -276,7 +275,7 @@ window.onload = function() {
         <div class="patchcat-title">
             <span style="font-size:24px;">🐱</span>
             <span>PatchCat AI 编排网关</span>
-            <span style="font-size:11px; background:#1e293b; color:#10b981; padding:2px 8px; border-radius:12px; border:1px solid #334155;">v0.4.6 for AX86U</span>
+            <span style="font-size:11px; background:#1e293b; color:#10b981; padding:2px 8px; border-radius:12px; border:1px solid #334155;">v0.4.7 for AX86U</span>
         </div>
         <div>
             <button type="button" class="btn-return" onclick="return_softcenter();">⬅ 返回软件中心</button>
@@ -292,9 +291,9 @@ window.onload = function() {
                     ✨ PatchCat Web 画布已就绪
                 </div>
                 <div style="font-size:13px; color:#94a3b8; line-height:1.6;">
-                    工业级 Prompt 拓扑流编排平台。核心执行引擎完全运行在您的客户端浏览器中。<br/>
-                    • <b>华硕原生直达</b>：<a href="/patchcat/index.html" target="_blank" style="color:#38bdf8; text-decoration:underline;">/patchcat/index.html</a>（免独立端口，零依赖极速秒开）<br/>
-                    • <b>独立服务端口</b>：<a href="javascript:void(0);" onclick="open_canvas();" style="color:#10b981;">http://&lt;路由器IP&gt;:8899</a>
+                    工业级 Prompt 拓扑流编排平台。核心执行引擎与 DAG 画布完全运行在客户端浏览器中。<br/>
+                    • <b>局域网访问地址</b>：<a href="javascript:void(0);" onclick="open_canvas();" style="color:#10b981; font-weight:bold; text-decoration:underline;">http://&lt;路由器IP&gt;:8899</a><br/>
+                    • <b>路由器网关核心</b>：已集成轻量反向代理，可借助路由器网络环境直接加速调用全球大模型。
                 </div>
             </div>
             <div>
