@@ -3,6 +3,8 @@ name: Build Merlin Router Package (ARM64)
 on:
   workflow_dispatch:
   push:
+    branches:
+      - 'main'
     tags:
       - 'v*'
 
@@ -46,8 +48,10 @@ jobs:
 
       - name: Package Merlin Offline Archive
         run: |
-          cd merlin_pkg
-          tar -czf ../patchcat-merlin-arm64.tar.gz .
+          mkdir -p merlin_staging/patchcat
+          cp -rf merlin_pkg/. merlin_staging/patchcat/
+          cd merlin_staging
+          tar -czf ../patchcat-merlin-arm64.tar.gz patchcat
           cd ..
           ls -lh patchcat-merlin-arm64.tar.gz
 
