@@ -48,6 +48,10 @@
 
 With **zero mandatory backend setup** (Client-Only BYOK Mode) and direct connectivity to **Google Gemini, DeepSeek, OpenAI, SiliconFlow, and local Ollama**, PatchCat delivers high-performance AI workflow orchestration and prompt engineering directly inside your browser with enterprise-grade telemetry and zero data leakage.
 
+> [!NOTE]
+> **Core Design Philosophy: Why Deterministic Workflows?**  
+> AI models are probabilistic by nature — prone to hallucinations, unexpected schema shifts, and unpredictable costs when left entirely autonomous. **PatchCat believes AI should do the heavy lifting of reasoning, drafting, and tool invocation, while a deterministic DAG state machine strictly enforces boundaries, conditional routes, and fallback safeguards.**
+
 ---
 
 ## 🎬 Video Walkthrough
