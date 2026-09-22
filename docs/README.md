@@ -42,6 +42,7 @@
 - [Phase 1: FastAPI + PostgreSQL Backend & Dual-Mode Storage](02-architecture/phase-1-backend-and-dual-storage-architecture.md)
 - [Phase 2: Knowledge Base (RAG) Vector Engine & Data Modeling](02-architecture/phase-2-knowledge-base-and-rag-architecture.md)
 - [Phase 3: Conversation Memory & Dual-Tier Storage Architecture](02-architecture/phase-3-conversation-memory-and-storage-architecture.md)
+- [Local-First Architecture & Evolution Strategy (Core Conclusions & Roadmap)](02-architecture/local-first-architecture-and-evolution-strategy.md)
 
 ---
 
@@ -129,6 +130,7 @@
 - [Phase 1: FastAPI + PostgreSQL 后端与双模存储设计](02-architecture/phase-1-backend-and-dual-storage-architecture.md)
 - [Phase 2: 知识库（RAG）向量引擎与数据建模方案](02-architecture/phase-2-knowledge-base-and-rag-architecture.md)
 - [Phase 3: 多轮会话记忆与底层存储持久化架构](02-architecture/phase-3-conversation-memory-and-storage-architecture.md)
+- [本地优先（Local-First）架构核心结论与 PatchCat 演进启示录](02-architecture/local-first-architecture-and-evolution-strategy.md)
 
 ---
 
