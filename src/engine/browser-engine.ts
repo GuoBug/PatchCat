@@ -26,6 +26,7 @@ import type {
   HttpNodeConfig,
   HttpMethod,
   AgentNodeConfig,
+  TokenUsage,
 } from './types';
 import { topologicalSort, validateGraphTopology } from './topological-sort.ts';
 import { resolveObjectVariables } from './variable-resolver.ts';
@@ -35,6 +36,9 @@ import { useSettingsStore } from '../stores/settings-store.ts';
 import { useKnowledgeStore } from '../stores/knowledge-store.ts';
 import { logger } from './logger.ts';
 import { RUNTIME_DEFAULTS, DEFAULT_RUNTIME_PROTECTION } from '../config/runtime-defaults.ts';
+import { TelemetryTracer } from '../services/telemetry/otel-tracer.ts';
+import { estimateTokenCostUSD } from '../config/model-pricing.ts';
+import { indexedDb } from '../services/storage/indexeddb-adapter.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Internal Types & Evaluators
@@ -96,6 +100,9 @@ interface InternalNodeResult {
   output: Record<string, unknown>;
   error?: string;
   durationMs: number;
+  tokens?: TokenUsage;
+  model?: string;
+  ttftMs?: number;
 }
 
 interface GraphInput {
@@ -346,6 +353,16 @@ export class BrowserWorkflowEngine {
       { totalNodes: graph.nodes.length, layersCount: executionLayers.length },
     );
 
+    const workflowId = options.workflowId || 'browser-run';
+    const workflowTitle = options.workflowTitle || 'Untitled Workflow';
+    const triggerMode = options.triggerMode || 'manual';
+
+    const tracer = new TelemetryTracer({
+      workflowId,
+      workflowTitle,
+      triggerMode,
+    });
+
     yield {
       type: 'WORKFLOW_START',
       payload: {
@@ -362,6 +379,8 @@ export class BrowserWorkflowEngine {
         if (signal.aborted) {
           throw new Error('Workflow execution aborted by user.');
         }
+
+        const waveSpan = tracer.startWaveSpan(layerIdx);
 
         logger.detailed(
           'WorkflowEngine',
@@ -503,6 +522,15 @@ export class BrowserWorkflowEngine {
                 },
               });
 
+              const sanitizedInputs = (node.data.inputs ? { ...node.data.inputs } : {}) as Record<string, unknown>;
+              tracer.startNodeSpan(
+                node.id,
+                node.data.label || node.id,
+                node.data.type,
+                sanitizedInputs,
+                waveSpan.spanId,
+              );
+
               const result = await this.executeNodeInternal(
                 node,
                 context,
@@ -534,6 +562,13 @@ export class BrowserWorkflowEngine {
                   node.id,
                 );
 
+                tracer.endNodeSpan(
+                  result.nodeId,
+                  'error',
+                  { error: result.error ?? 'Unknown error' },
+                  { error: result.error },
+                );
+
                 eventQueue.push({
                   type: 'NODE_ERROR',
                   payload: {
@@ -557,6 +592,24 @@ export class BrowserWorkflowEngine {
                     node.id,
                   );
                 }
+
+                if (result.ttftMs !== undefined) {
+                  tracer.recordTTFT(result.nodeId, result.ttftMs);
+                }
+                const nodeCost = result.tokens && result.model
+                  ? estimateTokenCostUSD(result.tokens, result.model)
+                  : undefined;
+
+                tracer.endNodeSpan(
+                  result.nodeId,
+                  'success',
+                  result.output,
+                  {
+                    tokens: result.tokens,
+                    model: result.model,
+                    costUSD: nodeCost,
+                  },
+                );
 
                 logger.summary(
                   'WorkflowEngine',
@@ -605,6 +658,7 @@ export class BrowserWorkflowEngine {
         }
 
         const layerResults = await layerExecutionPromise;
+        tracer.endWaveSpan();
 
         // Check if any node in this layer failed
         const failedResult = layerResults.find((r) => r.status === 'error');
@@ -619,6 +673,13 @@ export class BrowserWorkflowEngine {
         totalDurationMs: totalDuration,
       });
 
+      const runRecord = tracer.completeTrace('success');
+      try {
+        await indexedDb.saveRunRecord(runRecord);
+      } catch (saveErr) {
+        logger.dev('WorkflowEngine', 'Failed to save run record to IndexedDB', { outputs: saveErr });
+      }
+
       // 3. Workflow Success
       yield {
         type: 'WORKFLOW_COMPLETE',
@@ -626,17 +687,27 @@ export class BrowserWorkflowEngine {
           outputs: context,
           totalDurationMs: totalDuration,
           timestamp: Date.now(),
+          runRecord,
         },
       };
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       logger.error('WorkflowEngine', `工作流执行中断: ${errMsg}`, err);
 
+      const isCancelled = signal.aborted || errMsg.toLowerCase().includes('aborted');
+      const runRecord = tracer.completeTrace(isCancelled ? 'cancelled' : 'error', errMsg);
+      try {
+        await indexedDb.saveRunRecord(runRecord);
+      } catch (saveErr) {
+        logger.dev('WorkflowEngine', 'Failed to save run record to IndexedDB', { outputs: saveErr });
+      }
+
       yield {
         type: 'WORKFLOW_ERROR',
         payload: {
           error: errMsg,
           timestamp: Date.now(),
+          runRecord,
         },
       };
     }
@@ -796,6 +867,7 @@ export class BrowserWorkflowEngine {
     nodeMap?: Map<string, WorkflowNode>,
   ): Promise<InternalNodeResult> {
     const start = Date.now();
+    let capturedTtftMs: number | undefined = undefined;
 
     try {
       if (signal.aborted) {
@@ -906,6 +978,9 @@ export class BrowserWorkflowEngine {
               settings.model,
             );
 
+            const llmCallStart = Date.now();
+            let firstChunkReceived = false;
+
             const llmResult = await streamChatCompletion(
               {
                 baseUrl: settings.baseUrl,
@@ -917,6 +992,10 @@ export class BrowserWorkflowEngine {
               },
               {
                 onChunk: (chunk) => {
+                  if (!firstChunkReceived) {
+                    firstChunkReceived = true;
+                    capturedTtftMs = Date.now() - llmCallStart;
+                  }
                   if (onChunk) {
                     onChunk(chunk);
                   }
@@ -934,6 +1013,7 @@ export class BrowserWorkflowEngine {
           } else {
             // MOCK / FLOW VALIDATION MODE (Simulated response with notice)
             const delayMs = customDelay ?? 80;
+            capturedTtftMs = delayMs;
             if (delayMs > 0) {
               await new Promise<void>((resolve, reject) => {
                 if (signal.aborted) {
@@ -1883,11 +1963,17 @@ export class BrowserWorkflowEngine {
         }
       }
 
+      const usage = output['usage'] as TokenUsage | undefined;
+      const model = (output['model'] as string | undefined) ?? (node.data.config?.['model'] as string | undefined);
+
       return {
         nodeId: node.id,
         status: 'success',
         output,
         durationMs: Date.now() - start,
+        tokens: usage,
+        model,
+        ttftMs: capturedTtftMs,
       };
     } catch (err: unknown) {
       return {

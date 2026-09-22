@@ -10,6 +10,8 @@ import {
   ChatDebugPanel,
   PublishApiModal,
   ShadowDraftRecoveryBanner,
+  RunHistoryDrawer,
+  StepDataInspector,
 } from './components/panels';
 import { WorkflowCanvas } from './components/canvas';
 import { useWorkflowStore } from './stores/workflow-store.ts';
@@ -53,12 +55,16 @@ export const App: React.FC = () => {
     syncStorageMode(storageMode, serverBaseUrl);
   }, [storageMode, serverBaseUrl, syncStorageMode]);
 
-  // Global Ctrl+Shift+D shortcut for toggling Chat Debug Panel
+  // Global Ctrl+Shift+D (Chat Debug) & Ctrl+Shift+H (Run History) shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
         e.preventDefault();
         setIsChatOpen((prev) => !prev);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'H' || e.key === 'h')) {
+        e.preventDefault();
+        useWorkflowStore.getState().toggleRunHistory();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -170,6 +176,12 @@ export const App: React.FC = () => {
 
         {/* Publish Workflow as REST API Modal */}
         <PublishApiModal isOpen={isPublishModalOpen} onClose={() => setIsPublishModalOpen(false)} />
+
+        {/* Run Observability History Drawer (v0.4.8) */}
+        <RunHistoryDrawer />
+
+        {/* Step Data Freeze-Frame Inspector Modal (v0.4.8) */}
+        <StepDataInspector />
       </div>
     </ReactFlowProvider>
   );

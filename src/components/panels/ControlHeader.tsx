@@ -222,10 +222,20 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
         }
       };
 
+      const activeWorkflowId = useProjectStore.getState().activeWorkflowId || 'default-workflow';
+      const activeWorkflow = useProjectStore.getState().workflows.find((w) => w.id === activeWorkflowId);
+      const workflowTitle = activeWorkflow?.name || 'Untitled Workflow';
+
       try {
         for await (const event of engine.executeWorkflow(
           { nodes: store.nodes, edges: store.edges },
-          { inputs: store.globalInputs, skipLLM: runOptions?.skipLLM },
+          {
+            inputs: store.globalInputs,
+            skipLLM: runOptions?.skipLLM,
+            workflowId: activeWorkflowId,
+            workflowTitle,
+            triggerMode: 'manual',
+          },
         )) {
           switch (event.type) {
             case 'NODE_START':
@@ -271,6 +281,9 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
               break;
             case 'WORKFLOW_COMPLETE': {
               flushChunks();
+              if (event.payload.runRecord) {
+                store.setLastRunRecord(event.payload.runRecord);
+              }
               const finalEdges = useWorkflowStore.getState().edges.map((e) => ({
                 ...e,
                 animated: false,
@@ -281,6 +294,9 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
             }
             case 'WORKFLOW_ERROR':
               flushChunks();
+              if (event.payload.runRecord) {
+                store.setLastRunRecord(event.payload.runRecord);
+              }
               console.error('[Workflow Error]:', event.payload.error);
               if (
                 event.payload.error.includes('Cycle') ||
@@ -591,6 +607,16 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
               <span className="hidden sm:inline">{t.header.chatDebug}</span>
             </button>
           )}
+
+          {/* Run Observability History Drawer Button */}
+          <button
+            onClick={() => useWorkflowStore.getState().toggleRunHistory()}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 text-xs font-medium transition-colors shadow-xs cursor-pointer"
+            title={language === 'zh' ? '运行历史与追踪 (Ctrl+Shift+H)' : 'Run History & Traces (Ctrl+Shift+H)'}
+          >
+            <Activity className="w-3.5 h-3.5 text-indigo-500" />
+            <span className="hidden md:inline">{language === 'zh' ? '运行历史' : 'History'}</span>
+          </button>
 
           {/* Settings Page Navigation Button */}
           <button

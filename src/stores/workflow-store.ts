@@ -37,6 +37,8 @@ import type {
   WorkflowGraph,
   NodeExecutionResult,
   TokenUsage,
+  RunHistoryRecord,
+  NodeRunSnapshot,
 } from '../engine/types.ts';
 import { getDefaultNodeConfig, getDefaultNodeLabel } from '../engine/types.ts';
 import { HistoryManager } from '../engine/history-manager.ts';
@@ -159,6 +161,17 @@ export interface WorkflowStoreState {
     sourceNodeId: string;
     sourceHandle?: string | null;
   }) => string;
+
+  // ── Observability & Run History (v0.4.8) ──────────────────────────────────
+  isRunHistoryOpen: boolean;
+  toggleRunHistory: () => void;
+  setRunHistoryOpen: (open: boolean) => void;
+  selectedRunRecord: RunHistoryRecord | null;
+  setSelectedRunRecord: (record: RunHistoryRecord | null) => void;
+  selectedSnapshot: NodeRunSnapshot | null;
+  setSelectedSnapshot: (snapshot: NodeRunSnapshot | null) => void;
+  lastRunRecord: RunHistoryRecord | null;
+  setLastRunRecord: (record: RunHistoryRecord | null) => void;
 }
 
 
@@ -292,6 +305,37 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
     engineMode: 'mock' as EngineMode,
     isExecuting: false,
     globalInputs: {},
+
+    // ── Observability & Run History (v0.4.8) ──────────────────────────────
+    isRunHistoryOpen: false,
+    toggleRunHistory: () => {
+      set((state) => {
+        state.isRunHistoryOpen = !state.isRunHistoryOpen;
+      });
+    },
+    setRunHistoryOpen: (open) => {
+      set((state) => {
+        state.isRunHistoryOpen = open;
+      });
+    },
+    selectedRunRecord: null,
+    setSelectedRunRecord: (record) => {
+      set((state) => {
+        state.selectedRunRecord = record;
+      });
+    },
+    selectedSnapshot: null,
+    setSelectedSnapshot: (snapshot) => {
+      set((state) => {
+        state.selectedSnapshot = snapshot;
+      });
+    },
+    lastRunRecord: null,
+    setLastRunRecord: (record) => {
+      set((state) => {
+        state.lastRunRecord = record;
+      });
+    },
 
     // ── React Flow Callbacks ─────────────────────────────────────────────
     onNodesChange: (changes) => {

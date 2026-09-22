@@ -30,6 +30,9 @@
 | [PRD-010](01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md) | **Conversation Memory & Persistent Storage** | Phase 3.1 | ✅ Done |
 | [PRD-011](01-prd/PRD-011-Agent-Capabilities-and-Tool-Use.md) | **AI Agent Capabilities, ReAct Autonomous Loop & Tool Calling** | Phase 4 | ✅ Done |
 | [PRD-012](01-prd/PRD-012-Canvas-Ergonomics-and-Interactive-Productivity.md) | **Canvas Ergonomics, Comprehensive Tooltip System & Interactive Productivity** | Phase 4.2 | ✅ Done |
+| [PRD-013](01-prd/PRD-013-Empty-Canvas-Onboarding-Template-Gallery-and-Node-Ergonomics.md) | **Empty Canvas Guidance, Template Showcase Gallery & Draft Recovery** | Phase 4.3 | ✅ Done |
+| [PRD-014](01-prd/PRD-014-Merlin-Router-Plugin-and-Lightweight-Gateway.md) | **Merlin Router Plugin & Lightweight Gateway Packaging** | Phase 4.7 | ✅ Done |
+| [PRD-015](01-prd/PRD-015-Run-Observability-Trace-Inspection-and-OTel-Alignment.md) | **Run Observability, Step Snapshot Inspection & OpenTelemetry Tracing** | Phase 4.8 | ✅ Done |
 
 ---
 
@@ -118,6 +121,9 @@
 | [PRD-010](01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md) | **多轮会话记忆与端侧持久化存储架构** | Phase 3.1 | ✅ 已完成 |
 | [PRD-011](01-prd/PRD-011-Agent-Capabilities-and-Tool-Use.md) | **AI Agent 智能体能力层、ReAct 自主循环与多模态工具调用** | Phase 4 | ✅ 已完成 |
 | [PRD-012](01-prd/PRD-012-Canvas-Ergonomics-and-Interactive-Productivity.md) | **画布高频交互生产力、全节点精准说明与错误聚焦体系** | Phase 4.2 | ✅ 已完成 |
+| [PRD-013](01-prd/PRD-013-Empty-Canvas-Onboarding-Template-Gallery-and-Node-Ergonomics.md) | **空画布灵感引导、场景模板画廊与草稿安全体系** | Phase 4.3 | ✅ 已完成 |
+| [PRD-014](01-prd/PRD-014-Merlin-Router-Plugin-and-Lightweight-Gateway.md) | **华硕 Merlin 路由器插件包与轻量网关服务** | Phase 4.7 | ✅ 已完成 |
+| [PRD-015](01-prd/PRD-015-Run-Observability-Trace-Inspection-and-OTel-Alignment.md) | **运行可观测性、节点单步数据快照与 OpenTelemetry 标准对齐** | Phase 4.8 | ✅ 已完成 |
 
 ---
 

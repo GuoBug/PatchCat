@@ -7,8 +7,10 @@
  *   knowledge base documents, and embedding chunks without the 5MB LocalStorage limit.
  */
 
+import type { RunHistoryRecord } from '../../engine/types.ts';
+
 const DB_NAME = 'PatchCatDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export const STORES = {
   WORKFLOWS: 'workflows',
@@ -16,6 +18,7 @@ export const STORES = {
   KB_BASES: 'kb_bases',
   KB_DOCS: 'kb_docs',
   KB_CHUNKS: 'kb_chunks',
+  RUN_HISTORY: 'run_history',
 } as const;
 
 export type StoreName = (typeof STORES)[keyof typeof STORES];
@@ -59,6 +62,11 @@ export class IndexedDbAdapter {
           const chunkStore = db.createObjectStore(STORES.KB_CHUNKS, { keyPath: 'id' });
           chunkStore.createIndex('kb_id', 'kb_id', { unique: false });
           chunkStore.createIndex('doc_id', 'doc_id', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORES.RUN_HISTORY)) {
+          const runStore = db.createObjectStore(STORES.RUN_HISTORY, { keyPath: 'id' });
+          runStore.createIndex('workflowId', 'workflowId', { unique: false });
+          runStore.createIndex('startedAt', 'startedAt', { unique: false });
         }
       };
 
@@ -132,6 +140,67 @@ export class IndexedDbAdapter {
 
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
+    });
+  }
+
+  // ── Run History & Observability API (Phase 4.8 / v0.4.8) ─────────────────
+
+  /**
+   * Saves an execution run record with FIFO ring-buffer eviction.
+   * Keeps at most `maxPerWorkflow` (default 10) records per workflow.
+   */
+  public async saveRunRecord(record: RunHistoryRecord, maxPerWorkflow = 10): Promise<void> {
+    await this.put<RunHistoryRecord>(STORES.RUN_HISTORY, record);
+
+    // Evict oldest records exceeding maxPerWorkflow
+    try {
+      const allRuns = await this.getRecentRuns(record.workflowId, 50);
+      if (allRuns.length > maxPerWorkflow) {
+        const toDelete = allRuns.slice(maxPerWorkflow);
+        const db = await this.getDB();
+        const tx = db.transaction(STORES.RUN_HISTORY, 'readwrite');
+        const store = tx.objectStore(STORES.RUN_HISTORY);
+        for (const r of toDelete) {
+          store.delete(r.id);
+        }
+      }
+    } catch {
+      // Non-blocking best-effort eviction
+    }
+  }
+
+  /**
+   * Retrieves the most recent execution records for a workflow, sorted by startedAt descending.
+   */
+  public async getRecentRuns(workflowId: string, limit = 10): Promise<RunHistoryRecord[]> {
+    const all = await this.getAll<RunHistoryRecord>(STORES.RUN_HISTORY);
+    return all
+      .filter((r) => r.workflowId === workflowId)
+      .sort((a, b) => b.startedAt - a.startedAt)
+      .slice(0, limit);
+  }
+
+  /**
+   * Deletes a specific run history record by ID.
+   */
+  public async deleteRunRecord(id: string): Promise<void> {
+    return this.delete(STORES.RUN_HISTORY, id);
+  }
+
+  /**
+   * Clears all run history records for a given workflow.
+   */
+  public async clearRunsForWorkflow(workflowId: string): Promise<void> {
+    const runs = await this.getRecentRuns(workflowId, 100);
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORES.RUN_HISTORY, 'readwrite');
+      const store = tx.objectStore(STORES.RUN_HISTORY);
+      for (const r of runs) {
+        store.delete(r.id);
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
     });
   }
 }

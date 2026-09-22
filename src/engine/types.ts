@@ -284,8 +284,14 @@ export interface ExecutionEventPayloadMap {
     outputs: Record<string, unknown>;
     totalDurationMs: number;
     timestamp: number;
+    runRecord?: RunHistoryRecord;
   };
-  WORKFLOW_ERROR: { error: string; failedNodeId?: string; timestamp: number };
+  WORKFLOW_ERROR: {
+    error: string;
+    failedNodeId?: string;
+    timestamp: number;
+    runRecord?: RunHistoryRecord;
+  };
   AGENT_TOOL_CALL: {
     nodeId: string;
     iterationIndex: number;
@@ -379,6 +385,12 @@ export interface WorkflowRunOptions {
     };
     knowledgeAdapter?: unknown;
   };
+  /** ID of the workflow being executed, used for audit telemetry. */
+  workflowId?: string;
+  /** Title/label of the workflow being executed. */
+  workflowTitle?: string;
+  /** Mode that initiated execution ('manual' | 'chat' | 'api'). Default: 'manual'. */
+  triggerMode?: WorkflowTriggerMode;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -616,4 +628,117 @@ export function getDefaultNodeLabel(type: NodeType): string {
     sub_workflow: 'Sub-Workflow',
   };
   return labels[type];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 10. Run Observability & Trace Contracts (Phase 4.8 / v0.4.8)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Status of an entire workflow run */
+export type WorkflowRunStatus =
+  | 'completed'
+  | 'failed'
+  | 'aborted'
+  | 'success'
+  | 'error'
+  | 'cancelled'
+  | 'running';
+
+/** Mode that initiated the workflow execution */
+export type WorkflowTriggerMode = 'manual' | 'chat' | 'api';
+
+/**
+ * Freeze-frame execution snapshot for a single node within a workflow run.
+ */
+export interface NodeRunSnapshot {
+  nodeId: string;
+  nodeName?: string;
+  nodeLabel: string;
+  nodeType: NodeType;
+  status: NodeStatus;
+  waveIndex: number;
+  startedAt: number;
+  completedAt: number;
+  durationMs: number;
+  ttftMs?: number;
+  inputsSnapshot: Record<string, unknown>;
+  outputsSnapshot: Record<string, unknown>;
+  inputs?: Record<string, unknown>;
+  outputs?: Record<string, unknown>;
+  tokens?: TokenUsage;
+  tokenUsage?: TokenUsage;
+  costUSD?: number;
+  estimatedCostUSD?: number;
+  model?: string;
+  spanId?: string;
+  parentSpanId?: string;
+  spanAttributes?: Record<string, unknown>;
+  error?: string;
+  toolCalls?: Array<{
+    tool: string;
+    args: unknown;
+    result: unknown;
+    durationMs: number;
+  }>;
+}
+
+/**
+ * OpenTelemetry / OpenInference-compliant Span representation for client export.
+ */
+export interface OTelSpan {
+  traceId: string;
+  spanId: string;
+  parentSpanId?: string;
+  name: string;
+  kind: 'INTERNAL' | 'CLIENT' | 'SERVER';
+  startTimeUnixNano: string;
+  endTimeUnixNano: string;
+  status: {
+    code: 'OK' | 'ERROR' | 'UNSET';
+    message?: string;
+  };
+  attributes: Record<string, string | number | boolean | undefined>;
+}
+
+/**
+ * OpenTelemetry OTLP-like JSON export payload.
+ */
+export interface OTelExportTrace {
+  resourceSpans: Array<{
+    resource: {
+      attributes: Record<string, string | number | boolean>;
+    };
+    scopeSpans: Array<{
+      scope: {
+        name: string;
+        version: string;
+      };
+      spans: OTelSpan[];
+    }>;
+  }>;
+}
+
+/**
+ * Full persistent execution record for a single workflow run, stored in IndexedDB.
+ */
+export interface RunHistoryRecord {
+  id: string;
+  runId: string;
+  traceId: string;
+  workflowId: string;
+  workflowTitle?: string;
+  startedAt: number;
+  completedAt: number;
+  durationMs: number;
+  totalDurationMs: number;
+  status: WorkflowRunStatus;
+  triggerMode: WorkflowTriggerMode;
+  totalTokens: TokenUsage;
+  estimatedCostUSD: number;
+  totalCostUSD: number;
+  nodeSnapshots: Record<string, NodeRunSnapshot>;
+  stepSnapshots: NodeRunSnapshot[];
+  spans: OTelSpan[];
+  otelTrace?: OTelExportTrace;
+  error?: string;
 }

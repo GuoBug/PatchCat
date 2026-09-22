@@ -15,3 +15,5 @@ export { ChatDebugPanel } from './ChatDebugPanel';
 export { PublishApiModal } from './PublishApiModal';
 export { SaveStatusBadge } from './SaveStatusBadge';
 export { ShadowDraftRecoveryBanner } from './ShadowDraftRecoveryBanner';
+export { RunHistoryDrawer } from './RunHistoryDrawer';
+export { StepDataInspector } from './StepDataInspector';

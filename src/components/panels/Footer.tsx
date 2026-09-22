@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Github, BookOpen, ExternalLink, User } from 'lucide-react';
+import { Github, BookOpen, ExternalLink, User, Activity } from 'lucide-react';
 import { CatLogo } from '../icons/CatLogo.tsx';
 import { HelpModal } from './HelpModal.tsx';
 import { useTranslation } from '../../i18n/useTranslation.ts';
 import { PROJECT_LINKS } from '../../config/project.ts';
+import { useWorkflowStore } from '../../stores/workflow-store.ts';
 
 export const Footer: React.FC = () => {
   const { t } = useTranslation();
@@ -48,8 +49,20 @@ export const Footer: React.FC = () => {
           </a>
         </div>
 
-        {/* Right: Help Documentation & GitHub Repository Links */}
+        {/* Right: History, Help Documentation & GitHub Repository Links */}
         <div className="flex items-center gap-3">
+          {/* Run History Trigger */}
+          <button
+            onClick={() => useWorkflowStore.getState().toggleRunHistory()}
+            className="flex items-center gap-1 text-[11px] text-slate-600 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors group cursor-pointer"
+            title="Run Observability & Traces (Ctrl+Shift+H)"
+          >
+            <Activity className="w-3.5 h-3.5 text-indigo-500 group-hover:scale-110 transition-transform" />
+            <span className="font-medium">运行历史</span>
+          </button>
+
+          <span className="text-slate-300 dark:text-slate-700">|</span>
+
           {/* Help Documentation Trigger */}
           <button
             onClick={() => setIsHelpOpen(true)}
