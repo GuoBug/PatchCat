@@ -14,13 +14,13 @@
   </p>
 
   <p>
-    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/版本-v0.4.7-blue.svg" alt="Release: v0.4.7" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/版本-v0.4.8-blue.svg" alt="Release: v0.4.8" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/开源协议-MIT-emerald.svg" alt="License: MIT" /></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" alt="React 18" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/自动化测试-269项全部通过-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/自动化测试-261项全部通过-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
@@ -143,6 +143,15 @@ https://github.com/user-attachments/assets/e8d3cc61-68f4-43fd-9463-2051a7a35c3d
 - **动态多轮上下文自动拼装**：调试发送时根据策略修剪历史对话，自动将问答对注入 `{{chat_history}}`、`{{conversation_history}}`、`{{history}}` 变量插槽；
 - **存储架构说明与 Q&A 知识库**：设置中心内置折叠卡片，深度解析端侧 IndexedDB、自部署单文件 SQLite（`patchcat.db`）选型优势与现代浏览器 File System Access API 刷新高频授权的沙箱边界。
 
+### 8. 🕒 运行可观测性、单步快照与 OpenTelemetry 标准对齐 (v0.4.8)
+- **最近 10 次画布执行历史抽屉**：快捷键 `Ctrl+Shift+H` 或顶栏/底栏随时呼出，查看最近 10 次执行状态、触发方式、耗时与 Token 开销；
+- **聚合 KPI 概览看板**：总延迟、Prompt/Completion Token 消耗分段统计，实时根据主流模型阶梯动态估算美元（USD）成本；
+- **执行时序瀑布流甘特图**：以直观水平进度条展示各波次及单节点的真实耗时比例与相对起始偏移，性能瓶颈一目了然；
+- **节点单步数据冻结快照查看器**：点选任意节点即可穿透查看执行当刻的入参（Inputs）、产出（Outputs）与错误堆栈，支持一键格式化复制；
+- **OpenTelemetry / OpenInference 工业标准对齐**：纯前端生成标准 W3C 128 位 Trace ID 与 64 位 Span ID，编排 Root ➔ Wave ➔ Node 树状 Span，精确捕获首字生成延迟（TTFT）；
+- **标准 OTel JSON 一键导出**：一键导出或复制符合 OpenTelemetry ResourceSpans 标准的 JSON 文件，可直接接入 Langfuse、Datadog 等企业 APM 平台；
+- **端侧 FIFO 环形淘汰保障**：IndexedDB 单工作流固定保留最近 10 条快照记录，严格防范存储泄漏，守住本地优先轻量底线。
+
 ---
 
 ## 📸 界面预览与功能展示
@@ -242,6 +251,10 @@ PatchCat 内置了开箱即用的工业级场景模板：
 - [x] 多智能体自主协同与 ReAct 工具调用循环
 - [x] 一键将可视化工作流发布为独立 REST API 端点
 - [x] 本地 Python 后端服务支持（FastAPI + 异步引擎 + Alembic 数据迁移）
+- [x] 华硕 Merlin 路由器插件包与轻量网关服务 (v0.4.7)
+- [x] 运行可观测性、节点单步数据快照与 OpenTelemetry 标准对齐 (v0.4.8)
+- [ ] 端侧不可变 Checkpointing 与容错断点续跑 (v0.4.10)
+- [ ] 纯本地轻量混合检索 (BM25 + 稠密向量) (v0.5.2)
 
 ---
 

@@ -1,9 +1,9 @@
 # 🎯 Next Steps / 接续开发清单
 
-> **Current Version**: `v0.4.6` (Completed & Verified ✅)  
-> **Last Updated**: 2026-09-17  
-> **Previous Milestone**: Phase 4.2 Canvas Ergonomics & Phase 4.3 Node Ergonomics (`v0.4.6` Shipped ✅)  
-> **Current Target Milestone**: **`v0.4.8` Run Observability & Trace Inspection**  
+> **Current Version**: `v0.4.8` (Completed & Verified ✅)  
+> **Last Updated**: 2026-09-22  
+> **Previous Milestone**: Phase 4.8 Run Observability, Step Snapshots & OpenTelemetry Tracing (`v0.4.8` Shipped ✅)  
+> **Current Target Milestone**: **`v0.4.10` Immutable Checkpointing & Resumable DAG Execution (端侧不可变 Checkpointing 与容错断点续跑)**  
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -124,14 +124,46 @@
 
 ---
 
-### 🚀 Upcoming Milestone: v0.4.8 Run Observability & Trace Inspection
+### ⚡ Completed Milestone: Phase 4.8 Run Observability, Step Snapshots & OpenTelemetry Tracing (v0.4.8)
 
-- [ ] **1. Run History Timeline Drawer**:
-  - Retain the most recent 10 workflow execution runs with timestamp, duration, status, and token expenditure.
-- [ ] **2. Step-by-Step Data Snapshot Inspector**:
-  - View exact inputs, outputs, and intermediate states for each node in a historical run.
-- [ ] **3. Structured Log Search & Filtering**:
-  - Real-time search by keyword, log level (Summary, Detailed, Dev), and node ID.
+- [x] **1. Run Observability & 10-Run History Timeline (`RunHistoryDrawer.tsx`, `workflow-store.ts`)**:
+  - Slide-over drawer displaying the recent 10 workflow execution runs with timestamps, trigger mode (Manual / Chat / Scheduled), run status, and total duration.
+  - Aggregate KPI cards summarizing overall execution latency, Prompt/Completion token breakdown, and estimated USD cost.
+  - Interactive execution waterfall timeline (Gantt chart) visualizing each wave and node's relative start offset and duration ratio.
+- [x] **2. Node Step Data Freeze-Frame Inspector (`StepDataInspector.tsx`)**:
+  - Precision modal for inspecting immutable historical step data across 3 tabs:
+    1. **Inputs**: Exact upstream data payload received at execution time.
+    2. **Outputs**: Node execution products, LLM outputs, or error details with one-click JSON/formatted copy.
+    3. **Telemetry & OTel**: Node-level OpenInference attributes, Trace ID, Span ID, TTFT, and token usage breakdown.
+- [x] **3. OpenTelemetry & OpenInference Standard Alignment (`otel-tracer.ts`, `otel-exporter.ts`)**:
+  - Pure-frontend W3C Trace Context generation: 128-bit hex `TraceId` and 64-bit hex `SpanId`.
+  - OpenInference semantic attributes: `openinference.span.kind`, `llm.model_name`, `llm.token_count`, `llm.ttft_ms` (Time-to-First-Token).
+  - Hierarchical tree span arrangement: Root Span (`workflow.run`) ➔ Wave Spans (`wave.X`) ➔ Node Spans (`node.<type>.<id>`).
+  - Standard OTel ResourceSpans JSON export with 1-click file download (`patchcat-trace-{traceId}.json`) and clipboard copying, directly ingestible by APM platforms (Langfuse, Datadog, Jaeger).
+- [x] **4. Multi-Model Token Pricing & Dynamic Cost Engine (`model-pricing.ts`)**:
+  - Built-in pricing rules per 1M tokens for Google Gemini, DeepSeek, OpenAI, SiliconFlow, and free tier for local Ollama models.
+  - Polymorphic `estimateTokenCostUSD` supporting both camelCase (`promptTokens`/`completionTokens`) and snake/flat (`prompt`/`completion`) token counts.
+- [x] **5. Client-Side IndexedDB Storage Upgrade (`indexeddb-adapter.ts`)**:
+  - Upgraded schema to `DB_VERSION = 2` with dedicated `run_history` object store and `by_workflow` index.
+  - Enforced 10-record FIFO ring-buffer eviction per workflow to maintain bounded browser storage footprint.
+- [x] **6. Browser Engine Observability Instrumentation (`browser-engine.ts`)**:
+  - End-to-end tracing and immutable step snapshot capture via `structuredClone` across wave scheduling and node execution.
+  - Automated cost aggregation and background persistence upon workflow completion.
+- [x] **7. Entrypoints & Ergonomics (`ControlHeader.tsx`, `Footer.tsx`, `App.tsx`)**:
+  - Added 「🕒 运行历史」 triggers to Header toolbar and Footer status bar.
+  - Global keyboard shortcut `Ctrl+Shift+H` for instant drawer toggle.
+- [x] **8. Verification**: 261/261 unit tests passing across 60 test suites, 0 typecheck errors, production build verified.
+
+---
+
+### 🚀 Upcoming Milestone: v0.4.10 Immutable Checkpointing & Resumable DAG Execution
+
+- [ ] **1. Immutable Execution Snapshots Storage**:
+  - Based on IndexedDB immutable state checkpointing for partial execution graphs.
+- [ ] **2. In-Place Node Resumption (`resumeFrom(nodeId)`)**:
+  - Re-run starting from failed nodes while reusing 100% of upstream cached results to eliminate redundant token expenditure.
+- [ ] **3. Automated Dirty State Detection & Incremental Graph Pruning**:
+  - Automatically detect modified upstream configurations and dynamically prune downstream affected subgraphs.
 
 ---
 
@@ -287,14 +319,46 @@ npm run build
 
 ---
 
-### 🚀 即将推进里程碑：v0.4.8 运行可观测性与执行回溯
+### ⚡ 已交付里程碑：Phase 4.8 运行可观测性、单步快照与 OpenTelemetry 标准对齐 (v0.4.8)
 
-- [ ] **1. 最近运行历史抽屉 (Run History Timeline)**：
-  - 保留最近 10 次画布执行历史快照，展示状态、触发时间、总耗时与 Token 消耗估算。
-- [ ] **2. 节点单步数据检查器 (Step Data Inspector)**：
-  - 查看历史运行中各节点的入参快照、实际产出与中间状态。
-- [ ] **3. 结构化日志搜索与多维过滤**：
-  - 支持按关键字、日志级别（Summary、Detailed、Dev）及关联节点 ID 快速过滤定位。
+- [x] **1. 最近运行历史抽屉 (`RunHistoryDrawer.tsx`, `workflow-store.ts`)**：
+  - 侧滑抽屉展示最近 10 次画布执行历史，含时间戳、触发模式（手动/Chat/定时）、状态及执行总耗时；
+  - 顶部指标卡：总耗时、Prompt / Completion Token 详细开销、主流模型阶梯动态美元（USD）成本估算；
+  - 节点执行瀑布流（Waterfall Timeline Bar Chart）：直观呈现各波次及单节点的相对起始偏移与百分比耗时进度条。
+- [x] **2. 节点单步数据冻结快照查看器 (`StepDataInspector.tsx`)**：
+  - 冻结快照模态框，提供 Inputs / Outputs / Telemetry 三标签切换；
+  - 查看执行当刻的真实入参快照、输出成果物或错误堆栈，支持一键格式化复制。
+- [x] **3. OpenTelemetry & OpenInference 工业标准对齐 (`otel-tracer.ts`, `otel-exporter.ts`)**：
+  - 纯前端 W3C Trace Context 生成：128 位 `TraceId` 与 64 位 `SpanId` 强随机生成；
+  - 对齐 OpenInference 语义契约（`openinference.span.kind`、`llm.model_name`、`llm.token_count`、首字延迟 `llm.ttft_ms`）；
+  - 树状 Span 结构：Root Span (`workflow.run`) ➔ Wave Spans (`wave.X`) ➔ Node Spans (`node.<type>.<id>`)；
+  - 支持一键下载标准 OTel JSON（`patchcat-trace-{traceId}.json`）及复制剪贴板，无缝对接 Langfuse、Datadog 等 APM 平台。
+- [x] **4. 多厂商 Token 计费与成本核算引擎 (`model-pricing.ts`)**：
+  - 内置 Google Gemini、DeepSeek、OpenAI、SiliconFlow 及 Ollama 本地模型的百万 Token 计费阶梯；
+  - 多态 `estimateTokenCostUSD` 算法，兼容各类模型字段命名差异。
+- [x] **5. 端侧持久化与 FIFO 环形淘汰策略 (`indexeddb-adapter.ts`)**：
+  - IndexedDB 数据库升级至 `DB_VERSION = 2`，新增 `run_history` 对象仓库与 `by_workflow` 索引；
+  - 严格落实单工作流 10 条 FIFO 自动淘汰机制，死守 Local-First 轻量运行。
+- [x] **6. 执行引擎全链路埋点与深度拷贝 (`browser-engine.ts`)**：
+  - 工作流启动、波次调度与节点执行全链路记录毫秒耗时与输入输出深拷贝快照；
+  - 执行完毕自动聚合 Token 账单与成本，异步入库 IndexedDB。
+- [x] **7. 交互体验与全局快捷键 (`ControlHeader.tsx`, `Footer.tsx`, `App.tsx`)**：
+  - 顶部控制栏与底部状态栏新增「🕒 运行历史」呼出按钮；
+  - 全局快捷键 `Ctrl+Shift+H` 瞬时呼出抽屉。
+- [x] **8. 质量验收与自动化测试**：
+  - 新增 `tests/model-pricing.node.test.ts`、`tests/otel-exporter.node.test.ts`、`tests/observability-engine.node.test.ts`；
+  - 全量 261 项前端单元与契约测试通过率 100%，60 个测试套件，0 类型错误，生产打包顺利完成。
+
+---
+
+### 🚀 即将推进里程碑：v0.4.10 端侧不可变 Checkpointing 与容错断点续跑
+
+- [ ] **1. 端侧不可变执行快照存储 (Execution Snapshot Storage)**：
+  - 基于浏览器 IndexedDB 实现增量与分支状态的不可变存储。
+- [ ] **2. 失败节点就地断点续跑 (`resumeFrom(nodeId)`)**：
+  - 100% 复用上游绿色节点执行结果，杜绝重复调用大模型造成的昂贵 Token 浪费与网络开销。
+- [ ] **3. 脏状态 (Dirty State) 自动感知与增量拓扑子图裁剪调度**：
+  - 智能感知节点属性修改，动态识别脏节点，仅重跑下游受影响的子图分枝。
 
 ---
 

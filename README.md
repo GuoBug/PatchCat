@@ -14,13 +14,13 @@
   </p>
 
   <p>
-    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/version-v0.4.7-blue.svg" alt="Release: v0.4.7" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/version-v0.4.8-blue.svg" alt="Release: v0.4.8" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-emerald.svg" alt="License: MIT" /></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" alt="React 18" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-269%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-261%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
@@ -143,6 +143,15 @@ Why choose **PatchCat** over heavyweight orchestration tools?
 - **Dynamic Context Injection**: Automatically prunes historical dialogue and injects formatted multi-turn context into `{{chat_history}}`, `{{conversation_history}}`, and `{{history}}` variable slots.
 - **Storage Architecture FAQ & Q&A**: Embedded interactive card disclosing client-side IndexedDB benefits, self-hosted SQLite (`patchcat.db`) zero-config persistence, and browser sandbox File System Access API authorization constraints.
 
+### 8. 🕒 Run Observability, Step Data Snapshots & OpenTelemetry Tracing (v0.4.8)
+- **Recent 10 Execution Runs Timeline**: Dedicated slide-over drawer (`Ctrl+Shift+H` or top header) displaying the latest 10 canvas execution records with duration and token consumption.
+- **Aggregate KPI Overview**: Instant glance at total latency, Prompt/Completion token breakdown, and dynamic USD cost estimates across top model providers.
+- **Execution Waterfall Timeline**: Visual horizontal Gantt/bar chart displaying relative start offsets and proportional execution durations per node.
+- **Step Data Freeze-Frame Inspector**: Modal inspector to review exact inputs, outputs, error traces, and telemetry metadata captured for any historical step.
+- **OpenTelemetry & OpenInference Alignment**: Pure-frontend W3C Trace Context generation (128-bit Trace ID, 64-bit Span ID) with hierarchical Root -> Wave -> Node spans and Time-to-First-Token (TTFT) recording.
+- **One-Click OTel JSON Export**: Losslessly export or copy standard OTel ResourceSpans JSON ready for Langfuse, Datadog, Jaeger, or any APM platform.
+- **Client-Side FIFO Eviction**: Enforces an automatic 10-record ring buffer per workflow in IndexedDB, preventing local storage growth while maintaining local-first privacy.
+
 ---
 
 ## ⚡ Quick Start
@@ -234,6 +243,10 @@ PatchCat comes with ready-to-use industrial presets:
 - [x] Multi-Agent Autonomous Tool Calling Loop (ReAct Agent)
 - [x] One-Click Workflow Export as Standalone REST API Endpoint
 - [x] Local Python Server Backend (FastAPI + Async Engine + Alembic Migrations)
+- [x] Asuswrt-Merlin Router Plugin & Lightweight Go Gateway (v0.4.7)
+- [x] Run Observability, Step Snapshot Inspection & OpenTelemetry Tracing (v0.4.8)
+- [ ] Immutable Checkpointing & Resumable Execution Subgraph (v0.4.10)
+- [ ] Local Lightweight Hybrid Search (BM25 + Vectors) (v0.5.2)
 
 ---
 

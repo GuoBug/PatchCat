@@ -275,7 +275,7 @@ window.onload = function() {
         <div class="patchcat-title">
             <span style="font-size:24px;">🐱</span>
             <span>PatchCat AI 编排网关</span>
-            <span style="font-size:11px; background:#1e293b; color:#10b981; padding:2px 8px; border-radius:12px; border:1px solid #334155;">v0.4.7 for AX86U</span>
+            <span style="font-size:11px; background:#1e293b; color:#10b981; padding:2px 8px; border-radius:12px; border:1px solid #334155;">v0.4.8 for AX86U</span>
         </div>
         <div>
             <button type="button" class="btn-return" onclick="return_softcenter();">⬅ 返回软件中心</button>

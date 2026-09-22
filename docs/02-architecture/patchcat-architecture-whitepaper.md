@@ -3,8 +3,8 @@ rfc: "RFC-101"
 title: "PatchCat: A Reactive, Isomorphic DAG Workflow Orchestration Engine for Agentic AI"
 title_zh: "PatchCat 反应式同构有向无环图 AI 编排引擎架构技术白皮书"
 status: "Approved / Standard Specification"
-version: "0.4.2"
-date: "2026-09-14"
+version: "0.4.8"
+date: "2026-09-22"
 category: "Standards Track / Core Architecture"
 references:
   - "Apache Airflow: DAG Validation & Topological Sorter (Airflow AIP-38)"
@@ -16,7 +16,7 @@ references:
 ---
 
 # PatchCat 反应式同构有向无环图（DAG）AI 编排引擎技术白皮书
-## Technical Architecture Specification (RFC-101, Version 0.4.2)
+## Technical Architecture Specification (RFC-101, Version 0.4.8)
 
 ---
 
@@ -44,7 +44,7 @@ flowchart TB
     end
 
     subgraph Storage_Boundary["Local-First 双模持久化层 (Storage Layer)"]
-        PatchCatDB["IndexedDbAdapter (PatchCatDB 5 大对象仓库，解除 5MB 上限)"]
+        PatchCatDB["IndexedDbAdapter (PatchCatDB 6 大对象仓库，含运行历史与快照)"]
         LocalStore["LocalStorageAdapter (配额熔断器 safeSetLocalStorageItem)"]
         ServerStore["ServerKnowledgeAdapter (FastAPI + PostgreSQL pgvector / SQLite)"]
     end

@@ -5,6 +5,39 @@ All notable changes to the **PatchCat** project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.8] - 2026-09-22
+
+### Added
+- **Run Observability & 10-Run History Timeline (`RunHistoryDrawer.tsx`, `workflow-store.ts`)**:
+  - Slide-over drawer displaying the recent 10 workflow execution runs with timestamps, trigger mode (Manual / Chat / Scheduled), run status, and total duration.
+  - Aggregate KPI cards summarizing overall execution latency, Prompt/Completion token breakdown, and estimated USD cost.
+  - Interactive execution waterfall timeline (Gantt chart) visualizing each wave and node's relative start offset and duration ratio.
+- **Node Step Data Freeze-Frame Inspector (`StepDataInspector.tsx`)**:
+  - Precision modal for inspecting immutable historical step data across 3 tabs:
+    1. **Inputs**: Exact upstream data payload received at execution time.
+    2. **Outputs**: Node execution products, LLM outputs, or error details with one-click JSON/formatted copy.
+    3. **Telemetry & OTel**: Node-level OpenInference attributes, Trace ID, Span ID, TTFT, and token usage breakdown.
+- **OpenTelemetry & OpenInference Standard Alignment (`otel-tracer.ts`, `otel-exporter.ts`)**:
+  - Pure-frontend W3C Trace Context generation: 128-bit hex `TraceId` and 64-bit hex `SpanId`.
+  - OpenInference semantic attributes: `openinference.span.kind`, `llm.model_name`, `llm.token_count`, `llm.ttft_ms` (Time-to-First-Token).
+  - Hierarchical tree span arrangement: Root Span (`workflow.run`) ➔ Wave Spans (`wave.X`) ➔ Node Spans (`node.<type>.<id>`).
+  - Standard OTel ResourceSpans JSON export with 1-click file download (`patchcat-trace-{traceId}.json`) and clipboard copying, directly ingestible by APM platforms (Langfuse, Datadog, Jaeger).
+- **Multi-Model Token Pricing & Dynamic Cost Engine (`model-pricing.ts`)**:
+  - Built-in pricing rules per 1M tokens for Google Gemini, DeepSeek, OpenAI, SiliconFlow, and free tier for local Ollama models.
+  - Polymorphic `estimateTokenCostUSD` supporting both camelCase (`promptTokens`/`completionTokens`) and snake/flat (`prompt`/`completion`) token counts.
+- **Client-Side IndexedDB Storage Upgrade (`indexeddb-adapter.ts`)**:
+  - Upgraded schema to `DB_VERSION = 2` with dedicated `run_history` object store and `by_workflow` index.
+  - Enforced 10-record FIFO ring-buffer eviction per workflow to maintain bounded browser storage footprint.
+- **Browser Engine Observability Instrumentation (`browser-engine.ts`)**:
+  - End-to-end tracing and immutable step snapshot capture via `structuredClone` across wave scheduling and node execution.
+  - Automated cost aggregation and background persistence upon workflow completion.
+- **Entrypoints & Ergonomics (`ControlHeader.tsx`, `Footer.tsx`, `App.tsx`)**:
+  - Added 「🕒 运行历史」 triggers to Header toolbar and Footer status bar.
+  - Global keyboard shortcut `Ctrl+Shift+H` for instant drawer toggle.
+- **Automated Testing Suite Expansion**:
+  - Added `tests/model-pricing.node.test.ts`, `tests/otel-exporter.node.test.ts`, and `tests/observability-engine.node.test.ts`.
+  - All 261 automated unit and integration tests passing with 100% green rate.
+
 ---
 
 ## [0.4.7] - 2026-09-21

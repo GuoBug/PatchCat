@@ -77,6 +77,7 @@
 - [📖 Phase 3: Conditional Routing, External Integration & Interactive Debugging](04-dev-notes/dev-log-phase-3-conditional-routing-and-graph-pruning.md)
 - [📖 Phase 3: Chat Debug Panel & API Publishing](04-dev-notes/dev-log-phase-3-chat-debug-and-api-publishing.md)
 - [📖 Phase 4: AI Agent Capabilities, ReAct Autonomous Loop & Multi-Modal Tool Calling](04-dev-notes/dev-log-phase-4-agent-capabilities-and-react-loop.md)
+- [📖 Phase 4.8: Run Observability, Step Snapshot Inspection & OpenTelemetry Tracing](04-dev-notes/dev-log-phase-4-8-run-observability-and-opentelemetry.md)
 
 ---
 
@@ -168,6 +169,7 @@
 - [📖 Phase 3：条件路由、外部集成与交互式调试](04-dev-notes/dev-log-phase-3-conditional-routing-and-graph-pruning.md)
 - [📖 Phase 3：Chat 调试抽屉与一键 API 发布](04-dev-notes/dev-log-phase-3-chat-debug-and-api-publishing.md)
 - [📖 Phase 4：AI 智能体能力层、ReAct 自主循环与多模态工具调用](04-dev-notes/dev-log-phase-4-agent-capabilities-and-react-loop.md)
+- [📖 Phase 4.8：运行可观测性、节点单步数据快照与 OpenTelemetry 标准对齐](04-dev-notes/dev-log-phase-4-8-run-observability-and-opentelemetry.md)
 
 ---
 

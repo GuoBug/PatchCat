@@ -1,7 +1,7 @@
 # 🗺️ PatchCat Product Roadmap
 
-> **Current Stage**: `v0.4.6` (Released ✅)  
-> **Last Updated**: 2026-09-17  
+> **Current Stage**: `v0.4.8` (Released ✅)  
+> **Last Updated**: 2026-09-22  
 > **Positioning**: A local-first, zero-setup, visual high-performance AI prompt workflow orchestrator  
 
 [English](#english) | [简体中文](#简体中文)
@@ -16,8 +16,8 @@
 PatchCat adheres to a **Micro-Milestone cadence (~0.0.2 version increments)** and a **Local-First, Progressive Enhancement** architecture. Each micro-release focuses on a tightly scoped, fully verified feature slice with zero regressions, ironclad reliability watchdogs, and zero superficial testing theater.
 
 ```
-v0.4.6 (Current) ──► v0.4.8 (OTel & Trace) ──► v0.4.10 (Checkpointing) ──► v0.5.2 (Local BM25)
-                                                                                  │
+v0.4.8 (Current) ──► v0.4.10 (Checkpointing) ──► v0.5.2 (Local BM25)
+                                                      │
 v0.6.0 (MCP & Docker) ◄── v0.5.8 (Snapshots) ◄── v0.5.6 (Rolling Summary) ◄── v0.5.4 (Reranker)
         │
         └──► v1.0.0 (Enterprise Ready)
@@ -56,6 +56,8 @@ v0.6.0 (MCP & Docker) ◄── v0.5.8 (Snapshots) ◄── v0.5.6 (Rolling Sum
 - [x] **Phase 4.1 (v0.4.4)**: Agent Runtime Hardening, Global Settings Architecture & Reliability Baseline (2026-09-16)
 - [x] **Phase 4.2 (v0.4.6)**: Canvas Ergonomics, Comprehensive Tooltip System, Pinpoint Error Diagnostics & Interactive Productivity (2026-09-17)
 - [x] **Phase 4.3 (v0.4.6)**: Empty Canvas Guidance, Template Showcase Gallery, Progressive Low-Code Node Suite & Draft Recovery Safeguards (2026-09-17)
+- [x] **Phase 4.7 (v0.4.7)**: Asuswrt-Merlin Router Plugin & Lightweight Go Gateway (2026-09-21)
+- [x] **Phase 4.8 (v0.4.8)**: Run Observability, Step Snapshot Inspection & OpenTelemetry Tracing (2026-09-22)
 
 ---
 
@@ -69,8 +71,8 @@ v0.6.0 (MCP & Docker) ◄── v0.5.8 (Snapshots) ◄── v0.5.6 (Rolling Sum
 PatchCat 坚守 **`0.0.2` 微步演进路线（Micro-Milestone Cadence）** 与 **Local-First 纯本地免配置渐进增强** 原则。每个微版本聚焦于一个定义明确、边界清晰且彻底验证的特性切片，坚决杜绝“大版本跳跃与功能堆叠”，淘汰形式主义测试，死守零崩溃、零死锁、零假死底线。
 
 ```
-v0.4.7 (当前版本) ──► v0.4.8 (OTel与可观测) ──► v0.4.10 (断点快照续跑) ──► v0.5.2 (纯本地BM25)
-                                                                                                │
+v0.4.8 (当前版本) ──► v0.4.10 (断点快照续跑) ──► v0.5.2 (纯本地BM25)
+                                                                  │
 v0.6.0 (MCP与Docker大考) ◄── v0.5.8 (快照与归档) ◄── v0.5.6 (长效会话记忆) ◄── v0.5.4 (Reranker重排)
         │
         └──► v1.0.0 (企业生产交付)
@@ -108,3 +110,5 @@ v0.6.0 (MCP与Docker大考) ◄── v0.5.8 (快照与归档) ◄── v0.5.6 
 - [x] **Phase 4.1 (v0.4.4)**：Agent 运行时加固、配置规范化与可靠性基线 (2026-09-16)
 - [x] **Phase 4.2 (v0.4.6)**：画布工效学、全节点 1 句话精准悬停说明、精准报错诊断定焦与高频交互生产力 (2026-09-17)
 - [x] **Phase 4.3 (v0.4.6)**：空画布灵感引导、场景模板画廊、节点渐进式无代码与草稿安全体系 (2026-09-17)
+- [x] **Phase 4.7 (v0.4.7)**：华硕 Merlin 路由器插件包与轻量网关服务 (2026-09-21)
+- [x] **Phase 4.8 (v0.4.8)**：运行可观测性、节点单步数据快照与 OpenTelemetry 标准对齐 (2026-09-22)
