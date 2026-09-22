@@ -6,11 +6,11 @@
   # PatchCat
 
   <p>
-    <strong>Precision prompts. Seamless workflows.</strong>
+    <strong>Precision prompts. Deterministic workflows.</strong>
   </p>
 
   <p>
-    <em>The open-source, visual prompt orchestration and multi-agent workflow engine built for next-generation AI applications.</em>
+    <em>The open-source, deterministic AI workflow orchestration engine & DAG state machine built for next-generation AI builders.</em>
   </p>
 
   <p>
@@ -44,9 +44,9 @@
 
 ## 🌟 What is PatchCat?
 
-**PatchCat** is a modern, lightweight, yet enterprise-grade **visual prompt orchestration platform and DAG execution engine**. Designed for AI engineers, prompt designers, and developers building agentic workflows, PatchCat makes it effortless to chain prompts, LLMs, autonomous agents, code transformations, and conditional routers into robust, parallelized pipelines.
+**PatchCat** is an open-source, deterministic **AI workflow orchestration engine and visual DAG state machine** created by **[GuoBug](https://github.com/GuoBug)**. Designed for AI engineers, product engineers, and developers building robust agentic pipelines, PatchCat transforms complex multi-agent interactions, LLMs, code transforms, and conditional branches into visual, parallelized, and deterministic workflows.
 
-With **zero mandatory backend setup** (Client-Only BYOK Mode) and direct connectivity to **Google Gemini, DeepSeek, OpenAI, SiliconFlow, and local Ollama**, PatchCat delivers high-performance prompt engineering right inside your browser with enterprise-grade telemetry and zero data leakage.
+With **zero mandatory backend setup** (Client-Only BYOK Mode) and direct connectivity to **Google Gemini, DeepSeek, OpenAI, SiliconFlow, and local Ollama**, PatchCat delivers high-performance AI workflow orchestration and prompt engineering directly inside your browser with enterprise-grade telemetry and zero data leakage.
 
 ---
 
@@ -81,7 +81,7 @@ Why choose **PatchCat** over heavyweight orchestration tools?
 | **Deployment Weight** | **Zero Setup (Static Web / 0MB)** | Heavy (Docker Compose) | Enterprise Heavy (~2GB+ Docker) | Heavy (Pip / Docker) |
 | **Data Privacy** | **Zero Data Leakage (BYOK In-Browser)** | Server-stored Keys | Server-stored Keys | Server-stored Keys |
 | **Local LLM Support** | **Direct Ollama Web API** | Proxy Bridge Required | Docker Network Configuration | Backend Proxy |
-| **Execution Engine** | **Kahn Topological DAG Scheduler** | Sequential Graph | Async Event Worker | Directed Graph |
+| **Execution Engine** | **Deterministic DAG State Machine (Kahn)** | Sequential Graph | Async Event Worker | Directed Graph |
 | **Cold Start Latency**| **< 300 ms** | 10 ~ 30 s | 30 ~ 60 s | 15 ~ 30 s |
 | **Memory Footprint** | **< 35 MB (Browser Tab)** | ~300 MB | ~1.5 GB | ~500 MB |
 | **Code Node Sandbox**| **Native JS / Isolated Worker** | VM2 Sandbox | Python Sandbox | Restricted Python |
@@ -96,12 +96,13 @@ Why choose **PatchCat** over heavyweight orchestration tools?
 - **Multi-Type Tool Dispatcher**: Route to sandboxed JavaScript (`builtin_code`), external REST endpoints (`builtin_http`), or delegate to canvas nodes (`canvas_node`).
 - **Loop & Sub-Workflow Primitives**: Dynamic array batch iterator (`LoopNode`) and composite workflow encapsulation (`SubWorkflowNode`).
 
-### 2. 🎨 Visual DAG Canvas & Topology Scheduler
-- **Drag-and-Drop Workflow Builder**: Built on `@xyflow/react` (React Flow v12) with 12 specialized node components (`Input`, `Prompt`, `LLM`, `Agent`, `Loop`, `Sub-Workflow`, `Code`, `Output`, `Knowledge`, `Condition`, `Aggregator`, `HTTP`).
-- **Dynamic Conditional Routing & Skipping**: IF/ELSE multi-branch evaluation with dynamic downstream skipping and variable aggregation.
-- **Interactive Chat Debug & API Publishing**: Slide-over Chat panel (`Ctrl+Shift+D`) and instant FastAPI REST endpoint generation with API Key auth.
+### 2. 🎨 Visual AI Workflow Orchestration & DAG State Machine
+- **Deterministic DAG Scheduling**: Powered by Kahn's topological sort algorithm, executing parallel execution waves while eliminating race conditions and cyclic deadlocks.
+- **Drag-and-Drop Workflow Canvas**: Built on `@xyflow/react` (React Flow v12) with 12 specialized node components (`Input`, `Prompt`, `LLM`, `Agent`, `Loop`, `Sub-Workflow`, `Code`, `Output`, `Knowledge`, `Condition`, `Aggregator`, `HTTP`).
+- **Dynamic Conditional Routing & Skipping**: IF/ELSE multi-branch evaluation with dynamic downstream skipping (`NODE_SKIPPED`) and variable aggregation.
+- **Interactive Chat Debug & API Publishing**: Slide-over Chat drawer (`Ctrl+Shift+D`) and instant FastAPI REST endpoint generation with API Key auth.
 
-### 2. ⚡ Multi-Vendor Model Hub & Dynamic Discovery
+### 3. ⚡ Multi-Vendor Model Hub & Dynamic Discovery
 - **Direct Cloud & Local LLM Connectivity**:
   - 🔵 **Google Gemini**: Full support for `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.0-flash`, with dynamic model discovery.
   - 🐳 **DeepSeek**: Seamless integration with DeepSeek-R1 (with live reasoning/thought streaming) and DeepSeek-V3.
@@ -112,17 +113,17 @@ Why choose **PatchCat** over heavyweight orchestration tools?
 - **Cross-Vendor Model Auto-Remapping**: Intelligently adapts preset templates to your currently selected provider without broken requests.
 - **Transient 503 Auto-Retry & Diagnostics**: Built-in exponential backoff for high-concurrency spikes and actionable Chinese/English error diagnostics.
 
-### 3. 🧠 Real-Time SSE Stream & DeepSeek Reasoning Display
+### 4. 🧠 Real-Time SSE Stream & DeepSeek Reasoning Display
 - **Live Token Streaming**: Token-by-token real-time canvas rendering with fluid animations.
 - **Dual-Stream Reasoning Inspection**: Dedicated visualization panel for DeepSeek R1 and Gemini thinking chains.
 - **Precise Token & Latency Telemetry**: Accurate per-node execution duration and token usage calculation.
 
-### 4. 💻 Dynamic JavaScript Code Node & Sandbox
+### 5. 💻 Dynamic JavaScript Code Node & Sandbox
 - **In-Browser Safe Execution**: Execute custom JavaScript scripts directly in browser sandbox with `inputs` and `console.log` capture.
 - **Automatic JSON Markdown Stripping**: Effortlessly parse structured outputs from LLMs wrapped in ` ```json ` blocks.
 - **Smart Decision Routing**: Conditionally dispatch workflows based on intent, urgency, and confidence scores.
 
-### 5. 🛡️ 3-Tier Enterprise Logging & Strict Privacy Sanitization
+### 6. 🛡️ 3-Tier Enterprise Logging & Strict Privacy Sanitization
 - **Configurable 3-Level Logging**:
   - **`Summary (概要)`**: System lifecycle (`START`, `COMPLETE`, `ERROR`), HTTP status codes, latency, and failure traces.
   - **`Detailed (详细)`**: Node IDs, runtime parameters (`model`, `temperature`, `max_tokens`), and DAG layer wave timing.
@@ -131,12 +132,12 @@ Why choose **PatchCat** over heavyweight orchestration tools?
   - Automatic recursive masking of all API Keys (`sk-***`, `AIzaSy***`), Bearer tokens, and password fields across all log levels.
 - **Collapsible Visual Console Drawer**: Built-in IDE-style terminal drawer with search, type filters, JSON payload inspector, and one-click JSON/TXT export.
 
-### 6. 🔗 Dynamic Variable Slot Resolver
+### 7. 🔗 Dynamic Variable Slot Resolver
 - **Mustache-Style Syntax**: Interpolate data with `{{nodeId.propertyPath}}`.
 - **Deep Object & Array Navigation**: Access nested fields such as `{{classifier.result.tags[0].name}}`.
 - **Fallback Defaults**: Built-in fallback syntax `{{nodeId.output | "default_value"}}` to safeguard against missing values.
 
-### 7. 💾 Multi-Turn Conversation Memory & Dual-Tier Storage Architecture
+### 8. 💾 Multi-Turn Conversation Memory & Dual-Tier Storage Architecture
 - **IndexedDB Asynchronous Persistence**: High-capacity, non-blocking browser client storage overcoming 5MB `sessionStorage` limits and tab-closure data loss.
 - **Workflow-Scoped Isolation**: Messages are strictly partitioned by `${workflowId}::${sessionId}` to prevent cross-canvas contamination during testing.
 - **Tier-1 Global Policy & 2-Tier Configuration**: Configure global defaults in Settings (`SettingsPage.tsx`) for sliding window rounds (1–20), token budget limit (500–16,000), and pruning strategies (`hybrid`, `window`, `token_budget`).
@@ -225,7 +226,7 @@ PatchCat comes with ready-to-use industrial presets:
 | **Canvas & Nodes** | [@xyflow/react (React Flow v12)](https://reactflow.dev/) |
 | **State Management** | [Zustand](https://github.com/pmndrs/zustand) + [Immer](https://immerjs.github.io/immer/) |
 | **Styling & UI** | [Tailwind CSS v4](https://tailwindcss.com/) + [Lucide Icons](https://lucide.dev/) |
-| **Execution Engine** | Native In-Browser Kahn's DAG Scheduler + SSE Stream Client |
+| **Workflow Engine** | Deterministic In-Browser Kahn's DAG State Machine + SSE Stream Client |
 | **Backend & Storage** | [FastAPI](https://fastapi.tiangolo.com/) + [SQLAlchemy 2.0](https://www.sqlalchemy.org/) (SQLite / PostgreSQL + pgvector) |
 | **Testing** | Node.js Native Test Runner (`node --test`) + Pytest |
 
@@ -250,6 +251,14 @@ PatchCat comes with ready-to-use industrial presets:
 
 ---
 
+## 👨‍💻 Author & Maintainer
+
+**PatchCat** is created and actively maintained by **[GuoBug (Guo Qiang)](https://github.com/GuoBug)** — a Product Engineer combining platform engineering rigor (DAG state machines, deterministic orchestration, developer tooling) with product-led growth and user experience empathy.
+
+Engineered through an AI pair programming workflow with rigorous verification and open-source milestones. Inquiries, architectural discussions, and contributions are warmly welcome!
+
+---
+
 ## 🤝 Contributing
 
 We welcome contributions from the global open-source community!
@@ -268,5 +277,5 @@ Distributed under the **[MIT License](LICENSE)**. Free for commercial and person
 ---
 
 <div align="center">
-  <sub>Built with ❤️ by the PatchCat Team & Community.</sub>
+  <sub>Built with ❤️ by GuoBug and the PatchCat Community.</sub>
 </div>

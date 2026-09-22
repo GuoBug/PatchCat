@@ -6,11 +6,11 @@
   # PatchCat (中文文档)
 
   <p>
-    <strong>精准提示词编排 · 丝滑智能体工作流</strong>
+    <strong>精准提示词编排 · 确定性 AI 工作流</strong>
   </p>
 
   <p>
-    <em>专为新一代 AI 应用打造的开源可视化提示词编排与多智能体 DAG 执行引擎。</em>
+    <em>专为新一代 AI 应用打造的开源可视化 AI 工作流编排引擎与 DAG 状态机调度系统。</em>
   </p>
 
   <p>
@@ -44,9 +44,9 @@
 
 ## 🌟 什么是 PatchCat？
 
-**PatchCat** 是一个现代化、轻量化且具备企业级特性的**可视化提示词编排平台与有向无环图（DAG）执行引擎**。专为 AI 工程师、Prompt 架构师以及多智能体开发者打造，让您可以像搭积木一样串联 Prompt 模板、大语言模型（LLM）、自主 Agent 智能体、JavaScript 数据转换与分支条件路由，构建高并发、可并行的智能化工作流。
+**PatchCat** 是由 **[GuoBug](https://github.com/GuoBug)** 发起并维护的开源**确定性 AI 工作流编排引擎与可视化 DAG 状态机平台**。专为 AI 工程师、Product Engineer 以及智能体开发者打造，让您可以像搭积木一样可视化串联 Prompt 模板、大语言模型（LLM）、自主 ReAct Agent、JavaScript 数据转换与分支条件路由，构建高并发、确定性执行的现代化 AI 工作流。
 
-系统原生支持**零后端依赖模式（Client-Only BYOK）**，所有数据与 API Key 均仅保存在浏览器本地，直连 **Google Gemini、DeepSeek、OpenAI、SiliconFlow（硅基流动）以及本地 Ollama**，在浏览器端即可获得极致低延迟的实时流式体验与严密的隐私安全保障。
+系统原生支持**零后端依赖模式（Client-Only BYOK）**，所有数据与 API Key 均仅保存在浏览器本地，直连 **Google Gemini、DeepSeek、OpenAI、SiliconFlow（硅基流动）以及本地 Ollama**，在浏览器端即可获得开箱即用的低延迟实时流式体验与零数据泄漏的安全保障。
 
 ---
 
@@ -81,7 +81,7 @@ https://github.com/user-attachments/assets/e8d3cc61-68f4-43fd-9463-2051a7a35c3d
 | **部署成本与体积** | **零门槛（静态网页 / 0MB）** | 较重 (Docker Compose) | 企业级重型 (~2GB+ Docker) | 较重 (Pip / Docker) |
 | **数据隐私与安全** | **零泄漏 (浏览器端 BYOK 本地直连)** | 服务端存储密钥 | 服务端存储密钥 | 服务端存储密钥 |
 | **本地模型支持** | **原生直连本地 Ollama Web API** | 需要中转代理配置 | 依赖 Docker 网络配置 | 后端代理转发 |
-| **执行调度引擎** | **Kahn 拓扑分层调度算法** | 顺序图执行 | 异步 Event 队列 Worker | 有向图递归 |
+| **执行调度引擎** | **确定性 DAG 状态机调度器 (Kahn)** | 顺序图执行 | 异步 Event 队列 Worker | 有向图递归 |
 | **冷启动延迟**| **< 300 毫秒** | 10 ~ 30 秒 | 30 ~ 60 秒 | 15 ~ 30 秒 |
 | **运行内存占用** | **< 35 MB (单浏览器标签页)** | ~300 MB | ~1.5 GB | ~500 MB |
 | **脚本沙箱** | **原生 JS / 隔离 Web Worker** | VM2 沙箱 | Python 沙箱 | 受限 Python |
@@ -96,12 +96,13 @@ https://github.com/user-attachments/assets/e8d3cc61-68f4-43fd-9463-2051a7a35c3d
 - **多模态工具路由执行**：内置隔离沙箱代码执行（`builtin_code`）、动态外部 HTTP API 请求（`builtin_http`）及画布既有节点委托（`canvas_node`）。
 - **批量循环与子流程嵌套**：提供动态数组批量迭代器（`LoopNode`）与多流程复合嵌套（`SubWorkflowNode`）。
 
-### 2. 🎨 可视化 DAG 画布与 Kahn 拓扑调度器
-- **拖拽式工作流画布**：基于 `@xyflow/react`（React Flow v12）打造，包含 12 大专业节点组件（`输入`, `提示词`, `大模型`, `智能体`, `循环迭代`, `子工作流`, `脚本代码`, `输出`, `知识库`, `条件分支`, `变量聚合器`, `HTTP请求`）。
+### 2. 🎨 可视化 AI 工作流编排与 DAG 状态机调度
+- **确定性 DAG 状态机调度**：基于 Kahn 拓扑排序算法构建执行内核，支持分层波次并行调度，从架构根源杜绝并发竞态与环路死锁风险。
+- **拖拽式可视化编排画布**：基于 `@xyflow/react`（React Flow v12）打造，提供 12 大专业节点组件（`输入`, `提示词`, `大模型`, `智能体`, `循环迭代`, `子工作流`, `脚本代码`, `输出`, `知识库`, `条件分支`, `变量聚合器`, `HTTP请求`）。
 - **多路条件分支路由与动态跳过**：支持 IF/ELSE 规则求值、未命中下游分支动态跳过（`NODE_SKIPPED`）与聚合器汇聚收拢。
 - **交互式 Chat 调试抽屉与一键 API 发布**：全局快捷键 `Ctrl+Shift+D` 呼出实时对话调试抽屉；支持一键生成 FastAPI REST API 端点与 Key 鉴权。
 
-### 2. ⚡ 多大模型服务商集成与动态模型发现
+### 3. ⚡ 多大模型服务商集成与动态模型发现
 - **主流云端与本地大模型直连**：
   - 🔵 **Google Gemini**：完整支持 `gemini-2.5-flash`、`gemini-2.5-pro`、`gemini-2.0-flash` 等官方模型，支持一键动态拉取可用模型列表。
   - 🐳 **DeepSeek**：原生支持 DeepSeek-R1（带实时思维链推理过程渲染）与 DeepSeek-V3。
@@ -112,17 +113,17 @@ https://github.com/user-attachments/assets/e8d3cc61-68f4-43fd-9463-2051a7a35c3d
 - **跨服务商模型智能自适应映射 (`resolveTargetModel`)**：切换服务商时，预设模板中的非本厂商模型名称将自动无缝映射为当前服务商的默认模型，杜绝 400/404 报错。
 - **瞬态 503 自动重试与中文错误诊断**：内置针对 Google 免费层高并发负载波动的自动避让重试机制，提供操作指引详尽的中文诊断提示。
 
-### 3. 🧠 实时 SSE 流式输出与 DeepSeek 思考链展示
+### 4. 🧠 实时 SSE 流式输出与 DeepSeek 思考链展示
 - **字级流式吐字渲染**：实时 Token 级流式推送到画布节点，具备顺滑的动效呈现。
 - **双流思维链抽屉**：专为 DeepSeek-R1 / Gemini Thinking 打造的独立思考过程展示区。
 - **精准度量与耗时统计**：精确记录每个节点的毫秒级延迟与 Prompt/Completion Token 消耗。
 
-### 4. 💻 动态 JavaScript 代码节点与沙箱
+### 5. 💻 动态 JavaScript 代码节点与沙箱
 - **浏览器端安全沙箱**：直接在浏览器沙箱内运行自定义 JavaScript 脚本，注入上游 `inputs` 并完整捕获 `console.log` 输出。
 - **Markdown JSON 代码块自动脱壳**：轻松解析大模型返回的 ` ```json ... ``` ` 内容并转换为结构化对象。
 - **智能条件路由**：根据意图、情绪评级、风险等级等动态决定工单队列、SLA 承诺与服务分派。
 
-### 5. 🛡️ 三级企业级日志系统与严格隐私脱敏
+### 6. 🛡️ 三级企业级日志系统与严格隐私脱敏
 - **三级可配置日志登记**：
   - **`概要 (Summary)`**：记录系统启停（`START` / `COMPLETE` / `ERROR`）、请求方法/状态码/耗时/Token数、异常崩溃栈。
   - **`详细 (Detailed)`**：在概要基础上，补充节点 ID、模型参数（`model`, `temperature`, `max_tokens`）、拓扑波次时序。
@@ -131,12 +132,12 @@ https://github.com/user-attachments/assets/e8d3cc61-68f4-43fd-9463-2051a7a35c3d
   - 在所有日志级别中自动递归对 `sk-***`、`AIzaSy***`、`Bearer` 令牌及各类密码字段进行全量掩码，绝对杜绝密钥泄漏！
 - **可视化可折叠控制台抽屉**：类似现代 IDE 的底部控制台，支持上下拖拽调节高度、分类过滤、实时搜索、JSON 查看及一键导出 JSON/TXT。
 
-### 6. 🔗 动态插槽变量解析引擎
+### 7. 🔗 动态插槽变量解析引擎
 - **Mustache 风格插槽语法**：`{{nodeId.propertyPath}}` 动态注入上游节点数据。
 - **深层对象与数组访问**：支持访问如 `{{classifier.result.tags[0].name}}` 等复杂嵌套属性。
 - **容错默认值语法**：支持 `{{nodeId.output | "默认值"}}`，防止上游字段为空导致的执行失败。
 
-### 7. 💾 多轮会话记忆与两级存储架构
+### 8. 💾 多轮会话记忆与两级存储架构
 - **端侧 IndexedDB 异步持久化**：告别仅 5MB 且关标签易失的 `sessionStorage`，利用非阻塞 IndexedDB 保障画布 60 FPS 丝滑拖拽；
 - **工作流独立会话隔离**：按 `${workflowId}::${sessionId}` 严格作用域物理隔离，杜绝跨画布调试会话串话；
 - **一级全局偏好与二级继承机制**：在设置中心（`SettingsPage.tsx`）统一配置全局会话记忆总开关、滑动窗口轮数（1~20 轮）、Token 预算上限（500~16,000）与三大裁剪策略（`hybrid` / `window` / `token_budget`）；
@@ -233,7 +234,7 @@ PatchCat 内置了开箱即用的工业级场景模板：
 | **画布引擎** | [@xyflow/react (React Flow v12)](https://reactflow.dev/) |
 | **状态管理** | [Zustand](https://github.com/pmndrs/zustand) + [Immer](https://immerjs.github.io/immer/) |
 | **样式与组件** | [Tailwind CSS v4](https://tailwindcss.com/) + [Lucide Icons](https://lucide.dev/) |
-| **执行内核** | 纯浏览器端 Kahn 拓扑 DAG 调度器 + SSE 流式解析器 |
+| **工作流调度内核** | 确定性端侧 Kahn DAG 状态机引擎 + SSE 实时流式解析器 |
 | **后端与存储** | [FastAPI](https://fastapi.tiangolo.com/) + [SQLAlchemy 2.0](https://www.sqlalchemy.org/) (SQLite / PostgreSQL + pgvector) |
 | **自动化测试** | Node.js 原生测试套件 (`node --test`) + Pytest |
 
@@ -258,6 +259,16 @@ PatchCat 内置了开箱即用的工业级场景模板：
 
 ---
 
+## 👨‍💻 作者与维护者 (Author & Maintainer)
+
+**PatchCat** 由 **[GuoBug (Guo Qiang)](https://github.com/GuoBug)** 独立发起，并全程借助 AI 结对编程驱动演进与落地。
+
+作为一名兼具平台工程底蕴与产品增长视角的 **Product Engineer**，作者致力于探索“确定性架构（DAG 状态机/调度器契约）”与“低门槛平权体验（纯端侧免部署/开箱即用）”的有机结合。
+
+本项目秉持开源、求真、透明的原则，欢迎社区同行与资深架构师提出 Issue、探讨架构选型或提交 PR 共同演进！
+
+---
+
 ## 🤝 参与贡献
 
 我们非常欢迎来自开源社区的每一位开发者参与贡献！
@@ -274,5 +285,5 @@ PatchCat 内置了开箱即用的工业级场景模板：
 ---
 
 <div align="center">
-  <sub>由 PatchCat 团队与开源社区共同倾心打造 · Built with ❤️</sub>
+  <sub>由 GuoBug 与开源社区共同倾心打造 · Built with ❤️</sub>
 </div>
