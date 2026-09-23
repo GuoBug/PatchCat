@@ -12,6 +12,7 @@ import { useSettingsStore, DEFAULT_PROVIDERS } from '../src/stores/settings-stor
 import { getDefaultNodeConfig } from '../src/engine/types.ts';
 import type { AgentNodeConfig, WorkflowNode, ExecutionEvent } from '../src/engine/types.ts';
 import { BrowserWorkflowEngine } from '../src/engine/browser-engine.ts';
+import { PROJECT_VERSION } from '../src/config/project.ts';
 
 async function collectEvents(generator: AsyncGenerator<ExecutionEvent>): Promise<ExecutionEvent[]> {
   const events: ExecutionEvent[] = [];
@@ -80,7 +81,7 @@ describe('v0.4.4 Hardened Agent Runtime, Configuration & Safety Verification', (
       const sanitizedJson = store.exportSettings(false);
       const parsed = JSON.parse(sanitizedJson);
 
-      assert.strictEqual(parsed.version, '0.4.4');
+      assert.strictEqual(parsed.version, PROJECT_VERSION);
       assert.strictEqual(parsed.providers.deepseek.apiKey, '');
       assert.strictEqual(parsed.providers.openai.apiKey, '');
       assert.ok(parsed.runtimeProtection);
@@ -95,8 +96,9 @@ describe('v0.4.4 Hardened Agent Runtime, Configuration & Safety Verification', (
       const fullJson = store.exportSettings(true);
       const parsed = JSON.parse(fullJson);
 
-      assert.strictEqual(parsed.version, '0.4.4');
+      assert.strictEqual(parsed.version, PROJECT_VERSION);
       assert.strictEqual(parsed.providers.deepseek.apiKey, 'sk-secret-key-12345');
+      assert.ok(parsed._securityWarning);
     });
 
     it('imports valid configuration backup and updates reactive state', () => {

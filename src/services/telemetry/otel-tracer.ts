@@ -18,6 +18,7 @@ import type {
   OTelSpan,
   OTelExportTrace,
 } from '../../engine/types.ts';
+import { PROJECT_VERSION } from '../../config/project.ts';
 
 /**
  * Generates a random 32-character hexadecimal string conforming to W3C Trace Context trace-id.
@@ -451,7 +452,7 @@ export class TelemetryTracer {
           resource: {
             attributes: {
               'service.name': 'patchcat',
-              'service.version': 'v0.4.8',
+              'service.version': `v${PROJECT_VERSION}`,
               'telemetry.sdk.name': 'patchcat-telemetry',
               'telemetry.sdk.language': 'typescript',
             },

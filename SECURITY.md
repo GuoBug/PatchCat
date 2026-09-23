@@ -36,19 +36,20 @@ Include the following information in your report:
 
 PatchCat is designed with a **Local-First & BYOK (Bring Your Own Key)** security architecture:
 
-1. **Zero Server-Side Key Storage**: API keys are stored exclusively in the user's browser LocalStorage and are never transmitted to any third-party server.
+1. **Client-Side Key Management**: API keys are stored in the user's browser LocalStorage and sent directly to configured AI provider endpoints, or optionally proxied via the local router Go Gateway strictly to whitelisted upstream AI providers with RFC1918 private IP and SSRF blocking.
 2. **Automatic Credential Sanitization**: All log outputs recursively mask API keys (`sk-***`, `AIzaSy***`), Bearer tokens, and password fields via the `sanitizeData` engine.
-3. **Code Sandbox Isolation**: User-submitted JavaScript in Code Nodes executes in an isolated Web Worker sandbox with a 5-second watchdog timeout.
-4. **No Telemetry / No Tracking**: PatchCat collects zero analytics, telemetry, or usage data.
+3. **Code & Expression Sandbox Isolation**: User-submitted JavaScript in Code Nodes and Condition expressions executes in an isolated Web Worker sandbox with an automated watchdog timeout (3–5s), stripped of network APIs (`fetch`, `XMLHttpRequest`, `WebSocket`), DOM, and `localStorage` access.
+4. **No Telemetry / No Tracking**: PatchCat collects zero analytics, telemetry, or remote usage tracking data.
 
 ### Scope
 
 The following are considered in-scope for security reports:
 
-- XSS vulnerabilities in the canvas or panel components
-- API key leakage through logs, network requests, or storage
-- Code sandbox escape in the JavaScript execution environment
-- CSRF or injection vulnerabilities in the FastAPI backend
+- XSS vulnerabilities in the visual canvas or panel components
+- API key leakage through logs, network requests, or export bundles
+- Code sandbox escape in JavaScript execution environments (Code & Condition nodes)
+- SSRF, credential leakage, or CORS bypasses in the Go Gateway (`gateway/main.go`)
+- CSRF, injection, or authentication vulnerabilities in the FastAPI backend (`server/`)
 - Dependency vulnerabilities with known CVEs
 
 ### Out of Scope

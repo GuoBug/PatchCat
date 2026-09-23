@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { evaluateCondition, BrowserWorkflowEngine } from "../src/engine/browser-engine.ts";
+import { evaluateSandboxedCondition } from "../src/engine/sandbox-executor.ts";
 import { getDefaultNodeConfig } from "../src/engine/types.ts";
 import type { WorkflowNode, WorkflowEdge, ConditionRule, ExecutionEvent } from "../src/engine/types.ts";
 
@@ -452,6 +453,25 @@ describe("Phase 3: Condition Node & Variable Aggregator Node", () => {
 
       assert.strictEqual(outputs["cond_expr"]?.activeBranch, "admin_route");
       assert.strictEqual(outputs["prompt_admin"]?.promptText, "Admin Dashboard");
+    });
+
+    it("evaluates expressions safely inside sandbox with watchdog timeout", async () => {
+      // 1. Direct unit test of evaluateSandboxedCondition
+      const okRes = await evaluateSandboxedCondition("inputs.score > 80", { score: 95 });
+      assert.strictEqual(okRes.isTruthy, true);
+
+      const failRes = await evaluateSandboxedCondition("inputs.score > 80", { score: 50 });
+      assert.strictEqual(failRes.isTruthy, false);
+
+      // 2. Watchdog timeout on infinite loop
+      const timeoutRes = await evaluateSandboxedCondition(
+        "while(true){} return true;",
+        {},
+        {},
+        { timeoutMs: 200 }
+      );
+      assert.strictEqual(timeoutRes.isTruthy, false);
+      assert.ok(String(timeoutRes.actualValue).includes("timed out") || String(timeoutRes.actualValue).includes("超时"));
     });
   });
 });

@@ -283,3 +283,52 @@ async function runInNodeVm(
     throw new Error(errMsg);
   }
 }
+
+/**
+ * Evaluates single-line or multi-line JavaScript condition expressions in an isolated sandbox.
+ * Runs in a dedicated Web Worker in browser environments (zero access to localStorage / DOM / network)
+ * and in an isolated VM context in Node.js test environments.
+ */
+export async function evaluateSandboxedCondition(
+  rawExpr: string,
+  inputs: Record<string, unknown>,
+  context: Record<string, unknown> = {},
+  options: SandboxExecutionOptions = {},
+): Promise<{ isTruthy: boolean; actualValue: unknown }> {
+  const cleanExpr = rawExpr.trim();
+  if (cleanExpr.length === 0) {
+    return { isTruthy: false, actualValue: 'empty_expression' };
+  }
+
+  // Wrap expression safely to execute in the Worker/VM sandbox.
+  // Both `inputs` (and nested properties) and `context` are accessible.
+  const hasReturn = /\breturn\b/.test(cleanExpr);
+  const script = `
+const context = inputs.__context || inputs.context || {};
+${hasReturn ? cleanExpr : `return Boolean(${cleanExpr});`}
+`;
+
+  try {
+    const safeInputs = typeof inputs === 'object' && inputs !== null ? { ...inputs } : {};
+    const safeContext = typeof context === 'object' && context !== null ? { ...context } : {};
+    const sandboxInputs: Record<string, unknown> = {
+      ...safeInputs,
+      inputs: safeInputs,
+      __context: safeContext,
+      context: safeContext,
+    };
+
+    const res = await runSandboxedScript(script, sandboxInputs, options);
+    return {
+      isTruthy: Boolean(res.result),
+      actualValue: res.result,
+    };
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    return {
+      isTruthy: false,
+      actualValue: errMsg,
+    };
+  }
+}
+

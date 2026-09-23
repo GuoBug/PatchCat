@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -23,15 +25,34 @@ const (
 	AppName    = "PatchCat-Merlin-Gateway"
 )
 
+// Default whitelist of authorized upstream AI service domains
+var defaultAllowedDomains = []string{
+	"generativelanguage.googleapis.com",
+	"api.openai.com",
+	"api.anthropic.com",
+	"api.deepseek.com",
+	"api.siliconflow.cn",
+	"api.groq.com",
+	"openrouter.ai",
+	"api.mistral.ai",
+	"api.cohere.com",
+	"api.together.xyz",
+	"api.minimax.chat",
+	"api.moonshot.cn",
+	"dashscope.aliyuncs.com",
+}
+
 // Config defines the configuration schema for the gateway.
 type Config struct {
 	Server struct {
-		Host string `json:"host"`
-		Port int    `json:"port"`
+		Host           string   `json:"host"`
+		Port           int      `json:"port"`
+		AllowedOrigins []string `json:"allowed_origins"`
 	} `json:"server"`
 	Proxy struct {
-		Enabled        bool `json:"enabled"`
-		TimeoutSeconds int  `json:"timeout_seconds"`
+		Enabled        bool     `json:"enabled"`
+		TimeoutSeconds int      `json:"timeout_seconds"`
+		AllowedDomains []string `json:"allowed_domains"`
 	} `json:"proxy"`
 	Storage struct {
 		Enabled bool   `json:"enabled"`
@@ -51,8 +72,10 @@ func defaultConfig() Config {
 	var c Config
 	c.Server.Host = "0.0.0.0"
 	c.Server.Port = 8899
+	c.Server.AllowedOrigins = []string{}
 	c.Proxy.Enabled = true
 	c.Proxy.TimeoutSeconds = 180
+	c.Proxy.AllowedDomains = []string{}
 	c.Storage.Enabled = false // Strictly false by default
 	c.Storage.DBPath = "/tmp/mnt/sda1/patchcat/data.db"
 	c.StaticDir = "./dist"
@@ -90,15 +113,168 @@ func loadConfig(path string) error {
 	return nil
 }
 
-// corsMiddleware injects permissive CORS headers for local/cross-origin requests.
+// isPrivateOrReservedIP checks if an IP belongs to private, loopback, link-local, or cloud metadata ranges.
+func isPrivateOrReservedIP(ip net.IP) bool {
+	if ip == nil {
+		return true
+	}
+	if ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsMulticast() || ip.IsUnspecified() {
+		return true
+	}
+
+	if ip4 := ip.To4(); ip4 != nil {
+		if ip4[0] == 10 {
+			return true
+		}
+		if ip4[0] == 172 && ip4[1] >= 16 && ip4[1] <= 31 {
+			return true
+		}
+		if ip4[0] == 192 && ip4[1] == 168 {
+			return true
+		}
+		if ip4[0] == 169 && ip4[1] == 254 {
+			return true
+		}
+		if ip4[0] == 0 {
+			return true
+		}
+		if ip4[0] >= 224 {
+			return true
+		}
+	} else {
+		// IPv6 unique local addresses (fc00::/7)
+		if len(ip) == 16 && (ip[0]&0xfe) == 0xfc {
+			return true
+		}
+	}
+	return false
+}
+
+// isAllowedTargetURL validates that targetURL is an http/https URL pointing to a whitelisted AI domain and NOT a private IP.
+func isAllowedTargetURL(rawURL string, extraAllowedDomains []string) (*url.URL, error) {
+	if strings.TrimSpace(rawURL) == "" {
+		return nil, fmt.Errorf("missing target URL")
+	}
+
+	parsed, err := url.Parse(strings.TrimSpace(rawURL))
+	if err != nil {
+		return nil, fmt.Errorf("invalid URL format: %w", err)
+	}
+
+	scheme := strings.ToLower(parsed.Scheme)
+	if scheme != "http" && scheme != "https" {
+		return nil, fmt.Errorf("invalid scheme '%s': only http and https are permitted", parsed.Scheme)
+	}
+
+	hostname := parsed.Hostname()
+	if hostname == "" {
+		return nil, fmt.Errorf("missing host in target URL")
+	}
+
+	lowerHost := strings.ToLower(hostname)
+	if lowerHost == "localhost" || strings.HasSuffix(lowerHost, ".local") || strings.HasSuffix(lowerHost, ".internal") {
+		return nil, fmt.Errorf("access to internal/local host '%s' is strictly forbidden", hostname)
+	}
+
+	// Check if hostname is an IP directly
+	if ip := net.ParseIP(hostname); ip != nil {
+		if isPrivateOrReservedIP(ip) {
+			return nil, fmt.Errorf("access to private/reserved IP '%s' is strictly forbidden (SSRF protection)", hostname)
+		}
+	}
+
+	// Check domain against allowed whitelist
+	allAllowed := append([]string{}, defaultAllowedDomains...)
+	allAllowed = append(allAllowed, extraAllowedDomains...)
+
+	matched := false
+	for _, domain := range allAllowed {
+		cleanDomain := strings.ToLower(strings.TrimSpace(domain))
+		if cleanDomain == "" {
+			continue
+		}
+		if lowerHost == cleanDomain || strings.HasSuffix(lowerHost, "."+cleanDomain) {
+			matched = true
+			break
+		}
+	}
+
+	if !matched {
+		return nil, fmt.Errorf("target host '%s' is not in the allowed upstream AI provider whitelist", hostname)
+	}
+
+	return parsed, nil
+}
+
+// isAllowedOrigin checks if the origin is safe to allow CORS.
+func isAllowedOrigin(origin string, extraAllowedOrigins []string) bool {
+	if origin == "" {
+		return false
+	}
+	parsed, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	host := strings.ToLower(parsed.Hostname())
+
+	// Loopback / localhost
+	if host == "localhost" || host == "127.0.0.1" || host == "::1" {
+		return true
+	}
+
+	// Standard router LAN subnets & ASUS router names
+	if strings.HasPrefix(host, "192.168.") || strings.HasPrefix(host, "10.") || host == "router.asus.com" || strings.HasSuffix(host, ".asuscomm.com") {
+		return true
+	}
+	if strings.HasPrefix(host, "172.") {
+		parts := strings.Split(host, ".")
+		if len(parts) >= 2 {
+			var secondOctet int
+			if _, err := fmt.Sscanf(parts[1], "%d", &secondOctet); err == nil && secondOctet >= 16 && secondOctet <= 31 {
+				return true
+			}
+		}
+	}
+
+	// User-configured extra origins
+	for _, allowed := range extraAllowedOrigins {
+		allowed = strings.TrimSpace(allowed)
+		if allowed == "" {
+			continue
+		}
+		if strings.EqualFold(origin, allowed) {
+			return true
+		}
+		if parsedAllowed, err := url.Parse(allowed); err == nil {
+			if strings.EqualFold(host, strings.ToLower(parsedAllowed.Hostname())) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// corsMiddleware injects explicit, origin-checked CORS headers (rejects wildcard *).
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Target-URL, X-Goog-Api-Key, Accept")
-		w.Header().Set("Access-Control-Expose-Headers", "Content-Length, Content-Type")
+		origin := r.Header.Get("Origin")
+		allowed := isAllowedOrigin(origin, config.Server.AllowedOrigins)
+
+		// Set CORS headers only when Origin is present AND explicitly permitted
+		if origin != "" && allowed {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Target-URL, X-Goog-Api-Key, Accept")
+			w.Header().Set("Access-Control-Expose-Headers", "Content-Length, Content-Type")
+			w.Header().Set("Vary", "Origin")
+		}
 
 		if r.Method == http.MethodOptions {
+			if origin != "" && !allowed {
+				http.Error(w, `{"error": "Forbidden: CORS origin not allowed"}`, http.StatusForbidden)
+				return
+			}
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
@@ -121,8 +297,7 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(status)
 }
 
-// handleProxy forwards LLM chat completion requests to upstream LLM APIs.
-// This resolves browser CORS issues and leverages the router's transparent network gateway.
+// handleProxy forwards LLM chat completion requests to upstream LLM APIs with strict SSRF & header filtering.
 func handleProxy(w http.ResponseWriter, r *http.Request) {
 	if !config.Proxy.Enabled {
 		http.Error(w, `{"error": "Proxy is disabled in gateway configuration"}`, http.StatusForbidden)
@@ -135,7 +310,6 @@ func handleProxy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 1. Resolve Target Upstream URL
-	// Can be passed via Header "X-Target-URL" or query param "?target_url="
 	targetURL := r.Header.Get("X-Target-URL")
 	if targetURL == "" {
 		targetURL = r.URL.Query().Get("target_url")
@@ -146,16 +320,19 @@ func handleProxy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate protocol
-	if !strings.HasPrefix(targetURL, "http://") && !strings.HasPrefix(targetURL, "https://") {
-		http.Error(w, `{"error": "Invalid target URL scheme, must be http or https"}`, http.StatusBadRequest)
+	// Strict SSRF and Whitelist validation
+	targetParsed, err := isAllowedTargetURL(targetURL, config.Proxy.AllowedDomains)
+	if err != nil {
+		log.Printf("[Security Warning] 🛑 SSRF/Target blocked: %v (Remote: %s)", err, r.RemoteAddr)
+		http.Error(w, fmt.Sprintf(`{"error": "Target URL blocked by security policy: %v"}`, err), http.StatusForbidden)
 		return
 	}
 
-	// 2. Read incoming request body
+	// 2. Read incoming request body (Max 10MB to avoid memory exhaustion DoS)
+	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, fmt.Sprintf(`{"error": "Failed to read request body: %v"}`, err), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf(`{"error": "Failed to read request body or exceeded 10MB limit: %v"}`, err), http.StatusRequestEntityTooLarge)
 		return
 	}
 	_ = r.Body.Close()
@@ -168,16 +345,25 @@ func handleProxy(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, targetURL, bytes.NewReader(bodyBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, targetParsed.String(), bytes.NewReader(bodyBytes))
 	if err != nil {
 		http.Error(w, fmt.Sprintf(`{"error": "Failed to create upstream request: %v"}`, err), http.StatusInternalServerError)
 		return
 	}
 
-	// Copy headers (Authorization, Content-Type, custom AI headers)
+	// Whitelisted safe headers only — prevents arbitrary/dangerous header forwarding
+	allowedHeaders := map[string]bool{
+		"authorization":   true,
+		"x-goog-api-key":  true,
+		"content-type":    true,
+		"accept":          true,
+		"user-agent":      true,
+		"accept-encoding": true,
+	}
+
 	for k, v := range r.Header {
 		lowerK := strings.ToLower(k)
-		if lowerK == "x-target-url" || lowerK == "host" || lowerK == "content-length" {
+		if !allowedHeaders[lowerK] {
 			continue
 		}
 		for _, val := range v {
@@ -185,9 +371,16 @@ func handleProxy(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Ensure Host header matches upstream destination
+	req.Host = targetParsed.Host
+
 	// 4. Send request via HTTP Client
 	client := &http.Client{
 		Timeout: timeout,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			// Disallow redirects to prevent open-redirect SSRF bypasses
+			return http.ErrUseLastResponse
+		},
 	}
 
 	resp, err := client.Do(req)

@@ -33,6 +33,9 @@ export const LoopNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, sel
             <span>x{concurrency}</span>
           </div>
         </div>
+        <div className="text-[9px] text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded px-1.5 py-0.5 font-sans">
+          试验特性 · 子图循环迭代开发中
+        </div>
       </div>
     </BaseNode>
   );

@@ -1,4 +1,4 @@
-﻿"""
+"""
 Server-Side Workflow DAG Runner for REST API and SSE Execution
 """
 
@@ -36,6 +36,8 @@ def evaluate_condition_rule(operator: str, actual_val: Any, target_val: Any) -> 
     elif operator == "is_not_empty":
         return actual_val is not None and str_actual != ""
     elif operator == "regex_match":
+        if len(str_target) > 250 or len(str_actual) > 50000:
+            return False
         try:
             return bool(re.search(str_target, str_actual, re.IGNORECASE))
         except Exception:

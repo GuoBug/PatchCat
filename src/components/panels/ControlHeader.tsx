@@ -370,7 +370,7 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
   };
 
   // Node creation palette definition
-  const nodePalette: { type: NodeType; label: string; desc: string; color: string }[] = [
+  const nodePalette: { type: NodeType; label: string; desc: string; color: string; badge?: string }[] = [
     {
       type: 'input',
       label: t.nodeTypes.input,
@@ -434,14 +434,16 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
     {
       type: 'loop',
       label: t.nodeTypes.loop,
-      desc: t.nodeTypes.loopDesc,
+      desc: `${t.nodeTypes.loopDesc} (试验特性)`,
       color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+      badge: 'Preview',
     },
     {
       type: 'sub_workflow',
       label: t.nodeTypes.sub_workflow,
-      desc: t.nodeTypes.sub_workflowDesc,
+      desc: `${t.nodeTypes.sub_workflowDesc} (试验特性)`,
       color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
+      badge: 'Preview',
     },
   ];
 
@@ -496,8 +498,13 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
                         {item.type}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                          {item.label}
+                        <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                          <span>{item.label}</span>
+                          {item.badge && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-mono font-medium">
+                              {item.badge}
+                            </span>
+                          )}
                         </div>
                         <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                           {item.desc}

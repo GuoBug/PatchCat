@@ -40,7 +40,7 @@ import {
 } from './topological-sort.ts';
 import { resolveObjectVariables } from './variable-resolver.ts';
 import { streamChatCompletion, type ChatMessage } from './llm-client.ts';
-import { runSandboxedScript } from './sandbox-executor.ts';
+import { runSandboxedScript, evaluateSandboxedCondition } from './sandbox-executor.ts';
 import { useSettingsStore } from '../stores/settings-store.ts';
 import { useKnowledgeStore } from '../stores/knowledge-store.ts';
 import { logger } from './logger.ts';
@@ -93,7 +93,11 @@ export function evaluateCondition(rule: ConditionRule, actualValue: unknown): bo
       return actualValue !== null && actualValue !== undefined && strVal.trim() !== '';
     case 'regex_match':
       try {
-        const regex = new RegExp(String(targetVal), 'i');
+        const targetStr = String(targetVal);
+        if (targetStr.length > 250 || strVal.length > 50000) {
+          return false;
+        }
+        const regex = new RegExp(targetStr, 'i');
         return regex.test(strVal);
       } catch {
         return false;
@@ -255,8 +259,8 @@ export class BrowserWorkflowEngine {
           serverBaseUrl: settingsStore.serverBaseUrl || 'http://localhost:8000',
           runtimeProtection: settingsStore.runtimeProtection || DEFAULT_RUNTIME_PROTECTION,
         };
-      } catch {
-        // Fallback if store is unavailable
+      } catch (err: unknown) {
+        logger.detailed('WorkflowEngine', 'SettingsStore unavailable during resolution, falling back to defaults', { error: String(err) });
       }
     }
     return {
@@ -290,8 +294,8 @@ export class BrowserWorkflowEngine {
         return {
           retrieve: store.retrieve.bind(store),
         };
-      } catch {
-        // Fallback if store is unavailable
+      } catch (err: unknown) {
+        logger.detailed('WorkflowEngine', 'KnowledgeStore unavailable during resolution, falling back to undefined', { error: String(err) });
       }
     }
     return undefined;
@@ -824,8 +828,8 @@ export class BrowserWorkflowEngine {
         };
         try {
           await indexedDb.saveCheckpoint(waveCheckpoint, 5);
-        } catch {
-          // Non-blocking best-effort checkpointing
+        } catch (saveErr) {
+          logger.detailed('WorkflowEngine', 'Non-blocking wave checkpoint save failed', { error: String(saveErr) });
         }
 
         // Check if any node in this layer failed
@@ -867,8 +871,8 @@ export class BrowserWorkflowEngine {
       };
       try {
         await indexedDb.saveCheckpoint(finalCheckpoint, 5);
-      } catch {
-        // Non-blocking
+      } catch (saveErr) {
+        logger.detailed('WorkflowEngine', 'Non-blocking final checkpoint save failed', { error: String(saveErr) });
       }
 
       // 3. Workflow Success
@@ -912,8 +916,8 @@ export class BrowserWorkflowEngine {
       };
       try {
         await indexedDb.saveCheckpoint(errorCheckpoint, 5);
-      } catch {
-        // Non-blocking
+      } catch (saveErr) {
+        logger.detailed('WorkflowEngine', 'Non-blocking error checkpoint save failed', { error: String(saveErr) });
       }
 
       yield {
@@ -1443,17 +1447,14 @@ export class BrowserWorkflowEngine {
             let actualValue: unknown = undefined;
 
             if (rawExpr.length > 0) {
-              try {
-                // Safe new Function sandbox evaluating single-line JS expression
-                const code = rawExpr.startsWith('return ') ? rawExpr : `return Boolean(${rawExpr});`;
-                const evaluator = new Function('inputs', 'context', `"use strict"; ${code}`);
-                const evalResult = evaluator(resolvedInputs, context);
-                isTruthy = Boolean(evalResult);
-                actualValue = evalResult;
-              } catch (err: unknown) {
-                isTruthy = false;
-                actualValue = err instanceof Error ? err.message : String(err);
-              }
+              const evalRes = await evaluateSandboxedCondition(
+                rawExpr,
+                resolvedInputs,
+                context,
+                { timeoutMs: 3000 },
+              );
+              isTruthy = evalRes.isTruthy;
+              actualValue = evalRes.actualValue;
             } else {
               isTruthy = false;
               actualValue = 'empty_expression';
@@ -2141,6 +2142,9 @@ export class BrowserWorkflowEngine {
         }
 
         case 'loop': {
+          logger.warn(
+            `[Experimental Node] Node "${node.id}" (loop) operates in array-batching preview mode; full sub-graph iterative execution is in progress.`,
+          );
           const loopConfig = (node.data.config || {}) as { inputArrayVariable?: string; maxConcurrency?: number };
           const arrayVarName = loopConfig.inputArrayVariable || 'items';
           let inputArray: unknown[] = [];
@@ -2156,11 +2160,15 @@ export class BrowserWorkflowEngine {
             results: inputArray.map((item, idx) => ({ index: idx, item, processed: true })),
             totalItems: inputArray.length,
             output: inputArray,
+            isExperimentalStub: true,
           };
           break;
         }
 
         case 'sub_workflow': {
+          logger.warn(
+            `[Experimental Node] Node "${node.id}" (sub_workflow) operates in stub reference mode; nested sub-graph execution is in progress.`,
+          );
           const subConfig = (node.data.config || {}) as { targetWorkflowId?: string };
           let isolatedInputs: Record<string, unknown>;
           try {
@@ -2172,6 +2180,7 @@ export class BrowserWorkflowEngine {
             result: `[Sub-Workflow] Executed workflow "${subConfig.targetWorkflowId || 'unknown'}" (isolated scope)`,
             output: isolatedInputs,
             targetWorkflowId: subConfig.targetWorkflowId,
+            isExperimentalStub: true,
           };
           break;
         }

@@ -279,6 +279,20 @@ export class LoggerEngine {
   }
 
   /**
+   * Log warning events (captured at summary level).
+   */
+  public warn(
+    sourceOrMessage: string,
+    message?: string,
+    metadata?: Record<string, unknown>,
+    nodeId?: string,
+  ): void {
+    const src = message !== undefined ? sourceOrMessage : 'system';
+    const msg = message !== undefined ? message : sourceOrMessage;
+    this.summary(src, `[WARN] ${msg}`, metadata, nodeId, 'system');
+  }
+
+  /**
    * Log error events (always captured at summary level).
    */
   public error(

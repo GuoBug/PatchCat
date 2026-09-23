@@ -25,6 +25,9 @@ export const SubWorkflowNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, da
           <Workflow className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
           <span className="truncate">{targetWorkflow}</span>
         </div>
+        <div className="text-[9px] text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded px-1.5 py-0.5 font-sans">
+          试验特性 · 嵌套子图执行开发中
+        </div>
       </div>
     </BaseNode>
   );

@@ -17,9 +17,9 @@ class Settings(BaseSettings):
     )
 
     APP_NAME: str = "PatchCat Backend"
-    APP_VERSION: str = "0.4.6"
+    APP_VERSION: str = "0.4.11"
     APP_ENV: str = "development"
-    DEBUG: bool = True
+    DEBUG: bool = False
     API_V1_STR: str = "/api/v1"
 
     HOST: str = "127.0.0.1"

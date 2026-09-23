@@ -8,6 +8,7 @@
  */
 
 import type { RunHistoryRecord, OTelExportTrace } from '../../engine/types.ts';
+import { PROJECT_VERSION } from '../../config/project.ts';
 
 /**
  * Formats a RunHistoryRecord into a standardized OTel/OpenInference JSON string.
@@ -19,7 +20,7 @@ export function exportOTelTraceToJson(record: RunHistoryRecord): string {
         resource: {
           attributes: {
             'service.name': 'patchcat',
-            'service.version': 'v0.4.8',
+            'service.version': `v${PROJECT_VERSION}`,
             'workflow.id': record.workflowId,
             'workflow.title': record.workflowTitle || 'Untitled Workflow',
           },

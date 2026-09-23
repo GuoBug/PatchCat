@@ -46,6 +46,7 @@ export const nodeTypes: NodeTypes = {
   http: HttpNode,
   agent: AgentNode,
   loop: LoopNode,
+  sub_workflow: SubWorkflowNode,
   subworkflow: SubWorkflowNode,
 };
 
@@ -61,7 +62,9 @@ export const SUPPORTED_NODE_TYPES = [
   'http',
   'agent',
   'loop',
+  'sub_workflow',
   'subworkflow',
 ] as const;
 
 export type RegisteredNodeType = (typeof SUPPORTED_NODE_TYPES)[number];
+

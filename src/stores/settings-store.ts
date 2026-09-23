@@ -18,6 +18,7 @@ import {
   DEFAULT_EDITOR_PREFERENCES,
   DEFAULT_NETWORK_SETTINGS,
 } from '../config/runtime-defaults.ts';
+import { PROJECT_VERSION } from '../config/project.ts';
 
 export type ProviderId = 'openai' | 'deepseek' | 'siliconflow' | 'google' | 'ollama' | 'custom';
 export type AppView = 'canvas' | 'settings';
@@ -558,10 +559,16 @@ export const useSettingsStore = create<SettingsStoreState>()(
         const state = get();
         const exportData = {
           schemaVersion: '1.0',
-          version: '0.4.4',
+          version: PROJECT_VERSION,
           app: 'PatchCat',
           exportedAt: new Date().toISOString(),
           includeSensitiveKeys,
+          ...(includeSensitiveKeys
+            ? {
+                _securityWarning:
+                  'CAUTION: This export contains unencrypted LLM API credentials. Do not share publicly.',
+              }
+            : {}),
           language: state.language,
           storageMode: state.storageMode,
           serverBaseUrl: state.serverBaseUrl,
