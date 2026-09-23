@@ -27,8 +27,17 @@ import type {
   HttpMethod,
   AgentNodeConfig,
   TokenUsage,
+  DAGCheckpoint,
+  NodeCheckpointState,
 } from './types';
-import { topologicalSort, validateGraphTopology } from './topological-sort.ts';
+import {
+  topologicalSort,
+  validateGraphTopology,
+  computeAncestors,
+  computeDescendants,
+  computeNodeConfigHash,
+  computeGraphTopologyHash,
+} from './topological-sort.ts';
 import { resolveObjectVariables } from './variable-resolver.ts';
 import { streamChatCompletion, type ChatMessage } from './llm-client.ts';
 import { runSandboxedScript } from './sandbox-executor.ts';
@@ -312,7 +321,7 @@ export class BrowserWorkflowEngine {
       return;
     }
 
-    const { executionLayers } = topologicalSort(graph);
+    let executionLayers: string[][] = [];
     const nodeMap = new Map(graph.nodes.map((n) => [n.id, n]));
 
     // Graph topology adjacency for dynamic conditional routing & skipping
@@ -333,12 +342,42 @@ export class BrowserWorkflowEngine {
     // Execution context: maps nodeId → resolved output bag
     const context: Record<string, Record<string, unknown>> = {};
     const reexecutedNodes = new Set<string>();
+    const nodeStatesMap: Record<string, NodeCheckpointState> = {};
 
-    // In resume mode, pre-populate context with cached outputs from existing nodes
-    if (options.resumeFromExisting) {
+    const workflowId = options.workflowId || 'browser-run';
+    const workflowTitle = options.workflowTitle || 'Untitled Workflow';
+    const triggerMode = options.triggerMode || 'manual';
+
+    // 1.1 In resumeFromNodeId mode, pre-hydrate context & node states from persistent checkpoint
+    if (options.resumeFromNodeId) {
+      let loadedCheckpoint: DAGCheckpoint | null = null;
+      if (options.checkpointId) {
+        loadedCheckpoint = await indexedDb.getCheckpointById(options.checkpointId);
+      }
+      if (!loadedCheckpoint && options.workflowId) {
+        loadedCheckpoint = await indexedDb.getLatestCheckpoint(options.workflowId);
+      }
+      if (loadedCheckpoint?.contextBag) {
+        for (const [k, v] of Object.entries(loadedCheckpoint.contextBag)) {
+          if (v && typeof v === 'object') {
+            context[k] = v;
+          }
+        }
+      }
+      if (loadedCheckpoint?.nodeStates) {
+        for (const [k, v] of Object.entries(loadedCheckpoint.nodeStates)) {
+          if (v) {
+            nodeStatesMap[k] = structuredClone(v);
+          }
+        }
+      }
+    }
+
+    // In legacy resume or checkpoint resume, merge any cached node.data.outputs from memory
+    if (options.resumeFromExisting || options.resumeFromNodeId) {
       for (const node of graph.nodes) {
         if (node.data?.outputs && typeof node.data.outputs === 'object') {
-          context[node.id] = node.data.outputs as Record<string, unknown>;
+          context[node.id] = (node.data.outputs as Record<string, unknown>) || context[node.id];
         }
       }
     }
@@ -347,15 +386,78 @@ export class BrowserWorkflowEngine {
       context['global_input'] = options.inputs;
     }
 
+    // 1.2 Kahn graph pruning for resumeFromNodeId
+    let prunedNodeIds: Set<string> | null = null;
+
+    if (options.resumeFromNodeId) {
+      const targetNodeId = options.resumeFromNodeId;
+      const initialAncestors = computeAncestors(targetNodeId, graph);
+      logger.detailed(
+        'WorkflowEngine',
+        `断点续跑前置检查: 节点 [${targetNodeId}] 识别到 ${initialAncestors.size} 个前序祖先节点`,
+        { targetNodeId, ancestorCount: initialAncestors.size },
+        targetNodeId,
+      );
+
+      const targetNodesToRun = new Set<string>([targetNodeId]);
+      let expanded = true;
+      while (expanded) {
+        expanded = false;
+        for (const tId of targetNodesToRun) {
+          const incoming = incomingEdgesMap.get(tId) || [];
+          for (const edge of incoming) {
+            const pId = edge.source;
+            const hasCachedOutput = context[pId] && Object.keys(context[pId]).length > 0;
+            if (!hasCachedOutput && !targetNodesToRun.has(pId)) {
+              targetNodesToRun.add(pId);
+              expanded = true;
+            }
+          }
+        }
+      }
+
+      const targetDescendants = computeDescendants(targetNodesToRun, graph);
+      prunedNodeIds = new Set<string>([...targetNodesToRun, ...targetDescendants]);
+
+      const prunedNodes = graph.nodes.filter((n) => prunedNodeIds!.has(n.id));
+      const prunedEdges = graph.edges.filter(
+        (e) => prunedNodeIds!.has(e.source) && prunedNodeIds!.has(e.target),
+      );
+      const prunedSort = topologicalSort({ nodes: prunedNodes, edges: prunedEdges });
+      executionLayers = prunedSort.executionLayers;
+
+      // Register cached outputs for all ancestor / non-pruned nodes
+      for (const node of graph.nodes) {
+        if (!prunedNodeIds.has(node.id) && context[node.id]) {
+          const existing = nodeStatesMap[node.id];
+          nodeStatesMap[node.id] = {
+            nodeId: node.id,
+            nodeType: existing?.nodeType || node.data?.type || node.type || 'unknown',
+            status: 'cached',
+            outputsSnapshot: structuredClone(context[node.id]),
+            durationMs: 0,
+            tokensUsed: { prompt: 0, completion: 0, total: 0 },
+            configHash: computeNodeConfigHash(node),
+            completedAt: Date.now(),
+          };
+        }
+      }
+
+      logger.summary(
+        'WorkflowEngine',
+        `断点续跑已激活: 从节点 [${targetNodeId}] 续跑，重算 ${prunedNodeIds.size} 个节点，复用 ${graph.nodes.length - prunedNodeIds.size} 个祖先输出`,
+        { targetNodeId, prunedCount: prunedNodeIds.size, cachedCount: graph.nodes.length - prunedNodeIds.size },
+      );
+    } else {
+      const fullSort = topologicalSort(graph);
+      executionLayers = fullSort.executionLayers;
+    }
+
     logger.summary(
       'WorkflowEngine',
       `工作流开始执行 (共 ${graph.nodes.length} 个节点, 划分 ${executionLayers.length} 个并行波次)`,
       { totalNodes: graph.nodes.length, layersCount: executionLayers.length },
     );
-
-    const workflowId = options.workflowId || 'browser-run';
-    const workflowTitle = options.workflowTitle || 'Untitled Workflow';
-    const triggerMode = options.triggerMode || 'manual';
 
     const tracer = new TelemetryTracer({
       workflowId,
@@ -372,9 +474,29 @@ export class BrowserWorkflowEngine {
       },
     };
 
+    // Emit instant NODE_COMPLETE events for cached ancestor nodes in resume mode
+    if (prunedNodeIds) {
+      for (const node of graph.nodes) {
+        if (!prunedNodeIds.has(node.id) && context[node.id]) {
+          yield {
+            type: 'NODE_COMPLETE',
+            payload: {
+              nodeId: node.id,
+              output: context[node.id]!,
+              durationMs: 0,
+            },
+          };
+        }
+      }
+    }
+
+    let currentLayerIndex = 0;
+    let lastFailedNodeId: string | null = null;
+
     try {
       // 2. Layer-by-layer parallel execution
       for (let layerIdx = 0; layerIdx < executionLayers.length; layerIdx++) {
+        currentLayerIndex = layerIdx;
         const layer = executionLayers[layerIdx]!;
         if (signal.aborted) {
           throw new Error('Workflow execution aborted by user.');
@@ -554,6 +676,18 @@ export class BrowserWorkflowEngine {
               );
 
               if (result.status === 'error') {
+                lastFailedNodeId = result.nodeId;
+                nodeStatesMap[result.nodeId] = {
+                  nodeId: result.nodeId,
+                  nodeType: node.data?.type || node.type || 'unknown',
+                  status: 'error',
+                  inputsSnapshot: structuredClone(sanitizedInputs),
+                  errorMessage: result.error,
+                  durationMs: result.durationMs,
+                  configHash: computeNodeConfigHash(node),
+                  completedAt: Date.now(),
+                };
+
                 logger.error(
                   'WorkflowEngine',
                   `节点 [${node.id}] 执行失败: ${result.error}`,
@@ -580,6 +714,17 @@ export class BrowserWorkflowEngine {
               } else {
                 context[result.nodeId] = result.output;
                 reexecutedNodes.add(result.nodeId);
+                nodeStatesMap[result.nodeId] = {
+                  nodeId: result.nodeId,
+                  nodeType: node.data?.type || node.type || 'unknown',
+                  status: 'success',
+                  inputsSnapshot: structuredClone(sanitizedInputs),
+                  outputsSnapshot: structuredClone(result.output),
+                  durationMs: result.durationMs,
+                  tokensUsed: result.tokens,
+                  configHash: computeNodeConfigHash(node),
+                  completedAt: Date.now(),
+                };
 
                 // If condition node, record active branch handle
                 if (node.data.type === 'condition' || node.type === 'condition') {
@@ -660,6 +805,29 @@ export class BrowserWorkflowEngine {
         const layerResults = await layerExecutionPromise;
         tracer.endWaveSpan();
 
+        // Checkpoint at each wave completion (Phase 4.10 / v0.4.10)
+        const traceId = tracer.getTraceId();
+        const waveChkId = `chk_${traceId}_wave_${layerIdx}`;
+        const waveCheckpoint: DAGCheckpoint = {
+          id: waveChkId,
+          checkpointId: waveChkId,
+          runId: `run_${startTime}_${traceId.slice(0, 8)}`,
+          workflowId,
+          timestamp: Date.now(),
+          graphTopologyHash: computeGraphTopologyHash(graph),
+          currentWaveIndex: layerIdx,
+          totalWaves: executionLayers.length,
+          isCompleted: false,
+          failedNodeIds: layerResults.filter((r) => r.status === 'error').map((r) => r.nodeId),
+          contextBag: structuredClone(context),
+          nodeStates: structuredClone(nodeStatesMap),
+        };
+        try {
+          await indexedDb.saveCheckpoint(waveCheckpoint, 5);
+        } catch {
+          // Non-blocking best-effort checkpointing
+        }
+
         // Check if any node in this layer failed
         const failedResult = layerResults.find((r) => r.status === 'error');
         if (failedResult) {
@@ -678,6 +846,29 @@ export class BrowserWorkflowEngine {
         await indexedDb.saveRunRecord(runRecord);
       } catch (saveErr) {
         logger.dev('WorkflowEngine', 'Failed to save run record to IndexedDB', { outputs: saveErr });
+      }
+
+      // Final success checkpoint
+      const finalTraceId = tracer.getTraceId();
+      const finalChkId = `chk_${finalTraceId}_final`;
+      const finalCheckpoint: DAGCheckpoint = {
+        id: finalChkId,
+        checkpointId: finalChkId,
+        runId: `run_${startTime}_${finalTraceId.slice(0, 8)}`,
+        workflowId,
+        timestamp: Date.now(),
+        graphTopologyHash: computeGraphTopologyHash(graph),
+        currentWaveIndex: executionLayers.length - 1,
+        totalWaves: executionLayers.length,
+        isCompleted: true,
+        failedNodeIds: [],
+        contextBag: structuredClone(context),
+        nodeStates: structuredClone(nodeStatesMap),
+      };
+      try {
+        await indexedDb.saveCheckpoint(finalCheckpoint, 5);
+      } catch {
+        // Non-blocking
       }
 
       // 3. Workflow Success
@@ -700,6 +891,29 @@ export class BrowserWorkflowEngine {
         await indexedDb.saveRunRecord(runRecord);
       } catch (saveErr) {
         logger.dev('WorkflowEngine', 'Failed to save run record to IndexedDB', { outputs: saveErr });
+      }
+
+      // Error checkpoint
+      const errTraceId = tracer.getTraceId();
+      const errChkId = `chk_${errTraceId}_err`;
+      const errorCheckpoint: DAGCheckpoint = {
+        id: errChkId,
+        checkpointId: errChkId,
+        runId: `run_${startTime}_${errTraceId.slice(0, 8)}`,
+        workflowId,
+        timestamp: Date.now(),
+        graphTopologyHash: computeGraphTopologyHash(graph),
+        currentWaveIndex: currentLayerIndex,
+        totalWaves: executionLayers.length,
+        isCompleted: false,
+        failedNodeIds: lastFailedNodeId ? [lastFailedNodeId] : [],
+        contextBag: structuredClone(context),
+        nodeStates: structuredClone(nodeStatesMap),
+      };
+      try {
+        await indexedDb.saveCheckpoint(errorCheckpoint, 5);
+      } catch {
+        // Non-blocking
       }
 
       yield {

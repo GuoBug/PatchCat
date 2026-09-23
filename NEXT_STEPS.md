@@ -1,9 +1,9 @@
 # 🎯 Next Steps / 接续开发清单
 
-> **Current Version**: `v0.4.8` (Completed & Verified ✅)  
-> **Last Updated**: 2026-09-22  
-> **Previous Milestone**: Phase 4.8 Run Observability, Step Snapshots & OpenTelemetry Tracing (`v0.4.8` Shipped ✅)  
-> **Current Target Milestone**: **`v0.4.10` Immutable Checkpointing & Resumable DAG Execution (端侧不可变 Checkpointing 与容错断点续跑)**  
+> **Current Version**: `v0.4.10` (Completed & Verified ✅)  
+> **Last Updated**: 2026-09-23  
+> **Previous Milestone**: Phase 4.10 Immutable Checkpointing & Resumable DAG Execution (`v0.4.10` Shipped ✅)  
+> **Current Target Milestone**: **`v0.4.12` Local Lightweight Hybrid Search (BM25 + Vectors) (纯本地轻量混合检索)**  
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -156,14 +156,47 @@
 
 ---
 
-### 🚀 Upcoming Milestone: v0.4.10 Immutable Checkpointing & Resumable DAG Execution
+### ⚡ Completed Milestone: Phase 4.10 Immutable Checkpointing & Resumable DAG Execution (v0.4.10)
 
-- [ ] **1. Immutable Execution Snapshots Storage**:
-  - Based on IndexedDB immutable state checkpointing for partial execution graphs.
-- [ ] **2. In-Place Node Resumption (`resumeFrom(nodeId)`)**:
-  - Re-run starting from failed nodes while reusing 100% of upstream cached results to eliminate redundant token expenditure.
-- [ ] **3. Automated Dirty State Detection & Incremental Graph Pruning**:
-  - Automatically detect modified upstream configurations and dynamically prune downstream affected subgraphs.
+- [x] **0. Architectural Specification & Product Definition ([PRD-016](docs/01-prd/PRD-016-Immutable-Checkpointing-and-Resumable-DAG-Execution.md))**:
+  - Published comprehensive PRD defining DAG Checkpointing schema, reverse-adjacency ancestor traversal, dirty state cascading, and UI ergonomics.
+- [x] **1. Immutable Execution Snapshots Storage (`indexeddb-adapter.ts`)**:
+  - Upgraded schema to `DB_VERSION = 3` with dedicated `checkpoints` object store and indexes (`by_workflow`, `by_timestamp`, `by_checkpoint_id`).
+  - Strict 5-record FIFO ring-buffer eviction per workflow to maintain bounded storage footprint (<20MB).
+  - In-memory fallback map for high-speed automated Node.js testing environments.
+- [x] **2. In-Place Node Resumption & Subgraph Pruning (`browser-engine.ts`, `topological-sort.ts`)**:
+  - `resumeFromNodeId` executes in-place resumption starting from target failed node, walking ancestor dependencies and scheduling only the pruned downstream subgraph $\{target\} \cup Descendants(target)$ via Kahn's algorithm.
+  - Zero token recomputation guarantee: ancestor outputs are 100% reused (0 token spend, 0 duration, zero re-fetching) with status marked as `'cached'`.
+  - Upward dependency expansion: if any ancestor output is unfulfilled or missing, automatically expands execution wave upstream.
+- [x] **3. Topology & Node Config Fingerprinting (`topological-sort.ts`)**:
+  - Deterministic MD5/Murmur-style structural hashing (`computeGraphTopologyHash`, `computeNodeConfigHash`) to guard against graph mutations.
+- [x] **4. Canvas Ergonomics & React Flow UI Integration (`BaseNode.tsx`, `PropertyPanel.tsx`, `ControlHeader.tsx`, `RunHistoryDrawer.tsx`)**:
+  - Added `[ ⏯️ Resume Downstream ]` action in `BaseNode` headers, `PropertyPanel` footer, and `ControlHeader` error banner.
+  - Added `[ ⤺ Restore to Canvas ]` in `RunHistoryDrawer` to hydrate historical run snapshots directly onto active canvas.
+  - Added dedicated `'cached'` node status styling with sky-blue border, lock icon, and `Cached (0 Token)` badges.
+- [x] **5. Verification & Testing**:
+  - Added `tests/checkpoint-resumption.node.test.ts` (8 suites) and expanded `tests/canvas-ergonomics.node.test.ts` (3 new suites).
+  - 272/272 automated unit tests passing across 65 suites with 100% green rate.
+
+---
+
+### 🚀 Active Milestone: v0.4.12 Local Lightweight Hybrid Search (BM25 + Vectors)
+
+- [ ] **1. Pure-Frontend In-Memory BM25 Lexical Inverted Index Engine**:
+  - Zero-dependency in-memory inverted index for browser Local BYOK mode with CJK n-gram & whitespace tokenization.
+- [ ] **2. Reciprocal Rank Fusion (RRF) Hybrid Scoring**:
+  - Weighted fusion algorithm combining lexical keyword scores and dense vector cosine similarity.
+- [ ] **3. Retrieval Scoring Visualization & Keyword Highlights**:
+  - Visualization of BM25 vs Dense vector contributions and highlight chips in Knowledge node preview.
+
+---
+
+### 🔮 Upcoming Milestone: v0.4.14 Reranker Cross-Encoder API Integration
+
+- [ ] **1. Multi-Provider Reranker Client (`reranker-client.ts`)**:
+  - Direct integration with SiliconFlow (`BAAI/bge-reranker-v2-m3`), Cohere, and Jina Rerank endpoints.
+- [ ] **2. Knowledge Node Re-ranking Pipeline & Token Compression**:
+  - Top-N reranking cutoff and relevance filtering before prompt synthesis.
 
 ---
 
@@ -351,14 +384,47 @@ npm run build
 
 ---
 
-### 🚀 即将推进里程碑：v0.4.10 端侧不可变 Checkpointing 与容错断点续跑
+### ⚡ 已交付里程碑：Phase 4.10 端侧不可变 Checkpointing 与容错断点续跑 (v0.4.10)
 
-- [ ] **1. 端侧不可变执行快照存储 (Execution Snapshot Storage)**：
-  - 基于浏览器 IndexedDB 实现增量与分支状态的不可变存储。
-- [ ] **2. 失败节点就地断点续跑 (`resumeFrom(nodeId)`)**：
-  - 100% 复用上游绿色节点执行结果，杜绝重复调用大模型造成的昂贵 Token 浪费与网络开销。
-- [ ] **3. 脏状态 (Dirty State) 自动感知与增量拓扑子图裁剪调度**：
-  - 智能感知节点属性修改，动态识别脏节点，仅重跑下游受影响的子图分枝。
+- [x] **0. 架构规范与需求定义 ([PRD-016](docs/01-prd/PRD-016-Immutable-Checkpointing-and-Resumable-DAG-Execution.md))**：
+  - 发布完整中英双语 PRD 规范，确立 DAG 状态机快照 Schema、逆邻接祖先遍历、脏状态级联算法与画布工效交互设计。
+- [x] **1. 端侧不可变执行快照存储 (`indexeddb-adapter.ts`)**：
+  - IndexedDB 数据库结构升级至 `DB_VERSION = 3`，新增 `checkpoints` 对象仓库与多维索引（`by_workflow`、`by_timestamp`、`by_checkpoint_id`）；
+  - 严格落实单工作流 5 条快照 FIFO 环形自动淘汰机制，死守浏览器本地轻量存储红线 (<20MB)；
+  - 针对 Node.js 自动化测试环境实现全内存 Fallback 适配，兼顾高频测试吞吐。
+- [x] **2. 失败节点就地断点续跑与增量拓扑子图裁剪 (`browser-engine.ts`, `topological-sort.ts`)**：
+  - 实现基于 Kahn 拓扑排序的精准下游子图裁剪调度器：以此节点为起点，仅重新调度 $\{target\} \cup Descendants(target)$；
+  - 零 Token 浪费保障：100% 复用祖先已就绪的执行输出（0 Token 消耗、0ms 耗时、零网络请求），节点状态标记为 `'cached'`；
+  - 自适应向上逆向依赖扩充：当菱形图或多分支中存在未完成的前置祖先时，自动触发向上扩充分支，确保数据流确定性闭环。
+- [x] **3. 拓扑结构与节点配置指纹哈希计算 (`topological-sort.ts`)**：
+  - 基于确定性哈希算法（`computeGraphTopologyHash`, `computeNodeConfigHash`）对全图拓扑与单节点参数进行指纹验签，严防快照间跨图结构污染。
+- [x] **4. 画布工效学与 React Flow 深度整合 (`BaseNode.tsx`, `PropertyPanel.tsx`, `ControlHeader.tsx`, `RunHistoryDrawer.tsx`)**：
+  - 节点卡片头部、属性侧边栏底部及顶部失败警告横幅中一键提供 `[ ⏯️ 从此处断点续跑 ]` 快捷动作；
+  - 运行历史抽屉（`RunHistoryDrawer`）支持 `[ ⤺ 恢复快照至画布 ]`，一键还原任意历史轮次的节点输出与执行状态；
+  - 新增专用 `'cached'` 节点状态，搭配天青色渐变边框、加锁图标及「缓存已复用 (0 Token)」高辨识度徽章。
+- [x] **5. 自动化测试套件扩充与质量验收**：
+  - 新增 `tests/checkpoint-resumption.node.test.ts`（8 个测试套件）并扩充 `tests/canvas-ergonomics.node.test.ts`（3 个测试用例）；
+  - 全量 272 项自动化测试 100% 绿灯通过，65 个测试套件，0 类型报错，生产打包顺利完成。
+
+---
+
+### 🚀 当前推进里程碑：v0.4.12 纯本地轻量混合检索 (BM25 + 稠密向量)
+
+- [ ] **1. 纯前端内存倒排索引分词引擎 (In-Memory BM25)**：
+  - 零后端依赖的纯前端轻量倒排索引，支持 CJK 字符双元分词（Bi-gram）与空格分词，实现精准关键词与字面匹配。
+- [ ] **2. 倒排与向量倒数排序融合 (Reciprocal Rank Fusion - RRF)**：
+  - 实现工业级 RRF 加权融合算法，自适应平衡 BM25 词法分值与高维语义向量余弦相似度。
+- [ ] **3. 检索分值可视化与命中关键词高亮**：
+  - 在知识库切片预览与画布节点中直观展现 BM25 vs Vector 贡献比，命中文本片段高亮渲染。
+
+---
+
+### 🔮 后续接续里程碑：v0.4.14 交叉重排 Reranker API 深度集成
+
+- [ ] **1. 多厂商轻量重排客户端适配 (`reranker-client.ts`)**：
+  - 接入 SiliconFlow（`BAAI/bge-reranker-v2-m3`）、Cohere 与 Jina Rerank 接口规范。
+- [ ] **2. 知识库检索节点重排过滤与上下文压缩**：
+  - 设定 Top-N 截断阈值，在 Prompt 注入前对冗余切片进行深度压缩去噪。
 
 ---
 

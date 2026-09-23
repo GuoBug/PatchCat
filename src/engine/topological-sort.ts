@@ -229,3 +229,92 @@ export function validateGraphTopology(graph: GraphInput): GraphValidationResult 
     executionLayers: hasCycle ? undefined : executionLayers,
   };
 }
+
+/**
+ * Computes all ancestor nodes (immediate and transitive parents) for a given target node.
+ */
+export function computeAncestors(targetNodeId: string, graph: GraphInput): Set<string> {
+  const incomingMap = new Map<string, string[]>();
+  for (const edge of graph.edges) {
+    if (!incomingMap.has(edge.target)) incomingMap.set(edge.target, []);
+    incomingMap.get(edge.target)!.push(edge.source);
+  }
+
+  const ancestors = new Set<string>();
+  const queue = [...(incomingMap.get(targetNodeId) || [])];
+  while (queue.length > 0) {
+    const parent = queue.shift()!;
+    if (!ancestors.has(parent)) {
+      ancestors.add(parent);
+      const grandParents = incomingMap.get(parent) || [];
+      for (const gp of grandParents) {
+        if (!ancestors.has(gp)) queue.push(gp);
+      }
+    }
+  }
+  return ancestors;
+}
+
+/**
+ * Computes all descendant nodes (immediate and transitive children) for a set of target nodes.
+ */
+export function computeDescendants(targetNodeIds: Iterable<string>, graph: GraphInput): Set<string> {
+  const outgoingMap = new Map<string, string[]>();
+  for (const edge of graph.edges) {
+    if (!outgoingMap.has(edge.source)) outgoingMap.set(edge.source, []);
+    outgoingMap.get(edge.source)!.push(edge.target);
+  }
+
+  const targets = new Set(targetNodeIds);
+  const descendants = new Set<string>();
+  const queue = [...targets];
+  while (queue.length > 0) {
+    const curr = queue.shift()!;
+    const children = outgoingMap.get(curr) || [];
+    for (const child of children) {
+      if (!descendants.has(child) && !targets.has(child)) {
+        descendants.add(child);
+        queue.push(child);
+      }
+    }
+  }
+  return descendants;
+}
+
+/**
+ * Computes a deterministic configuration hash for a node to detect dirty state.
+ */
+export function computeNodeConfigHash(node: WorkflowNode): string {
+  const payload = JSON.stringify({
+    type: node.type || node.data?.type,
+    inputs: node.data?.inputs || {},
+    config: node.data?.config || {},
+  });
+  let hash = 0;
+  for (let i = 0; i < payload.length; i++) {
+    const char = payload.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(16);
+}
+
+/**
+ * Computes a structural hash of the DAG nodes and directed edges.
+ */
+export function computeGraphTopologyHash(graph: GraphInput): string {
+  const nodeIds = graph.nodes.map((n) => n.id).sort().join(',');
+  const edgeIds = graph.edges
+    .map((e) => `${e.source}->${e.target}${e.sourceHandle ? ':' + e.sourceHandle : ''}`)
+    .sort()
+    .join(';');
+  const payload = `${nodeIds}#${edgeIds}`;
+  let hash = 0;
+  for (let i = 0; i < payload.length; i++) {
+    const char = payload.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0;
+  }
+  return 'topo_' + Math.abs(hash).toString(16);
+}
+

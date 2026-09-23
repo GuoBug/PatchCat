@@ -14,13 +14,13 @@
   </p>
 
   <p>
-    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/版本-v0.4.8-blue.svg" alt="Release: v0.4.8" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/版本-v0.4.10-blue.svg" alt="Release: v0.4.10" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/开源协议-MIT-emerald.svg" alt="License: MIT" /></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" alt="React 18" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/自动化测试-261项全部通过-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/自动化测试-272项全部通过-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
@@ -258,8 +258,9 @@ PatchCat 内置了开箱即用的工业级场景模板：
 - [x] 本地 Python 后端服务支持（FastAPI + 异步引擎 + Alembic 数据迁移）
 - [x] 华硕 Merlin 路由器插件包与轻量网关服务 (v0.4.7)
 - [x] 运行可观测性、节点单步数据快照与 OpenTelemetry 标准对齐 (v0.4.8)
-- [ ] 端侧不可变 Checkpointing 与容错断点续跑 (v0.4.10)
-- [ ] 纯本地轻量混合检索 (BM25 + 稠密向量) (v0.5.2)
+- [x] 端侧不可变 Checkpointing 与容错断点续跑 (v0.4.10)
+- [ ] 纯本地轻量混合检索 (BM25 + 稠密向量) (v0.4.12)
+- [ ] 交叉重排 Reranker API 深度集成 (v0.4.14)
 
 ---
 

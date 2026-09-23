@@ -7,10 +7,10 @@
  *   knowledge base documents, and embedding chunks without the 5MB LocalStorage limit.
  */
 
-import type { RunHistoryRecord } from '../../engine/types.ts';
+import type { RunHistoryRecord, DAGCheckpoint } from '../../engine/types.ts';
 
 const DB_NAME = 'PatchCatDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 export const STORES = {
   WORKFLOWS: 'workflows',
@@ -19,15 +19,26 @@ export const STORES = {
   KB_DOCS: 'kb_docs',
   KB_CHUNKS: 'kb_chunks',
   RUN_HISTORY: 'run_history',
+  CHECKPOINTS: 'checkpoints',
 } as const;
 
 export type StoreName = (typeof STORES)[keyof typeof STORES];
 
 export class IndexedDbAdapter {
   private dbPromise: Promise<IDBDatabase> | null = null;
+  private memoryFallback = new Map<string, Map<string, unknown>>();
 
   public isSupported(): boolean {
     return typeof window !== 'undefined' && typeof window.indexedDB !== 'undefined';
+  }
+
+  private getMemoryStore(storeName: string): Map<string, unknown> {
+    let store = this.memoryFallback.get(storeName);
+    if (!store) {
+      store = new Map<string, unknown>();
+      this.memoryFallback.set(storeName, store);
+    }
+    return store;
   }
 
   private async getDB(): Promise<IDBDatabase> {
@@ -68,6 +79,12 @@ export class IndexedDbAdapter {
           runStore.createIndex('workflowId', 'workflowId', { unique: false });
           runStore.createIndex('startedAt', 'startedAt', { unique: false });
         }
+        if (!db.objectStoreNames.contains(STORES.CHECKPOINTS)) {
+          const chkStore = db.createObjectStore(STORES.CHECKPOINTS, { keyPath: 'id' });
+          chkStore.createIndex('workflowId', 'workflowId', { unique: false });
+          chkStore.createIndex('timestamp', 'timestamp', { unique: false });
+          chkStore.createIndex('checkpointId', 'checkpointId', { unique: false });
+        }
       };
 
       request.onsuccess = () => {
@@ -84,6 +101,10 @@ export class IndexedDbAdapter {
   }
 
   public async get<T>(storeName: StoreName, key: string): Promise<T | null> {
+    if (!this.isSupported()) {
+      const store = this.getMemoryStore(storeName);
+      return (store.get(key) as T) ?? null;
+    }
     const db = await this.getDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(storeName, 'readonly');
@@ -96,6 +117,10 @@ export class IndexedDbAdapter {
   }
 
   public async getAll<T>(storeName: StoreName): Promise<T[]> {
+    if (!this.isSupported()) {
+      const store = this.getMemoryStore(storeName);
+      return Array.from(store.values()) as T[];
+    }
     const db = await this.getDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(storeName, 'readonly');
@@ -108,6 +133,15 @@ export class IndexedDbAdapter {
   }
 
   public async put<T>(storeName: StoreName, value: T): Promise<void> {
+    if (!this.isSupported()) {
+      const store = this.getMemoryStore(storeName);
+      const key =
+        (value as { id?: string; key?: string })?.id ||
+        (value as { id?: string; key?: string })?.key ||
+        String(Date.now());
+      store.set(key, value);
+      return;
+    }
     const db = await this.getDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(storeName, 'readwrite');
@@ -120,6 +154,11 @@ export class IndexedDbAdapter {
   }
 
   public async delete(storeName: StoreName, key: string): Promise<void> {
+    if (!this.isSupported()) {
+      const store = this.getMemoryStore(storeName);
+      store.delete(key);
+      return;
+    }
     const db = await this.getDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(storeName, 'readwrite');
@@ -132,6 +171,11 @@ export class IndexedDbAdapter {
   }
 
   public async clear(storeName: StoreName): Promise<void> {
+    if (!this.isSupported()) {
+      const store = this.getMemoryStore(storeName);
+      store.clear();
+      return;
+    }
     const db = await this.getDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(storeName, 'readwrite');
@@ -157,11 +201,8 @@ export class IndexedDbAdapter {
       const allRuns = await this.getRecentRuns(record.workflowId, 50);
       if (allRuns.length > maxPerWorkflow) {
         const toDelete = allRuns.slice(maxPerWorkflow);
-        const db = await this.getDB();
-        const tx = db.transaction(STORES.RUN_HISTORY, 'readwrite');
-        const store = tx.objectStore(STORES.RUN_HISTORY);
         for (const r of toDelete) {
-          store.delete(r.id);
+          await this.delete(STORES.RUN_HISTORY, r.id);
         }
       }
     } catch {
@@ -192,16 +233,83 @@ export class IndexedDbAdapter {
    */
   public async clearRunsForWorkflow(workflowId: string): Promise<void> {
     const runs = await this.getRecentRuns(workflowId, 100);
-    const db = await this.getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORES.RUN_HISTORY, 'readwrite');
-      const store = tx.objectStore(STORES.RUN_HISTORY);
-      for (const r of runs) {
-        store.delete(r.id);
+    for (const r of runs) {
+      await this.delete(STORES.RUN_HISTORY, r.id);
+    }
+  }
+
+  // ── DAG Checkpointing & Resumption API (Phase 4.10 / v0.4.10) ────────────
+
+  /**
+   * Saves an immutable DAG execution checkpoint with strict FIFO ring-buffer eviction.
+   * Retains at most `maxPerWorkflow` (default 5) checkpoints per workflow to guard browser storage quotas.
+   */
+  public async saveCheckpoint(checkpoint: DAGCheckpoint, maxPerWorkflow = 5): Promise<void> {
+    await this.put<DAGCheckpoint>(STORES.CHECKPOINTS, checkpoint);
+
+    try {
+      const allCheckpoints = await this.getCheckpointsForWorkflow(checkpoint.workflowId, 50);
+      if (allCheckpoints.length > maxPerWorkflow) {
+        const toDelete = allCheckpoints.slice(maxPerWorkflow);
+        for (const c of toDelete) {
+          await this.delete(STORES.CHECKPOINTS, c.id);
+        }
       }
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
+    } catch {
+      // Non-blocking best-effort eviction
+    }
+  }
+
+  /**
+   * Retrieves the latest checkpoint for a workflow, sorted by timestamp descending.
+   */
+  public async getLatestCheckpoint(workflowId: string): Promise<DAGCheckpoint | null> {
+    const list = await this.getCheckpointsForWorkflow(workflowId, 1);
+    return list.length > 0 && list[0] ? list[0] : null;
+  }
+
+  /**
+   * Retrieves a specific checkpoint by its checkpointId or id.
+   */
+  public async getCheckpointById(checkpointId: string): Promise<DAGCheckpoint | null> {
+    const all = await this.getAll<DAGCheckpoint>(STORES.CHECKPOINTS);
+    return all.find((c) => c.checkpointId === checkpointId || c.id === checkpointId) ?? null;
+  }
+
+  /**
+   * Retrieves all checkpoints for a workflow, ordered newest to oldest.
+   */
+  public async getCheckpointsForWorkflow(workflowId: string, limit = 5): Promise<DAGCheckpoint[]> {
+    const all = await this.getAll<DAGCheckpoint>(STORES.CHECKPOINTS);
+    return all
+      .filter((c) => c.workflowId === workflowId)
+      .sort((a, b) => {
+        if (b.timestamp !== a.timestamp) {
+          return b.timestamp - a.timestamp;
+        }
+        if (b.isCompleted !== a.isCompleted) {
+          return b.isCompleted ? 1 : -1;
+        }
+        return b.currentWaveIndex - a.currentWaveIndex;
+      })
+      .slice(0, limit);
+  }
+
+  /**
+   * Deletes a specific checkpoint by its ID.
+   */
+  public async deleteCheckpoint(id: string): Promise<void> {
+    return this.delete(STORES.CHECKPOINTS, id);
+  }
+
+  /**
+   * Clears all checkpoints for a given workflow.
+   */
+  public async clearCheckpointsForWorkflow(workflowId: string): Promise<void> {
+    const checkpoints = await this.getCheckpointsForWorkflow(workflowId, 100);
+    for (const c of checkpoints) {
+      await this.delete(STORES.CHECKPOINTS, c.id);
+    }
   }
 }
 

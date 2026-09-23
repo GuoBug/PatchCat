@@ -7,6 +7,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   RotateCcw,
+  FastForward,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
@@ -38,6 +39,7 @@ export const PropertyPanel: React.FC = () => {
   const updateNodeData = useWorkflowStore((s) => s.updateNodeData);
   const updateNodeConfig = useWorkflowStore((s) => s.updateNodeConfig);
   const retryNode = useWorkflowStore((s) => s.retryNode);
+  const resumeFromNode = useWorkflowStore((s) => s.resumeFromNode);
   const isExecuting = useWorkflowStore((s) => s.isExecuting);
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
@@ -297,16 +299,27 @@ export const PropertyPanel: React.FC = () => {
       {/* Panel Footer Actions */}
       <div className="p-4 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/60 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {(data.status === 'error' || data.status === 'success') && (
-            <button
-              onClick={() => retryNode(id)}
-              disabled={isExecuting}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-blue-600 dark:text-sky-400 hover:bg-blue-50 dark:hover:bg-sky-500/10 border border-blue-200 dark:border-sky-500/30 text-xs font-medium transition-all shadow-xs disabled:opacity-50 cursor-pointer"
-              title={t.ergonomics.retryNodeHint}
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>{t.ergonomics.retryNode}</span>
-            </button>
+          {(data.status === 'error' || data.status === 'success' || data.status === 'cached') && (
+            <>
+              <button
+                onClick={() => retryNode(id)}
+                disabled={isExecuting}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-blue-600 dark:text-sky-400 hover:bg-blue-50 dark:hover:bg-sky-500/10 border border-blue-200 dark:border-sky-500/30 text-xs font-medium transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                title={t.ergonomics.retryNodeHint}
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>{t.ergonomics.retryNode}</span>
+              </button>
+              <button
+                onClick={() => resumeFromNode(id)}
+                disabled={isExecuting}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-xs font-medium transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                title={t.ergonomics.resumeFromNodeHint}
+              >
+                <FastForward className="w-3.5 h-3.5" />
+                <span>{t.ergonomics.resumeFromNode}</span>
+              </button>
+            </>
           )}
 
           <button

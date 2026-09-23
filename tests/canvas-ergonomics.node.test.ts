@@ -2,9 +2,11 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { HistoryManager } from '../src/engine/history-manager.ts';
 import { BrowserWorkflowEngine } from '../src/engine/browser-engine.ts';
-import type { WorkflowNode, WorkflowEdge, ExecutionEvent } from '../src/engine/types.ts';
-import { resolveAABBCollision } from '../src/stores/workflow-store.ts';
+import type { WorkflowNode, WorkflowEdge, ExecutionEvent, DAGCheckpoint, RunHistoryRecord } from '../src/engine/types.ts';
+import { resolveAABBCollision, useWorkflowStore } from '../src/stores/workflow-store.ts';
 import { TEMPLATES_META, TEMPLATE_CATEGORIES } from '../src/presets/preset-meta.ts';
+import { translations } from '../src/i18n/translations.ts';
+import { indexedDb } from '../src/services/storage/indexeddb-adapter.ts';
 
 async function collectEvents(generator: AsyncGenerator<ExecutionEvent>): Promise<ExecutionEvent[]> {
   const events: ExecutionEvent[] = [];
@@ -294,6 +296,150 @@ describe('v0.4.6 Canvas Ergonomics & Productivity Tests', () => {
           assert.ok(c.icon);
         }
       }
+    });
+  });
+
+  describe('v0.4.10 (PRD-016) Checkpointing & Resumption Ergonomics & Store Integration', () => {
+    it('verifies bilingual translations for resumeFromNode, resumeAllFailed, and cachedOutputBadge exist', () => {
+      const enErgo = translations.en.ergonomics;
+      const zhErgo = translations.zh.ergonomics;
+
+      assert.ok(enErgo.resumeFromNode, 'Missing en.ergonomics.resumeFromNode');
+      assert.ok(enErgo.resumeFromNodeHint, 'Missing en.ergonomics.resumeFromNodeHint');
+      assert.ok(enErgo.resumeAllFailed, 'Missing en.ergonomics.resumeAllFailed');
+      assert.ok(enErgo.cachedOutputBadge, 'Missing en.ergonomics.cachedOutputBadge');
+
+      assert.ok(zhErgo.resumeFromNode, 'Missing zh.ergonomics.resumeFromNode');
+      assert.ok(zhErgo.resumeFromNodeHint, 'Missing zh.ergonomics.resumeFromNodeHint');
+      assert.ok(zhErgo.resumeAllFailed, 'Missing zh.ergonomics.resumeAllFailed');
+      assert.ok(zhErgo.cachedOutputBadge, 'Missing zh.ergonomics.cachedOutputBadge');
+
+      assert.strictEqual(enErgo.cachedOutputBadge, 'Cached (0 Token)');
+      assert.strictEqual(zhErgo.cachedOutputBadge, '缓存已复用 (0 Token)');
+    });
+
+    it('restores checkpoint node states and outputs to canvas via restoreCheckpointToCanvas', async () => {
+      const store = useWorkflowStore.getState();
+      store.loadPreset({
+        nodes: [
+          {
+            id: 'node_a',
+            type: 'input',
+            position: { x: 0, y: 0 },
+            data: { label: 'Node A', type: 'input', status: 'idle', inputs: {}, outputs: {} },
+          } as WorkflowNode,
+          {
+            id: 'node_b',
+            type: 'prompt',
+            position: { x: 100, y: 0 },
+            data: { label: 'Node B', type: 'prompt', status: 'idle', inputs: {}, outputs: {} },
+          } as WorkflowNode,
+        ],
+        edges: [],
+      });
+
+      const checkpoint: DAGCheckpoint = {
+        id: 'chk_test_canvas',
+        checkpointId: 'chk_test_canvas',
+        runId: 'run_test_canvas',
+        workflowId: 'wf_canvas',
+        timestamp: Date.now(),
+        graphTopologyHash: 'top_hash',
+        currentWaveIndex: 1,
+        totalWaves: 2,
+        isCompleted: false,
+        failedNodeIds: [],
+        contextBag: {},
+        nodeStates: {
+          node_a: {
+            nodeId: 'node_a',
+            nodeType: 'input',
+            status: 'cached',
+            durationMs: 0,
+            outputsSnapshot: { text: 'hydrated output a' },
+            configHash: 'hash_a',
+            tokensUsed: { prompt: 0, completion: 0, total: 0 },
+          },
+          node_b: {
+            nodeId: 'node_b',
+            nodeType: 'prompt',
+            status: 'cached',
+            durationMs: 0,
+            outputsSnapshot: { promptText: 'hydrated output b' },
+            configHash: 'hash_b',
+            tokensUsed: { prompt: 0, completion: 0, total: 0 },
+          },
+        },
+      };
+
+      await indexedDb.saveCheckpoint(checkpoint);
+      const restored = await store.restoreCheckpointToCanvas('chk_test_canvas');
+      assert.strictEqual(restored, true);
+
+      const updatedNodes = useWorkflowStore.getState().nodes;
+      const nodeA = updatedNodes.find((n) => n.id === 'node_a');
+      const nodeB = updatedNodes.find((n) => n.id === 'node_b');
+
+      assert.ok(nodeA);
+      assert.strictEqual(nodeA.data.status, 'cached');
+      assert.deepStrictEqual(nodeA.data.outputs, { text: 'hydrated output a' });
+
+      assert.ok(nodeB);
+      assert.strictEqual(nodeB.data.status, 'cached');
+      assert.deepStrictEqual(nodeB.data.outputs, { promptText: 'hydrated output b' });
+    });
+
+    it('restores run history snapshots to canvas via restoreRunToCanvas', () => {
+      const store = useWorkflowStore.getState();
+      store.loadPreset({
+        nodes: [
+          {
+            id: 'node_x',
+            type: 'code',
+            position: { x: 0, y: 0 },
+            data: { label: 'Node X', type: 'code', status: 'idle', inputs: {}, outputs: {} },
+          } as WorkflowNode,
+        ],
+        edges: [],
+      });
+
+      const runRecord: RunHistoryRecord = {
+        id: 'rec_1',
+        runId: 'run_1',
+        traceId: 'trace_1',
+        workflowId: 'wf_1',
+        startedAt: 1000,
+        completedAt: 1150,
+        durationMs: 150,
+        totalDurationMs: 150,
+        status: 'success',
+        triggerMode: 'manual',
+        totalTokens: { prompt: 10, completion: 20, total: 30 },
+        estimatedCostUSD: 0.0001,
+        totalCostUSD: 0.0001,
+        nodeSnapshots: {
+          node_x: {
+            nodeId: 'node_x',
+            nodeType: 'code',
+            status: 'success',
+            durationMs: 45,
+            inputs: {},
+            outputs: { result: 42 },
+            tokenUsage: { prompt: 0, completion: 0, total: 0 },
+            error: undefined,
+          },
+        },
+        stepSnapshots: [],
+        spans: [],
+      };
+
+      store.restoreRunToCanvas(runRecord);
+
+      const nodeX = useWorkflowStore.getState().nodes.find((n) => n.id === 'node_x');
+      assert.ok(nodeX);
+      assert.strictEqual(nodeX.data.status, 'cached');
+      assert.deepStrictEqual(nodeX.data.outputs, { result: 42 });
+      assert.strictEqual(nodeX.data.executionResult?.latencyMs, 45);
     });
   });
 });

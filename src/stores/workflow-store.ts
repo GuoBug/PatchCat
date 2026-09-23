@@ -45,6 +45,7 @@ import { HistoryManager } from '../engine/history-manager.ts';
 import { BrowserWorkflowEngine } from '../engine/browser-engine.ts';
 import { useSettingsStore } from './settings-store.ts';
 import { saveShadowDraft } from '../services/storage/shadow-draft-manager.ts';
+import { indexedDb } from '../services/storage/indexeddb-adapter.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Store Interface
@@ -150,9 +151,12 @@ export interface WorkflowStoreState {
   canUndo: () => boolean;
   canRedo: () => boolean;
 
-  // ── In-Place Local Retry ─────────────────────────────────────────────────
+  // ── In-Place Local Retry & Resumption (v0.4.10) ─────────────────────────
   retryNode: (nodeId: string, options?: { resumeDownstream?: boolean }) => Promise<void>;
   retryAllFailedNodes: () => Promise<void>;
+  resumeFromNode: (nodeId: string) => Promise<void>;
+  restoreCheckpointToCanvas: (checkpointId: string) => Promise<boolean>;
+  restoreRunToCanvas: (runRecord: RunHistoryRecord) => void;
 
   // ── Drop-to-Add Connection with AABB Collision Avoidance ──────────────────
   addNodeAndConnect: (params: {
@@ -886,6 +890,140 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
           s.isExecuting = false;
         });
       }
+    },
+
+    // ── Resumable DAG Execution (v0.4.10) ────────────────────────────────────
+    resumeFromNode: async (nodeId: string) => {
+      const state = get();
+      if (state.isExecuting) return;
+      const targetNode = state.nodes.find((n) => n.id === nodeId);
+      if (!targetNode) return;
+
+      set((s) => {
+        s.isExecuting = true;
+        s.edges = s.edges.map((e) => ({
+          ...e,
+          animated: true,
+          style: { stroke: '#0284c7', strokeWidth: 2, strokeDasharray: '6,6' },
+        }));
+      });
+
+      const activeWorkflowId =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('patchcat_active_workflow_v2') || 'default-workflow'
+          : 'default-workflow';
+
+      try {
+        const engine = new BrowserWorkflowEngine();
+        for await (const event of engine.executeWorkflow(
+          { nodes: get().nodes, edges: get().edges },
+          {
+            inputs: get().globalInputs,
+            resumeFromNodeId: nodeId,
+            workflowId: activeWorkflowId,
+            triggerMode: 'manual',
+          },
+        )) {
+          if (event.type === 'NODE_START') {
+            get().setNodeStatus(event.payload.nodeId, 'running');
+          } else if (event.type === 'NODE_CHUNK') {
+            get().updateNodeStreamingOutput(
+              event.payload.nodeId,
+              event.payload.fullContent,
+              event.payload.fullReasoning,
+            );
+          } else if (event.type === 'NODE_COMPLETE') {
+            const isCached = event.payload.durationMs === 0;
+            const rawUsage = event.payload.output?.usage as TokenUsage | undefined;
+            const tokenUsage = isCached
+              ? { prompt: 0, completion: 0, total: 0 }
+              : (rawUsage || { prompt: 60, completion: 60, total: 120 });
+            get().setNodeStatus(event.payload.nodeId, isCached ? 'cached' : 'success', {
+              latencyMs: event.payload.durationMs,
+              tokenUsage,
+              timestamp: Date.now(),
+            });
+            if (event.payload.output) {
+              get().updateNodeData(event.payload.nodeId, {
+                outputs: event.payload.output,
+              });
+            }
+          } else if (event.type === 'NODE_ERROR') {
+            get().setNodeStatus(event.payload.nodeId, 'error', {
+              latencyMs: event.payload.durationMs,
+              error: event.payload.error,
+              timestamp: Date.now(),
+            });
+          } else if (event.type === 'WORKFLOW_COMPLETE') {
+            if (event.payload.runRecord) {
+              get().setLastRunRecord(event.payload.runRecord);
+            }
+          } else if (event.type === 'WORKFLOW_ERROR') {
+            if (event.payload.runRecord) {
+              get().setLastRunRecord(event.payload.runRecord);
+            }
+          }
+        }
+      } finally {
+        set((s) => {
+          s.isExecuting = false;
+          s.edges = s.edges.map((e) => ({
+            ...e,
+            animated: false,
+            style: { stroke: '#10b981', strokeWidth: 2 },
+          }));
+        });
+      }
+    },
+
+    restoreCheckpointToCanvas: async (checkpointId: string) => {
+      try {
+        const cp = await indexedDb.getCheckpointById(checkpointId);
+        if (!cp || !cp.nodeStates) return false;
+
+        set((s) => {
+          for (const [nodeId, state] of Object.entries(cp.nodeStates)) {
+            const node = s.nodes.find((n) => n.id === nodeId);
+            if (node) {
+              node.data.status = state.status;
+              if (state.outputsSnapshot) {
+                node.data.outputs = state.outputsSnapshot;
+              }
+              node.data.executionResult = {
+                latencyMs: state.durationMs,
+                tokenUsage: state.tokensUsed,
+                timestamp: cp.timestamp,
+                error: state.errorMessage,
+              };
+            }
+          }
+        });
+        return true;
+      } catch (err) {
+        console.error('Failed to restore checkpoint to canvas:', err);
+        return false;
+      }
+    },
+
+    restoreRunToCanvas: (runRecord: RunHistoryRecord) => {
+      if (!runRecord || !runRecord.nodeSnapshots) return;
+      set((s) => {
+        for (const snap of Object.values(runRecord.nodeSnapshots)) {
+          const node = s.nodes.find((n) => n.id === snap.nodeId);
+          if (node) {
+            node.data.status = snap.status === 'success' ? 'cached' : snap.status;
+            if (snap.outputs) {
+              node.data.outputs = snap.outputs;
+            }
+            node.data.executionResult = {
+              latencyMs: snap.durationMs,
+              tokenUsage: snap.tokenUsage,
+              timestamp: runRecord.startedAt,
+              error: snap.error,
+            };
+          }
+        }
+      });
     },
   })),
 );

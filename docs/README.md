@@ -33,6 +33,7 @@
 | [PRD-013](01-prd/PRD-013-Empty-Canvas-Onboarding-Template-Gallery-and-Node-Ergonomics.md) | **Empty Canvas Guidance, Template Showcase Gallery & Draft Recovery** | Phase 4.3 | ✅ Done |
 | [PRD-014](01-prd/PRD-014-Merlin-Router-Plugin-and-Lightweight-Gateway.md) | **Merlin Router Plugin & Lightweight Gateway Packaging** | Phase 4.7 | ✅ Done |
 | [PRD-015](01-prd/PRD-015-Run-Observability-Trace-Inspection-and-OTel-Alignment.md) | **Run Observability, Step Snapshot Inspection & OpenTelemetry Tracing** | Phase 4.8 | ✅ Done |
+| [PRD-016](01-prd/PRD-016-Immutable-Checkpointing-and-Resumable-DAG-Execution.md) | **Immutable Checkpointing & Resumable DAG Execution** | Phase 4.10 | 📋 In Progress |
 
 ---
 
@@ -78,6 +79,7 @@
 - [📖 Phase 3: Chat Debug Panel & API Publishing](04-dev-notes/dev-log-phase-3-chat-debug-and-api-publishing.md)
 - [📖 Phase 4: AI Agent Capabilities, ReAct Autonomous Loop & Multi-Modal Tool Calling](04-dev-notes/dev-log-phase-4-agent-capabilities-and-react-loop.md)
 - [📖 Phase 4.8: Run Observability, Step Snapshot Inspection & OpenTelemetry Tracing](04-dev-notes/dev-log-phase-4-8-run-observability-and-opentelemetry.md)
+- [📖 Phase 4.10: Immutable Checkpointing & Resumable DAG Execution](04-dev-notes/dev-log-phase-4-10-immutable-checkpointing-and-resumable-dag.md)
 
 ---
 
@@ -125,6 +127,7 @@
 | [PRD-013](01-prd/PRD-013-Empty-Canvas-Onboarding-Template-Gallery-and-Node-Ergonomics.md) | **空画布灵感引导、场景模板画廊与草稿安全体系** | Phase 4.3 | ✅ 已完成 |
 | [PRD-014](01-prd/PRD-014-Merlin-Router-Plugin-and-Lightweight-Gateway.md) | **华硕 Merlin 路由器插件包与轻量网关服务** | Phase 4.7 | ✅ 已完成 |
 | [PRD-015](01-prd/PRD-015-Run-Observability-Trace-Inspection-and-OTel-Alignment.md) | **运行可观测性、节点单步数据快照与 OpenTelemetry 标准对齐** | Phase 4.8 | ✅ 已完成 |
+| [PRD-016](01-prd/PRD-016-Immutable-Checkpointing-and-Resumable-DAG-Execution.md) | **端侧不可变 Checkpointing 与容错断点续跑** | Phase 4.10 | 📋 进行中 |
 
 ---
 
@@ -170,6 +173,7 @@
 - [📖 Phase 3：Chat 调试抽屉与一键 API 发布](04-dev-notes/dev-log-phase-3-chat-debug-and-api-publishing.md)
 - [📖 Phase 4：AI 智能体能力层、ReAct 自主循环与多模态工具调用](04-dev-notes/dev-log-phase-4-agent-capabilities-and-react-loop.md)
 - [📖 Phase 4.8：运行可观测性、节点单步数据快照与 OpenTelemetry 标准对齐](04-dev-notes/dev-log-phase-4-8-run-observability-and-opentelemetry.md)
+- [📖 Phase 4.10：端侧不可变 Checkpointing 与容错断点续跑](04-dev-notes/dev-log-phase-4-10-immutable-checkpointing-and-resumable-dag.md)
 
 ---
 

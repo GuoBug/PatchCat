@@ -542,6 +542,10 @@ export interface Translations {
     retryNode: string;
     retryAllFailed: string;
     retryNodeHint: string;
+    resumeFromNode: string;
+    resumeFromNodeHint: string;
+    resumeAllFailed: string;
+    cachedOutputBadge: string;
     failedNodesCount: string;
     locateNode: string;
     copyMarkdown: string;
@@ -1171,6 +1175,10 @@ export const translations: Record<Language, Translations> = {
       retryNode: 'Retry Node',
       retryAllFailed: 'Retry All Failed Nodes',
       retryNodeHint: 'Re-runs this node using cached upstream outputs without restarting the full workflow.',
+      resumeFromNode: 'Resume Downstream',
+      resumeFromNodeHint: 'Resumes workflow execution from this node, reusing 100% of cached upstream outputs (0 Tokens).',
+      resumeAllFailed: 'Resume Failed Subgraphs',
+      cachedOutputBadge: 'Cached (0 Token)',
       failedNodesCount: '{count} Nodes Failed',
       locateNode: 'Locate Node',
       copyMarkdown: 'Copy Markdown',
@@ -1786,6 +1794,10 @@ export const translations: Record<Language, Translations> = {
       retryNode: '就地重试该节点',
       retryAllFailed: '重试所有失败节点',
       retryNodeHint: '复用上游已缓存的入参就地重试此节点，无需从头重跑整条工作流。',
+      resumeFromNode: '从此处断点续跑',
+      resumeFromNodeHint: '以此节点为起点断点续跑下游管道，100% 复用上游已通过的祖先输出（零 Token 浪费）。',
+      resumeAllFailed: '增量断点续跑',
+      cachedOutputBadge: '缓存已复用 (0 Token)',
       failedNodesCount: '{count} 个节点执行失败',
       locateNode: '定位节点',
       copyMarkdown: '复制 Markdown',

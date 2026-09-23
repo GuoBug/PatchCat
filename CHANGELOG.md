@@ -5,6 +5,30 @@ All notable changes to the **PatchCat** project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.10] - 2026-09-23
+
+### Added
+- **Immutable Checkpointing & Resumable DAG Execution (`browser-engine.ts`, `topological-sort.ts`, PRD-016)**:
+  - **Incremental Downstream Resumption (`resumeFromNodeId`)**:
+    - In-place DAG breakpoint resumption that walks upstream ancestor dependencies and schedules only the pruned downstream subgraph $\{target\} \cup Descendants(target)$ using Kahn's topological sort.
+    - Zero token recomputation guarantee: cached upstream ancestor outputs are 100% reused (0 Token spend, 0 duration, zero re-fetching) with status marked as `'cached'`.
+    - Automatic upward dependency expansion: if any required ancestor output is missing or incomplete, the engine automatically expands the execution wave upstream to recover deterministic outputs.
+  - **Graph Topology & Node Configuration Fingerprinting (`topological-sort.ts`)**:
+    - Deterministic structural hashing (`computeGraphTopologyHash`, `computeNodeConfigHash`) to ensure checkpoint compatibility and detect mid-flight canvas modifications.
+  - **IndexedDB Checkpointing Storage Engine (`indexeddb-adapter.ts`)**:
+    - Upgraded storage schema to `DB_VERSION = 3` with dedicated `checkpoints` object store and indexes (`by_workflow`, `by_timestamp`, `by_checkpoint_id`).
+    - Enforced strict 5-record FIFO ring-buffer eviction per workflow to prevent browser storage quota explosion (<20MB footprint).
+    - Added headless in-memory fallback map for high-speed automated Node.js testing environments.
+- **Canvas Ergonomics & React Flow UI Integration (`BaseNode.tsx`, `PropertyPanel.tsx`, `ControlHeader.tsx`, `RunHistoryDrawer.tsx`)**:
+    - Added `[ ⏯️ 从此处断点续跑 ]` (`resumeFromNode`) actions in `BaseNode` headers, `PropertyPanel` footer, and `ControlHeader` execution failure alerts.
+    - Added `[ ⤺ 恢复快照至画布 ]` in `RunHistoryDrawer` allowing one-click hydration of any historical run snapshot back onto the canvas.
+    - Added dedicated `'cached'` node status styling with sky-blue border, lock icon, and `Cached (0 Token)` / `缓存已复用 (0 Token)` badges.
+- **Automated Test Suite Expansion (`checkpoint-resumption.node.test.ts`, `canvas-ergonomics.node.test.ts`)**:
+    - Added comprehensive integration tests verifying wave checkpoints, failure resumption, upward expansion, ring-buffer FIFO eviction, and canvas restoration.
+    - 272 automated tests across 65 suites passing with 100% green rate.
+
+---
+
 ## [0.4.8] - 2026-09-22
 
 ### Added

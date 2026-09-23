@@ -62,7 +62,7 @@ export type NodeType =
  *                   │            └──▶ skipped
  * ```
  */
-export type NodeStatus = 'idle' | 'queued' | 'running' | 'success' | 'error' | 'skipped';
+export type NodeStatus = 'idle' | 'queued' | 'running' | 'success' | 'error' | 'skipped' | 'cached';
 
 /**
  * Runtime engine mode that determines *how* each node is executed.
@@ -391,6 +391,10 @@ export interface WorkflowRunOptions {
   workflowTitle?: string;
   /** Mode that initiated execution ('manual' | 'chat' | 'api'). Default: 'manual'. */
   triggerMode?: WorkflowTriggerMode;
+  /** Node ID to resume execution from using cached immutable ancestors (Phase 4.10 / v0.4.10). */
+  resumeFromNodeId?: string;
+  /** Specific checkpoint ID to hydrate ancestor state from. If omitted, uses the latest checkpoint for the workflow. */
+  checkpointId?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -741,4 +745,43 @@ export interface RunHistoryRecord {
   spans: OTelSpan[];
   otelTrace?: OTelExportTrace;
   error?: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 14. Immutable Checkpointing & Resumable DAG Execution (Phase 4.10 / v0.4.10)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Immutable per-node state snapshot within a DAG execution checkpoint.
+ */
+export interface NodeCheckpointState {
+  nodeId: string;
+  nodeType: string;
+  status: 'idle' | 'running' | 'success' | 'error' | 'skipped' | 'cached';
+  inputsSnapshot?: Record<string, unknown>;
+  outputsSnapshot?: Record<string, unknown>;
+  errorMessage?: string;
+  durationMs: number;
+  tokensUsed?: TokenUsage;
+  configHash: string;
+  completedAt?: number;
+}
+
+/**
+ * Full immutable DAG execution checkpoint stored in IndexedDB.
+ * Allows safe, zero-token breakpoint resumption across browser reloads or network blips.
+ */
+export interface DAGCheckpoint {
+  id: string;                  // Primary key for IndexedDB
+  checkpointId: string;        // Unique identifier (e.g., chk_1727092800000_abc123)
+  runId: string;               // Workflow run instance ID
+  workflowId: string;          // Owning workflow ID
+  timestamp: number;           // Creation timestamp
+  graphTopologyHash: string;   // Structural hash of graph nodes and edges
+  currentWaveIndex: number;    // Wave index at checkpoint moment
+  totalWaves: number;          // Total planned execution waves
+  isCompleted: boolean;        // Whether execution reached full graph completion
+  failedNodeIds: string[];     // Node IDs currently in failed state
+  contextBag: Record<string, Record<string, unknown>>; // Immutable snapshot of execution context
+  nodeStates: Record<string, NodeCheckpointState>;     // Snapshot of each node's state
 }

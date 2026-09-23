@@ -14,13 +14,13 @@
   </p>
 
   <p>
-    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/version-v0.4.8-blue.svg" alt="Release: v0.4.8" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/version-v0.4.10-blue.svg" alt="Release: v0.4.10" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-emerald.svg" alt="License: MIT" /></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" alt="React 18" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-261%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-272%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
@@ -250,8 +250,9 @@ PatchCat comes with ready-to-use industrial presets:
 - [x] Local Python Server Backend (FastAPI + Async Engine + Alembic Migrations)
 - [x] Asuswrt-Merlin Router Plugin & Lightweight Go Gateway (v0.4.7)
 - [x] Run Observability, Step Snapshot Inspection & OpenTelemetry Tracing (v0.4.8)
-- [ ] Immutable Checkpointing & Resumable Execution Subgraph (v0.4.10)
-- [ ] Local Lightweight Hybrid Search (BM25 + Vectors) (v0.5.2)
+- [x] Immutable Checkpointing & Resumable Execution Subgraph (v0.4.10)
+- [ ] Local Lightweight Hybrid Search (BM25 + Vectors) (v0.4.12)
+- [ ] Reranker Cross-Encoder API Integration (v0.4.14)
 
 ---
 

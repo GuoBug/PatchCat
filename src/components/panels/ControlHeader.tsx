@@ -20,6 +20,7 @@ import {
   MessageSquare,
   Lock,
   Search,
+  FastForward,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import { useProjectStore } from '../../stores/project-store.ts';
@@ -777,7 +778,7 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
                 {alertNotification.message}
               </p>
               {alertNotification.failedNodeId && (
-                <div className="pt-1">
+                <div className="pt-1 flex items-center gap-2">
                   <button
                     onClick={() => highlightNode(alertNotification.failedNodeId!)}
                     className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 dark:bg-rose-500/20 dark:hover:bg-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold cursor-pointer transition-colors shadow-xs"
@@ -785,6 +786,18 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
                     <Search className="w-3.5 h-3.5" />
                     <span>{t.ergonomics.locateNode}</span>
                     <span className="font-mono text-[11px] opacity-80">({alertNotification.failedNodeId})</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const failedId = alertNotification.failedNodeId!;
+                      setAlertNotification(null);
+                      useWorkflowStore.getState().resumeFromNode(failedId);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold cursor-pointer transition-colors shadow-xs"
+                    title={t.ergonomics.resumeFromNodeHint}
+                  >
+                    <FastForward className="w-3.5 h-3.5" />
+                    <span>{t.ergonomics.resumeAllFailed}</span>
                   </button>
                 </div>
               )}

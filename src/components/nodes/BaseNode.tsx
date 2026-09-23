@@ -19,6 +19,8 @@ import {
   Repeat,
   Layers,
   RotateCcw,
+  Lock,
+  FastForward,
 } from 'lucide-react';
 import type { NodeType, NodeStatus, NodeExecutionResult } from '../../engine/types.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
@@ -176,6 +178,13 @@ const statusStyles: Record<NodeStatus, { border: string; badge: string; icon: Re
       'bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700/50',
     icon: <MinusCircle className="w-3 h-3 text-slate-400" />,
   },
+  cached: {
+    border:
+      'border-sky-500/70 shadow-xs shadow-sky-500/10 dark:border-sky-500/40 bg-sky-50/10 dark:bg-sky-950/20',
+    badge:
+      'bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-500/20 dark:text-sky-300 dark:border-sky-500/30',
+    icon: <Lock className="w-3 h-3 text-sky-600 dark:text-sky-400" />,
+  },
 };
 
 export const BaseNode: React.FC<BaseNodeProps> = memo(
@@ -196,6 +205,8 @@ export const BaseNode: React.FC<BaseNodeProps> = memo(
     const { t } = useTranslation();
     const highlightedNodeId = useWorkflowStore((s) => s.highlightedNodeId);
     const retryNode = useWorkflowStore((s) => s.retryNode);
+    const resumeFromNode = useWorkflowStore((s) => s.resumeFromNode);
+    const isExecuting = useWorkflowStore((s) => s.isExecuting);
     const isHighlighted = highlightedNodeId === id;
     const handleRetry = onRetry ? () => onRetry(id) : () => retryNode(id);
 
@@ -263,25 +274,41 @@ export const BaseNode: React.FC<BaseNodeProps> = memo(
             </div>
           </div>
 
-          {/* Status Badge & Local Retry Button */}
+          {/* Status Badge & Local Retry / Resume Buttons */}
           <div className="flex items-center gap-1.5 shrink-0">
-            {(status === 'error' || status === 'success') && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRetry();
-                }}
-                className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-blue-600 dark:hover:text-sky-400 transition-colors cursor-pointer"
-                title={t.ergonomics.retryNodeHint}
-              >
-                <RotateCcw className="w-3 h-3" />
-              </button>
+            {(status === 'error' || status === 'success' || status === 'cached') && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRetry();
+                  }}
+                  disabled={isExecuting}
+                  className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-blue-600 dark:hover:text-sky-400 transition-colors cursor-pointer disabled:opacity-40"
+                  title={t.ergonomics.retryNodeHint}
+                >
+                  <RotateCcw className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    resumeFromNode(id);
+                  }}
+                  disabled={isExecuting}
+                  className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer disabled:opacity-40"
+                  title={t.ergonomics.resumeFromNodeHint}
+                >
+                  <FastForward className="w-3 h-3" />
+                </button>
+              </>
             )}
             <div
               className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium ${currentStatus.badge}`}
             >
               {currentStatus.icon}
-              <span className="capitalize">{status}</span>
+              <span className="capitalize">
+                {status === 'cached' ? t.ergonomics.cachedOutputBadge : status}
+              </span>
             </div>
           </div>
         </div>

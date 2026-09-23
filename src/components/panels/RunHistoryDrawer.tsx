@@ -21,6 +21,7 @@ export const RunHistoryDrawer: React.FC = () => {
   const setSelectedRunRecord = useWorkflowStore((s) => s.setSelectedRunRecord);
   const setSelectedSnapshot = useWorkflowStore((s) => s.setSelectedSnapshot);
   const lastRunRecord = useWorkflowStore((s) => s.lastRunRecord);
+  const restoreRunToCanvas = useWorkflowStore((s) => s.restoreRunToCanvas);
 
   const activeWorkflowId = useProjectStore((s) => s.activeWorkflowId) || 'default-workflow';
   const { language } = useTranslation();
@@ -29,6 +30,7 @@ export const RunHistoryDrawer: React.FC = () => {
   const [runs, setRuns] = useState<RunHistoryRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [copiedTrace, setCopiedTrace] = useState(false);
+  const [restoredSuccess, setRestoredSuccess] = useState(false);
 
   // Load recent runs whenever drawer opens or lastRunRecord updates
   const fetchRecentRuns = async () => {
@@ -103,6 +105,13 @@ export const RunHistoryDrawer: React.FC = () => {
     navigator.clipboard.writeText(jsonStr);
     setCopiedTrace(true);
     setTimeout(() => setCopiedTrace(false), 2000);
+  };
+
+  const handleRestoreToCanvas = () => {
+    if (!selectedRunRecord) return;
+    restoreRunToCanvas(selectedRunRecord);
+    setRestoredSuccess(true);
+    setTimeout(() => setRestoredSuccess(false), 2000);
   };
 
   if (!isRunHistoryOpen) return null;
@@ -278,8 +287,17 @@ export const RunHistoryDrawer: React.FC = () => {
                           </span>
                         </div>
 
-                        {/* OTel Export Actions */}
+                        {/* OTel Export & Checkpoint Restore Actions */}
                         <div className="flex items-center gap-2">
+                          <button
+                            onClick={handleRestoreToCanvas}
+                            className="px-2.5 py-1 text-xs font-medium rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-600/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors flex items-center gap-1.5"
+                            title={isZh ? '将该次运行的所有节点快照与输出还原到画布' : 'Restore node snapshot states and outputs to canvas'}
+                          >
+                            <span>{restoredSuccess ? '✓' : '⤺'}</span>
+                            <span>{restoredSuccess ? (isZh ? '已还原' : 'Restored') : (isZh ? '恢复至画布' : '恢复快照至画布')}</span>
+                          </button>
+
                           <button
                             onClick={handleCopyOTelJson}
                             className="px-2.5 py-1 text-xs font-medium rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5"
