@@ -195,7 +195,11 @@ function runInBrowserWorker(
 }
 
 /**
- * Isolated VM execution for Node.js (test suites and server-side runtimes).
+ * VM execution for Node.js (test suites and offline environments).
+ *
+ * ⚠️ 安全声明：Node.js 原生 `node:vm` 模块在官方设计上明确“非安全隔离沙箱”（Not a security boundary），
+ * 无法抵御深层原型链逃逸或恶意攻击。此路径仅供自动化测试与 Node.js 离线环境降级使用。
+ * 生产浏览器环境下，引擎强制运行于专属独立的 Web Worker 线程沙箱（剥离 DOM、网络、Cookie 及 Storage）。
  */
 async function runInNodeVm(
   rawScript: string,

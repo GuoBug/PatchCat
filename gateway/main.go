@@ -21,7 +21,7 @@ import (
 
 // Version constants
 const (
-	AppVersion = "0.4.8-merlin"
+	AppVersion = "0.4.11-merlin"
 	AppName    = "PatchCat-Merlin-Gateway"
 )
 
@@ -324,7 +324,7 @@ func handleProxy(w http.ResponseWriter, r *http.Request) {
 	targetParsed, err := isAllowedTargetURL(targetURL, config.Proxy.AllowedDomains)
 	if err != nil {
 		log.Printf("[Security Warning] 🛑 SSRF/Target blocked: %v (Remote: %s)", err, r.RemoteAddr)
-		http.Error(w, fmt.Sprintf(`{"error": "Target URL blocked by security policy: %v"}`, err), http.StatusForbidden)
+		http.Error(w, `{"error": "Target URL blocked by security policy: forbidden target host or IP"}`, http.StatusForbidden)
 		return
 	}
 

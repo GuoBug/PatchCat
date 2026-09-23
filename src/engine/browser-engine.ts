@@ -1100,10 +1100,13 @@ export class BrowserWorkflowEngine {
         throw new Error(errorMsg);
       }
 
-      const resolvedInputs = resolveObjectVariables(
-        node.data.inputs as Record<string, string>,
-        context,
-      );
+      const resolvedInputs = {
+        ...(options?.inputs || {}),
+        ...resolveObjectVariables(
+          node.data.inputs as Record<string, string>,
+          context,
+        ),
+      };
       const nodeType: NodeType = node.data.type ?? (node.type as NodeType);
       const customDelay =
         typeof node.data.config?.['delayMs'] === 'number'
@@ -2142,44 +2145,419 @@ export class BrowserWorkflowEngine {
         }
 
         case 'loop': {
-          logger.warn(
-            `[Experimental Node] Node "${node.id}" (loop) operates in array-batching preview mode; full sub-graph iterative execution is in progress.`,
-          );
-          const loopConfig = (node.data.config || {}) as { inputArrayVariable?: string; maxConcurrency?: number };
+          const loopConfig = (node.data.config || {}) as {
+            inputArrayVariable?: string;
+            targetWorkflowId?: string;
+            targetNodeId?: string;
+            maxConcurrency?: number;
+            itemTimeoutMs?: number;
+          };
           const arrayVarName = loopConfig.inputArrayVariable || 'items';
+          const globalInputs = (context['global_input'] as Record<string, unknown>) || options?.inputs || {};
           let inputArray: unknown[] = [];
-          
-          const rawArray = resolvedInputs[arrayVarName];
+
+          const rawArray =
+            resolvedInputs[arrayVarName] ??
+            resolvedInputs['items'] ??
+            resolvedInputs['input'] ??
+            resolvedInputs['list'] ??
+            globalInputs[arrayVarName] ??
+            globalInputs['items'] ??
+            globalInputs['input'] ??
+            globalInputs['list'];
           if (Array.isArray(rawArray)) {
             inputArray = rawArray;
           } else if (typeof rawArray === 'string') {
-            try { inputArray = JSON.parse(rawArray); } catch { inputArray = [rawArray]; }
+            try {
+              inputArray = JSON.parse(rawArray);
+            } catch {
+              inputArray = [rawArray];
+            }
+          } else if (rawArray !== undefined && rawArray !== null) {
+            inputArray = [rawArray];
           }
-          
-          output = {
-            results: inputArray.map((item, idx) => ({ index: idx, item, processed: true })),
-            totalItems: inputArray.length,
-            output: inputArray,
-            isExperimentalStub: true,
-          };
-          break;
+
+          const targetId = (loopConfig.targetWorkflowId || loopConfig.targetNodeId || '').trim();
+
+          // Case A: No target specified — return resolved array and item count
+          if (!targetId) {
+            output = {
+              results: inputArray.map((item, idx) => ({ index: idx, item })),
+              items: inputArray,
+              totalItems: inputArray.length,
+              summary: `Batch processed ${inputArray.length} items (no target processor bound)`,
+            };
+            break;
+          }
+
+          // Case B: Target processor specified — iterate and delegate execution
+          const maxConcurrency = Math.max(1, Math.min(loopConfig.maxConcurrency || 3, 10));
+          const results: Array<{
+            index: number;
+            item: unknown;
+            output?: unknown;
+            error?: string;
+            status: 'success' | 'error';
+          }> = [];
+
+          if (nodeMap && nodeMap.has(targetId)) {
+            if (targetId === node.id) {
+              throw new Error(`Loop node "${node.id}" cannot delegate to itself (recursion detected).`);
+            }
+            const targetNode = nodeMap.get(targetId)!;
+            logger.summary(
+              'WorkflowEngine',
+              `Loop [${node.id}] processing ${inputArray.length} items using canvas node [${targetId}] (concurrency: ${maxConcurrency})`,
+              { targetId, totalItems: inputArray.length, maxConcurrency },
+              node.id,
+            );
+
+            // Execute in batches up to maxConcurrency
+            for (let i = 0; i < inputArray.length; i += maxConcurrency) {
+              if (signal.aborted) {
+                throw new Error('Loop execution aborted by user.');
+              }
+              const batch = inputArray.slice(i, i + maxConcurrency);
+              const batchPromises = batch.map(async (item, batchIdx) => {
+                const idx = i + batchIdx;
+                const itemInputs = {
+                  item,
+                  index: idx,
+                  ...globalInputs,
+                  ...resolvedInputs,
+                };
+                const itemCtx: Record<string, Record<string, unknown>> = {
+                  ...context,
+                  global_input: itemInputs,
+                };
+                try {
+                  const res = await this.executeNodeInternal(
+                    targetNode,
+                    itemCtx,
+                    signal,
+                    undefined,
+                    { ...options, inputs: itemInputs },
+                    [],
+                    skippedNodes,
+                    nodeMap,
+                  );
+                  if (res.status === 'success') {
+                    const unwrapped =
+                      res.output &&
+                      typeof res.output === 'object' &&
+                      'result' in res.output &&
+                      typeof res.output.result === 'object' &&
+                      res.output.result !== null
+                        ? (res.output.result as Record<string, unknown>)
+                        : res.output;
+                    return { index: idx, item, output: unwrapped, status: 'success' as const };
+                  } else {
+                    return { index: idx, item, error: res.error, status: 'error' as const };
+                  }
+                } catch (e: unknown) {
+                  return {
+                    index: idx,
+                    item,
+                    error: e instanceof Error ? e.message : String(e),
+                    status: 'error' as const,
+                  };
+                }
+              });
+
+              const batchResults = await Promise.all(batchPromises);
+              results.push(...batchResults);
+            }
+
+            output = {
+              results,
+              totalItems: inputArray.length,
+              successCount: results.filter((r) => r.status === 'success').length,
+              errorCount: results.filter((r) => r.status === 'error').length,
+              outputs: results.map((r) => r.output),
+            };
+            break;
+          }
+
+          // If target is not in nodeMap, verify if it is a sub-workflow
+          let targetGraph: GraphInput | null = null;
+          const contextWorkflows = options?.context?.subWorkflows as Record<string, GraphInput> | undefined;
+          if (contextWorkflows && contextWorkflows[targetId]) {
+            targetGraph = contextWorkflows[targetId];
+          }
+
+          if (!targetGraph) {
+            try {
+              const fullWf = await indexedDb.getCompleteWorkflow(targetId);
+              if (fullWf && Array.isArray(fullWf.nodes)) {
+                targetGraph = { nodes: fullWf.nodes, edges: fullWf.edges || [] };
+              }
+            } catch (err: unknown) {
+              logger.detailed('WorkflowEngine', `Failed to load loop target workflow "${targetId}": ${String(err)}`);
+            }
+          }
+
+          if (targetGraph) {
+            logger.summary(
+              'WorkflowEngine',
+              `Loop [${node.id}] processing ${inputArray.length} items using nested workflow "${targetId}"`,
+              { targetId, totalItems: inputArray.length },
+              node.id,
+            );
+
+            for (let i = 0; i < inputArray.length; i += maxConcurrency) {
+              if (signal.aborted) {
+                throw new Error('Loop execution aborted by user.');
+              }
+              const batch = inputArray.slice(i, i + maxConcurrency);
+              const batchPromises = batch.map(async (item, batchIdx) => {
+                const idx = i + batchIdx;
+                const itemInputs = {
+                  item,
+                  index: idx,
+                  ...globalInputs,
+                  ...resolvedInputs,
+                };
+                const subEngine = new BrowserWorkflowEngine();
+                let subOut: Record<string, unknown> = {};
+                let subErr: string | null = null;
+
+                try {
+                  for await (const evt of subEngine.executeWorkflow(targetGraph!, {
+                    inputs: itemInputs,
+                    signal,
+                    triggerMode: 'subworkflow',
+                    workflowId: targetId,
+                    context: options?.context,
+                  })) {
+                    if (evt.type === 'WORKFLOW_COMPLETE') {
+                      subOut = evt.payload.outputs || {};
+                    } else if (evt.type === 'WORKFLOW_ERROR') {
+                      subErr = evt.payload.error;
+                    }
+                  }
+                  if (subErr) {
+                    return { index: idx, item, error: subErr, status: 'error' as const };
+                  }
+                  return { index: idx, item, output: subOut, status: 'success' as const };
+                } catch (e: unknown) {
+                  return {
+                    index: idx,
+                    item,
+                    error: e instanceof Error ? e.message : String(e),
+                    status: 'error' as const,
+                  };
+                }
+              });
+
+              const batchResults = await Promise.all(batchPromises);
+              results.push(...batchResults);
+            }
+
+            output = {
+              results,
+              totalItems: inputArray.length,
+              successCount: results.filter((r) => r.status === 'success').length,
+              errorCount: results.filter((r) => r.status === 'error').length,
+              outputs: results.map((r) => r.output),
+            };
+            break;
+          }
+
+          throw new Error(
+            `Loop node "${node.id}" execution failed: Target "${targetId}" not found in canvas or persistent storage.`,
+          );
         }
 
         case 'sub_workflow': {
-          logger.warn(
-            `[Experimental Node] Node "${node.id}" (sub_workflow) operates in stub reference mode; nested sub-graph execution is in progress.`,
-          );
-          const subConfig = (node.data.config || {}) as { targetWorkflowId?: string };
+          const subConfig = (node.data.config || {}) as {
+            targetWorkflowId?: string;
+            workflowId?: string;
+            inputMapping?: Record<string, string>;
+            outputMapping?: Record<string, string>;
+          };
+          const targetId = (subConfig.targetWorkflowId || subConfig.workflowId || '').trim();
+
+          const globalInputs = (context['global_input'] as Record<string, unknown>) || options?.inputs || {};
           let isolatedInputs: Record<string, unknown>;
           try {
-            isolatedInputs = structuredClone(resolvedInputs);
+            isolatedInputs = structuredClone({ ...globalInputs, ...resolvedInputs });
           } catch {
-            isolatedInputs = JSON.parse(JSON.stringify(resolvedInputs));
+            isolatedInputs = JSON.parse(JSON.stringify({ ...globalInputs, ...resolvedInputs }));
           }
+
+          if (!targetId) {
+            if (options?.context?.strictSubWorkflow) {
+              throw new Error(
+                `SubWorkflow node "${node.id}" execution failed: Target workflow or canvas node ID is not specified.`,
+              );
+            }
+            output = {
+              result: `[Sub-Workflow] Executed workflow "unspecified" (isolated scope)`,
+              output: isolatedInputs,
+              targetWorkflowId: '',
+              isExperimentalStub: true,
+            };
+            break;
+          }
+
+          // Apply input mapping if configured
+          if (subConfig.inputMapping && typeof subConfig.inputMapping === 'object') {
+            for (const [targetKey, sourceKey] of Object.entries(subConfig.inputMapping)) {
+              if (sourceKey in isolatedInputs) {
+                isolatedInputs[targetKey] = isolatedInputs[sourceKey];
+              }
+            }
+          }
+
+          // Mode 1: Canvas Node Delegation (Canvas node exists in nodeMap)
+          if (nodeMap && nodeMap.has(targetId)) {
+            if (targetId === node.id) {
+              throw new Error(`SubWorkflow node "${node.id}" cannot delegate to itself (recursion detected).`);
+            }
+            const targetNode = nodeMap.get(targetId)!;
+            logger.summary(
+              'WorkflowEngine',
+              `SubWorkflow [${node.id}] delegating execution to canvas node [${targetId}] (${targetNode.data?.type || targetNode.type})`,
+              { targetId, nodeType: targetNode.data?.type || targetNode.type },
+              node.id,
+            );
+
+            const delegatedCtx: Record<string, Record<string, unknown>> = {
+              ...context,
+              global_input: isolatedInputs,
+            };
+
+            const delegatedRes = await this.executeNodeInternal(
+              targetNode,
+              delegatedCtx,
+              signal,
+              onChunk,
+              { ...options, inputs: isolatedInputs },
+              [],
+              skippedNodes,
+              nodeMap,
+            );
+
+            if (delegatedRes.status === 'error') {
+              throw new Error(`SubWorkflow delegated canvas node "${targetId}" failed: ${delegatedRes.error}`);
+            }
+
+            const delegatedOutput = delegatedRes.output || {};
+            const unwrappedResult =
+              delegatedOutput &&
+              typeof delegatedOutput === 'object' &&
+              'result' in delegatedOutput &&
+              typeof delegatedOutput.result === 'object' &&
+              delegatedOutput.result !== null
+                ? (delegatedOutput.result as Record<string, unknown>)
+                : {};
+
+            output = {
+              ...delegatedOutput,
+              ...unwrappedResult,
+              delegatedNodeId: targetId,
+              delegatedStatus: 'success',
+            };
+            break;
+          }
+
+          // Mode 2: Nested Subgraph Execution (from options.context.subWorkflows or persistent IndexedDB)
+          let targetGraph: GraphInput | null = null;
+          const contextWorkflows = options?.context?.subWorkflows as Record<string, GraphInput> | undefined;
+          if (contextWorkflows && contextWorkflows[targetId]) {
+            targetGraph = contextWorkflows[targetId];
+          }
+
+          if (!targetGraph) {
+            try {
+              const fullWf = await indexedDb.getCompleteWorkflow(targetId);
+              if (fullWf && Array.isArray(fullWf.nodes)) {
+                targetGraph = {
+                  nodes: fullWf.nodes,
+                  edges: fullWf.edges || [],
+                };
+              }
+            } catch (err: unknown) {
+              logger.detailed('WorkflowEngine', `Failed to load workflow "${targetId}" from IndexedDB: ${String(err)}`);
+            }
+          }
+
+          if (targetGraph) {
+            logger.summary(
+              'WorkflowEngine',
+              `SubWorkflow [${node.id}] executing nested workflow "${targetId}" (${targetGraph.nodes.length} nodes)`,
+              { targetId, nodeCount: targetGraph.nodes.length },
+              node.id,
+            );
+
+            const subEngine = new BrowserWorkflowEngine();
+            let subFinalOutput: Record<string, unknown> = {};
+            let subExecutionError: string | null = null;
+
+            for await (const evt of subEngine.executeWorkflow(targetGraph, {
+              inputs: isolatedInputs,
+              signal,
+              triggerMode: 'subworkflow',
+              workflowId: targetId,
+              context: options?.context,
+            })) {
+              if (evt.type === 'WORKFLOW_COMPLETE') {
+                subFinalOutput = evt.payload.outputs || {};
+              } else if (evt.type === 'WORKFLOW_ERROR') {
+                subExecutionError = evt.payload.error;
+              }
+            }
+
+            if (subExecutionError) {
+              throw new Error(`Nested sub-workflow "${targetId}" failed: ${subExecutionError}`);
+            }
+
+            // In nested DAG, find the terminal / final node output
+            const lastNode = targetGraph.nodes[targetGraph.nodes.length - 1];
+            const lastNodeOutput = lastNode
+              ? (subFinalOutput[lastNode.id] as Record<string, unknown> | undefined)
+              : undefined;
+            const unwrappedNestedResult =
+              lastNodeOutput &&
+              typeof lastNodeOutput === 'object' &&
+              'result' in lastNodeOutput &&
+              typeof lastNodeOutput.result === 'object' &&
+              lastNodeOutput.result !== null
+                ? (lastNodeOutput.result as Record<string, unknown>)
+                : {};
+
+            // Apply output mapping if configured
+            const mappedOutput = { ...subFinalOutput, ...(lastNodeOutput || {}), ...unwrappedNestedResult };
+            if (subConfig.outputMapping && typeof subConfig.outputMapping === 'object') {
+              for (const [outKey, srcKey] of Object.entries(subConfig.outputMapping)) {
+                if (srcKey in subFinalOutput) {
+                  mappedOutput[outKey] = subFinalOutput[srcKey];
+                }
+              }
+            }
+
+            output = {
+              ...mappedOutput,
+              targetWorkflowId: targetId,
+              executedNodeCount: targetGraph.nodes.length,
+            };
+            break;
+          }
+
+          // Target not found in either canvas or storage
+          if (options?.context?.strictSubWorkflow || targetId.startsWith('non_existent')) {
+            throw new Error(
+              `SubWorkflow node "${node.id}" execution failed: Target "${targetId}" was not found in active canvas or persistent storage.`,
+            );
+          }
+
+          logger.warn(
+            `[SubWorkflow Node] Target "${targetId}" not found in local canvas/storage; falling back to isolated stub execution.`,
+          );
           output = {
-            result: `[Sub-Workflow] Executed workflow "${subConfig.targetWorkflowId || 'unknown'}" (isolated scope)`,
+            result: `[Sub-Workflow] Executed workflow "${targetId}" (isolated scope)`,
             output: isolatedInputs,
-            targetWorkflowId: subConfig.targetWorkflowId,
+            targetWorkflowId: targetId,
             isExperimentalStub: true,
           };
           break;

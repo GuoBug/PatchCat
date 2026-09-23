@@ -434,16 +434,16 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
     {
       type: 'loop',
       label: t.nodeTypes.loop,
-      desc: `${t.nodeTypes.loopDesc} (试验特性)`,
+      desc: `${t.nodeTypes.loopDesc} (支持数组迭代与节点委托)`,
       color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
-      badge: 'Preview',
+      badge: 'Beta',
     },
     {
       type: 'sub_workflow',
       label: t.nodeTypes.sub_workflow,
-      desc: `${t.nodeTypes.sub_workflowDesc} (试验特性)`,
-      color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
-      badge: 'Preview',
+      desc: `${t.nodeTypes.sub_workflowDesc} (支持画布委托与嵌套子图)`,
+      color: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30',
+      badge: 'Beta',
     },
   ];
 

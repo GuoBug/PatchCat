@@ -349,7 +349,11 @@ export interface GraphValidationResult {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 8. Execution Configuration
-// ─────────────────────────────────────────────────────────────────────────────
+/** Standard topological input graph representation. */
+export interface GraphInput {
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+}
 
 /** Options bag passed to `IWorkflowEngineAdapter.executeWorkflow()`. */
 export interface WorkflowRunOptions {
@@ -384,6 +388,9 @@ export interface WorkflowRunOptions {
       availableModels?: string[];
     };
     knowledgeAdapter?: unknown;
+    subWorkflows?: Record<string, GraphInput>;
+    strictSubWorkflow?: boolean;
+    [key: string]: unknown;
   };
   /** ID of the workflow being executed, used for audit telemetry. */
   workflowId?: string;
@@ -649,7 +656,7 @@ export type WorkflowRunStatus =
   | 'running';
 
 /** Mode that initiated the workflow execution */
-export type WorkflowTriggerMode = 'manual' | 'chat' | 'api';
+export type WorkflowTriggerMode = 'manual' | 'chat' | 'api' | 'subworkflow';
 
 /**
  * Freeze-frame execution snapshot for a single node within a workflow run.
