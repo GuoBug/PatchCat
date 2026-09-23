@@ -513,7 +513,8 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
         typeof window !== 'undefined'
           ? localStorage.getItem('patchcat_active_workflow_v2')
           : null;
-      if (activeWorkflowId) {
+      // Guard: strictly ignore ephemeral execution outputs and in-flight execution states
+      if (activeWorkflowId && !get().isExecuting && !('outputs' in data)) {
         saveShadowDraft(activeWorkflowId, nodeId, data);
       }
     },
@@ -529,7 +530,8 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
         typeof window !== 'undefined'
           ? localStorage.getItem('patchcat_active_workflow_v2')
           : null;
-      if (activeWorkflowId) {
+      // Guard: do not write shadow draft during active workflow execution
+      if (activeWorkflowId && !get().isExecuting) {
         saveShadowDraft(activeWorkflowId, nodeId, { config });
       }
     },

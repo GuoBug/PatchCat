@@ -48,6 +48,9 @@ export interface SavedWorkflow {
   api_enabled?: boolean;
   api_key?: string;
   memoryConfig?: WorkflowMemoryConfig;
+  nodeCount?: number;
+  description?: string;
+  tags?: string[];
 }
 
 export interface ProjectStoreState {
@@ -634,6 +637,9 @@ export const useProjectStore = create<ProjectStoreState>()(
       },
 
       autoSaveCurrentWorkflow: () => {
+        // Red Line 2: strictly no disk writes during active workflow execution
+        if (useWorkflowStore.getState().isExecuting) return;
+
         const activeId = get().activeWorkflowId;
         if (!activeId) return;
         const currentWf = get().workflows.find((w) => w.id === activeId);

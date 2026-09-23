@@ -33,7 +33,8 @@
 | [PRD-013](01-prd/PRD-013-Empty-Canvas-Onboarding-Template-Gallery-and-Node-Ergonomics.md) | **Empty Canvas Guidance, Template Showcase Gallery & Draft Recovery** | Phase 4.3 | ✅ Done |
 | [PRD-014](01-prd/PRD-014-Merlin-Router-Plugin-and-Lightweight-Gateway.md) | **Merlin Router Plugin & Lightweight Gateway Packaging** | Phase 4.7 | ✅ Done |
 | [PRD-015](01-prd/PRD-015-Run-Observability-Trace-Inspection-and-OTel-Alignment.md) | **Run Observability, Step Snapshot Inspection & OpenTelemetry Tracing** | Phase 4.8 | ✅ Done |
-| [PRD-016](01-prd/PRD-016-Immutable-Checkpointing-and-Resumable-DAG-Execution.md) | **Immutable Checkpointing & Resumable DAG Execution** | Phase 4.10 | 📋 In Progress |
+| [PRD-016](01-prd/PRD-016-Immutable-Checkpointing-and-Resumable-DAG-Execution.md) | **Immutable Checkpointing & Resumable DAG Execution** | Phase 4.10 | ✅ Done |
+| [PRD-017](01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md) | **Local Data Sovereignty, Web Crypto Vault & Storage Hardening** | Phase 4.11 / 4.13 | 📋 In Progress |
 
 ---
 
@@ -62,6 +63,7 @@
 #### Decision Records (ADR)
 - [ADR-001: Visual Canvas Engine Selection (XYFlow / React Flow v12)](04-dev-notes/adr-001-canvas-engine-selection.md)
 - [ADR-002: Dual-Engine Architecture Strategy](04-dev-notes/adr-002-dual-engine-architecture.md)
+- [ADR-003: Deterministic Architecture Decision - Event Sourcing vs Checkpointing & Linux Philosophy](04-dev-notes/adr-003-event-sourcing-vs-checkpointing-and-local-first-lessons.md)
 
 #### Technical Deep Dives
 - [i18n Architecture & Fullscreen Settings Page](04-dev-notes/i18n-and-settings-architecture.md)
@@ -80,6 +82,7 @@
 - [📖 Phase 4: AI Agent Capabilities, ReAct Autonomous Loop & Multi-Modal Tool Calling](04-dev-notes/dev-log-phase-4-agent-capabilities-and-react-loop.md)
 - [📖 Phase 4.8: Run Observability, Step Snapshot Inspection & OpenTelemetry Tracing](04-dev-notes/dev-log-phase-4-8-run-observability-and-opentelemetry.md)
 - [📖 Phase 4.10: Immutable Checkpointing & Resumable DAG Execution](04-dev-notes/dev-log-phase-4-10-immutable-checkpointing-and-resumable-dag.md)
+- [📖 Phase 4.11: Storage Hardening & Ephemeral Stream](04-dev-notes/dev-log-phase-4-11-storage-hardening-and-ephemeral-stream.md)
 
 ---
 
@@ -127,7 +130,8 @@
 | [PRD-013](01-prd/PRD-013-Empty-Canvas-Onboarding-Template-Gallery-and-Node-Ergonomics.md) | **空画布灵感引导、场景模板画廊与草稿安全体系** | Phase 4.3 | ✅ 已完成 |
 | [PRD-014](01-prd/PRD-014-Merlin-Router-Plugin-and-Lightweight-Gateway.md) | **华硕 Merlin 路由器插件包与轻量网关服务** | Phase 4.7 | ✅ 已完成 |
 | [PRD-015](01-prd/PRD-015-Run-Observability-Trace-Inspection-and-OTel-Alignment.md) | **运行可观测性、节点单步数据快照与 OpenTelemetry 标准对齐** | Phase 4.8 | ✅ 已完成 |
-| [PRD-016](01-prd/PRD-016-Immutable-Checkpointing-and-Resumable-DAG-Execution.md) | **端侧不可变 Checkpointing 与容错断点续跑** | Phase 4.10 | 📋 进行中 |
+| [PRD-016](01-prd/PRD-016-Immutable-Checkpointing-and-Resumable-DAG-Execution.md) | **端侧不可变 Checkpointing 与容错断点续跑** | Phase 4.10 | ✅ 已完成 |
+| [PRD-017](01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md) | **端侧数据主权、Web Crypto 本地暗室与存储防膨胀治理** | Phase 4.11 / 4.13 | 📋 进行中 |
 
 ---
 
@@ -156,6 +160,7 @@
 #### 架构决策记录 (ADR)
 - [ADR-001: 画布技术选型决策 (XYFlow / React Flow v12)](04-dev-notes/adr-001-canvas-engine-selection.md)
 - [ADR-002: 双引擎架构策略](04-dev-notes/adr-002-dual-engine-architecture.md)
+- [ADR-003: 确定性执行架构抉择 —— 从 Event Sourcing 与 Checkpointing 之争到 Linux 工具哲学落地](04-dev-notes/adr-003-event-sourcing-vs-checkpointing-and-local-first-lessons.md)
 
 #### 技术深入分析
 - [国际化 (i18n) 体系与全屏设置页面架构](04-dev-notes/i18n-and-settings-architecture.md)
@@ -174,6 +179,7 @@
 - [📖 Phase 4：AI 智能体能力层、ReAct 自主循环与多模态工具调用](04-dev-notes/dev-log-phase-4-agent-capabilities-and-react-loop.md)
 - [📖 Phase 4.8：运行可观测性、节点单步数据快照与 OpenTelemetry 标准对齐](04-dev-notes/dev-log-phase-4-8-run-observability-and-opentelemetry.md)
 - [📖 Phase 4.10：端侧不可变 Checkpointing 与容错断点续跑](04-dev-notes/dev-log-phase-4-10-immutable-checkpointing-and-resumable-dag.md)
+- [📖 Phase 4.11：底座存储防膨胀治理与时态数据物理隔离](04-dev-notes/dev-log-phase-4-11-storage-hardening-and-ephemeral-stream.md)
 
 ---
 

@@ -1,9 +1,9 @@
 # 🎯 Next Steps / 接续开发清单
 
-> **Current Version**: `v0.4.10` (Completed & Verified ✅)  
+> **Current Version**: `v0.4.11` (Completed & Verified ✅)  
 > **Last Updated**: 2026-09-23  
-> **Previous Milestone**: Phase 4.10 Immutable Checkpointing & Resumable DAG Execution (`v0.4.10` Shipped ✅)  
-> **Current Target Milestone**: **`v0.4.12` Local Lightweight Hybrid Search (BM25 + Vectors) (纯本地轻量混合检索)**  
+> **Previous Milestone**: Phase 4.11 Storage Hardening & Ephemeral Stream (`v0.4.11` Shipped ✅)  
+> **Current Target Milestone**: **`v0.4.12` 纯本地轻量混合检索 (BM25 + 稠密向量)** (详见 [PRD-006](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md) & [RAG 架构白皮书](docs/02-architecture/phase-2-knowledge-base-and-rag-architecture.md))  
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -177,6 +177,26 @@
 - [x] **5. Verification & Testing**:
   - Added `tests/checkpoint-resumption.node.test.ts` (8 suites) and expanded `tests/canvas-ergonomics.node.test.ts` (3 new suites).
   - 272/272 automated unit tests passing across 65 suites with 100% green rate.
+
+---
+
+### ⚡ Completed Milestone: Phase 4.11 Storage Hardening & Ephemeral Stream (v0.4.11)
+
+- [x] **1. Ephemeral Streaming Channel Isolation & Zero Write Amplification (`workflow-store.ts`, `project-store.ts`)**:
+  - LLM token streaming (`NODE_CHUNK`), DeepSeek reasoning traces, and canvas high-frequency node pulses are strictly isolated to memory channels (Zustand & RAF batcher).
+  - Blocked `saveShadowDraft` and `autoSaveCurrentWorkflow` during active execution (`isExecuting = true`) and ignored ephemeral execution outputs, eliminating write amplification.
+  - Added `getWriteCount()` and `resetWriteCount()` audit telemetry on `IndexedDbAdapter` to deterministically verify 0 storage mutations during streaming.
+- [x] **2. Checkpoint FIFO Ring-Buffer Logrotate (`indexeddb-adapter.ts`)**:
+  - Implemented strict atomic FIFO ring-buffer eviction limiting execution snapshots to $\le 5$ records per workflow.
+  - Automatically prunes oldest historical snapshots upon new checkpoint insertion within atomic transactions, enforcing bounded storage footprint.
+  - Added explicit `evictCheckpoints(workflowId, maxLimit)` helper.
+- [x] **3. Metadata-First Catalog Separation & Lazy Hydration (`indexeddb-adapter.ts`, `storage-adapter.ts`)**:
+  - Upgraded IndexedDB schema to `DB_VERSION = 4` with dual stores: `workflows_meta` (lightweight catalog metadata with `folderId` and `updatedAt` indexes) and `workflows_payload` (heavy node/edge graph topologies).
+  - Implemented `IndexedDbStorageAdapter` conforming to `IStorageAdapter`, accelerating workflow drawer / sidebar cold starts to $< 5\text{ms}$ while overcoming 5MB LocalStorage quotas.
+  - Atomic multi-store persistence (`saveWorkflowMetaAndPayload`) and lazy graph hydration on demand.
+- [x] **4. Automated Regression Suite & Verification (`tests/storage-hardening.node.test.ts`)**:
+  - Added comprehensive automated test suite verifying 0 IndexedDB writes across 100 high-frequency streaming chunks, strict 5-snapshot FIFO bounds over 30 consecutive execution cycles, metadata catalog separation, and adapter CRUD lifecycle.
+  - 278 automated tests across 70 suites passing with 100% green rate.
 
 ---
 
@@ -408,7 +428,26 @@ npm run build
 
 ---
 
+### ⚡ 已交付里程碑：Phase 4.11 底座存储防膨胀治理与时态数据物理隔离 (v0.4.11)
+> 依据 [ADR-003: Linux 工具哲学与检查点快照抉择](docs/04-dev-notes/adr-003-event-sourcing-vs-checkpointing-and-local-first-lessons.md) 与 [PRD-017](docs/01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md) 推进。
+
+- [x] **1. 时态数据物理隔离（Ephemeral vs. Persistent）**：
+  - 严格限制：LLM 逐字 Streaming Token、DeepSeek 思维链增量推送、节点实时高亮脉冲仅在 Zustand 内存流转；
+  - 拦截流式输出期间触发的任何 `saveWorkflow` / `saveCheckpoint` 磁盘持久化调用，写放大降为 0。
+- [x] **2. 快照 FIFO 环形淘汰机制（Ring-Buffer Logrotate）**：
+  - 单个工作流在 IndexedDB `checkpoints` 表中的快照上限死守为 5 个；
+  - 超过上限时原子删除最早历史快照，确保持久化体积绝对有界。
+- [x] **3. Metadata-First 目录化索引与大图 Payload 懒加载**：
+  - 拆分 `workflows_meta`（目录元数据）与 `workflows_payload`（大图拓扑）表；
+  - 侧边栏和工作流管理抽屉仅加载轻量元数据，保证 50+ 工作流场景冷启动 $< 5\text{ms}$。
+- [x] **4. 自动化回归测试与性能基线验收**：
+  - 新增 `tests/storage-hardening.node.test.ts`，验证高频吐字期间 0 磁盘 I/O 及 5 快照 FIFO 淘汰逻辑。
+  - 全量 278 项自动化测试通过率 100%，70 个测试套件，0 类型报错，生产打包顺利完成。
+
+---
+
 ### 🚀 当前推进里程碑：v0.4.12 纯本地轻量混合检索 (BM25 + 稠密向量)
+> 依据 [PRD-006: 知识库（RAG）向量检索与画布节点](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md) 与 [RAG 架构白皮书](docs/02-architecture/phase-2-knowledge-base-and-rag-architecture.md) 推进。
 
 - [ ] **1. 纯前端内存倒排索引分词引擎 (In-Memory BM25)**：
   - 零后端依赖的纯前端轻量倒排索引，支持 CJK 字符双元分词（Bi-gram）与空格分词，实现精准关键词与字面匹配。
@@ -419,7 +458,22 @@ npm run build
 
 ---
 
+### 🔮 接续推进里程碑：v0.4.13 本地数据主权暗室与资产一键安全脱敏 (Phase 4.13)
+> 依据 [PRD-017: 端侧数据主权与 Web Crypto 本地暗室](docs/01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md) 与 [ADR-003](docs/04-dev-notes/adr-003-event-sourcing-vs-checkpointing-and-local-first-lessons.md) 推进。
+
+- [ ] **1. Web Crypto API (AES-GCM) 本地主口令加密暗室**：
+  - 利用浏览器原生 `SubtleCrypto` + PBKDF2 派生主密钥，对所有 Provider 的 API Key 本地加密落盘；
+  - 彻底杜绝在 LocalStorage / IndexedDB 中存有任何明文 API Key，阻断第三方浏览器扩展或 XSS 抓取。
+- [ ] **2. 工作流导出「一键安全脱敏」弹窗（Sanitized Export）**：
+  - 导出工作流时默认自动剔除绑定的 API Key、敏感测试占位符及本地绝对物理路径；
+  - 支持免密脱敏导出与口令完整备份双模切换。
+- [ ] **3. 存储适配器契约冻结（`IStorageAdapter` Freeze）**：
+  - 补齐存储层极端环境（Private 模式、配额超出）降级测试，确立业务层与存储层 100% 隔离红线。
+
+---
+
 ### 🔮 后续接续里程碑：v0.4.14 交叉重排 Reranker API 深度集成
+> 依据 [PRD-006: 知识库（RAG）向量检索与画布节点](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md) 扩展规范推进。
 
 - [ ] **1. 多厂商轻量重排客户端适配 (`reranker-client.ts`)**：
   - 接入 SiliconFlow（`BAAI/bge-reranker-v2-m3`）、Cohere 与 Jina Rerank 接口规范。

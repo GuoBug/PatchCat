@@ -13,6 +13,12 @@ import {
   reconcileFoldersAndWorkflows,
 } from '../../stores/project-store.ts';
 import type { WorkflowNode, WorkflowEdge } from '../../engine/types.ts';
+import {
+  indexedDb,
+  STORES,
+  type WorkflowMetadata,
+  type WorkflowPayload,
+} from './indexeddb-adapter.ts';
 
 export interface IStorageAdapter {
   // Folder Operations
@@ -516,12 +522,218 @@ export class ApiServerAdapter implements IStorageAdapter {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. Factory Function
+// 3. IndexedDB Storage Adapter (Metadata-First & Storage Hardening Mode)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export class IndexedDbStorageAdapter implements IStorageAdapter {
+  private async getStoredFolders(): Promise<Folder[]> {
+    const rawFolders = await indexedDb.getAll<Folder>(STORES.FOLDERS);
+    const { folders, hasChanges } = reconcileFoldersAndWorkflows(rawFolders, [], 'en');
+    if (hasChanges || rawFolders.length === 0) {
+      for (const f of folders) {
+        await indexedDb.put<Folder>(STORES.FOLDERS, f);
+      }
+    }
+    return folders;
+  }
+
+  async getFolders(): Promise<Folder[]> {
+    return this.getStoredFolders();
+  }
+
+  async createFolder(folder: { id?: string; name: string; isExpanded?: boolean }): Promise<Folder> {
+    const newFolder: Folder = {
+      id: folder.id || `folder_${nanoid(6)}`,
+      name: folder.name.trim(),
+      createdAt: Date.now(),
+      isExpanded: folder.isExpanded !== false,
+      isPreset: false,
+    };
+    await indexedDb.put<Folder>(STORES.FOLDERS, newFolder);
+    return newFolder;
+  }
+
+  async updateFolder(
+    id: string,
+    updates: { name?: string; isExpanded?: boolean },
+  ): Promise<Folder> {
+    const folders = await this.getFolders();
+    const existing = folders.find((f) => f.id === id);
+    if (!existing) throw new Error(`Folder '${id}' not found`);
+
+    const updated: Folder = {
+      ...existing,
+      ...(updates.name ? { name: updates.name.trim() } : {}),
+      ...(updates.isExpanded !== undefined ? { isExpanded: updates.isExpanded } : {}),
+    };
+    await indexedDb.put<Folder>(STORES.FOLDERS, updated);
+    return updated;
+  }
+
+  async deleteFolder(id: string): Promise<void> {
+    await indexedDb.delete(STORES.FOLDERS, id);
+
+    // Re-assign orphaned workflows to default folder
+    const allMetas = await indexedDb.getAllWorkflowMetas();
+    const defaultFolderId = 'default';
+    for (const m of allMetas) {
+      if (m.folderId === id) {
+        m.folderId = defaultFolderId;
+        m.updatedAt = Date.now();
+        await indexedDb.put<WorkflowMetadata>(STORES.WORKFLOWS_META, m);
+      }
+    }
+  }
+
+  /**
+   * Retrieves workflows list using Metadata-First separation (<5ms cold start).
+   * Only reads from `workflows_meta`. Nodes and edges are returned as empty arrays
+   * to avoid parsing huge JSON payloads during drawer / catalog display.
+   */
+  async getWorkflows(folderId?: string, search?: string): Promise<SavedWorkflow[]> {
+    let metas = await indexedDb.getAllWorkflowMetas(folderId);
+    if (search) {
+      const q = search.toLowerCase();
+      metas = metas.filter((m) => m.name.toLowerCase().includes(q));
+    }
+
+    return metas.map((m) => ({
+      id: m.id,
+      name: m.name,
+      folderId: m.folderId,
+      nodes: [],
+      edges: [],
+      globalInputs: {},
+      createdAt: m.createdAt,
+      updatedAt: m.updatedAt,
+      isPreset: m.isPreset,
+      isLocked: m.isLocked,
+      api_enabled: m.api_enabled,
+      api_key: m.api_key,
+      nodeCount: m.nodeCount,
+      description: m.description,
+      tags: m.tags,
+    }));
+  }
+
+  /**
+   * Retrieves complete workflow with full nodes, edges, and configs.
+   * Lazy-loads `workflows_payload` and joins with `workflows_meta`.
+   */
+  async getWorkflow(id: string): Promise<SavedWorkflow | null> {
+    return indexedDb.getCompleteWorkflow(id);
+  }
+
+  async createWorkflow(workflow: SavedWorkflow): Promise<SavedWorkflow> {
+    const meta: WorkflowMetadata = {
+      id: workflow.id,
+      name: workflow.name,
+      folderId: workflow.folderId || 'default',
+      description: workflow.description,
+      tags: workflow.tags,
+      nodeCount: workflow.nodes ? workflow.nodes.length : 0,
+      createdAt: workflow.createdAt || Date.now(),
+      updatedAt: workflow.updatedAt || Date.now(),
+      isPreset: workflow.isPreset,
+      isLocked: workflow.isLocked,
+      api_enabled: workflow.api_enabled,
+      api_key: workflow.api_key,
+      version: 1,
+    };
+
+    const payload: WorkflowPayload = {
+      id: workflow.id,
+      nodes: workflow.nodes || [],
+      edges: workflow.edges || [],
+      globalInputs: workflow.globalInputs || {},
+      memoryConfig: workflow.memoryConfig,
+    };
+
+    await indexedDb.saveWorkflowMetaAndPayload(meta, payload);
+    return workflow;
+  }
+
+  async saveWorkflow(id: string, updates: Partial<SavedWorkflow>): Promise<SavedWorkflow> {
+    const existing = await indexedDb.getCompleteWorkflow(id);
+    if (!existing) throw new Error(`Workflow '${id}' not found`);
+
+    const now = Date.now();
+    const updatedMeta: WorkflowMetadata = {
+      id,
+      name: updates.name !== undefined ? updates.name : existing.name,
+      folderId: updates.folderId !== undefined ? updates.folderId : existing.folderId,
+      description: updates.description !== undefined ? updates.description : existing.description,
+      tags: updates.tags !== undefined ? updates.tags : existing.tags,
+      nodeCount:
+        updates.nodes !== undefined
+          ? updates.nodes.length
+          : existing.nodes
+            ? existing.nodes.length
+            : existing.nodeCount || 0,
+      createdAt: existing.createdAt,
+      updatedAt: now,
+      isPreset: updates.isPreset !== undefined ? updates.isPreset : existing.isPreset,
+      isLocked: updates.isLocked !== undefined ? updates.isLocked : existing.isLocked,
+      api_enabled: updates.api_enabled !== undefined ? updates.api_enabled : existing.api_enabled,
+      api_key: updates.api_key !== undefined ? updates.api_key : existing.api_key,
+      version: 1,
+    };
+
+    const updatedPayload: WorkflowPayload = {
+      id,
+      nodes: updates.nodes !== undefined ? updates.nodes : existing.nodes,
+      edges: updates.edges !== undefined ? updates.edges : existing.edges,
+      globalInputs:
+        updates.globalInputs !== undefined ? updates.globalInputs : existing.globalInputs,
+      memoryConfig:
+        updates.memoryConfig !== undefined ? updates.memoryConfig : existing.memoryConfig,
+    };
+
+    await indexedDb.saveWorkflowMetaAndPayload(updatedMeta, updatedPayload);
+
+    return {
+      ...existing,
+      ...updates,
+      updatedAt: now,
+      nodeCount: updatedMeta.nodeCount,
+    };
+  }
+
+  async duplicateWorkflow(id: string): Promise<SavedWorkflow> {
+    const source = await indexedDb.getCompleteWorkflow(id);
+    if (!source) throw new Error(`Workflow '${id}' not found`);
+
+    const newId = `wf_${nanoid(8)}`;
+    const now = Date.now();
+    const copy: SavedWorkflow = {
+      ...source,
+      id: newId,
+      name: `${source.name} (Copy)`,
+      createdAt: now,
+      updatedAt: now,
+      isPreset: false,
+    };
+
+    await this.createWorkflow(copy);
+    return copy;
+  }
+
+  async moveWorkflow(id: string, targetFolderId: string): Promise<SavedWorkflow> {
+    return this.saveWorkflow(id, { folderId: targetFolderId });
+  }
+
+  async deleteWorkflow(id: string): Promise<void> {
+    await indexedDb.deleteWorkflowFromDb(id);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. Factory Function
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function getStorageAdapter(mode: 'local' | 'server', baseUrl?: string): IStorageAdapter {
   if (mode === 'server') {
     return new ApiServerAdapter(baseUrl || 'http://localhost:8000');
   }
-  return new LocalStorageAdapter();
+  return new IndexedDbStorageAdapter();
 }

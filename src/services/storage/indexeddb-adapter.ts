@@ -1,19 +1,29 @@
 /**
  * @file    src/services/storage/indexeddb-adapter.ts
- * @version 1.0.0
+ * @version 1.1.0
  * @description
  *   High-capacity, asynchronous IndexedDB storage layer for PatchCat.
  *   Provides zero-dependency persistence for large workflow topologies,
  *   knowledge base documents, and embedding chunks without the 5MB LocalStorage limit.
+ *   v0.4.11: Added Metadata-First catalog separation (workflows_meta vs workflows_payload)
+ *   and strict atomic FIFO ring-buffer eviction for execution checkpoints.
  */
 
-import type { RunHistoryRecord, DAGCheckpoint } from '../../engine/types.ts';
+import type {
+  RunHistoryRecord,
+  DAGCheckpoint,
+  WorkflowNode,
+  WorkflowEdge,
+} from '../../engine/types.ts';
+import type { SavedWorkflow, WorkflowMemoryConfig } from '../../stores/project-store.ts';
 
 const DB_NAME = 'PatchCatDB';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 export const STORES = {
-  WORKFLOWS: 'workflows',
+  WORKFLOWS: 'workflows', // Legacy monolithic store preserved for backward compatibility
+  WORKFLOWS_META: 'workflows_meta', // v0.4.11: Lightweight catalog metadata (<5ms cold start)
+  WORKFLOWS_PAYLOAD: 'workflows_payload', // v0.4.11: Heavy topology graph & configs (lazy loaded)
   FOLDERS: 'folders',
   KB_BASES: 'kb_bases',
   KB_DOCS: 'kb_docs',
@@ -24,12 +34,66 @@ export const STORES = {
 
 export type StoreName = (typeof STORES)[keyof typeof STORES];
 
+/**
+ * Lightweight workflow catalog metadata stored in `workflows_meta`.
+ * Allows high-speed sidebar rendering without parsing heavy nodes/edges.
+ */
+export interface WorkflowMetadata {
+  id: string;
+  name: string;
+  folderId: string;
+  description?: string;
+  tags?: string[];
+  nodeCount: number;
+  createdAt: number;
+  updatedAt: number;
+  isPreset?: boolean;
+  isLocked?: boolean;
+  api_enabled?: boolean;
+  api_key?: string;
+  version?: number;
+}
+
+/**
+ * Heavy workflow topology graph stored in `workflows_payload`.
+ * Lazy-loaded only when the user opens or executes the workflow.
+ */
+export interface WorkflowPayload {
+  id: string;
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+  globalInputs: Record<string, unknown>;
+  memoryConfig?: WorkflowMemoryConfig;
+  viewport?: { x: number; y: number; zoom: number };
+}
+
 export class IndexedDbAdapter {
   private dbPromise: Promise<IDBDatabase> | null = null;
   private memoryFallback = new Map<string, Map<string, unknown>>();
 
+  // Telemetry & audit counters for testing zero disk writes during streaming
+  private writeCounts = {
+    put: 0,
+    delete: 0,
+    clear: 0,
+  };
+
   public isSupported(): boolean {
     return typeof window !== 'undefined' && typeof window.indexedDB !== 'undefined';
+  }
+
+  /**
+   * Returns total write operations (put + delete + clear) performed by the adapter.
+   */
+  public getWriteCount(): number {
+    return this.writeCounts.put + this.writeCounts.delete + this.writeCounts.clear;
+  }
+
+  /**
+   * Resets write audit counter.
+   */
+  public resetWriteCount(): void {
+    this.writeCounts = { put: 0, delete: 0, clear: 0 };
   }
 
   private getMemoryStore(storeName: string): Map<string, unknown> {
@@ -58,6 +122,14 @@ export class IndexedDbAdapter {
 
         if (!db.objectStoreNames.contains(STORES.WORKFLOWS)) {
           db.createObjectStore(STORES.WORKFLOWS, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(STORES.WORKFLOWS_META)) {
+          const metaStore = db.createObjectStore(STORES.WORKFLOWS_META, { keyPath: 'id' });
+          metaStore.createIndex('folderId', 'folderId', { unique: false });
+          metaStore.createIndex('updatedAt', 'updatedAt', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORES.WORKFLOWS_PAYLOAD)) {
+          db.createObjectStore(STORES.WORKFLOWS_PAYLOAD, { keyPath: 'id' });
         }
         if (!db.objectStoreNames.contains(STORES.FOLDERS)) {
           db.createObjectStore(STORES.FOLDERS, { keyPath: 'id' });
@@ -133,6 +205,7 @@ export class IndexedDbAdapter {
   }
 
   public async put<T>(storeName: StoreName, value: T): Promise<void> {
+    this.writeCounts.put++;
     if (!this.isSupported()) {
       const store = this.getMemoryStore(storeName);
       const key =
@@ -154,6 +227,7 @@ export class IndexedDbAdapter {
   }
 
   public async delete(storeName: StoreName, key: string): Promise<void> {
+    this.writeCounts.delete++;
     if (!this.isSupported()) {
       const store = this.getMemoryStore(storeName);
       store.delete(key);
@@ -171,6 +245,7 @@ export class IndexedDbAdapter {
   }
 
   public async clear(storeName: StoreName): Promise<void> {
+    this.writeCounts.clear++;
     if (!this.isSupported()) {
       const store = this.getMemoryStore(storeName);
       store.clear();
@@ -184,6 +259,121 @@ export class IndexedDbAdapter {
 
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
+    });
+  }
+
+  // ── Metadata-First Workflow Catalog API (Phase 4.11 / v0.4.11) ───────────
+
+  /**
+   * Saves both workflow metadata and topology payload.
+   * Uses an atomic multi-store readwrite transaction in browser IndexedDB,
+   * or synchronous atomic Map writes in memory fallback.
+   */
+  public async saveWorkflowMetaAndPayload(
+    meta: WorkflowMetadata,
+    payload: WorkflowPayload,
+  ): Promise<void> {
+    if (!this.isSupported()) {
+      const metaStore = this.getMemoryStore(STORES.WORKFLOWS_META);
+      const payloadStore = this.getMemoryStore(STORES.WORKFLOWS_PAYLOAD);
+      metaStore.set(meta.id, meta);
+      payloadStore.set(payload.id, payload);
+      this.writeCounts.put += 2;
+      return;
+    }
+
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction([STORES.WORKFLOWS_META, STORES.WORKFLOWS_PAYLOAD], 'readwrite');
+      const metaStore = tx.objectStore(STORES.WORKFLOWS_META);
+      const payloadStore = tx.objectStore(STORES.WORKFLOWS_PAYLOAD);
+
+      metaStore.put(meta);
+      payloadStore.put(payload);
+      this.writeCounts.put += 2;
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  /**
+   * Retrieves lightweight metadata for a single workflow.
+   */
+  public async getWorkflowMeta(id: string): Promise<WorkflowMetadata | null> {
+    return this.get<WorkflowMetadata>(STORES.WORKFLOWS_META, id);
+  }
+
+  /**
+   * Retrieves lightweight metadata for all workflows, optionally filtered by folderId.
+   * Sorted by updatedAt descending.
+   */
+  public async getAllWorkflowMetas(folderId?: string): Promise<WorkflowMetadata[]> {
+    const all = await this.getAll<WorkflowMetadata>(STORES.WORKFLOWS_META);
+    let filtered = all;
+    if (folderId) {
+      filtered = filtered.filter((m) => m.folderId === folderId);
+    }
+    return filtered.sort((a, b) => b.updatedAt - a.updatedAt);
+  }
+
+  /**
+   * Retrieves only the heavy topology payload (nodes, edges, inputs) for a workflow.
+   */
+  public async getWorkflowPayload(id: string): Promise<WorkflowPayload | null> {
+    return this.get<WorkflowPayload>(STORES.WORKFLOWS_PAYLOAD, id);
+  }
+
+  /**
+   * Reconstitutes a complete SavedWorkflow by joining metadata and topology payload.
+   */
+  public async getCompleteWorkflow(id: string): Promise<SavedWorkflow | null> {
+    const meta = await this.getWorkflowMeta(id);
+    if (!meta) return null;
+
+    const payload = await this.getWorkflowPayload(id);
+    return {
+      id: meta.id,
+      name: meta.name,
+      folderId: meta.folderId,
+      nodes: payload?.nodes || [],
+      edges: payload?.edges || [],
+      globalInputs: payload?.globalInputs || {},
+      createdAt: meta.createdAt,
+      updatedAt: meta.updatedAt,
+      isPreset: meta.isPreset,
+      isLocked: meta.isLocked,
+      api_enabled: meta.api_enabled,
+      api_key: meta.api_key,
+      memoryConfig: payload?.memoryConfig,
+      nodeCount: meta.nodeCount,
+      description: meta.description,
+      tags: meta.tags,
+    };
+  }
+
+  /**
+   * Atomically deletes both metadata and payload for a workflow.
+   */
+  public async deleteWorkflowFromDb(id: string): Promise<void> {
+    if (!this.isSupported()) {
+      const metaStore = this.getMemoryStore(STORES.WORKFLOWS_META);
+      const payloadStore = this.getMemoryStore(STORES.WORKFLOWS_PAYLOAD);
+      metaStore.delete(id);
+      payloadStore.delete(id);
+      this.writeCounts.delete += 2;
+      return;
+    }
+
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction([STORES.WORKFLOWS_META, STORES.WORKFLOWS_PAYLOAD], 'readwrite');
+      tx.objectStore(STORES.WORKFLOWS_META).delete(id);
+      tx.objectStore(STORES.WORKFLOWS_PAYLOAD).delete(id);
+      this.writeCounts.delete += 2;
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -243,21 +433,85 @@ export class IndexedDbAdapter {
   /**
    * Saves an immutable DAG execution checkpoint with strict FIFO ring-buffer eviction.
    * Retains at most `maxPerWorkflow` (default 5) checkpoints per workflow to guard browser storage quotas.
+   * Atomically prunes excess records immediately.
    */
   public async saveCheckpoint(checkpoint: DAGCheckpoint, maxPerWorkflow = 5): Promise<void> {
-    await this.put<DAGCheckpoint>(STORES.CHECKPOINTS, checkpoint);
+    if (!this.isSupported()) {
+      const store = this.getMemoryStore(STORES.CHECKPOINTS);
+      this.writeCounts.put++;
+      store.set(checkpoint.id, checkpoint);
 
-    try {
-      const allCheckpoints = await this.getCheckpointsForWorkflow(checkpoint.workflowId, 50);
-      if (allCheckpoints.length > maxPerWorkflow) {
-        const toDelete = allCheckpoints.slice(maxPerWorkflow);
-        for (const c of toDelete) {
-          await this.delete(STORES.CHECKPOINTS, c.id);
+      // In-memory atomic FIFO ring-buffer eviction
+      const wfCheckpoints: DAGCheckpoint[] = [];
+      for (const item of store.values()) {
+        const cp = item as DAGCheckpoint;
+        if (cp.workflowId === checkpoint.workflowId) {
+          wfCheckpoints.push(cp);
         }
       }
-    } catch {
-      // Non-blocking best-effort eviction
+
+      if (wfCheckpoints.length > maxPerWorkflow) {
+        wfCheckpoints.sort((a, b) => {
+          if (b.timestamp !== a.timestamp) return b.timestamp - a.timestamp;
+          if (b.isCompleted !== a.isCompleted) return b.isCompleted ? 1 : -1;
+          return b.currentWaveIndex - a.currentWaveIndex;
+        });
+        const toDelete = wfCheckpoints.slice(maxPerWorkflow);
+        for (const c of toDelete) {
+          store.delete(c.id);
+          this.writeCounts.delete++;
+        }
+      }
+      return;
     }
+
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORES.CHECKPOINTS, 'readwrite');
+      const store = tx.objectStore(STORES.CHECKPOINTS);
+
+      // 1. Put the new checkpoint
+      store.put(checkpoint);
+      this.writeCounts.put++;
+
+      // 2. Query all checkpoints for this workflow using index
+      const index = store.index('workflowId');
+      const req = index.getAll(checkpoint.workflowId);
+
+      req.onsuccess = () => {
+        const records = (req.result as DAGCheckpoint[]) || [];
+        if (records.length > maxPerWorkflow) {
+          records.sort((a, b) => {
+            if (b.timestamp !== a.timestamp) return b.timestamp - a.timestamp;
+            if (b.isCompleted !== a.isCompleted) return b.isCompleted ? 1 : -1;
+            return b.currentWaveIndex - a.currentWaveIndex;
+          });
+          const toDelete = records.slice(maxPerWorkflow);
+          for (const item of toDelete) {
+            store.delete(item.id);
+            this.writeCounts.delete++;
+          }
+        }
+      };
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  /**
+   * Explicitly evicts older checkpoints for a workflow, ensuring no more than `maxLimit` remain.
+   * Returns the count of deleted records.
+   */
+  public async evictCheckpoints(workflowId: string, maxLimit = 5): Promise<number> {
+    const list = await this.getCheckpointsForWorkflow(workflowId, 100);
+    if (list.length <= maxLimit) return 0;
+
+    const toDelete = list.slice(maxLimit);
+    for (const c of toDelete) {
+      await this.delete(STORES.CHECKPOINTS, c.id);
+    }
+    return toDelete.length;
   }
 
   /**
