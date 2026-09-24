@@ -63,6 +63,7 @@ async function callSiliconFlowApi(
   model: string = TARGET_FREE_MODEL,
   messages: ChatMessage[],
   responseFormatMode: 'none' | 'json_object',
+  timeoutMs: number = 20000,
 ): Promise<LLMExecutionOutput> {
   // Billing safety double check
   if (model.startsWith('Pro/')) {
@@ -83,41 +84,49 @@ async function callSiliconFlowApi(
     body.response_format = { type: 'json_object' };
   }
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  const durationMs = Date.now() - start;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
 
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`SiliconFlow API call failed (${res.status}): ${errText}`);
+    const durationMs = Date.now() - start;
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`SiliconFlow API call failed (${res.status}): ${errText}`);
+    }
+
+    const json = (await res.json()) as {
+      choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
+      usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+    };
+
+    const choice = json.choices?.[0];
+    const response = choice?.message?.content || '';
+    const finishReason = choice?.finish_reason || 'stop';
+
+    return {
+      response,
+      usage: {
+        prompt: json.usage?.prompt_tokens || 0,
+        completion: json.usage?.completion_tokens || 0,
+        total: json.usage?.total_tokens || 0,
+      },
+      finishReason,
+      durationMs,
+    };
+  } finally {
+    clearTimeout(timer);
   }
-
-  const json = (await res.json()) as {
-    choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
-    usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
-  };
-
-  const choice = json.choices?.[0];
-  const response = choice?.message?.content || '';
-  const finishReason = choice?.finish_reason || 'stop';
-
-  return {
-    response,
-    usage: {
-      prompt: json.usage?.prompt_tokens || 0,
-      completion: json.usage?.completion_tokens || 0,
-      total: json.usage?.total_tokens || 0,
-    },
-    finishReason,
-    durationMs,
-  };
 }
 
 // 3. 10 Natural Semantic Conflict Test Cases
@@ -211,8 +220,11 @@ async function main() {
   let b_self_healed = 0;
   let b_exhausted = 0;
 
-  for (const item of BENCHMARK_CASES) {
+  for (let i = 0; i < BENCHMARK_CASES.length; i++) {
+    const item = BENCHMARK_CASES[i];
     const isRefundCase = item.expectedCategory === 'refund';
+
+    console.log(`[用例 ${i + 1}/${BENCHMARK_CASES.length}] 正在评测样本 #${item.id}: "${item.title}"`);
 
     // ──────────────────────────────────────────────────────────────────────────
     // Group A: Unconstrained Decoding (Baseline: Prompt-only)
@@ -228,6 +240,7 @@ urgency (1-5整数), category ('logistics'|'refund'|'quality'|'other'), summary 
     ];
 
     let groupARawOutput = '';
+    const startA = Date.now();
     if (isLive) {
       try {
         const out = await callSiliconFlowApi(apiKey, TARGET_FREE_MODEL, promptGroupA, 'none');
@@ -237,8 +250,6 @@ urgency (1-5整数), category ('logistics'|'refund'|'quality'|'other'), summary 
       }
     } else {
       // Simulation baseline for 7B unconstrained:
-      // ~20% of the time, wraps in ```json or has formatting imperfections.
-      // Often sets urgency=2 when user says "不着急", violating cross-field refine without self-healing.
       if (item.id === 1) {
         groupARawOutput = '```json\n{"urgency": 2, "category": "refund", "summary": "键盘空格键失灵申请退款", "orderId": "ORD-881201"}\n```';
       } else if (item.id === 10) {
@@ -252,17 +263,22 @@ urgency (1-5整数), category ('logistics'|'refund'|'quality'|'other'), summary 
         });
       }
     }
+    const durationA = Date.now() - startA;
 
     const parseResultA = safeParseOutput(groupARawOutput, TicketSemanticSchema);
     if (!parseResultA.syntaxError) {
       a_l1_passed++;
       if (parseResultA.success) {
         a_l2_passed++;
+        console.log(`  ├─ 模式 A (Prompt基线): ✅ 格式与业务均合规 (${durationA}ms)`);
       } else {
         a_exhausted++; // Group A has NO state machine to self-heal
+        const issue = parseResultA.errors?.[0]?.message || '业务规则违规';
+        console.log(`  ├─ 模式 A (Prompt基线): ❌ L1放行但触犯 L2 规则: "${issue}" (无自愈状态机直接失败) (${durationA}ms)`);
       }
     } else {
       a_exhausted++;
+      console.log(`  ├─ 模式 A (Prompt基线): ❌ L1 JSON 语法解析损坏 (${durationA}ms)`);
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -277,6 +293,7 @@ urgency (1-5整数), category ('logistics'|'refund'|'quality'|'other'), summary 
     ];
 
     let bCallCount = 0;
+    const startB = Date.now();
     const callerB = async (overrides: Partial<LLMChatRequest>): Promise<LLMExecutionOutput> => {
       bCallCount++;
       if (isLive) {
@@ -321,18 +338,26 @@ urgency (1-5整数), category ('logistics'|'refund'|'quality'|'other'), summary 
       provider: 'siliconflow',
       model: TARGET_FREE_MODEL,
     });
+    const durationB = Date.now() - startB;
 
     b_l1_passed++; // Constrained mode guarantees L1 syntax pass
     if (healingResultB.totalAttempts > 1) {
       b_l2_interceptions++;
       if (healingResultB.success) {
         b_self_healed++;
+        console.log(`  └─ 模式 B (双层防御自愈): 🎯 L2 截获业务违规 -> 注入手术刀处方 -> 第 ${healingResultB.totalAttempts} 轮纠偏自愈成功！(${durationB}ms)`);
       } else {
         b_exhausted++;
+        console.log(`  └─ 模式 B (双层防御自愈): ⚠️ 耗尽 ${healingResultB.totalAttempts} 次重试预算，优雅降级 (${durationB}ms)`);
       }
-    } else if (!healingResultB.success) {
+    } else if (healingResultB.success) {
+      console.log(`  └─ 模式 B (双层防御自愈): ✅ 第 1 轮直接合规通过 (${durationB}ms)`);
+    } else {
       b_exhausted++;
+      console.log(`  └─ 模式 B (双层防御自愈): ⚠️ 校验失败并降级 (${durationB}ms)`);
     }
+
+    console.log('');
   }
 
   // Calculate Metrics
