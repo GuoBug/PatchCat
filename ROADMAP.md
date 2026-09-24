@@ -1,8 +1,8 @@
 # 🗺️ PatchCat Product Roadmap
 
-> **Current Stage**: `v0.4.11` (Released ✅)  
-> **Last Updated**: 2026-09-23  
-> **Positioning**: A local-first, zero-setup, visual high-performance AI prompt workflow orchestrator  
+> **Current Stage**: `v0.4.12` (Released ✅)  
+> **Last Updated**: 2026-09-24  
+> **Positioning**: A production-grade, local-first deterministic AI workflow engine · interactive playground  
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -69,6 +69,10 @@ v0.6.0 (MCP & Docker) ◄── v0.5.8 (Snapshots) ◄── v0.5.6 (Rolling Sum
 
 <a name="简体中文"></a>
 ## 简体中文
+
+> **当前阶段**：`v0.4.12` (已发布 ✅)  
+> **最近更新**：2026-09-24  
+> **定位**：生产级、本地优先的确定性 AI 工作流引擎 · 交互式实验工坊  
 
 ### 🧭 演进节奏与设计哲学
 

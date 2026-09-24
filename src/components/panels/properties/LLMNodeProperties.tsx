@@ -15,11 +15,11 @@ import {
 import { useTranslation } from '../../../i18n/useTranslation.ts';
 import { useSettingsStore } from '../../../stores/settings-store.ts';
 import { useWorkflowStore } from '../../../stores/workflow-store.ts';
+import { type ZodSchemaConfig } from '../../../engine/structured-output.ts';
 import {
   TEST_SCENARIOS,
   type LLMTestScenario,
-  type ZodSchemaConfig,
-} from '../../../engine/structured-output.ts';
+} from '../../../presets/self-healing-scenarios.ts';
 import type { ResponseFormatMode, LLMSimulationMode } from '../../../engine/types.ts';
 
 interface LLMNodePropertiesProps {

@@ -6,21 +6,21 @@
   # PatchCat (中文文档)
 
   <p>
-    <strong>精准提示词编排 · 确定性 AI 工作流</strong>
+    <strong>确定性 AI 工作流引擎 · 交互式实验工坊</strong>
   </p>
 
   <p>
-    <em>专为新一代 AI 应用打造的开源可视化 AI 工作流编排引擎与 DAG 状态机调度系统。</em>
+    <em>专为 AI 开发者与工程探索者打造的开源可视化 DAG 状态机调度系统与白盒实验工坊。左手生产级确定性架构，右手白盒交互式实验环境。</em>
   </p>
 
   <p>
-    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/版本-v0.4.10-blue.svg" alt="Release: v0.4.10" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/版本-v0.4.12-blue.svg" alt="Release: v0.4.12" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/开源协议-MIT-emerald.svg" alt="License: MIT" /></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" alt="React 18" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/自动化测试-272项全部通过-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/自动化测试-329项全部通过-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
@@ -44,13 +44,21 @@
 
 ## 🌟 什么是 PatchCat？
 
-**PatchCat** 是由 **[GuoBug](https://github.com/GuoBug)** 发起并维护的开源**确定性 AI 工作流编排引擎与可视化 DAG 状态机平台**。专为 AI 工程师、Product Engineer 以及智能体开发者打造，让您可以像搭积木一样可视化串联 Prompt 模板、大语言模型（LLM）、自主 ReAct Agent、JavaScript 数据转换与分支条件路由，构建高并发、确定性执行的现代化 AI 工作流。
+**PatchCat** 是由 **[GuoBug](https://github.com/GuoBug)** 发起并维护的开源**确定性 AI 工作流编排引擎与交互式白盒实验工坊 (Interactive AI Playground)**。专为 AI 工程师、Product Engineer、智能体开发者与自学探索者打造，让您可以像搭积木一样可视化串联 Prompt 模板、大语言模型（LLM）、自主 ReAct Agent、JavaScript 数据转换与分支条件路由，构建高并发、确定性执行的现代化 AI 工作流。
 
-系统原生支持**零后端依赖模式（Client-Only BYOK）**，所有数据与 API Key 均仅保存在浏览器本地，直连 **Google Gemini、DeepSeek、OpenAI、SiliconFlow（硅基流动）以及本地 Ollama**，在浏览器端即可获得开箱即用的低延迟实时流式体验与零数据泄漏的安全保障。
+系统不仅是一套生产级的编排底座，更是一个**高透明度的 AI 工程教学与实验平台**：无需配置 API Key 即可通过内置的丰富仿真场景单步剖析工作流调度、状态机流转与容错机制。同时原生支持**零后端依赖模式（Client-Only BYOK）**，所有数据与 API Key 均仅保存在浏览器本地，直连 **Google Gemini、DeepSeek、OpenAI、SiliconFlow（硅基流动）以及本地 Ollama**，在浏览器端即可获得开箱即用的低延迟实时流式体验与零数据泄漏的安全保障。
 
 > [!NOTE]
 > **核心设计哲学：为什么坚持确定性编排？**  
 > 大语言模型本质上是概率引擎——单独作为完全自主 Agent 运行时，容易产生幻觉、参数漂移或不可控的 Token 成本。**PatchCat 的核心哲学是：让 AI 承担繁重的认知推理、内容起草与工具调用，但让 DAG 状态机牢牢掌控系统的控制流边界、分支路由、依赖波次与降级兜底。**
+
+> [!TIP]
+> **💡 PatchCat 核心架构设计原则 (Core Axioms)**  
+> 1. **分层防御哲学**：*“L1 守物理语法，L2 守业务契约，L3 守系统鲁棒，L4 守调度可用。确定性编排不是剥夺 LLM 的创造力，而是给概率性的输出套上确定性的工程安全气囊。”*  
+> 2. **校验与真实的界限**：*“Zod 只能证明‘没查出违规’，不能证明‘数据正确’。已满足 $\neq$ 正确。未被点名不等于正确：朴素字段冻结只会把幻觉锁死在局部优化陷阱中。”*  
+> 3. **引擎架构纯粹性**：*“把这段引擎代码拿去做法律合同审查工作流，需要改吗？需要 $\to$ 就是业务下沉了。引擎必须对业务领域彻底盲视，业务永远归仓 Presets。”*  
+> 4. **重试与自愈的本质**：*“缺少结构化反馈的重试，只是让模型在同一个局部极小值反复打转（同构重试陷阱）；真正的自愈不是‘盲目重跑一次’，而是‘带病历复诊’。”*  
+> 5. **科学归因底线**：*“端到端通过率的跃升，不是来自模型首轮犯错变少，而是来自自愈状态机在工程调度层强悍的兜底与挽回转化能力。”*
 
 ---
 
@@ -81,6 +89,7 @@ https://github.com/user-attachments/assets/e8d3cc61-68f4-43fd-9463-2051a7a35c3d
 
 | 核心特性 / 指标 | **PatchCat 🐱 (本项目)** | **Flowise** | **Dify** | **Langflow** |
 | :--- | :--- | :--- | :--- | :--- |
+| **定位与实验门槛** | **确定性编排底座 + 白盒交互式实验工坊（内置离线仿真，免配 Key 零成本上手）** | 生产构建（黑盒） | 生产构建（黑盒） | 实验构建（需搭环境） |
 | **系统架构** | **100% 纯前端 / 边缘端** | Node.js + 后端数据库 | Python + Celery + Redis + Postgres | Python + 后端数据库 |
 | **部署成本与体积** | **零门槛（静态网页 / 0MB）** | 较重 (Docker Compose) | 企业级重型 (~2GB+ Docker) | 较重 (Pip / Docker) |
 | **数据隐私与安全** | **零泄漏 (浏览器端 BYOK 本地直连)** | 服务端存储密钥 | 服务端存储密钥 | 服务端存储密钥 |

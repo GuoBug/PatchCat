@@ -1,6 +1,8 @@
 # 🚀 PatchCat 快速入门指南 (Quick Start)
 
-欢迎来到 **PatchCat**！本指南将带您在 **5 分钟内** 从零搭建并运行您的第一个 AI 智能体编排工作流——从连接大模型服务商到编排、执行与调试一套具备意图识别与极速派单的智能客服流水线。
+> **定位**：确定性 AI 工作流引擎 · 交互式实验工坊 (Deterministic AI Workflow Engine · Interactive Playground)
+
+欢迎来到 **PatchCat**！PatchCat 既是一套工业级高可靠的确定性 AI 工作流编排引擎，也是专为 AI 工程师、架构师与学习探索者打造的“白盒化交互式实验工坊”（Playground）。本指南将带您在 **5 分钟内** 从零上手——无论您是否拥有商业模型 API Key，均可沉浸式探索拓扑调度、容错验证与真实模型编排。
 
 ---
 
@@ -16,10 +18,11 @@
 
 完成本快速上手教程后，您将掌握：
 1. 如何在本地环境中**一键启动 PatchCat**。
-2. 如何通过自带 API Key 模式（BYOK）**直连主流大模型**（Google Gemini、DeepSeek、OpenAI 或本地 Ollama）。
-3. 如何**运行工业级预置工作流**（智能客服意图识别与工单极速路由派发）。
-4. 如何使用**字级流式吐字、DeepSeek 思考链可视化与三级安全脱敏日志控制台**。
-5. 如何从零开始**搭建与自定义自己的可视化 DAG 工作流**。
+2. 如何在**免 API Key 离线模式**下体验拓扑调度、变量插槽解析与环路死锁检测。
+3. 如何通过自带 API Key 模式（BYOK）**直连主流大模型**（Google Gemini、DeepSeek、OpenAI 或本地 Ollama）。
+4. 如何**运行工业级预置工作流**（智能客服意图识别与工单极速路由派发）。
+5. 如何使用**字级流式吐字、DeepSeek 思考链可视化与三级安全脱敏日志控制台**。
+6. 如何从零开始**搭建与自定义自己的可视化 DAG 工作流与实验场景**。
 
 ---
 
@@ -29,7 +32,7 @@
 - [Node.js](https://nodejs.org/) `>= 18.0.0`
 - [npm](https://www.npmjs.com/) `>= 9.0.0` 或 [pnpm](https://pnpm.io/)
 - 现代浏览器（Chrome、Edge、Firefox、Safari 等）
-- 任意一个受支持的大模型服务商 API Key：
+- *(可选，用于真实大模型调用)* 任意一个受支持的服务商 API Key（如暂无 Key，可直接使用内置免 Key 实验工坊体验）：
   - 🔵 **Google Gemini**（推荐，可在 [Google AI Studio](https://aistudio.google.com/app/apikey) 免费申请获取）
   - 🐳 **DeepSeek**（可在 [DeepSeek 开放平台](https://platform.deepseek.com/api_keys) 获取）
   - 🟢 **OpenAI**（可在 [OpenAI Platform](https://platform.openai.com/api-keys) 获取）
@@ -151,6 +154,32 @@ PatchCat 支持优雅强大的 Mustache 风格变量插槽：
 PatchCat 底层运行高效的 **Kahn 拓扑算法**：
 - **同层并行波次加速**：无上下游依赖的节点自动以 `Promise.all` 并发执行。
 - **毫秒级环路死锁检测**：若连线形成循环（如 $A \to B \to A$），系统会毫秒级检测并标红报错，弹出告警横幅阻止无限死循环。
+
+---
+
+## 🧪 第六步：免 Key 交互式实验工坊 (Zero-Key Playground)
+
+PatchCat 不仅是一个工业级的工作流运行时，更是一个面向 AI 编排算法与确定性架构的**交互式实验工坊**。即使在完全离线或无 API Key 的情况下，您也可以完整体验和研究核心工程原语：
+
+### 1. 流程流转与拓扑调度校验（Validate Flow Only）
+无需配置任何 API Key，在未绑定 Key 状态下点击 **`Run Workflow`**，选择 **`仅校验流程流转 (Validate Flow Only)`**：
+- 引擎将安全跳过真实网络调用，专注于验证整张 DAG 的 Kahn 拓扑排序、同层并发波次与连线依赖；
+- 验证 Mustache 变量插槽（如 `{{nodeId.property}}`）的解析正确性与默认值容错；
+- 实时追踪单步节点状态与下游上下文传递。
+
+### 2. 环路死锁攻防实验 (Cycle Deadlock Testing)
+- 尝试在画布中拖拽连线，从节点 B 连回节点 A，构建闭环；
+- 点击运行，观察 PatchCat 调度器如何在毫秒级拦截环路、定位并高亮标红成环节点，给出确定性阻断告警。
+
+### 3. 本地确定性契约测试套件
+在终端中执行内置的架构断言套件，深入探究确定性状态机与结构化输出契约：
+```bash
+# 运行全部确定性契约测试
+npm test
+
+# 运行真实模型结构化输出对比评测
+npm run test:ab
+```
 
 ---
 

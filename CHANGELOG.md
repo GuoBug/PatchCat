@@ -5,6 +5,30 @@ All notable changes to the **PatchCat** project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.12] - 2026-09-24
+
+### Added
+- **Deterministic Structured Output & Self-Healing State Machine (`src/engine/structured-output.ts`, PRD-018)**:
+  - **L1 Constrained Decoding & Multi-Provider Capability Negotiation**: Explicit fallback across `json_schema` $\to$ `json_object` $\to$ `none`, and syntax repair (`repairJsonL1`) stripping Markdown fences and unclosed delimiters.
+  - **L2 Zod Semantic & Cross-Field Validation**: Zero-throw `.safeParse()` validation covering boundary conditions, enums, regexes, and `.refine()` cross-field invariant constraints.
+  - **L3 Closed-Loop Self-Healing State Machine**:
+    - Round 1 Triad Surgical Feedback: Violating value, expected constraint rule, and actionable recommendation.
+    - Round 2+ Escalation: Global Schema re-injection and non-hallucinatory Golden Few-Shot Exemplar (`generateGoldenExemplar`).
+    - Failure Mode Triage: Compact compression prescription for token length truncation (`finishReason === 'length'`) and clean retry for empty outputs.
+  - **L4 Graceful Degradation Contract**: Bounded retry budget (max 2 retries, 3 total calls) returning standardized `{ _validationFailed: true, errors, raw }` payload, ensuring zero unhandled exceptions on the DAG scheduler.
+- **Architectural Purity & Presets Decoupling (`src/presets/self-healing-scenarios.ts`)**:
+  - Relocated domain schemas (`TicketSemanticSchema`) and 130 lines of customer support mock scenarios from the engine into `src/presets/self-healing-scenarios.ts`.
+  - Introduced generic dynamic `schemaRegistry` (`registerSchema`, `getRegisteredSchema`) in the core engine, ensuring 100% domain agnosticism (usable for legal contracts, medical charts, or any domain without engine changes).
+  - Normalized `testScenario?: string` in `src/engine/types.ts`.
+- **Node.js 22+ Test Environment Normalization (`package.json`)**:
+  - Inlined `--experimental-strip-types` into `package.json` `npm test` script to allow seamless local testing on Node.js v22+ without external `NODE_OPTIONS` environment variables.
+  - Automated test suite expanded to **329 passing tests across 85 test suites** with 100% green pass rate.
+- **Empirical A/B Benchmark & McNemar Statistical Analysis (`scripts/run-siliconflow-ab-test.ts`)**:
+  - Rigorous dual-metric reporting: by-sample McNemar exact test $p = 0.00195$ ($p < 0.01$) across 42 sample pairs on SiliconFlow `Qwen/Qwen2.5-7B-Instruct`.
+  - Documented gain decomposition: L1 syntax error elimination (3 $\to$ 0) and L3 self-healing recovery driving +23.9pt end-to-end compliance gains (69.0% $\to$ 92.9%).
+
+---
+
 ## [0.4.11] - 2026-09-23
 
 ### Added

@@ -21,12 +21,17 @@ import {
   convertZodToJsonSchema,
   buildZodSchema,
   resolveZodSchema,
+  registerSchema,
+  schemaRegistry,
   safeParseOutput,
   buildErrorFeedbackMessages,
   executeWithSelfHealing,
+  generateGoldenExemplar,
+} from '../src/engine/structured-output.ts';
+import {
   TEST_SCENARIOS,
   TicketSemanticSchema,
-} from '../src/engine/structured-output.ts';
+} from '../src/presets/self-healing-scenarios.ts';
 import { BrowserWorkflowEngine } from '../src/engine/browser-engine.ts';
 import { useSettingsStore } from '../src/stores/settings-store.ts';
 import type { WorkflowNode, WorkflowEdge, WorkflowGraph } from '../src/engine/types.ts';
@@ -120,6 +125,22 @@ describe('Zod Single Source of Truth & zod-to-json-schema Conversion', () => {
     // Invalid priority fails
     const invalid = builtSchema.safeParse({ category: 'billing', priority: 20, notes: 'Valid note' });
     assert.equal(invalid.success, false);
+  });
+
+  it('resolves named schemas via domain-agnostic schemaRegistry without engine hardcoding', () => {
+    const customContractSchema = z.object({
+      clauseId: z.string().regex(/^CLAUSE-\d+$/),
+      riskScore: z.number().min(0).max(100),
+    });
+
+    registerSchema('LegalContractClauseSchema', customContractSchema);
+    assert.ok(schemaRegistry.has('LegalContractClauseSchema'));
+
+    const resolved = resolveZodSchema({ name: 'LegalContractClauseSchema' });
+    assert.equal(resolved, customContractSchema);
+
+    const valid = resolved?.safeParse({ clauseId: 'CLAUSE-101', riskScore: 42 });
+    assert.equal(valid?.success, true);
   });
 });
 
@@ -233,8 +254,10 @@ describe('Error Memory Injection & Feedback Prompt Formatting', () => {
     });
 
     assert.ok(feedback.userMsg.content?.includes('严重警报：检测到你连续多次未能生成合规数据'));
-    assert.ok(feedback.userMsg.content?.includes('100% 合法黄金示例 (Few-Shot Golden Exemplar)'));
+    assert.ok(feedback.userMsg.content?.includes('结构对齐示例 (Golden Exemplar)'));
     assert.ok(feedback.userMsg.content?.includes('"urgency": 5'));
+    // A golden exemplar must never be copyable as real data.
+    assert.ok(feedback.userMsg.content?.includes('严禁照抄为真实数据'));
   });
 });
 
@@ -1187,3 +1210,53 @@ describe('A/B Benchmark Matrix: Unconstrained Baseline (A) vs Deterministic Dual
 
 
 
+
+describe('Golden Exemplar Grounding Safety (No Fabricated Entities, No Field Drift)', () => {
+  it('never fabricates a concrete entity value: cold start drops the exemplar instead of inventing one', () => {
+    const exemplar = generateGoldenExemplar(TicketSemanticSchema);
+
+    // No previous round + a format-constrained field => no valid example can be produced
+    // from primitives alone. Emit nothing rather than a fake ID the model will copy.
+    assert.deepEqual(exemplar, {});
+    assert.ok(!JSON.stringify(exemplar).includes('ORD-'));
+  });
+
+  it('still produces a valid exemplar when every field is satisfiable from primitives alone', () => {
+    const plain = z.object({
+      score: z.number().min(1).max(5),
+      note: z.string().min(10).max(40),
+      kind: z.enum(['a', 'b']),
+    });
+
+    const exemplar = generateGoldenExemplar(plain);
+
+    assert.ok(plain.safeParse(exemplar).success, `expected self-consistent exemplar, got ${JSON.stringify(exemplar)}`);
+    assert.equal(exemplar['kind'], 'a');
+    assert.ok(String(exemplar['note']).length >= 10, 'placeholder must respect the min-length rule');
+  });
+
+  it('never emits an exemplar that contradicts the contract it illustrates and avoids field freezing', () => {
+    // When schema has complex format constraints that cannot be satisfied without fabrication,
+    // generateGoldenExemplar returns {} rather than injecting conflicting or fake values.
+    const exemplar = generateGoldenExemplar(TicketSemanticSchema);
+    assert.deepEqual(exemplar, {});
+  });
+
+  it('emits a bidirectional prescription for cross-field invariants', () => {
+    const raw = JSON.stringify({
+      urgency: 5,
+      category: 'logistics',
+      summary: '签收后未收到货物，怀疑丢件',
+      orderId: 'ORD-443322',
+    });
+    const result = safeParseOutput(raw, TicketSemanticSchema);
+
+    assert.equal(result.success, false);
+    const logisticsIssue = (result.errors || []).find((e) => e.message.includes('物流类工单'));
+    assert.ok(logisticsIssue, 'logistics x urgency invariant must fire');
+    // The prescription must name BOTH participating fields and grant the model the choice.
+    assert.ok(logisticsIssue?.suggestion?.includes('category'));
+    assert.ok(logisticsIssue?.suggestion?.includes('urgency'));
+    assert.ok(logisticsIssue?.suggestion?.includes('任意一个'));
+  });
+});

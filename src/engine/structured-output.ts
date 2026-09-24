@@ -25,7 +25,6 @@ import type {
   TokenUsage,
   ZodFieldDef,
   ZodSchemaConfig,
-  LLMTestScenario,
   SelfHealingTraceStep,
   SelfHealingEscalationLevel,
 } from './types.ts';
@@ -39,7 +38,6 @@ export type {
   ValidationFallbackOutput,
   ZodFieldDef,
   ZodSchemaConfig,
-  LLMTestScenario,
   SelfHealingTraceStep,
   SelfHealingEscalationLevel,
 };
@@ -163,39 +161,28 @@ export function buildZodSchema(config: ZodSchemaConfig): z.ZodObject<Record<stri
 }
 
 /**
- * Advanced Semantic & Cross-Field Business Invariant Schema.
- * Used for testing L2 validation and multi-round self-healing when L1 passes.
+ * Global schema registry for named schemas.
+ * Allows presets, plugins, and custom domains to register schemas dynamically without polluting the core engine.
  */
-export const TicketSemanticSchema = z
-  .object({
-    urgency: z.number().int().min(1).max(5).describe('工单紧急度 1..5'),
-    category: z.enum(['logistics', 'refund', 'quality', 'other']).describe('工单类别'),
-    summary: z.string().min(5).max(30).describe('问题摘要（严格限制在 5-30 字内）'),
-    orderId: z.string().regex(/^ORD-\d{6}$/).describe('从文本中提取的订单号，形如 ORD-123456'),
-  })
-  .refine((d) => !(d.category === 'refund' && d.urgency < 4), {
-    message: '业务红线：退款类工单涉及资金流转，urgency 必须 ≥ 4',
-    path: ['urgency'],
-  })
-  .refine((d) => !(d.urgency >= 4 && d.summary.length < 15), {
-    message: '合规要求：高优先级工单 (urgency ≥ 4) 的 summary 至少需要 15 字阐述详情理由',
-    path: ['summary'],
-  })
-  // ── 跨字段契约 C1: summary × orderId（订单号只允许出现在 orderId 字段）────────────
-  .refine((d) => !/ORD[-\s]?\d{4,}/i.test(d.summary), {
-    message: '跨字段契约：订单号只允许出现在 orderId 字段，summary 中不得复述任何订单号',
-    path: ['summary'],
-  })
-  // ── 跨字段契约 C2: urgency × category（物流类不占用高优先级处理通道）─────────────
-  .refine((d) => !(d.category === 'logistics' && d.urgency > 3), {
-    message: '跨字段契约：物流类工单不涉及资金流转，urgency 必须 ≤ 3',
-    path: ['urgency'],
-  });
+export const schemaRegistry = new Map<string, z.ZodTypeAny>();
+
+export function registerSchema(name: string, schema: z.ZodTypeAny): void {
+  schemaRegistry.set(name, schema);
+}
+
+export function getRegisteredSchema(name: string): z.ZodTypeAny | undefined {
+  return schemaRegistry.get(name);
+}
+
+export function clearRegisteredSchemas(): void {
+  schemaRegistry.clear();
+}
 
 /**
  * Resolves a runtime ZodTypeAny from various config representations:
  * - Direct Zod schema (instance of z.ZodType or has safeParse)
  * - Declarative ZodSchemaConfig with field definitions
+ * - Registered named schema in schemaRegistry
  * - Object with nested schema
  */
 export function resolveZodSchema(input: unknown): z.ZodTypeAny | undefined {
@@ -211,8 +198,8 @@ export function resolveZodSchema(input: unknown): z.ZodTypeAny | undefined {
 
   if (typeof input === 'object' && input !== null) {
     const obj = input as Record<string, unknown>;
-    if (obj['name'] === 'TicketSemanticSchema') {
-      return TicketSemanticSchema;
+    if (typeof obj['name'] === 'string' && schemaRegistry.has(obj['name'])) {
+      return schemaRegistry.get(obj['name']);
     }
     if (obj['schema'] instanceof z.ZodType) {
       return obj['schema'] as z.ZodTypeAny;
@@ -577,13 +564,34 @@ export function deriveDiagnosticTriad(
       break;
     }
     case 'invalid_string': {
-      expectedRule = `字符串格式不符合规范: ${issue.message}`;
-      suggestion = `请修正字段 "${fieldName}" 的格式`;
+      const isCustomMessage = issue.message && issue.message !== 'Invalid';
+      expectedRule = isCustomMessage ? issue.message : `字符串格式不符合规范: 必须符合预期模式`;
+      suggestion = isCustomMessage
+        ? `请修正字段 "${fieldName}"，确保满足契约要求：${issue.message}`
+        : `请检查并修正字段 "${fieldName}" 的格式规范`;
       break;
     }
     case 'custom': {
       expectedRule = issue.message;
-      suggestion = `检测到跨字段业务规则冲突，请调整字段 "${fieldName}" 以满足业务逻辑限制 (当前输出值: ${formatDiagnosticValue(rawVal)})`;
+      // Cross-field invariants: the violation belongs to the FIELD COMBINATION, not to one
+      // field. A one-sided prescription ("change urgency") silently tells the model which
+      // way to resolve it — and the model will pick whichever edit is mechanically cheapest
+      // (usually nudging a number) instead of whichever field is actually wrong.
+      const declared = (issue as { params?: { crossFields?: unknown } }).params?.crossFields;
+      const crossFields = Array.isArray(declared)
+        ? declared.filter((f): f is string => typeof f === 'string')
+        : [];
+
+      if (crossFields.length > 1) {
+        const snapshot = crossFields
+          .map((f) => `${f} = ${formatDiagnosticValue(getDeepValue(parsedJson, [f]))}`)
+          .join('，');
+        suggestion = `该约束同时涉及字段 [${crossFields.join('] 与 [')}]，当前取值：${snapshot}。
+这些字段中的**任意一个**都可以被修改来满足约束（也可同时修改），只要最终组合满足约束即可。
+请判断究竟是哪一个字段的取值本身判断错了，再修改那一个；不要默认只调低数值字段（如等级/分数）来绕过约束，也不要为了省事改动分类/枚举字段却不复查它是否仍然符合输入语义。`;
+      } else {
+        suggestion = `检测到跨字段业务规则冲突，请调整字段 "${fieldName}" 以满足业务逻辑限制 (当前输出值: ${formatDiagnosticValue(rawVal)})`;
+      }
       break;
     }
     default: {
@@ -597,73 +605,205 @@ export function deriveDiagnosticTriad(
 }
 
 /**
- * Generates a 100% compliant sample JSON object (Golden Exemplar)
- * to ground the model during escalated self-healing retries.
+ * Unwraps Zod wrapper types (effects, optional, nullable, default) to reach the underlying primitive type.
+ */
+function unwrapZodType(v: unknown): unknown {
+  let target = v;
+  while (target && typeof target === 'object') {
+    if (target instanceof z.ZodEffects) {
+      target = target.innerType();
+    } else if (target instanceof z.ZodOptional || target instanceof z.ZodNullable) {
+      target = target.unwrap();
+    } else if (target instanceof z.ZodDefault) {
+      target = target.removeDefault();
+    } else {
+      break;
+    }
+  }
+  return target;
+}
+
+/**
+ * Reads min/max bounds declared on a Zod string/number type (defensive: internals may shift).
+ * Used only to size a neutral placeholder so the exemplar itself satisfies length constraints.
+ */
+function readNumericBounds(v: unknown): { min?: number; max?: number } {
+  const unwrapped = unwrapZodType(v);
+  const checks = (unwrapped as unknown as { _def?: { checks?: Array<{ kind?: string; value?: unknown }> } })?._def?.checks;
+  if (!Array.isArray(checks)) return {};
+  let min: number | undefined;
+  let max: number | undefined;
+  for (const c of checks) {
+    if (typeof c?.value !== 'number') continue;
+    if (c.kind === 'min') min = min === undefined ? c.value : Math.max(min, c.value);
+    if (c.kind === 'max') max = max === undefined ? c.value : Math.min(max, c.value);
+  }
+  return { min, max };
+}
+
+/**
+ * Neutral filler carrying no concrete entity semantics.
+ *
+ * A golden exemplar must NEVER fabricate a plausible-looking real-world value
+ * (order numbers, IDs, names): models copy the exemplar verbatim, so a hardcoded
+ * placeholder is directly converted into a hallucination.
+ */
+const NEUTRAL_FILLER = '示例占位值';
+
+function neutralString(min?: number, max?: number): string {
+  const lo = Math.max(1, min ?? 1);
+  const hi = Math.max(lo, max ?? Math.max(lo, 24));
+  // Aim for the UPPER part of the declared range. Min-length rules are the binding
+  // constraint in practice, so a too-short placeholder contradicts the prescription
+  // injected alongside it and the model copies the contradiction.
+  const target = Math.min(hi, Math.max(lo, 20));
+  let s = '';
+  while (s.length < target) s += NEUTRAL_FILLER;
+  return s.slice(0, target);
+}
+
+/** Candidate values for one field, derived only from its declared schema primitives. */
+function fieldCandidates(v: unknown): unknown[] {
+  const unwrapped = unwrapZodType(v);
+  if (unwrapped instanceof z.ZodNumber) {
+    const { min, max } = readNumericBounds(unwrapped);
+    const lo = min ?? 1;
+    const hi = max ?? lo + 4;
+    return [...new Set([lo, hi, Math.round((lo + hi) / 2)])];
+  }
+  if (unwrapped instanceof z.ZodString) {
+    const { min, max } = readNumericBounds(unwrapped);
+    return [...new Set([neutralString(min, max), neutralString(min, min), neutralString(max, max)])];
+  }
+  if (unwrapped instanceof z.ZodEnum) return [...(unwrapped as unknown as { options: string[] }).options];
+  if (unwrapped instanceof z.ZodBoolean) return [true, false];
+  return [];
+}
+
+/**
+ * A golden exemplar that violates the very contract being enforced is worse than no
+ * exemplar at all — it fights the prescription injected alongside it.
+ *
+ * Repair regenerated fields against the schema using only declared primitives. If no
+ * self-consistent combination exists, drop the exemplar instead of misleading the model.
+ */
+function selfConsistentExemplar(
+  exemplar: Record<string, unknown>,
+  schema: z.ZodTypeAny | Record<string, unknown>,
+): Record<string, unknown> {
+  const zod = resolveZodSchema(schema);
+  if (!zod) return exemplar;
+
+  const first = zod.safeParse(exemplar);
+  if (first.success) return exemplar;
+
+  let cursor: unknown = zod;
+  while (cursor instanceof z.ZodEffects) cursor = cursor.innerType();
+  if (!(cursor instanceof z.ZodObject)) return exemplar;
+  const shape = cursor.shape as Record<string, z.ZodTypeAny>;
+
+  // Only fields actually implicated by an issue are eligible for repair.
+  const targets = [...new Set(first.error.issues.map((i) => String(i.path[0] ?? '')))].filter(
+    (k) => k !== '' && k in exemplar,
+  );
+  const lists = targets.map((k) => fieldCandidates(shape[k]));
+  const total = lists.reduce((acc, l) => acc * Math.max(1, l.length), 1);
+
+  if (targets.length > 0 && total > 0 && total <= 512) {
+    const idx: number[] = targets.map(() => 0);
+    for (let n = 0; n < total; n++) {
+      const cand: Record<string, unknown> = { ...exemplar };
+      targets.forEach((k, i) => {
+        const list = lists[i] ?? [];
+        if (list.length > 0) cand[k] = list[idx[i] ?? 0];
+      });
+      if (zod.safeParse(cand).success) return cand;
+
+      for (let i = targets.length - 1; i >= 0; i--) {
+        const len = Math.max(1, (lists[i] ?? []).length);
+        const next = (idx[i] ?? 0) + 1;
+        idx[i] = next;
+        if (next < len) break;
+        idx[i] = 0;
+      }
+    }
+  }
+
+  logger.warn(
+    'WorkflowEngine',
+    '[黄金示例] 无法生成与契约自洽的示例，已放弃注入（避免示例与处方互相矛盾）',
+    { targets },
+  );
+  return {};
+}
+
+/**
+ * Generates a schema-shaped sample object (Golden Exemplar) used to ground the model
+ * during escalated self-healing retries.
+ *
+ * Invariant: Never fabricates a concrete entity value — only neutral, type-shaped placeholders.
+ * Reverted naive field preservation: Does not freeze or carry over previous-round outputs,
+ * avoiding trapping the model in false-positive/hallucinated fields.
  */
 export function generateGoldenExemplar(
   schema?: z.ZodTypeAny | Record<string, unknown>,
 ): Record<string, unknown> {
-  if (!schema) {
-    return { urgency: 5, summary: '合规的标准工单摘要内容（符合长度约束）' };
-  }
+  if (!schema) return {};
 
-  // If declarative config with fields
+  let exemplar: Record<string, unknown> | undefined;
+
+  // ── Declarative config with fields ────────────────────────────────────────
   if (typeof schema === 'object' && schema !== null && 'fields' in schema) {
     const fields = (schema as { fields?: Record<string, ZodFieldDef> }).fields;
     if (fields) {
-      const exemplar: Record<string, unknown> = {};
+      const built: Record<string, unknown> = {};
       for (const [k, f] of Object.entries(fields)) {
-        if (k === 'orderId') {
-          exemplar[k] = 'ORD-123456';
-        } else if (f.type === 'number') {
-          exemplar[k] = f.max ?? f.min ?? 5;
-        } else if (f.type === 'string') {
-          exemplar[k] = f.description ? `合规${f.description}` : '合规工单业务摘要说明内容（长度符合规范）';
-        } else if (f.type === 'enum' && f.enum && f.enum.length > 0) {
-          exemplar[k] = f.enum[0];
-        } else if (f.type === 'boolean') {
-          exemplar[k] = true;
-        } else if (f.type === 'array') {
-          exemplar[k] = [];
-        } else if (f.type === 'object') {
-          exemplar[k] = {};
+        if (f.type === 'number') built[k] = f.max ?? f.min ?? 5;
+        else if (f.type === 'string') built[k] = neutralString(f.minLength, f.maxLength);
+        else if (f.type === 'enum' && f.enum && f.enum.length > 0) built[k] = f.enum[0];
+        else if (f.type === 'boolean') built[k] = true;
+        else if (f.type === 'array') built[k] = [];
+        else if (f.type === 'object') built[k] = {};
+        else built[k] = neutralString();
+      }
+      exemplar = built;
+    }
+  }
+
+  // ── Zod schema instance ───────────────────────────────────────────────────
+  if (!exemplar) {
+    // Unwrap ZodEffects (.refine / .transform) if applicable
+    let targetZod: unknown = schema;
+    while (targetZod instanceof z.ZodEffects) {
+      targetZod = targetZod.innerType();
+    }
+
+    if (targetZod instanceof z.ZodObject) {
+      const shape = targetZod.shape;
+      const built: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(shape)) {
+        const unwrapped = unwrapZodType(v);
+        if (unwrapped instanceof z.ZodNumber) {
+          const { min, max } = readNumericBounds(unwrapped);
+          built[k] = max ?? min ?? 5;
+        } else if (unwrapped instanceof z.ZodString) {
+          const { min, max } = readNumericBounds(unwrapped);
+          built[k] = neutralString(min, max);
+        } else if (unwrapped instanceof z.ZodEnum) {
+          built[k] = (unwrapped as unknown as { options: string[] }).options[0] ?? 'default';
+        } else if (unwrapped instanceof z.ZodBoolean) {
+          built[k] = true;
+        } else if (unwrapped instanceof z.ZodArray) {
+          built[k] = [];
+        } else {
+          built[k] = neutralString();
         }
       }
-      return exemplar;
+      exemplar = built;
     }
   }
 
-  // Unwrap ZodEffects (.refine / .transform) if applicable
-  let targetZod: unknown = schema;
-  while (targetZod instanceof z.ZodEffects) {
-    targetZod = targetZod.innerType();
-  }
-
-  // If Zod schema instance
-  if (targetZod instanceof z.ZodObject) {
-    const shape = targetZod.shape;
-    const exemplar: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(shape)) {
-      if (k === 'orderId') {
-        exemplar[k] = 'ORD-123456';
-      } else if (v instanceof z.ZodNumber) {
-        exemplar[k] = 5;
-      } else if (v instanceof z.ZodString) {
-        exemplar[k] = '合规工单业务摘要说明内容（长度符合规范）';
-      } else if (v instanceof z.ZodEnum) {
-        exemplar[k] = (v as unknown as { options: string[] }).options[0] ?? 'default';
-      } else if (v instanceof z.ZodBoolean) {
-        exemplar[k] = true;
-      } else if (v instanceof z.ZodArray) {
-        exemplar[k] = [];
-      } else {
-        exemplar[k] = '合规值';
-      }
-    }
-    return exemplar;
-  }
-
-  return { urgency: 5, summary: '合规的标准工单摘要内容（符合长度约束）' };
+  return exemplar ? selfConsistentExemplar(exemplar, schema) : {};
 }
 
 /**
@@ -725,7 +865,7 @@ ${errors.map((e) => `- ${e.message}`).join('\n')}
       .join('\n');
 
     promptDetails = `[业务语义校验失败 / Semantic Validation Failed (R1 手术刀诊断)]
-你上一轮输出的 JSON 未能通过下游业务契约校验。请保持其他合法字段不变，严格按照下列三要素（违规值、约束规则、修复处方）针对性纠偏：
+你上一轮输出的 JSON 未能通过下游业务契约校验。请严格按照下列三要素（违规值、约束规则、修复处方）针对性纠偏：
 
 ${triadLines}
 
@@ -740,25 +880,30 @@ ${triadLines}
       })
       .join('\n');
 
-    const exemplar = schemaContext?.goldenExemplar || { urgency: 5, summary: '合规标准业务工单摘要' };
-
-    promptDetails = `【严重警报：检测到你连续多次未能生成合规数据，请停止局部微调！】
-系统已为你升级为全量模式约束与黄金示例对齐模式：
-
-【1. 100% 合法黄金示例 (Few-Shot Golden Exemplar)】:
+    const exemplar = schemaContext?.goldenExemplar;
+    const hasExemplar = Boolean(exemplar && Object.keys(exemplar).length > 0);
+    const exemplarBlock = hasExemplar
+      ? `【1. 结构对齐示例 (Golden Exemplar)】:
 \`\`\`json
 ${JSON.stringify(exemplar, null, 2)}
 \`\`\`
+注意：示例中的占位值仅为结构示范，严禁照抄为真实数据。请重新核验输入并输出合规的 JSON 对象。
 
-${
+`
+      : '';
+
+    promptDetails = `【严重警报：检测到你连续多次未能生成合规数据，请停止局部微调！】
+系统已为你升级为全量模式约束与结构对齐模式：
+
+${exemplarBlock}${
   schemaContext?.jsonSchema
-    ? `【2. 完整 JSON Schema 契约定义】:\n\`\`\`json\n${JSON.stringify(schemaContext.jsonSchema, null, 2)}\n\`\`\`\n`
+    ? `【2. 完整 JSON Schema 契约定义】:\n\`\`\`json\n${JSON.stringify(schemaContext.jsonSchema, null, 2)}\n\`\`\`\n\n`
     : ''
 }【3. 本轮残余违规处方】:
 ${triadLines}
 
 【最终生成指令】:
-请严格对照上述黄金示例的每个字段名称与数据类型，逐一核验后重新生成完整、闭合的 JSON 对象！`;
+请严格对照上述契约的每个字段名称与数据类型，逐一核验后重新生成完整、闭合的 JSON 对象！`;
   }
 
   return {
@@ -801,166 +946,6 @@ export function buildTruncationFeedbackMessages(
 // ─────────────────────────────────────────────────────────────────────────────
 // 4. Self-Healing State Machine Loop
 // ─────────────────────────────────────────────────────────────────────────────
-
-export interface TestScenarioDefinition {
-  id: LLMTestScenario;
-  name: string;
-  description: string;
-  schemaConfig: ZodSchemaConfig;
-  defaultResponses: string[];
-  defaultFinishReasons?: string[];
-  expectedOutcome: string;
-}
-
-export const TEST_SCENARIOS: Record<LLMTestScenario, TestScenarioDefinition> = {
-  valid: {
-    id: 'valid',
-    name: '1. Schema 完全合法 → 直接通过',
-    description: '模型一次性输出符合约束的合法 JSON，直接通过校验，0 次自愈重试',
-    schemaConfig: {
-      name: 'TicketVerification',
-      fields: {
-        urgency: { type: 'number', min: 1, max: 5, description: '工单紧急度 1..5' },
-        summary: { type: 'string', minLength: 5, description: '工单摘要至少5字符' },
-      },
-    },
-    defaultResponses: [
-      JSON.stringify({ urgency: 4, summary: '生产数据库偶发连接超时，正在排查中' }),
-    ],
-    defaultFinishReasons: ['stop'],
-    expectedOutcome: '直接通过校验，不触发自愈修复 (attempts: 1)',
-  },
-  missing_field: {
-    id: 'missing_field',
-    name: '2. 缺必填字段 → 修复第 1 次成功',
-    description: '第 1 轮缺少必填 summary 字段被 L2 拦截，回喂字段级错误记忆后，第 2 轮补全字段修复成功',
-    schemaConfig: {
-      name: 'TicketVerification',
-      fields: {
-        urgency: { type: 'number', min: 1, max: 5, description: '工单紧急度 1..5' },
-        summary: { type: 'string', minLength: 5, description: '工单摘要至少5字符' },
-      },
-    },
-    defaultResponses: [
-      JSON.stringify({ urgency: 4 }), // missing summary
-      JSON.stringify({ urgency: 4, summary: '已补全摘要：线上支付网关发生延迟并已恢复' }),
-    ],
-    defaultFinishReasons: ['stop', 'stop'],
-    expectedOutcome: '第 1 轮拦截缺失字段 -> 回喂记忆 -> 第 2 轮修正成功',
-  },
-  enum_out_of_bounds: {
-    id: 'enum_out_of_bounds',
-    name: '3. enum/数值越界 (1..5 给 9) → 被 L2 拦住',
-    description: '模型输出 urgency: 9（数字语法合法，L1放行），被 L2 safeParse 领域防线精确阻断，自愈修正为 5',
-    schemaConfig: {
-      name: 'TicketVerification',
-      fields: {
-        urgency: { type: 'number', min: 1, max: 5, description: '紧急度只能在 1..5' },
-        summary: { type: 'string', minLength: 5, description: '摘要不少于5字符' },
-      },
-    },
-    defaultResponses: [
-      JSON.stringify({ urgency: 9, summary: '服务器机房空调过热报警' }), // urgency 9 > 5
-      JSON.stringify({ urgency: 5, summary: '服务器机房空调过热报警（已纠偏至允许最高值5）' }),
-    ],
-    defaultFinishReasons: ['stop', 'stop'],
-    expectedOutcome: '证明 L1 语法不够，L2 精准截获 [urgency] 越界并回喂自愈',
-  },
-  token_truncated: {
-    id: 'token_truncated',
-    name: '4. 输出被 max_tokens 截断 ➔ 紧凑自愈重试成功',
-    description: '第 1 轮输出因达到 Token 长度被物理截断；状态机特异性走截断分支，注入紧凑压缩处方，第 2 轮紧凑输出自愈成功',
-    schemaConfig: {
-      name: 'TicketVerification',
-      fields: {
-        urgency: { type: 'number', min: 1, max: 5 },
-        summary: { type: 'string', minLength: 5 },
-      },
-    },
-    defaultResponses: [
-      '{"urgency": 3, "summary": "由于系统内存溢出，节点正在发生阶段性',
-      JSON.stringify({ urgency: 3, summary: '内存溢出排查已完成，已恢复正常' }),
-    ],
-    defaultFinishReasons: ['length', 'stop'],
-    expectedOutcome: '走截断特异性分支 -> 注入紧凑压缩处方 -> 第 2 轮修正成功 (healedFromTruncation: true)',
-  },
-  empty_output: {
-    id: 'empty_output',
-    name: '5. 输出为空 → 原地干净重试 (DeepSeek 空包坑)',
-    description: '模型偶发吐出空响应，状态机原地无污染重发原始请求（不注入虚假的校验报错记忆），第 2 轮成功输出',
-    schemaConfig: {
-      name: 'TicketVerification',
-      fields: {
-        urgency: { type: 'number', min: 1, max: 5 },
-        summary: { type: 'string', minLength: 5 },
-      },
-    },
-    defaultResponses: [
-      '', // empty
-      JSON.stringify({ urgency: 2, summary: '重试后正常响应：客户咨询升级计划' }),
-    ],
-    defaultFinishReasons: ['stop', 'stop'],
-    expectedOutcome: '原地干净重发原始请求，不污染上下文历史',
-  },
-  three_failures: {
-    id: 'three_failures',
-    name: '6. 连续 3 次失败 → 阶梯递进升级并优雅降级',
-    description: 'R1 给出字段级手术刀处方；R2 识别同构微调并升级为全量 Schema 与黄金示例灌顶；3 次耗尽后优雅降级不抛错',
-    schemaConfig: {
-      name: 'TicketVerification',
-      fields: {
-        urgency: { type: 'number', min: 1, max: 5 },
-        summary: { type: 'string', minLength: 5 },
-      },
-    },
-    defaultResponses: [
-      JSON.stringify({ urgency: 99, summary: '' }),
-      JSON.stringify({ urgency: 88, summary: 'abc' }),
-      JSON.stringify({ urgency: 77, summary: 'xyz' }),
-    ],
-    defaultFinishReasons: ['stop', 'stop', 'stop'],
-    expectedOutcome: '三轮反馈逐级升级 (R1手术刀->R2黄金示例)，预算耗尽后优雅降级输出 _validationFailed',
-  },
-  semantic_refine_violation: {
-    id: 'semantic_refine_violation',
-    name: '7. 跨字段业务契约拦截 (Refine Invariant Violation)',
-    description: '受限解码(L1)放行，被 L2 Zod .refine() 拦截跨字段业务冲突（refund 但 urgency < 4；高优先级 summary < 15 字），经状态机处方精准自愈',
-    schemaConfig: {
-      name: 'TicketSemanticSchema',
-      fields: {
-        urgency: { type: 'number', min: 1, max: 5, description: '工单紧急度 1..5' },
-        category: { type: 'enum', enum: ['logistics', 'refund', 'quality', 'other'], description: '工单类别' },
-        summary: { type: 'string', minLength: 5, maxLength: 30, description: '问题摘要(5-30字)' },
-        orderId: { type: 'string', description: '订单号 ORD-123456' },
-      },
-      schema: TicketSemanticSchema,
-    },
-    defaultResponses: [
-      JSON.stringify({ urgency: 2, category: 'refund', summary: '键盘空格键失灵申请退款', orderId: 'ORD-882310' }),
-      JSON.stringify({ urgency: 4, category: 'refund', summary: '键盘空格键硬件失灵故障，用户申请退款并寄回处理', orderId: 'ORD-882310' }),
-    ],
-    defaultFinishReasons: ['stop', 'stop'],
-    expectedOutcome: 'L1语法通过 -> L2截获业务跨字段冲突 -> 注入三要素处方 -> 第2轮自愈成功',
-  },
-  custom: {
-    id: 'custom',
-    name: '自定义测试场景',
-    description: '自定义多轮模型输出与校验规则',
-    schemaConfig: {
-      name: 'CustomSchema',
-      fields: {
-        urgency: { type: 'number', min: 1, max: 5 },
-        summary: { type: 'string', minLength: 5 },
-      },
-    },
-    defaultResponses: [
-      JSON.stringify({ urgency: 9, summary: '' }),
-      JSON.stringify({ urgency: 3, summary: '修正后的摘要内容' }),
-    ],
-    defaultFinishReasons: ['stop', 'stop'],
-    expectedOutcome: '按自定义填写的返回流执行自愈状态机',
-  },
-};
 
 export interface SelfHealingExecutionOptions {
   maxRetries?: number; // default 2 (total 3 attempts)

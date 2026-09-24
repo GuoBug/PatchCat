@@ -6,21 +6,21 @@
   # PatchCat
 
   <p>
-    <strong>Precision prompts. Deterministic workflows.</strong>
+    <strong>Deterministic AI Workflow Engine · Interactive Playground</strong>
   </p>
 
   <p>
-    <em>The open-source, deterministic AI workflow orchestration engine & DAG state machine built for next-generation AI builders.</em>
+    <em>The open-source deterministic DAG orchestration engine & white-box interactive playground built for AI engineers, learners, and builders.</em>
   </p>
 
   <p>
-    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/version-v0.4.10-blue.svg" alt="Release: v0.4.10" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/version-v0.4.12-blue.svg" alt="Release: v0.4.12" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-emerald.svg" alt="License: MIT" /></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" alt="React 18" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-272%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-329%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
@@ -44,13 +44,21 @@
 
 ## 🌟 What is PatchCat?
 
-**PatchCat** is an open-source, deterministic **AI workflow orchestration engine and visual DAG state machine** created by **[GuoBug](https://github.com/GuoBug)**. Designed for AI engineers, product engineers, and developers building robust agentic pipelines, PatchCat transforms complex multi-agent interactions, LLMs, code transforms, and conditional branches into visual, parallelized, and deterministic workflows.
+**PatchCat** is an open-source, deterministic **AI workflow orchestration engine and white-box interactive playground** created by **[GuoBug](https://github.com/GuoBug)**. Designed for AI engineers, product engineers, agent developers, and self-learners, PatchCat transforms complex multi-agent interactions, LLMs, code transforms, and conditional branches into visual, parallelized, and deterministic workflows.
 
-With **zero mandatory backend setup** (Client-Only BYOK Mode) and direct connectivity to **Google Gemini, DeepSeek, OpenAI, SiliconFlow, and local Ollama**, PatchCat delivers high-performance AI workflow orchestration and prompt engineering directly inside your browser with enterprise-grade telemetry and zero data leakage.
+More than a production-grade orchestration engine, PatchCat is an **interactive AI engineering playground**: test and inspect topological DAG scheduling, self-healing state machines, and fault tolerance mechanisms offline with zero API keys needed. With **zero mandatory backend setup** (Client-Only BYOK Mode) and direct connectivity to **Google Gemini, DeepSeek, OpenAI, SiliconFlow, and local Ollama**, PatchCat delivers high-performance AI workflow orchestration and prompt engineering directly inside your browser with enterprise-grade telemetry and zero data leakage.
 
 > [!NOTE]
 > **Core Design Philosophy: Why Deterministic Workflows?**  
 > AI models are probabilistic by nature — prone to hallucinations, unexpected schema shifts, and unpredictable costs when left entirely autonomous. **PatchCat believes AI should do the heavy lifting of reasoning, drafting, and tool invocation, while a deterministic DAG state machine strictly enforces boundaries, conditional routes, and fallback safeguards.**
+
+> [!TIP]
+> **💡 PatchCat Core Engineering Axioms**  
+> 1. **Defense-in-Depth**: *"L1 guards physical syntax, L2 guards domain invariants, L3 guards system robustness, and L4 guards scheduler availability. Deterministic orchestration does not rob LLMs of creativity—it equips probabilistic outputs with deterministic engineering airbags."*  
+> 2. **Validation vs. Correctness**: *"Zod only proves 'no violation detected', not 'correct data'. Satisfied ≠ Correct. Un-flagged does not equal correct: naive field freezing locks hallucinations into local optimizer traps."*  
+> 3. **Architectural Purity**: *"If we take this engine code to do a legal contract review workflow, would we need to modify it? If yes -> business logic has leaked into the engine. The core engine must remain strictly domain-blind; business rules belong in Presets."*  
+> 4. **Retry vs. Self-Healing**: *"Retrying without structured feedback merely makes the model spin in the same local minimum (isomorphic retry trap); true self-healing is not 'rerunning blindly', but 're-consulting with diagnostic history'."*  
+> 5. **Scientific Attribution**: *"The gain in end-to-end success rate does not come from the model making fewer errors upfront, but from the effective recovery of the self-healing state machine."*
 
 ---
 
@@ -81,6 +89,7 @@ Why choose **PatchCat** over heavyweight orchestration tools?
 
 | Feature / Metric | **PatchCat 🐱 (Ours)** | **Flowise** | **Dify** | **Langflow** |
 | :--- | :--- | :--- | :--- | :--- |
+| **Positioning & Learning Barrier** | **Deterministic Engine + Interactive Playground (Zero-key simulation & white-box inspection)** | Production Builder (Black-box) | Production Builder (Black-box) | Experiment Builder (Heavy Setup) |
 | **Architecture** | **100% Client-Side / Edge** | Node.js + Backend DB | Python + Celery + Redis + Postgres | Python + Backend DB |
 | **Deployment Weight** | **Zero Setup (Static Web / 0MB)** | Heavy (Docker Compose) | Enterprise Heavy (~2GB+ Docker) | Heavy (Pip / Docker) |
 | **Data Privacy** | **Zero Data Leakage (BYOK In-Browser)** | Server-stored Keys | Server-stored Keys | Server-stored Keys |

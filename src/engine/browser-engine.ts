@@ -34,8 +34,8 @@ import type {
 import {
   executeWithSelfHealing,
   resolveZodSchema,
-  TEST_SCENARIOS,
 } from './structured-output.ts';
+import { getTestScenario } from '../presets/self-healing-scenarios.ts';
 import {
   topologicalSort,
   validateGraphTopology,
@@ -1432,7 +1432,7 @@ export class BrowserWorkflowEngine {
             );
 
             const testScenario = nodeConfig.testScenario;
-            const scenarioDef = testScenario ? TEST_SCENARIOS[testScenario] : undefined;
+            const scenarioDef = testScenario ? getTestScenario(testScenario) : undefined;
 
             const promptLower = userPrompt.toLowerCase();
             const labelLower = node.data.label.toLowerCase();

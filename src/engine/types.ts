@@ -590,16 +590,6 @@ export interface ZodSchemaConfig {
   schema?: unknown;
 }
 
-export type LLMTestScenario =
-  | 'valid'
-  | 'missing_field'
-  | 'enum_out_of_bounds'
-  | 'token_truncated'
-  | 'empty_output'
-  | 'three_failures'
-  | 'semantic_refine_violation'
-  | 'custom';
-
 export type SelfHealingEscalationLevel =
   | 'surgical_prescription'
   | 'golden_exemplar'
@@ -632,7 +622,7 @@ export interface LLMNodeConfig {
   schema?: unknown;
   zodSchema?: unknown;
   maxSelfHealingRetries?: number;
-  testScenario?: LLMTestScenario;
+  testScenario?: string;
   simulationResponses?: string[];
   simulationFinishReasons?: string[];
   forceSimulation?: boolean;

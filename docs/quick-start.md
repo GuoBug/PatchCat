@@ -1,6 +1,8 @@
 # 🚀 PatchCat Quick Start Guide
 
-Welcome to **PatchCat**! In this guide, you will learn how to orchestrate your first multi-node AI workflow in **under 5 minutes**—from connecting an LLM provider to building, running, and inspecting an automated AI ticket routing pipeline.
+> **Positioning**: Deterministic AI Workflow Engine · Interactive Playground
+
+Welcome to **PatchCat**! PatchCat is both a production-grade deterministic AI workflow orchestration engine and a white-box **interactive playground** designed for AI engineers, architects, and learners. In this guide, you will learn how to orchestrate workflows in **under 5 minutes**—whether you have an API key or want to test DAG mechanics completely offline.
 
 ---
 
@@ -16,10 +18,11 @@ Welcome to **PatchCat**! In this guide, you will learn how to orchestrate your f
 
 By the end of this quickstart tutorial, you will know how to:
 1. **Launch PatchCat** in your local browser environment.
-2. **Connect an LLM provider** (Google Gemini, DeepSeek, OpenAI, or local Ollama) using your own API Key (BYOK).
-3. **Execute a pre-built industrial workflow** (Customer Support Intent Classification & VIP Logistics Routing).
-4. **Inspect real-time token streams, DeepSeek reasoning chains, and 3-tier security execution logs**.
-5. **Build and customize your own visual DAG workflow** from scratch.
+2. **Explore DAG topology and slot resolution offline** without an API key.
+3. **Connect an LLM provider** (Google Gemini, DeepSeek, OpenAI, or local Ollama) using your own API Key (BYOK).
+4. **Execute a pre-built industrial workflow** (Customer Support Intent Classification & VIP Logistics Routing).
+5. **Inspect real-time token streams, DeepSeek reasoning chains, and 3-tier security execution logs**.
+6. **Build, customize, and experiment with your own visual DAG workflows**.
 
 ---
 
@@ -29,7 +32,7 @@ Before you start, make sure you have:
 - [Node.js](https://nodejs.org/) `>= 18.0.0`
 - [npm](https://www.npmjs.com/) `>= 9.0.0` or [pnpm](https://pnpm.io/)
 - A modern browser (Chrome, Edge, Firefox, Safari)
-- An API Key from any supported provider:
+- *(Optional, for live LLM execution)* An API Key from any supported provider (not needed for offline playground testing):
   - 🔵 **Google Gemini** (Free tier available at [Google AI Studio](https://aistudio.google.com/app/apikey)) — *Recommended*
   - 🐳 **DeepSeek** ([DeepSeek Platform](https://platform.deepseek.com/api_keys))
   - 🟢 **OpenAI** ([OpenAI Platform](https://platform.openai.com/api-keys))
@@ -152,6 +155,32 @@ PatchCat supports powerful Mustache-style variable interpolation:
 PatchCat's engine utilizes **Kahn's Topological Algorithm**:
 - **Automatic Parallel Waves**: Nodes on the same dependency layer execute concurrently via `Promise.all`.
 - **Cycle Detection**: If you accidentally connect a cyclic loop ($A \to B \to A$), PatchCat detects the cycle in milliseconds, highlights the affected nodes in red, and presents an alert banner to prevent infinite loops.
+
+---
+
+## 🧪 Step 6: Zero-Key Interactive Playground
+
+Beyond serving as a production-grade workflow runtime, PatchCat is designed as an **interactive AI playground** for developers, researchers, and learners to inspect and experiment with deterministic orchestration primitives without friction:
+
+### 1. Validate Flow Only (Zero-Key Simulation)
+Without entering any API keys, click **`Run Workflow`** and choose **`Validate Flow Only (Skip LLM)`**:
+- Safely bypasses remote LLM network calls while verifying Kahn topological ordering, concurrency waves, and port bindings;
+- Validates Mustache slot parsing (e.g. `{{nodeId.property}}`) and fallback defaults;
+- Traces real-time node state transitions and downstream data flow.
+
+### 2. Cycle Deadlock Chaos Testing
+- Try drawing a reverse edge from node B back to node A on the canvas to create a loop;
+- Click Run and witness the scheduler intercept the cycle in milliseconds, highlight the offending nodes in red, and block deadlocks before execution starts.
+
+### 3. Local Deterministic Contract Test Suite
+Run the built-in contract assertion suite locally to explore state machines and structured schema guarantees:
+```bash
+# Run all deterministic contract tests
+npm test
+
+# Run real LLM structured output benchmark
+npm run test:ab
+```
 
 ---
 

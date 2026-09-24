@@ -1,9 +1,9 @@
 {
   "name": "patchcat",
   "private": true,
-  "version": "0.4.11",
+  "version": "0.4.12",
   "type": "module",
-  "description": "PatchCat: The open-source prompt orchestration engine designed for AI builders. Precision prompts. Seamless workflows.",
+  "description": "PatchCat: Open-source deterministic AI workflow orchestration engine and interactive playground. Precision prompts. White-box experiments.",
   "homepage": "https://GuoBug.github.io/PatchCat/",
   "repository": {
     "type": "git",
@@ -21,7 +21,7 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write src/",
     "format:check": "prettier --check src/",
-    "test": "node --test tests/engine.node.test.ts tests/settings.node.test.ts tests/llm-client.node.test.ts tests/logger.node.test.ts tests/project-store.node.test.ts tests/knowledge-node.node.test.ts tests/knowledge-store.node.test.ts tests/condition-aggregator.node.test.ts tests/http-node.node.test.ts tests/chat-and-api.node.test.ts tests/visual-ui-rendering.node.test.ts tests/session-storage.node.test.ts tests/agent-node.node.test.ts tests/architecture-hardening.node.test.ts tests/agent-runtime-guard.node.test.ts tests/canvas-ergonomics.node.test.ts tests/shadow-draft-and-save-status.node.test.ts tests/model-pricing.node.test.ts tests/otel-exporter.node.test.ts tests/observability-engine.node.test.ts tests/checkpoint-resumption.node.test.ts tests/storage-hardening.node.test.ts tests/sub-workflow-execution.node.test.ts tests/deterministic-structured-output.node.test.ts",
+    "test": "node --experimental-strip-types --test tests/engine.node.test.ts tests/settings.node.test.ts tests/llm-client.node.test.ts tests/logger.node.test.ts tests/project-store.node.test.ts tests/knowledge-node.node.test.ts tests/knowledge-store.node.test.ts tests/condition-aggregator.node.test.ts tests/http-node.node.test.ts tests/chat-and-api.node.test.ts tests/visual-ui-rendering.node.test.ts tests/session-storage.node.test.ts tests/agent-node.node.test.ts tests/architecture-hardening.node.test.ts tests/agent-runtime-guard.node.test.ts tests/canvas-ergonomics.node.test.ts tests/shadow-draft-and-save-status.node.test.ts tests/model-pricing.node.test.ts tests/otel-exporter.node.test.ts tests/observability-engine.node.test.ts tests/checkpoint-resumption.node.test.ts tests/storage-hardening.node.test.ts tests/sub-workflow-execution.node.test.ts tests/deterministic-structured-output.node.test.ts",
     "demo": "node scripts/demo-run.ts",
     "test:ab": "npx tsx scripts/run-siliconflow-ab-test.ts",
     "build:target": "node scripts/build-target.mjs",

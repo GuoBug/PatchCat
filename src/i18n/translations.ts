@@ -637,7 +637,7 @@ export const translations: Record<Language, Translations> = {
       darkMode: 'Dark Mode',
     },
     header: {
-      tagline: 'Precision prompts. Seamless workflows.',
+      tagline: 'Deterministic AI Workflow Engine · Interactive Playground',
       addNode: 'Add Node',
       preset: 'Preset:',
       apiKey: 'API Key',
@@ -1042,14 +1042,14 @@ export const translations: Record<Language, Translations> = {
     },
     help: {
       title: 'PatchCat Documentation',
-      subtitle: 'Visual Prompt Flow Orchestrator & Multi-Agent Architecture Guide',
+      subtitle: 'Deterministic AI Workflow Engine & Interactive Playground Guide',
       tabQuickstart: '🚀 Quickstart',
       tabNodes: '🧩 Node Types',
       tabShortcuts: '⌨️ Shortcuts',
       tabDocs: '📚 Dev Docs',
     },
     footer: {
-      tagline: 'Visual Prompt Orchestration Engine',
+      tagline: 'Deterministic AI Workflow Engine · Interactive Playground',
       author: 'Author',
       helpDocs: 'Help & Docs',
       github: 'GitHub',
@@ -1276,7 +1276,7 @@ export const translations: Record<Language, Translations> = {
       darkMode: '暗黑主题',
     },
     header: {
-      tagline: '精准提示词编排 · 无缝工作流协同',
+      tagline: '确定性 AI 工作流引擎 · 交互式实验工坊',
       addNode: '添加节点',
       preset: '预设模板:',
       apiKey: 'API 密钥',
@@ -1671,14 +1671,14 @@ export const translations: Record<Language, Translations> = {
     },
     help: {
       title: 'PatchCat 帮助与使用文档',
-      subtitle: '可视化 AI Prompt 编排引擎与多智能体工作流快速上手指南',
+      subtitle: '确定性 AI 工作流引擎与交互式实验工坊快速上手指南',
       tabQuickstart: '🚀 快速上手',
       tabNodes: '🧩 节点指南',
       tabShortcuts: '⌨️ 快捷操作',
       tabDocs: '📚 开发文档',
     },
     footer: {
-      tagline: '可视化 AI Prompt 编排引擎',
+      tagline: '确定性 AI 工作流引擎 · 交互式实验工坊',
       author: '作者',
       helpDocs: '帮助文档',
       github: 'GitHub 仓库',
