@@ -28,7 +28,7 @@
     "build:merlin:armv7": "node scripts/build-target.mjs --target=merlin --arch=arm"
   },
   "dependencies": {
-    "@xyflow/react": "^12.6.0",
+    "@xyflow/react": "^12.11.6",
     "clsx": "^2.1.1",
     "immer": "^10.1.1",
     "lucide-react": "^0.475.0",
