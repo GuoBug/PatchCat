@@ -180,6 +180,16 @@ export const TicketSemanticSchema = z
   .refine((d) => !(d.urgency >= 4 && d.summary.length < 15), {
     message: '合规要求：高优先级工单 (urgency ≥ 4) 的 summary 至少需要 15 字阐述详情理由',
     path: ['summary'],
+  })
+  // ── 跨字段契约 C1: summary × orderId（订单号只允许出现在 orderId 字段）────────────
+  .refine((d) => !/ORD[-\s]?\d{4,}/i.test(d.summary), {
+    message: '跨字段契约：订单号只允许出现在 orderId 字段，summary 中不得复述任何订单号',
+    path: ['summary'],
+  })
+  // ── 跨字段契约 C2: urgency × category（物流类不占用高优先级处理通道）─────────────
+  .refine((d) => !(d.category === 'logistics' && d.urgency > 3), {
+    message: '跨字段契约：物流类工单不涉及资金流转，urgency 必须 ≤ 3',
+    path: ['urgency'],
   });
 
 /**
