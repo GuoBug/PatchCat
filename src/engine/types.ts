@@ -402,6 +402,10 @@ export interface WorkflowRunOptions {
   resumeFromNodeId?: string;
   /** Specific checkpoint ID to hydrate ancestor state from. If omitted, uses the latest checkpoint for the workflow. */
   checkpointId?: string;
+  /** When true, marks execution as a single-node testbench run where mock injections / test scenarios are permitted. */
+  isNodeTest?: boolean;
+  /** When true, permits node-level simulation configurations (e.g. simulationResponses, testScenario). */
+  enableNodeSimulation?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -534,6 +538,97 @@ export interface SubWorkflowNodeConfig {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 11b. Structured Output & LLM Node Configuration
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type ResponseFormatMode = 'json_schema' | 'json_object' | 'none';
+
+export interface ResponseFormatConfig {
+  type: ResponseFormatMode;
+  jsonSchema?: {
+    name: string;
+    strict?: boolean;
+    schema: Record<string, unknown>;
+  };
+}
+
+export interface StructuredOutputError {
+  path: string;
+  message: string;
+  code?: string;
+}
+
+export interface ValidationFallbackOutput {
+  _validationFailed: true;
+  errors: StructuredOutputError[];
+  raw: string;
+  fallbackReason: 'schema_mismatch' | 'token_truncated' | 'empty_output' | 'max_retries_exceeded' | 'syntax_error';
+  response?: string;
+  [key: string]: unknown;
+}
+
+export interface ZodFieldDef {
+  type: 'string' | 'number' | 'boolean' | 'enum' | 'array' | 'object';
+  description?: string;
+  required?: boolean;
+  min?: number;
+  max?: number;
+  minLength?: number;
+  maxLength?: number;
+  enum?: string[];
+  items?: ZodFieldDef;
+  properties?: Record<string, ZodFieldDef>;
+}
+
+export interface ZodSchemaConfig {
+  name?: string;
+  strict?: boolean;
+  fields?: Record<string, ZodFieldDef>;
+  schema?: unknown;
+}
+
+export type LLMTestScenario =
+  | 'valid'
+  | 'missing_field'
+  | 'enum_out_of_bounds'
+  | 'token_truncated'
+  | 'empty_output'
+  | 'three_failures'
+  | 'custom';
+
+export interface SelfHealingTraceStep {
+  round: number;
+  rawOutput: string;
+  syntaxValid: boolean;
+  semanticValid: boolean;
+  errors?: StructuredOutputError[];
+  finishReason?: string;
+  feedbackPrompt?: string;
+  timestamp?: number;
+}
+
+export type LLMSimulationMode = 'offline_mock' | 'mock_first_round_then_real' | 'live_api';
+
+export interface LLMNodeConfig {
+  model?: string;
+  temperature?: number;
+  topP?: number;
+  maxTokens?: number;
+  systemPrompt?: string;
+  responseFormat?: ResponseFormatConfig | ResponseFormatMode;
+  zodSchemaConfig?: ZodSchemaConfig | unknown;
+  schema?: unknown;
+  zodSchema?: unknown;
+  maxSelfHealingRetries?: number;
+  testScenario?: LLMTestScenario;
+  simulationResponses?: string[];
+  simulationFinishReasons?: string[];
+  forceSimulation?: boolean;
+  simulationMode?: LLMSimulationMode;
+  mockFirstRoundOnly?: boolean;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 12. Node Default Config Factories
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -548,7 +643,14 @@ export function getDefaultNodeConfig(type: NodeType): Record<string, unknown> {
     case 'prompt':
       return { template: '' };
     case 'llm':
-      return { model: 'gpt-4o-mini', temperature: 0.7, topP: 1, maxTokens: 2048 };
+      return {
+        model: 'gpt-4o-mini',
+        temperature: 0.7,
+        topP: 1,
+        maxTokens: 2048,
+        responseFormat: 'none',
+        maxSelfHealingRetries: 2,
+      };
     case 'code':
       return { runtime: 'javascript', script: '' };
     case 'output':

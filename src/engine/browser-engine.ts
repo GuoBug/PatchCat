@@ -29,7 +29,13 @@ import type {
   TokenUsage,
   DAGCheckpoint,
   NodeCheckpointState,
+  LLMNodeConfig,
 } from './types';
+import {
+  executeWithSelfHealing,
+  resolveZodSchema,
+  TEST_SCENARIOS,
+} from './structured-output.ts';
 import {
   topologicalSort,
   validateGraphTopology,
@@ -960,9 +966,15 @@ export class BrowserWorkflowEngine {
     nodeId: string,
     options: WorkflowRunOptions = {},
   ): AsyncGenerator<ExecutionEvent> {
-    if (options.resumeDownstream) {
+    const singleNodeOptions: WorkflowRunOptions = {
+      ...options,
+      isNodeTest: options.isNodeTest ?? true,
+      enableNodeSimulation: options.enableNodeSimulation ?? true,
+    };
+
+    if (singleNodeOptions.resumeDownstream) {
       for await (const event of this.executeWorkflow(graph, {
-        ...options,
+        ...singleNodeOptions,
         resumeFromExisting: true,
         targetNodeIds: [nodeId],
       })) {
@@ -1038,7 +1050,7 @@ export class BrowserWorkflowEngine {
               },
             });
           },
-          options,
+          singleNodeOptions,
           incomingEdges,
           skippedNodes,
           nodeMap,
@@ -1176,13 +1188,60 @@ export class BrowserWorkflowEngine {
               ? (node.data.config['temperature'] as number)
               : 0.7;
 
+          const nodeConfig = (node.data.config || {}) as LLMNodeConfig;
+          const responseFormatConfig = nodeConfig.responseFormat;
+          const rawSchemaConfig =
+            nodeConfig.zodSchemaConfig ?? nodeConfig.zodSchema ?? nodeConfig.schema;
+          const schema = resolveZodSchema(rawSchemaConfig);
+          const maxSelfHealingRetries =
+            typeof nodeConfig.maxSelfHealingRetries === 'number'
+              ? nodeConfig.maxSelfHealingRetries
+              : 2;
+
+          const hasStructuredOutput = Boolean(
+            (responseFormatConfig && responseFormatConfig !== 'none') || schema,
+          );
+
           // Retrieve active provider settings via IoC helper
           const settings = this.resolveSettings(options);
 
           const isValidationOnly = Boolean(options?.skipLLM || options?.validationOnly);
 
-          if (settings.hasKey && !isValidationOnly) {
-            // REAL LLM CALL (Google Gemini / DeepSeek / OpenAI / Ollama / Custom)
+          // Node-level simulation (mock/fault injection) is ONLY active if:
+          // 1. Explicitly enabled via run options (node testbench or single node test), OR
+          // 2. The entire workflow is in validation / dry-run mode (skipLLM / validationOnly), OR
+          // 3. The active provider is 'mock' or no API key is available (offline fallback).
+          // When executing a full workflow from the top-right "运行工作流" button with a real provider,
+          // node simulation settings MUST NOT hijack the execution; live API calls must be made.
+          const isNodeTestRun = Boolean(options?.isNodeTest || options?.enableNodeSimulation);
+          const allowNodeSimulation =
+            isNodeTestRun ||
+            isValidationOnly ||
+            settings.provider === 'mock' ||
+            (!settings.hasKey && settings.provider !== 'ollama');
+
+          const isHybridMode =
+            allowNodeSimulation &&
+            nodeConfig.simulationMode !== 'live_api' &&
+            Boolean(
+              nodeConfig.simulationMode === 'mock_first_round_then_real' ||
+                nodeConfig.mockFirstRoundOnly,
+            );
+
+          const isPureOfflineMock =
+            allowNodeSimulation &&
+            nodeConfig.simulationMode !== 'live_api' &&
+            Boolean(
+              nodeConfig.simulationMode === 'offline_mock' ||
+                (!isHybridMode && (nodeConfig.forceSimulation || nodeConfig.testScenario)),
+            );
+
+          const canCallRealLLM =
+            (settings.hasKey || settings.provider === 'ollama') && !isValidationOnly;
+          const shouldRunRealLLM = canCallRealLLM && (!isPureOfflineMock || isHybridMode);
+
+          if (shouldRunRealLLM) {
+            // REAL LLM CALL (Google Gemini / DeepSeek / OpenAI / Ollama / Custom) or HYBRID INJECTION
             const messages: ChatMessage[] = [];
             if (systemPrompt) {
               messages.push({ role: 'system', content: systemPrompt });
@@ -1199,37 +1258,158 @@ export class BrowserWorkflowEngine {
             const llmCallStart = Date.now();
             let firstChunkReceived = false;
 
-            const llmResult = await streamChatCompletion(
-              {
-                baseUrl: settings.baseUrl,
-                apiKey: settings.apiKey,
-                model: targetModel,
-                messages,
-                temperature,
-                signal,
-              },
-              {
-                onChunk: (chunk) => {
-                  if (!firstChunkReceived) {
-                    firstChunkReceived = true;
-                    capturedTtftMs = Date.now() - llmCallStart;
-                  }
-                  if (onChunk) {
-                    onChunk(chunk);
-                  }
-                },
-              },
-            );
+            if (hasStructuredOutput) {
+              let callAttemptIndex = 0;
 
-            output = {
-              response: llmResult.response,
-              ...(llmResult.reasoning ? { reasoning: llmResult.reasoning } : {}),
-              usage: llmResult.usage,
-              model: targetModel,
-              finishReason: llmResult.finishReason,
-            };
+              // Execute with L1 capability negotiation, L2 semantic validation, and self-healing state machine
+              const healingRes = await executeWithSelfHealing(
+                async (overrides) => {
+                  const currentAttempt = callAttemptIndex++;
+                  const isRound1 = currentAttempt === 0;
+
+                  if (isHybridMode && isRound1) {
+                    const mockResp = nodeConfig.simulationResponses?.[0] ?? '';
+                    const finishReason =
+                      (nodeConfig.simulationFinishReasons?.[0] as string) || 'stop';
+
+                    if (onChunk) {
+                      onChunk({ delta: mockResp, fullContent: mockResp });
+                    }
+
+                    logger.summary(
+                      'WorkflowEngine',
+                      `[首轮故障注入] 节点 "${node.id}" (${node.data.label}) 第 1 轮采用用户注入的模拟返回值，触发 L1/L2 语义校验...`,
+                      { round: 1, mockLength: mockResp.length },
+                      node.id,
+                    );
+
+                    return {
+                      response: mockResp,
+                      usage: { prompt: 40, completion: 20, total: 60 },
+                      finishReason,
+                      durationMs: 30,
+                    };
+                  }
+
+                  // Round 2+ (or full real API mode): call REAL LLM!
+                  logger.summary(
+                    'WorkflowEngine',
+                    `[真实大模型自愈接管] 节点 "${node.id}" (${node.data.label}) 第 ${currentAttempt + 1} 轮自愈纠偏调用真实大模型: ${targetModel}...`,
+                    { round: currentAttempt + 1, provider: settings.provider, model: targetModel },
+                    node.id,
+                  );
+
+                  return streamChatCompletion(
+                    {
+                      baseUrl: settings.baseUrl,
+                      apiKey: settings.apiKey,
+                      model: targetModel,
+                      messages: overrides.messages || messages,
+                      temperature,
+                      signal,
+                      response_format: overrides.response_format,
+                    },
+                    {
+                      onChunk: (chunk) => {
+                        if (!firstChunkReceived) {
+                          firstChunkReceived = true;
+                          capturedTtftMs = Date.now() - llmCallStart;
+                        }
+                        if (onChunk) {
+                          onChunk(chunk);
+                        }
+                      },
+                    },
+                  );
+                },
+                messages,
+                {
+                  maxRetries: maxSelfHealingRetries,
+                  schema,
+                  responseFormat: responseFormatConfig,
+                  provider: settings.provider,
+                  model: targetModel,
+                  signal,
+                  onAttempt: (attemptIndex, isRetry, errs) => {
+                    if (isRetry) {
+                      logger.warn(
+                        'WorkflowEngine',
+                        `[LLM Self-Healing] Node "${node.id}" (${node.data.label}) running retry ${attemptIndex}/${maxSelfHealingRetries}...`,
+                        { errorCount: errs?.length, errors: errs as unknown as Record<string, unknown> },
+                        node.id,
+                      );
+                    }
+                  },
+                },
+              );
+
+              if (healingRes.success) {
+                const parsedObject =
+                  healingRes.data && typeof healingRes.data === 'object'
+                    ? (healingRes.data as Record<string, unknown>)
+                    : {};
+
+                output = {
+                  response: healingRes.raw,
+                  parsed: healingRes.data,
+                  ...parsedObject,
+                  ...(healingRes.reasoning ? { reasoning: healingRes.reasoning } : {}),
+                  usage: healingRes.usage,
+                  model: targetModel,
+                  finishReason: healingRes.finishReason || 'stop',
+                  selfHealingAttempts: healingRes.totalAttempts,
+                  selfHealingTrace: healingRes.trace,
+                };
+              } else {
+                // Graceful degradation: NEVER throw! Output { _validationFailed: true, errors, raw }
+                output = {
+                  _validationFailed: true,
+                  errors: healingRes.errors || [],
+                  raw: healingRes.raw,
+                  fallbackReason: healingRes.fallbackReason || 'max_retries_exceeded',
+                  response: healingRes.raw,
+                  ...(healingRes.reasoning ? { reasoning: healingRes.reasoning } : {}),
+                  usage: healingRes.usage,
+                  model: targetModel,
+                  finishReason: healingRes.finishReason || 'stop',
+                  selfHealingAttempts: healingRes.totalAttempts,
+                  selfHealingTrace: healingRes.trace,
+                };
+              }
+            } else {
+              // Standard unconstrained text output
+              const llmResult = await streamChatCompletion(
+                {
+                  baseUrl: settings.baseUrl,
+                  apiKey: settings.apiKey,
+                  model: targetModel,
+                  messages,
+                  temperature,
+                  signal,
+                },
+                {
+                  onChunk: (chunk) => {
+                    if (!firstChunkReceived) {
+                      firstChunkReceived = true;
+                      capturedTtftMs = Date.now() - llmCallStart;
+                    }
+                    if (onChunk) {
+                      onChunk(chunk);
+                    }
+                  },
+                },
+              );
+
+              output = {
+                response: llmResult.response,
+                ...(llmResult.reasoning ? { reasoning: llmResult.reasoning } : {}),
+                usage: llmResult.usage,
+                model: targetModel,
+                finishReason: llmResult.finishReason,
+              };
+            }
           } else {
-            // MOCK / FLOW VALIDATION MODE (Simulated response with notice)
+            // MOCK / FLOW VALIDATION / SCENARIO TESTING MODE
             const delayMs = customDelay ?? 80;
             capturedTtftMs = delayMs;
             if (delayMs > 0) {
@@ -1246,10 +1426,19 @@ export class BrowserWorkflowEngine {
               });
             }
 
-            // Check if prompt or node label implies structured JSON format (e.g. classifier, router)
+            const shouldSimulateFailure = Boolean(
+              node.data.config?.['mockValidationFail'] ||
+                (options as Record<string, unknown> | undefined)?.['mockValidationFail'],
+            );
+
+            const testScenario = nodeConfig.testScenario;
+            const scenarioDef = testScenario ? TEST_SCENARIOS[testScenario] : undefined;
+
             const promptLower = userPrompt.toLowerCase();
             const labelLower = node.data.label.toLowerCase();
             const expectsJson =
+              hasStructuredOutput ||
+              Boolean(testScenario) ||
               promptLower.includes('json') ||
               labelLower.includes('intent') ||
               labelLower.includes('router') ||
@@ -1257,29 +1446,164 @@ export class BrowserWorkflowEngine {
               node.data.label.includes('意图') ||
               node.data.label.includes('分类');
 
-            const mockText = expectsJson
-              ? JSON.stringify(
-                  {
-                    intent: 'logistics_expedite',
-                    urgency: 4,
-                    requires_human: true,
-                    summary: `[Flow Validation] Simulated intent classification for "${node.data.label}"`,
+            const hasCustomSimulation = Boolean(
+              nodeConfig.simulationResponses && nodeConfig.simulationResponses.length > 0,
+            );
+
+            if (
+              hasStructuredOutput ||
+              (allowNodeSimulation && Boolean(testScenario)) ||
+              (allowNodeSimulation && hasCustomSimulation && Boolean(schema))
+            ) {
+              // Run real executeWithSelfHealing state machine with simulated responses
+              const simResponses =
+                allowNodeSimulation &&
+                nodeConfig.simulationResponses &&
+                nodeConfig.simulationResponses.length > 0
+                  ? nodeConfig.simulationResponses
+                  : scenarioDef?.defaultResponses || [
+                      shouldSimulateFailure
+                        ? JSON.stringify({ intent: 'unknown_intent', urgency: 9, summary: '' })
+                        : JSON.stringify(
+                            {
+                              intent: 'logistics_expedite',
+                              urgency: 4,
+                              requires_human: true,
+                              summary: `[Flow Validation] Simulated intent classification for "${node.data.label}"`,
+                            },
+                            null,
+                            2,
+                          ),
+                    ];
+
+              const simFinishReasons =
+                nodeConfig.simulationFinishReasons && nodeConfig.simulationFinishReasons.length > 0
+                  ? nodeConfig.simulationFinishReasons
+                  : scenarioDef?.defaultFinishReasons ||
+                    (scenarioDef?.id === 'token_truncated' ? ['length'] : ['stop']);
+
+              const simMessages: ChatMessage[] = [];
+              if (systemPrompt) {
+                simMessages.push({ role: 'system', content: systemPrompt });
+              }
+              simMessages.push({ role: 'user', content: userPrompt });
+
+              let simAttempt = 0;
+              const targetModel = configuredModel || settings.model || 'mock-validator';
+
+              const healingRes = await executeWithSelfHealing(
+                async () => {
+                  const idx = Math.min(simAttempt, simResponses.length - 1);
+                  const respText = simResponses[idx] ?? '';
+                  const finishReason =
+                    simFinishReasons[idx] ?? (scenarioDef?.id === 'token_truncated' ? 'length' : 'stop');
+                  simAttempt++;
+
+                  if (onChunk) {
+                    onChunk({ delta: respText, fullContent: respText });
+                  }
+
+                  return {
+                    response: respText,
+                    usage: { prompt: 50 + idx * 20, completion: 30 + idx * 10, total: 80 + idx * 30 },
+                    finishReason,
+                    durationMs: 40 + idx * 20,
+                  };
+                },
+                simMessages,
+                {
+                  maxRetries: maxSelfHealingRetries,
+                  schema,
+                  responseFormat: responseFormatConfig,
+                  provider: settings.provider || 'openai',
+                  model: targetModel,
+                  signal,
+                  onAttempt: (attemptIndex, isRetry, errs) => {
+                    if (isRetry) {
+                      logger.warn(
+                        'WorkflowEngine',
+                        `[LLM Self-Healing Lab] 节点 "${node.id}" (${node.data.label}) 执行第 ${attemptIndex} 次自愈重试...`,
+                        { errorCount: errs?.length, errors: errs as unknown as Record<string, unknown> },
+                        node.id,
+                      );
+                    }
                   },
-                  null,
-                  2,
-                )
-              : `[Flow Validation] Simulated response for "${node.data.label}" (LLM model execution skipped for flow validation).`;
+                },
+              );
 
-            if (onChunk) {
-              onChunk({ delta: mockText, fullContent: mockText });
+              if (healingRes.success) {
+                const parsedObject =
+                  healingRes.data && typeof healingRes.data === 'object'
+                    ? (healingRes.data as Record<string, unknown>)
+                    : {};
+
+                output = {
+                  response: healingRes.raw,
+                  parsed: healingRes.data,
+                  ...parsedObject,
+                  usage: healingRes.usage,
+                  model: targetModel,
+                  finishReason: healingRes.finishReason || 'stop',
+                  selfHealingAttempts: healingRes.totalAttempts,
+                  selfHealingTrace: healingRes.trace,
+                };
+              } else {
+                output = {
+                  _validationFailed: true,
+                  errors: healingRes.errors || [],
+                  raw: healingRes.raw,
+                  fallbackReason: healingRes.fallbackReason || 'max_retries_exceeded',
+                  response: healingRes.raw,
+                  usage: healingRes.usage,
+                  model: targetModel,
+                  finishReason: healingRes.finishReason || 'stop',
+                  selfHealingAttempts: healingRes.totalAttempts,
+                  selfHealingTrace: healingRes.trace,
+                };
+              }
+            } else {
+              const userSimResponse = allowNodeSimulation
+                ? nodeConfig.simulationResponses?.[0]
+                : undefined;
+              const mockText =
+                userSimResponse !== undefined && userSimResponse.trim().length > 0
+                  ? userSimResponse
+                  : expectsJson
+                    ? JSON.stringify(
+                        {
+                          intent: 'logistics_expedite',
+                          urgency: 4,
+                          requires_human: true,
+                          summary: `[Flow Validation] Simulated intent classification for "${node.data.label}"`,
+                        },
+                        null,
+                        2,
+                      )
+                    : `[Flow Validation] Simulated response for "${node.data.label}" (LLM model execution skipped for flow validation).`;
+
+              if (onChunk) {
+                onChunk({ delta: mockText, fullContent: mockText });
+              }
+
+              let parsedJson: unknown = undefined;
+              try {
+                parsedJson = JSON.parse(mockText);
+              } catch {
+                // not JSON
+              }
+
+              output = {
+                response: mockText,
+                ...(parsedJson && typeof parsedJson === 'object'
+                  ? (parsedJson as Record<string, unknown>)
+                  : {}),
+                ...(parsedJson !== undefined ? { parsed: parsedJson } : {}),
+                usage: { prompt: 50, completion: 50, total: 100 },
+                finishReason:
+                  (nodeConfig.simulationFinishReasons?.[0] as string) || 'stop',
+                model: configuredModel || settings.model || 'mock-validator',
+              };
             }
-
-            output = {
-              response: mockText,
-              usage: { prompt: 50, completion: 50, total: 100 },
-              finishReason: 'stop',
-              model: configuredModel || settings.model || 'mock-validator',
-            };
           }
           break;
         }

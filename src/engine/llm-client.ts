@@ -40,6 +40,14 @@ export interface LLMChatRequest {
     };
   }>;
   tool_choice?: 'auto' | 'none' | 'required';
+  response_format?: {
+    type: 'text' | 'json_object' | 'json_schema';
+    json_schema?: {
+      name: string;
+      strict?: boolean;
+      schema: Record<string, unknown>;
+    };
+  };
 }
 
 export interface LLMStreamChunk {
@@ -129,6 +137,10 @@ export async function streamChatCompletion(
     if (request.tool_choice) {
       (payload as Record<string, unknown>).tool_choice = request.tool_choice;
     }
+  }
+
+  if (request.response_format) {
+    (payload as Record<string, unknown>).response_format = request.response_format;
   }
 
   logger.detailed(

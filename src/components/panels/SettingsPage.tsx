@@ -38,6 +38,7 @@ import {
   Shield,
   ShieldAlert,
   Upload,
+  FlaskConical,
 } from 'lucide-react';
 import {
   useSettingsStore,
@@ -116,6 +117,8 @@ export const SettingsPage: React.FC = () => {
   const networkSettings = useSettingsStore((s) => s.networkSettings);
   const updateNetworkSettings = useSettingsStore((s) => s.updateNetworkSettings);
   const resetNetworkSettings = useSettingsStore((s) => s.resetNetworkSettings);
+  const researchMode = useSettingsStore((s) => s.researchMode);
+  const setResearchMode = useSettingsStore((s) => s.setResearchMode);
   const exportSettings = useSettingsStore((s) => s.exportSettings);
   const importSettings = useSettingsStore((s) => s.importSettings);
 
@@ -549,6 +552,64 @@ export const SettingsPage: React.FC = () => {
                     />
                     <span className="text-xs font-mono text-slate-500 dark:text-slate-400">ms</span>
                   </div>
+                </div>
+              </div>
+
+              {/* Research & Developer Lab Mode */}
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <FlaskConical className="w-5 h-5 text-sky-500 shrink-0" />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                          {t.settings.researchModeSection}
+                        </h4>
+                        <span
+                          className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full ${
+                            researchMode
+                              ? 'bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-300/50 dark:border-sky-800'
+                              : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                          }`}
+                        >
+                          {researchMode
+                            ? t.settings.researchModeBadgeOn
+                            : t.settings.researchModeBadgeOff}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        {t.settings.researchModeSectionDesc}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Toggle Switch */}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={researchMode}
+                    onClick={() => setResearchMode(!researchMode)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-sky-500/20 ${
+                      researchMode ? 'bg-sky-600' : 'bg-slate-300 dark:bg-slate-700'
+                    }`}
+                    title={researchMode ? '关闭研究模式' : '开启研究模式'}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                        researchMode ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800/80 text-xs text-slate-600 dark:text-slate-300 space-y-1.5">
+                  <div className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <span>{t.settings.researchModeToggle}</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    {t.settings.researchModeToggleDesc}
+                  </p>
                 </div>
               </div>
 

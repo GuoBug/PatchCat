@@ -102,3 +102,6 @@ merlin_staging/
 patchcat-merlin-*.tar.gz
 patchcat-merlin-*.tar.gz.sha256
 patchcat/
+
+# Temporary test logs and screenshots
+测试日志及截图/

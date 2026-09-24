@@ -152,7 +152,7 @@ export interface WorkflowStoreState {
   canRedo: () => boolean;
 
   // ── In-Place Local Retry & Resumption (v0.4.10) ─────────────────────────
-  retryNode: (nodeId: string, options?: { resumeDownstream?: boolean }) => Promise<void>;
+  retryNode: (nodeId: string, options?: { resumeDownstream?: boolean; isNodeTest?: boolean }) => Promise<void>;
   retryAllFailedNodes: () => Promise<void>;
   resumeFromNode: (nodeId: string) => Promise<void>;
   restoreCheckpointToCanvas: (checkpointId: string) => Promise<boolean>;
@@ -784,7 +784,10 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
     canRedo: () => historyManager.canRedo(),
 
     // ── In-Place Local Retry ─────────────────────────────────────────────────
-    retryNode: async (nodeId: string, options?: { resumeDownstream?: boolean }) => {
+    retryNode: async (
+      nodeId: string,
+      options?: { resumeDownstream?: boolean; isNodeTest?: boolean },
+    ) => {
       const state = get();
       if (state.isExecuting) return;
       const targetNode = state.nodes.find((n) => n.id === nodeId);
@@ -800,7 +803,11 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
         for await (const event of engine.executeSingleNode(
           { nodes: get().nodes, edges: get().edges },
           nodeId,
-          { inputs: get().globalInputs, resumeDownstream: options?.resumeDownstream },
+          {
+            inputs: get().globalInputs,
+            resumeDownstream: options?.resumeDownstream,
+            isNodeTest: options?.isNodeTest,
+          },
         )) {
           if (event.type === 'NODE_START') {
             get().setNodeStatus(event.payload.nodeId, 'running');

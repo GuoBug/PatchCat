@@ -116,6 +116,7 @@ const MEMORY_DEFAULTS_KEY = 'patchcat-memory-defaults-v1';
 const RUNTIME_PROTECTION_KEY = 'patchcat-runtime-protection-v1';
 const EDITOR_PREFERENCES_KEY = 'patchcat-editor-preferences-v1';
 const NETWORK_SETTINGS_KEY = 'patchcat-network-settings-v1';
+const RESEARCH_MODE_KEY = 'patchcat-research-mode-v1';
 
 export interface MemoryDefaults {
   enabled: boolean;
@@ -180,6 +181,10 @@ export interface SettingsStoreState {
   updateNetworkSettings: (partial: Partial<NetworkSettings>) => void;
   resetNetworkSettings: () => void;
 
+  // Research & Lab Mode (Deterministic Structured Output Testbench & Fault Injector)
+  researchMode: boolean;
+  setResearchMode: (enabled: boolean) => void;
+
   // Backup & Migration
   exportSettings: (includeSensitiveKeys?: boolean) => string;
   importSettings: (jsonString: string) => { success: boolean; error?: string };
@@ -211,6 +216,7 @@ function loadInitialState(): {
   runtimeProtection: RuntimeProtectionSettings;
   editorPreferences: EditorPreferences;
   networkSettings: NetworkSettings;
+  researchMode: boolean;
 } {
   let language: Language = 'en';
   let activeProvider: ProviderId = 'deepseek';
@@ -221,6 +227,7 @@ function loadInitialState(): {
   let runtimeProtection: RuntimeProtectionSettings = DEFAULT_RUNTIME_PROTECTION;
   let editorPreferences: EditorPreferences = DEFAULT_EDITOR_PREFERENCES;
   let networkSettings: NetworkSettings = DEFAULT_NETWORK_SETTINGS;
+  let researchMode = false;
 
   if (typeof window !== 'undefined') {
     try {
@@ -282,6 +289,15 @@ function loadInitialState(): {
     }
 
     try {
+      const savedResearch = localStorage.getItem(RESEARCH_MODE_KEY);
+      if (savedResearch !== null) {
+        researchMode = savedResearch === 'true';
+      }
+    } catch (e) {
+      console.warn('[SettingsStore] Failed to load research mode:', e);
+    }
+
+    try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
@@ -306,6 +322,7 @@ function loadInitialState(): {
     runtimeProtection,
     editorPreferences,
     networkSettings,
+    researchMode,
   };
 }
 
@@ -550,6 +567,21 @@ export const useSettingsStore = create<SettingsStoreState>()(
             localStorage.removeItem(NETWORK_SETTINGS_KEY);
           } catch (e) {
             console.error('[SettingsStore] Failed to reset networkSettings:', e);
+          }
+        }
+      },
+
+      // Research & Lab Mode
+      researchMode: initial.researchMode,
+      setResearchMode: (enabled: boolean) => {
+        set((state) => {
+          state.researchMode = enabled;
+        });
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(RESEARCH_MODE_KEY, String(enabled));
+          } catch (e) {
+            console.error('[SettingsStore] Failed to save researchMode:', e);
           }
         }
       },

@@ -251,6 +251,12 @@ export interface Translations {
     themeDark: string;
     autoSaveDebounce: string;
     autoSaveDebounceDesc: string;
+    researchModeSection: string;
+    researchModeSectionDesc: string;
+    researchModeToggle: string;
+    researchModeToggleDesc: string;
+    researchModeBadgeOn: string;
+    researchModeBadgeOff: string;
     backupSection: string;
     backupSectionDesc: string;
     exportSettingsBtn: string;
@@ -859,6 +865,14 @@ export const translations: Record<Language, Translations> = {
       themeDark: 'Dark Cyberpunk Theme',
       autoSaveDebounce: 'Auto-Save Debounce Delay',
       autoSaveDebounceDesc: 'Time in milliseconds to wait after edits before auto-saving to storage.',
+      researchModeSection: 'Developer & Research Lab',
+      researchModeSectionDesc:
+        'Architectural testbenches, deterministic structured output verification, and fault injection modules.',
+      researchModeToggle: 'Research & Fault Injection Lab Mode',
+      researchModeToggleDesc:
+        'When enabled, reveals the deterministic output testbench, 6 preset test cases, multi-round return injector, and real LLM self-healing workbench in LLM node properties. Defaults to OFF to maintain a clean interface.',
+      researchModeBadgeOn: 'Research Mode Active',
+      researchModeBadgeOff: 'Standard Mode (Default)',
       backupSection: 'System Configuration Backup & Migration',
       backupSectionDesc: 'Export or import your full environment configuration, models, and execution settings.',
       exportSettingsBtn: 'Export Settings JSON',
@@ -1487,6 +1501,13 @@ export const translations: Record<Language, Translations> = {
       themeDark: '赛博极客暗黑 (Dark)',
       autoSaveDebounce: '画布自动保存防抖延迟',
       autoSaveDebounceDesc: '编辑停顿后自动暂存至存储的时间（毫秒），低配或弱网环境建议调高。',
+      researchModeSection: '研究与实验模式 (Developer & Research Lab)',
+      researchModeSectionDesc: '面向架构评测与调试的确定性结构化测试台、返回值注入器与自愈时序试验模块。',
+      researchModeToggle: '研究与故障注入实验模式',
+      researchModeToggleDesc:
+        '开启后，将在 LLM 节点属性面板中展现确定性结构化测试台、6 大经典场景载入、多轮返回值注入器与真实 LLM 自愈试验模块；默认关闭以保持界面整洁。',
+      researchModeBadgeOn: '研究模式已开启 (测试台展现)',
+      researchModeBadgeOff: '标准生产模式 (测试台默认隐藏)',
       backupSection: '系统配置备份与跨机迁移',
       backupSectionDesc: '一键导出或导入当前系统的全套环境偏好、模型配置与运行保护参数。',
       exportSettingsBtn: '导出系统配置 JSON',

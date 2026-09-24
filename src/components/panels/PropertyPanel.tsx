@@ -297,41 +297,48 @@ export const PropertyPanel: React.FC = () => {
       </div>
 
       {/* Panel Footer Actions */}
-      <div className="p-4 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/60 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="p-3 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/60 flex flex-col gap-2">
+        <div className="flex items-center gap-1.5 w-full">
           {(data.status === 'error' || data.status === 'success' || data.status === 'cached') && (
             <>
               <button
                 onClick={() => retryNode(id)}
                 disabled={isExecuting}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-blue-600 dark:text-sky-400 hover:bg-blue-50 dark:hover:bg-sky-500/10 border border-blue-200 dark:border-sky-500/30 text-xs font-medium transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                className="flex-1 min-w-0 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-blue-600 dark:text-sky-400 hover:bg-blue-50 dark:hover:bg-sky-500/10 border border-blue-200 dark:border-sky-500/30 text-xs font-medium transition-all shadow-xs disabled:opacity-50 cursor-pointer"
                 title={t.ergonomics.retryNodeHint}
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>{t.ergonomics.retryNode}</span>
+                <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{t.ergonomics.retryNode}</span>
               </button>
               <button
                 onClick={() => resumeFromNode(id)}
                 disabled={isExecuting}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-xs font-medium transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                className="flex-1 min-w-0 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-xs font-medium transition-all shadow-xs disabled:opacity-50 cursor-pointer"
                 title={t.ergonomics.resumeFromNodeHint}
               >
-                <FastForward className="w-3.5 h-3.5" />
-                <span>{t.ergonomics.resumeFromNode}</span>
+                <FastForward className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{t.ergonomics.resumeFromNode}</span>
               </button>
             </>
           )}
 
           <button
             onClick={handleDeleteNode}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-xs font-medium transition-all shadow-xs cursor-pointer"
+            className={`${
+              data.status === 'error' || data.status === 'success' || data.status === 'cached'
+                ? 'flex-1 min-w-0'
+                : 'w-full'
+            } flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-xs font-medium transition-all shadow-xs cursor-pointer`}
           >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span>{t.propertyPanel.deleteNode}</span>
+            <Trash2 className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{t.propertyPanel.deleteNode}</span>
           </button>
         </div>
 
-        <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">ID: {id}</span>
+        <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 dark:text-slate-500 px-0.5">
+          <span>Node ID</span>
+          <span className="select-all font-semibold text-slate-500 dark:text-slate-400">{id}</span>
+        </div>
       </div>
     </aside>
   );
