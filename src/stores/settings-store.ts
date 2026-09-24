@@ -68,6 +68,7 @@ export const DEFAULT_PROVIDERS: Record<ProviderId, ProviderConfig> = {
     availableModels: [
       'deepseek-ai/DeepSeek-V3',
       'deepseek-ai/DeepSeek-R1',
+      'Qwen/Qwen2.5-7B-Instruct',
       'Qwen/Qwen2.5-72B-Instruct',
       'THUDM/glm-4-9b-chat',
     ],

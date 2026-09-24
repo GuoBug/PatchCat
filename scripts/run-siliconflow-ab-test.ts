@@ -20,6 +20,17 @@ import {
 } from '../src/engine/structured-output.ts';
 import type { ChatMessage, LLMChatRequest, LLMExecutionOutput } from '../src/engine/llm-client.ts';
 
+// 0. Strict Model Name & Billing Guard
+// SiliconFlow Free Model: 'Qwen/Qwen2.5-7B-Instruct' (NOT 'Pro/Qwen/Qwen2.5-7B-Instruct')
+export const TARGET_FREE_MODEL = 'Qwen/Qwen2.5-7B-Instruct';
+
+// Hard assertion: prevent accidental invocation of paid Pro models
+if (TARGET_FREE_MODEL.startsWith('Pro/') || TARGET_FREE_MODEL.includes('/Pro/')) {
+  console.error('❌ FATAL BILLING ERROR: Paid "Pro/" model prefix detected!');
+  console.error('   Aborting execution immediately to prevent account balance deduction.');
+  process.exit(1);
+}
+
 // 1. Resolve API Key from process.env or .env file
 function loadSiliconFlowApiKey(): string {
   if (process.env.SILICONFLOW_API_KEY) {
@@ -49,10 +60,15 @@ function loadSiliconFlowApiKey(): string {
 // 2. Real SiliconFlow Caller
 async function callSiliconFlowApi(
   apiKey: string,
-  model: string,
+  model: string = TARGET_FREE_MODEL,
   messages: ChatMessage[],
   responseFormatMode: 'none' | 'json_object',
 ): Promise<LLMExecutionOutput> {
+  // Billing safety double check
+  if (model.startsWith('Pro/')) {
+    throw new Error(`[Billing Guard] Refusing to call paid model: ${model}`);
+  }
+
   const url = 'https://api.siliconflow.cn/v1/chat/completions';
   const start = Date.now();
 
@@ -171,14 +187,14 @@ const BENCHMARK_CASES = [
 async function main() {
   console.log('================================================================================');
   console.log('PatchCat A/B Benchmark: L1/L2 Semantic Refine & Self-Healing Evaluation');
-  console.log('Target Model: Qwen/Qwen2.5-7B-Instruct (SiliconFlow)');
+  console.log(`Target Model: ${TARGET_FREE_MODEL} (SiliconFlow 免费白嫖额度，严格禁止 Pro 收费版)`);
   console.log('================================================================================');
 
   const apiKey = loadSiliconFlowApiKey();
   const isLive = Boolean(apiKey);
 
   if (isLive) {
-    console.log(`[Mode] 🚀 LIVE API MODE detected! Connecting to SiliconFlow using provided Key.`);
+    console.log(`[Mode] 🚀 LIVE API MODE detected! Connecting to SiliconFlow using model: ${TARGET_FREE_MODEL}`);
   } else {
     console.log(`[Mode] 🔬 SIMULATION / DRY-RUN MODE.`);
     console.log(`  (To run live against SiliconFlow, set $env:SILICONFLOW_API_KEY="sk-..." or create a .env file)`);
@@ -214,7 +230,7 @@ urgency (1-5整数), category ('logistics'|'refund'|'quality'|'other'), summary 
     let groupARawOutput = '';
     if (isLive) {
       try {
-        const out = await callSiliconFlowApi(apiKey, 'Qwen/Qwen2.5-7B-Instruct', promptGroupA, 'none');
+        const out = await callSiliconFlowApi(apiKey, TARGET_FREE_MODEL, promptGroupA, 'none');
         groupARawOutput = out.response;
       } catch (err) {
         console.error(`Group A call error:`, err);
@@ -266,7 +282,7 @@ urgency (1-5整数), category ('logistics'|'refund'|'quality'|'other'), summary 
       if (isLive) {
         return callSiliconFlowApi(
           apiKey,
-          'Qwen/Qwen2.5-7B-Instruct',
+          TARGET_FREE_MODEL,
           overrides.messages || promptGroupB,
           'json_object',
         );
@@ -303,7 +319,7 @@ urgency (1-5整数), category ('logistics'|'refund'|'quality'|'other'), summary 
       maxRetries: 2,
       schema: TicketSemanticSchema,
       provider: 'siliconflow',
-      model: 'Qwen/Qwen2.5-7B-Instruct',
+      model: TARGET_FREE_MODEL,
     });
 
     b_l1_passed++; // Constrained mode guarantees L1 syntax pass
