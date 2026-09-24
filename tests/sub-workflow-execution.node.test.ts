@@ -167,7 +167,7 @@ describe('SubWorkflowNode & LoopNode Real Execution & Delegation', () => {
       }
     });
 
-    it('fails with explicit error when target does not exist in canvas or storage', async () => {
+    it('fails with explicit error by default when target does not exist in canvas or storage (no backdoor)', async () => {
       const nodes: WorkflowNode[] = [
         {
           id: 'sub_wf_unknown',
@@ -179,7 +179,38 @@ describe('SubWorkflowNode & LoopNode Real Execution & Delegation', () => {
             outputs: {},
             status: 'idle',
             config: {
-              targetWorkflowId: 'non_existent_target_12345',
+              targetWorkflowId: 'finance_recon_report_missing',
+            },
+          },
+          position: { x: 0, y: 0 },
+        },
+      ];
+
+      // Note: No strictSubWorkflow flag passed - defaults to strict
+      const events = await collectEvents(engine.executeWorkflow({ nodes, edges: [] }));
+      const errorEvt = events.find(
+        (e) => e.type === 'NODE_ERROR' && e.payload.nodeId === 'sub_wf_unknown',
+      );
+      assert.ok(errorEvt, 'Should yield NODE_ERROR when target is not found by default');
+      if (errorEvt && errorEvt.type === 'NODE_ERROR') {
+        assert.match(errorEvt.payload.error, /was not found in active canvas or persistent storage/);
+      }
+    });
+
+    it('allows stub fallback when allowStub is explicitly configured true', async () => {
+      const nodes: WorkflowNode[] = [
+        {
+          id: 'sub_wf_stub_allowed',
+          type: 'sub_workflow',
+          data: {
+            label: 'Sub Workflow Stub Allowed',
+            type: 'sub_workflow',
+            inputs: { sample: 'val' },
+            outputs: {},
+            status: 'idle',
+            config: {
+              targetWorkflowId: 'future_module_unimplemented',
+              allowStub: true,
             },
           },
           position: { x: 0, y: 0 },
@@ -187,13 +218,45 @@ describe('SubWorkflowNode & LoopNode Real Execution & Delegation', () => {
       ];
 
       const events = await collectEvents(engine.executeWorkflow({ nodes, edges: [] }));
-      const errorEvt = events.find(
-        (e) => e.type === 'NODE_ERROR' && e.payload.nodeId === 'sub_wf_unknown',
+      const completeEvt = events.find(
+        (e) => e.type === 'NODE_COMPLETE' && e.payload.nodeId === 'sub_wf_stub_allowed',
       );
-      assert.ok(errorEvt, 'Should yield NODE_ERROR when target is not found');
-      if (errorEvt && errorEvt.type === 'NODE_ERROR') {
-        assert.match(errorEvt.payload.error, /was not found in active canvas or persistent storage/);
+      assert.ok(completeEvt, 'Should complete with stub when allowStub is true');
+      if (completeEvt && completeEvt.type === 'NODE_COMPLETE') {
+        assert.strictEqual(completeEvt.payload.output['targetWorkflowId'], 'future_module_unimplemented');
+        assert.strictEqual(completeEvt.payload.output['isExperimentalStub'], true);
       }
+    });
+
+    it('allows stub fallback when strictSubWorkflow is explicitly disabled in context', async () => {
+      const nodes: WorkflowNode[] = [
+        {
+          id: 'sub_wf_context_lenient',
+          type: 'sub_workflow',
+          data: {
+            label: 'Sub Workflow Context Lenient',
+            type: 'sub_workflow',
+            inputs: {},
+            outputs: {},
+            status: 'idle',
+            config: {
+              targetWorkflowId: 'lenient_module_stub',
+            },
+          },
+          position: { x: 0, y: 0 },
+        },
+      ];
+
+      const events = await collectEvents(
+        engine.executeWorkflow(
+          { nodes, edges: [] },
+          { context: { strictSubWorkflow: false } },
+        ),
+      );
+      const completeEvt = events.find(
+        (e) => e.type === 'NODE_COMPLETE' && e.payload.nodeId === 'sub_wf_context_lenient',
+      );
+      assert.ok(completeEvt, 'Should complete with stub when strictSubWorkflow is false');
     });
 
     it('detects self-recursion deadlock and aborts immediately', async () => {
@@ -222,6 +285,86 @@ describe('SubWorkflowNode & LoopNode Real Execution & Delegation', () => {
       assert.ok(errorEvt, 'Should detect self recursion');
       if (errorEvt && errorEvt.type === 'NODE_ERROR') {
         assert.match(errorEvt.payload.error, /cannot delegate to itself \(recursion detected\)/);
+      }
+    });
+
+    it('detects indirect recursion cycle (A -> B -> A) and aborts immediately', async () => {
+      const nodes: WorkflowNode[] = [
+        {
+          id: 'sub_wf_a',
+          type: 'sub_workflow',
+          data: {
+            label: 'Sub Workflow A',
+            type: 'sub_workflow',
+            inputs: {},
+            outputs: {},
+            status: 'idle',
+            config: {
+              targetWorkflowId: 'sub_wf_b',
+            },
+          },
+          position: { x: 0, y: 0 },
+        },
+        {
+          id: 'sub_wf_b',
+          type: 'sub_workflow',
+          data: {
+            label: 'Sub Workflow B',
+            type: 'sub_workflow',
+            inputs: {},
+            outputs: {},
+            status: 'idle',
+            config: {
+              targetWorkflowId: 'sub_wf_a',
+            },
+          },
+          position: { x: 100, y: 0 },
+        },
+      ];
+
+      // Edge from A to B so topological sort runs A first
+      const edges = [{ id: 'e1', source: 'sub_wf_a', target: 'sub_wf_b' }];
+      const events = await collectEvents(engine.executeWorkflow({ nodes, edges }));
+      const errorEvt = events.find(
+        (e) => e.type === 'NODE_ERROR' && (e.payload.nodeId === 'sub_wf_a' || e.payload.nodeId === 'sub_wf_b'),
+      );
+      assert.ok(errorEvt, 'Should detect indirect cycle recursion');
+      if (errorEvt && errorEvt.type === 'NODE_ERROR') {
+        assert.match(
+          errorEvt.payload.error,
+          /SubWorkflow cycle detected: .* \(indirect recursion is strictly prohibited\)/,
+        );
+      }
+    });
+
+    it('enforces maximum delegation depth protection (MAX_DELEGATION_DEPTH = 5)', async () => {
+      // Chain of 7 nodes: d1 -> d2 -> d3 -> d4 -> d5 -> d6 -> d7
+      const nodes: WorkflowNode[] = [
+        { id: 'd1', type: 'sub_workflow', position: { x: 0, y: 0 }, data: { label: 'D1', type: 'sub_workflow', inputs: {}, outputs: {}, status: 'idle', config: { targetWorkflowId: 'd2' } } },
+        { id: 'd2', type: 'sub_workflow', position: { x: 0, y: 0 }, data: { label: 'D2', type: 'sub_workflow', inputs: {}, outputs: {}, status: 'idle', config: { targetWorkflowId: 'd3' } } },
+        { id: 'd3', type: 'sub_workflow', position: { x: 0, y: 0 }, data: { label: 'D3', type: 'sub_workflow', inputs: {}, outputs: {}, status: 'idle', config: { targetWorkflowId: 'd4' } } },
+        { id: 'd4', type: 'sub_workflow', position: { x: 0, y: 0 }, data: { label: 'D4', type: 'sub_workflow', inputs: {}, outputs: {}, status: 'idle', config: { targetWorkflowId: 'd5' } } },
+        { id: 'd5', type: 'sub_workflow', position: { x: 0, y: 0 }, data: { label: 'D5', type: 'sub_workflow', inputs: {}, outputs: {}, status: 'idle', config: { targetWorkflowId: 'd6' } } },
+        { id: 'd6', type: 'sub_workflow', position: { x: 0, y: 0 }, data: { label: 'D6', type: 'sub_workflow', inputs: {}, outputs: {}, status: 'idle', config: { targetWorkflowId: 'd7' } } },
+        { id: 'd7', type: 'code', position: { x: 0, y: 0 }, data: { label: 'D7', type: 'code', inputs: {}, outputs: {}, status: 'idle', config: { code: 'return { done: true };' } } },
+      ];
+
+      const events = await collectEvents(
+        engine.executeWorkflow({
+          nodes,
+          edges: [],
+        }),
+      );
+
+      const errorEvt = events.find(
+        (e) => e.type === 'NODE_ERROR' && (e.payload.nodeId === 'd1' || e.payload.nodeId === 'd6'),
+      );
+      assert.ok(errorEvt, 'Should detect max delegation depth exceeded');
+      if (errorEvt && errorEvt.type === 'NODE_ERROR') {
+        assert.match(
+          errorEvt.payload.error,
+          /SubWorkflow maximum delegation depth \(5\) exceeded/,
+        );
       }
     });
   });

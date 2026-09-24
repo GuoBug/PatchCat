@@ -48,6 +48,7 @@ import { RUNTIME_DEFAULTS, DEFAULT_RUNTIME_PROTECTION } from '../config/runtime-
 import { TelemetryTracer } from '../services/telemetry/otel-tracer.ts';
 import { estimateTokenCostUSD } from '../config/model-pricing.ts';
 import { indexedDb } from '../services/storage/indexeddb-adapter.ts';
+import { NODE_EXECUTORS } from './nodes/index.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Internal Types & Evaluators
@@ -516,12 +517,17 @@ export class BrowserWorkflowEngine {
 
         const eventQueue = new AsyncEventQueue<ExecutionEvent>();
 
-        // Start executing all nodes in current layer
-        const layerExecutionPromise = Promise.all(
-          layer
-            .map((nodeId) => nodeMap.get(nodeId))
-            .filter((n): n is WorkflowNode => n !== undefined)
-            .map(async (node) => {
+        // Start executing all nodes in current layer with controlled concurrency
+        const layerNodes = layer
+          .map((nodeId) => nodeMap.get(nodeId))
+          .filter((n): n is WorkflowNode => n !== undefined);
+
+        const maxConcurrency = Math.max(
+          1,
+          Math.min(options.maxConcurrency || RUNTIME_DEFAULTS.MAX_LAYER_CONCURRENCY, 50),
+        );
+
+        const executeSingleLayerNode = async (node: WorkflowNode): Promise<InternalNodeResult> => {
               // ── Dynamic Branch Skipping Evaluation ────────────────────────
               const incoming = incomingEdgesMap.get(node.id) || [];
               let shouldSkip = skippedNodes.has(node.id);
@@ -790,8 +796,22 @@ export class BrowserWorkflowEngine {
               }
 
               return result;
-            }),
-        )
+        };
+
+        const runLayerWithConcurrency = async (): Promise<InternalNodeResult[]> => {
+          const results: InternalNodeResult[] = [];
+          for (let i = 0; i < layerNodes.length; i += maxConcurrency) {
+            if (signal.aborted) {
+              throw new Error('Workflow execution aborted by user.');
+            }
+            const chunk = layerNodes.slice(i, i + maxConcurrency);
+            const chunkResults = await Promise.all(chunk.map((node) => executeSingleLayerNode(node)));
+            results.push(...chunkResults);
+          }
+          return results;
+        };
+
+        const layerExecutionPromise = runLayerWithConcurrency()
           .then((results) => {
             eventQueue.close();
             return results;
@@ -1115,46 +1135,23 @@ export class BrowserWorkflowEngine {
 
       let output: Record<string, unknown> = {};
 
-      switch (nodeType) {
-        case 'input': {
-          let mergedInputs: Record<string, unknown> = { ...resolvedInputs };
-          if (options?.inputs) {
-            // 1. Direct node-specific namespace: options.inputs[node.id]
-            if (
-              typeof options.inputs[node.id] === 'object' &&
-              options.inputs[node.id] !== null &&
-              !Array.isArray(options.inputs[node.id])
-            ) {
-              mergedInputs = {
-                ...mergedInputs,
-                ...(options.inputs[node.id] as Record<string, unknown>),
-              };
-            }
-            // 2. Flat parameter overlay (by key match or common query aliases)
-            for (const [key, val] of Object.entries(options.inputs)) {
-              if (key === node.id) continue;
-              if (
-                key in (node.data.inputs || {}) ||
-                key in resolvedInputs ||
-                key === 'query' ||
-                key === 'input' ||
-                key === 'user_query'
-              ) {
-                mergedInputs[key] = val;
-              }
-            }
-          }
-          output = { ...mergedInputs, output: mergedInputs };
-          break;
-        }
-
-        case 'prompt': {
-          const template = resolvedInputs['template'];
-          output = {
-            promptText: typeof template === 'string' ? template : JSON.stringify(resolvedInputs),
-          };
-          break;
-        }
+      const modularExecutor = NODE_EXECUTORS[nodeType];
+      if (modularExecutor) {
+        output = await modularExecutor.execute({
+          node,
+          resolvedInputs,
+          context,
+          signal,
+          onChunk,
+          options,
+          nodeMap,
+          incomingEdges,
+          skippedNodes,
+          settings: this.resolveSettings(options),
+          knowledge: this.resolveKnowledgeAdapter(options),
+        });
+      } else {
+        switch (nodeType) {
 
         case 'llm': {
           // Extract prompt content from resolved inputs
@@ -1420,14 +1417,6 @@ export class BrowserWorkflowEngine {
             context: contextStr,
             chunks: recalledChunks,
             query,
-          };
-          break;
-        }
-
-        case 'output': {
-          output = {
-            finalResult: resolvedInputs,
-            renderedAt: new Date().toISOString(),
           };
           break;
         }
@@ -2374,8 +2363,13 @@ export class BrowserWorkflowEngine {
             workflowId?: string;
             inputMapping?: Record<string, string>;
             outputMapping?: Record<string, string>;
+            allowStub?: boolean;
           };
           const targetId = (subConfig.targetWorkflowId || subConfig.workflowId || '').trim();
+
+          const isStrict =
+            options?.context?.strictSubWorkflow !== false &&
+            !subConfig.allowStub;
 
           const globalInputs = (context['global_input'] as Record<string, unknown>) || options?.inputs || {};
           let isolatedInputs: Record<string, unknown>;
@@ -2386,7 +2380,7 @@ export class BrowserWorkflowEngine {
           }
 
           if (!targetId) {
-            if (options?.context?.strictSubWorkflow) {
+            if (isStrict) {
               throw new Error(
                 `SubWorkflow node "${node.id}" execution failed: Target workflow or canvas node ID is not specified.`,
               );
@@ -2400,6 +2394,29 @@ export class BrowserWorkflowEngine {
             break;
           }
 
+          // Direct recursion safeguard
+          if (targetId === node.id) {
+            throw new Error(`SubWorkflow node "${node.id}" cannot delegate to itself (recursion detected).`);
+          }
+
+          // Indirect recursion & delegation depth safeguards
+          const callChain = ((options?.context?.callChain as string[]) || []).slice();
+          if (callChain.includes(targetId)) {
+            const fullChain = [...callChain, node.id, targetId].join(' -> ');
+            throw new Error(
+              `SubWorkflow cycle detected: ${fullChain} (indirect recursion is strictly prohibited)`,
+            );
+          }
+
+          const maxDepth = RUNTIME_DEFAULTS.MAX_DELEGATION_DEPTH;
+          if (callChain.length >= maxDepth) {
+            throw new Error(
+              `SubWorkflow maximum delegation depth (${maxDepth}) exceeded: ${[...callChain, node.id, targetId].join(' -> ')}`,
+            );
+          }
+
+          const nextChain = [...callChain, node.id];
+
           // Apply input mapping if configured
           if (subConfig.inputMapping && typeof subConfig.inputMapping === 'object') {
             for (const [targetKey, sourceKey] of Object.entries(subConfig.inputMapping)) {
@@ -2411,9 +2428,6 @@ export class BrowserWorkflowEngine {
 
           // Mode 1: Canvas Node Delegation (Canvas node exists in nodeMap)
           if (nodeMap && nodeMap.has(targetId)) {
-            if (targetId === node.id) {
-              throw new Error(`SubWorkflow node "${node.id}" cannot delegate to itself (recursion detected).`);
-            }
             const targetNode = nodeMap.get(targetId)!;
             logger.summary(
               'WorkflowEngine',
@@ -2432,7 +2446,14 @@ export class BrowserWorkflowEngine {
               delegatedCtx,
               signal,
               onChunk,
-              { ...options, inputs: isolatedInputs },
+              {
+                ...options,
+                inputs: isolatedInputs,
+                context: {
+                  ...options?.context,
+                  callChain: nextChain,
+                },
+              },
               [],
               skippedNodes,
               nodeMap,
@@ -2499,7 +2520,10 @@ export class BrowserWorkflowEngine {
               signal,
               triggerMode: 'subworkflow',
               workflowId: targetId,
-              context: options?.context,
+              context: {
+                ...options?.context,
+                callChain: nextChain,
+              },
             })) {
               if (evt.type === 'WORKFLOW_COMPLETE') {
                 subFinalOutput = evt.payload.outputs || {};
@@ -2545,7 +2569,7 @@ export class BrowserWorkflowEngine {
           }
 
           // Target not found in either canvas or storage
-          if (options?.context?.strictSubWorkflow || targetId.startsWith('non_existent')) {
+          if (isStrict) {
             throw new Error(
               `SubWorkflow node "${node.id}" execution failed: Target "${targetId}" was not found in active canvas or persistent storage.`,
             );
@@ -2563,6 +2587,7 @@ export class BrowserWorkflowEngine {
           break;
         }
       }
+    }
 
       const usage = output['usage'] as TokenUsage | undefined;
       const model = (output['model'] as string | undefined) ?? (node.data.config?.['model'] as string | undefined);

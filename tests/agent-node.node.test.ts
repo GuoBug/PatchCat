@@ -1,4 +1,4 @@
-﻿import { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { BrowserWorkflowEngine } from "../src/engine/browser-engine.ts";
 import { getDefaultNodeConfig, getDefaultNodeLabel } from "../src/engine/types.ts";
@@ -211,6 +211,7 @@ describe("Phase 4: Agent, Tool Calling & Iteration Engine Verification", () => {
         param1: "invoice_992",
       }, {
         targetWorkflowId: "wf-financial-audit",
+        allowStub: true,
       });
 
       const engine = new BrowserWorkflowEngine();

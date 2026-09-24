@@ -45,6 +45,8 @@ export const RUNTIME_DEFAULTS = {
   // ── 6. Node Execution Defaults ─────────────────────────────────────────────
   HTTP_NODE_TIMEOUT_MS: 30000,
   LOOP_NODE_ITEM_TIMEOUT_MS: 30000,
+  MAX_LAYER_CONCURRENCY: 10,
+  MAX_DELEGATION_DEPTH: 5,
 } as const;
 
 export interface RuntimeProtectionSettings {

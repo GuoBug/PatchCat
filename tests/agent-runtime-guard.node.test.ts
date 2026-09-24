@@ -257,6 +257,7 @@ describe('v0.4.4 Hardened Agent Runtime, Configuration & Safety Verification', (
             ...getDefaultNodeConfig('sub_workflow'),
             inputMapping: { testKey: 'child_in' },
             outputMapping: { child_out: 'parent_result' },
+            allowStub: true,
           },
         },
       };
