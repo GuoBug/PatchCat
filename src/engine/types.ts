@@ -556,6 +556,9 @@ export interface StructuredOutputError {
   path: string;
   message: string;
   code?: string;
+  receivedValue?: unknown;
+  expectedRule?: string;
+  suggestion?: string;
 }
 
 export interface ValidationFallbackOutput {
@@ -596,6 +599,12 @@ export type LLMTestScenario =
   | 'three_failures'
   | 'custom';
 
+export type SelfHealingEscalationLevel =
+  | 'surgical_prescription'
+  | 'golden_exemplar'
+  | 'clean_empty_retry'
+  | 'truncation_compression';
+
 export interface SelfHealingTraceStep {
   round: number;
   rawOutput: string;
@@ -605,6 +614,8 @@ export interface SelfHealingTraceStep {
   finishReason?: string;
   feedbackPrompt?: string;
   timestamp?: number;
+  escalationLevel?: SelfHealingEscalationLevel;
+  healedFromTruncation?: boolean;
 }
 
 export type LLMSimulationMode = 'offline_mock' | 'mock_first_round_then_real' | 'live_api';

@@ -27,6 +27,7 @@ import type {
   ZodSchemaConfig,
   LLMTestScenario,
   SelfHealingTraceStep,
+  SelfHealingEscalationLevel,
 } from './types.ts';
 import type { ChatMessage, LLMChatRequest, LLMExecutionOutput } from './llm-client.ts';
 import { logger } from './logger.ts';
@@ -40,6 +41,7 @@ export type {
   ZodSchemaConfig,
   LLMTestScenario,
   SelfHealingTraceStep,
+  SelfHealingEscalationLevel,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -423,12 +425,18 @@ export function safeParseOutput(
       };
     }
 
-    // Map Zod issues to high-density field errors
-    const errors: StructuredOutputError[] = zodResult.error.issues.map((issue) => ({
-      path: issue.path.join('.') || 'root',
-      message: issue.message,
-      code: issue.code,
-    }));
+    // Map Zod issues to high-density field errors with Prescriptive Triad
+    const errors: StructuredOutputError[] = zodResult.error.issues.map((issue) => {
+      const triad = deriveDiagnosticTriad(parsedJson, issue);
+      return {
+        path: issue.path.join('.') || 'root',
+        message: issue.message,
+        code: issue.code,
+        receivedValue: triad.receivedValue,
+        expectedRule: triad.expectedRule,
+        suggestion: triad.suggestion,
+      };
+    });
 
     return {
       success: false,
@@ -445,36 +453,264 @@ export function safeParseOutput(
   };
 }
 
+/**
+ * Safely extracts a deeply nested value from an object given an array path.
+ */
+export function getDeepValue(obj: unknown, path: (string | number)[]): unknown {
+  if (path.length === 0) return obj;
+  let curr: unknown = obj;
+  for (const seg of path) {
+    if (curr === null || curr === undefined || typeof curr !== 'object') {
+      return undefined;
+    }
+    curr = (curr as Record<string | number, unknown>)[seg];
+  }
+  return curr;
+}
+
+/**
+ * Derives the Prescriptive Diagnostic Triad:
+ * 1. Violating Value (实际输出值 / Current Actual)
+ * 2. Constraint Rule (合法约束/区间 / Allowed Range)
+ * 3. Prescriptive Fix (期望示例/修正式 / Actionable Example)
+ */
+export function deriveDiagnosticTriad(
+  parsedJson: unknown,
+  issue: z.ZodIssue,
+): {
+  receivedValue: unknown;
+  expectedRule: string;
+  suggestion: string;
+} {
+  const path = issue.path;
+  const rawVal = getDeepValue(parsedJson, path);
+  const isMissing = rawVal === undefined;
+  const fieldName = path.join('.') || 'root';
+
+  if (isMissing) {
+    return {
+      receivedValue: '[缺失未提供 / Missing]',
+      expectedRule: `必填字段，且不可为空 (${issue.message})`,
+      suggestion: `必须在 JSON 中提供字段 "${fieldName}"，请参考业务定义补齐`,
+    };
+  }
+
+  const receivedValue = rawVal;
+  let expectedRule = issue.message;
+  let suggestion = `请修正字段 [${fieldName}] 使其符合要求`;
+
+  switch (issue.code) {
+    case 'too_big': {
+      const bound = issue.maximum;
+      const inclusive = issue.inclusive;
+      if (issue.type === 'number') {
+        expectedRule = `数值必须 ${inclusive ? '<=' : '<'} ${bound}`;
+        suggestion = `请将数值纠偏至合法区间内，例如 "${fieldName}": ${bound}`;
+      } else if (issue.type === 'string') {
+        expectedRule = `字符串长度必须 ${inclusive ? '<=' : '<'} ${bound} 字符`;
+        suggestion = `当前文本超长，请将文字精炼在 ${bound} 字符以内`;
+      } else if (issue.type === 'array') {
+        expectedRule = `数组项数必须 ${inclusive ? '<=' : '<'} ${bound} 项`;
+        suggestion = `请将数组缩减至 ${bound} 项以内`;
+      }
+      break;
+    }
+    case 'too_small': {
+      const bound = issue.minimum;
+      const inclusive = issue.inclusive;
+      if (issue.type === 'number') {
+        expectedRule = `数值必须 ${inclusive ? '>=' : '>'} ${bound}`;
+        suggestion = `请将数值纠偏至合法区间内，例如 "${fieldName}": ${bound}`;
+      } else if (issue.type === 'string') {
+        expectedRule = `字符串长度必须 ${inclusive ? '>=' : '>'} ${bound} 字符`;
+        suggestion = `当前内容过短，请充实文字内容至至少 ${bound} 字符`;
+      } else if (issue.type === 'array') {
+        expectedRule = `数组项数必须 ${inclusive ? '>=' : '>'} ${bound} 项`;
+        suggestion = `请补充数组元素至至少 ${bound} 项`;
+      }
+      break;
+    }
+    case 'invalid_enum_value': {
+      const allowed = (issue as { options?: string[] }).options || [];
+      expectedRule = `必须为指定枚举之一: [${allowed.map((o) => `"${o}"`).join(', ')}]`;
+      suggestion = `当前输出值 "${String(rawVal)}" 非法，请选择最接近的合法值，例如 "${fieldName}": "${allowed[0] ?? ''}"`;
+      break;
+    }
+    case 'invalid_type': {
+      const expected = (issue as { expected?: string }).expected;
+      const received = (issue as { received?: string }).received;
+      expectedRule = `字段数据类型必须为 ${expected} (当前为 ${received})`;
+      suggestion = `请将字段 "${fieldName}" 转换为标准的 ${expected} 类型`;
+      break;
+    }
+    case 'invalid_string': {
+      expectedRule = `字符串格式不符合规范: ${issue.message}`;
+      suggestion = `请修正字段 "${fieldName}" 的格式`;
+      break;
+    }
+    default: {
+      expectedRule = issue.message;
+      suggestion = `请根据契约规则修正字段 "${fieldName}"`;
+      break;
+    }
+  }
+
+  return { receivedValue, expectedRule, suggestion };
+}
+
+/**
+ * Generates a 100% compliant sample JSON object (Golden Exemplar)
+ * to ground the model during escalated self-healing retries.
+ */
+export function generateGoldenExemplar(
+  schema?: z.ZodTypeAny | Record<string, unknown>,
+): Record<string, unknown> {
+  if (!schema) {
+    return { urgency: 5, summary: '合规的标准工单摘要内容（符合长度约束）' };
+  }
+
+  // If declarative config with fields
+  if (typeof schema === 'object' && schema !== null && 'fields' in schema) {
+    const fields = (schema as { fields?: Record<string, ZodFieldDef> }).fields;
+    if (fields) {
+      const exemplar: Record<string, unknown> = {};
+      for (const [k, f] of Object.entries(fields)) {
+        if (f.type === 'number') {
+          exemplar[k] = f.max ?? f.min ?? 5;
+        } else if (f.type === 'string') {
+          exemplar[k] = f.description ? `合规${f.description}` : '合规标准业务文本内容';
+        } else if (f.type === 'enum' && f.enum && f.enum.length > 0) {
+          exemplar[k] = f.enum[0];
+        } else if (f.type === 'boolean') {
+          exemplar[k] = true;
+        } else if (f.type === 'array') {
+          exemplar[k] = [];
+        } else if (f.type === 'object') {
+          exemplar[k] = {};
+        }
+      }
+      return exemplar;
+    }
+  }
+
+  // If Zod schema instance
+  if (schema instanceof z.ZodObject) {
+    const shape = schema.shape;
+    const exemplar: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(shape)) {
+      if (v instanceof z.ZodNumber) {
+        exemplar[k] = 5;
+      } else if (v instanceof z.ZodString) {
+        exemplar[k] = '合规示例摘要内容（不少于5字符）';
+      } else if (v instanceof z.ZodEnum) {
+        exemplar[k] = (v as unknown as { options: string[] }).options[0] ?? 'default';
+      } else if (v instanceof z.ZodBoolean) {
+        exemplar[k] = true;
+      } else if (v instanceof z.ZodArray) {
+        exemplar[k] = [];
+      } else {
+        exemplar[k] = '合规值';
+      }
+    }
+    return exemplar;
+  }
+
+  return { urgency: 5, summary: '合规的标准工单摘要内容（符合长度约束）' };
+}
+
+/**
+ * Formats a raw value safely for display inside error diagnostics.
+ */
+function formatDiagnosticValue(val: unknown): string {
+  if (val === undefined) return '[缺失未提供 / Missing]';
+  if (val === null) return 'null';
+  if (typeof val === 'string') return `"${val}"`;
+  if (typeof val === 'number' || typeof val === 'boolean') return String(val);
+  try {
+    return JSON.stringify(val);
+  } catch {
+    return String(val);
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. Error Memory Injection & Feedback Prompt Formatting
+// 3. Error Memory Injection & Progressive Escalation Feedback
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Builds the error memory context for LLM self-healing:
- * 1. Assistant message: exact raw erroneous output.
- * 2. User message: field-level precise error diagnostic + regeneration instruction.
+ * Builds the error memory context for LLM self-healing using a Progressive Escalation Ladder:
+ * - Round 1 (attemptIndex === 0): Targeted Surgical Prescription (Violating Value + Rule + Fix Suggestion)
+ * - Round 2+ (attemptIndex >= 1): Escalated Global Schema Definition + Golden Few-Shot Exemplar Grounding
+ *
+ * Avoids identical isomorphic retries that cause token waste with zero information gain.
  */
 export function buildErrorFeedbackMessages(
   rawText: string,
   errors: StructuredOutputError[],
   syntaxError?: boolean,
+  attemptIndex: number = 0,
+  schemaContext?: {
+    jsonSchema?: Record<string, unknown>;
+    goldenExemplar?: Record<string, unknown>;
+  },
 ): { assistantMsg: ChatMessage; userMsg: ChatMessage } {
   let promptDetails: string;
 
   if (syntaxError) {
-    promptDetails = `Your previous output could not be parsed as valid JSON:
+    promptDetails = `[JSON 语法解析失败 / JSON Syntax Error]
+你上一轮输出的内容未能通过 JSON 语法解析，具体报错如下：
 ${errors.map((e) => `- ${e.message}`).join('\n')}
-Please output ONLY a syntactically valid JSON object.`;
-  } else {
-    const errorLines = errors
-      .map((e) => `- 字段 [${e.path}]: ${e.message}`)
+
+请输出且仅输出一个纯净、合法的 JSON 对象，不要包含 markdown 标记或任何前置解释。`;
+  } else if (attemptIndex === 0) {
+    // ── R1: Targeted Surgical Prescription (三要素：违规值 + 合法区间/约束 + 修复处方) ────
+    const triadLines = errors
+      .map((e) => {
+        const valStr = formatDiagnosticValue(e.receivedValue);
+        const ruleStr = e.expectedRule || e.message;
+        const fixStr = e.suggestion || '请修正此字段';
+        return `- 字段 [${e.path}]:
+    * 实际输出值: ${valStr}
+    * 约束规则: ${ruleStr}
+    * 修复处方: ${fixStr}`;
+      })
       .join('\n');
 
-    promptDetails = `[业务语义校验失败 / Semantic Validation Failed]
-你上一轮输出的内容未能通过下游业务契约校验，具体错误如下：
-${errorLines}
+    promptDetails = `[业务语义校验失败 / Semantic Validation Failed (R1 手术刀诊断)]
+你上一轮输出的 JSON 未能通过下游业务契约校验。请保持其他合法字段不变，严格按照下列三要素（违规值、约束规则、修复处方）针对性纠偏：
 
-请严格根据上述字段级错误修正，重新输出符合要求的合法 JSON，不要包含除合法 JSON 以外的任何文本或解释。`;
+${triadLines}
+
+请直接输出修正后的完整合法 JSON 对象，不要输出除合法 JSON 以外的任何文本或解释。`;
+  } else {
+    // ── R2+: Escalated Global Grounding (全量 Schema 契约 + Few-Shot 黄金示例灌顶) ──────
+    const triadLines = errors
+      .map((e) => {
+        const valStr = formatDiagnosticValue(e.receivedValue);
+        const fixStr = e.suggestion || '请对照示例纠偏';
+        return `- 字段 [${e.path}]: 上一轮仍输出了 ${valStr}，请强制修正 (${fixStr})`;
+      })
+      .join('\n');
+
+    const exemplar = schemaContext?.goldenExemplar || { urgency: 5, summary: '合规标准业务工单摘要' };
+
+    promptDetails = `【严重警报：检测到你连续多次未能生成合规数据，请停止局部微调！】
+系统已为你升级为全量模式约束与黄金示例对齐模式：
+
+【1. 100% 合法黄金示例 (Few-Shot Golden Exemplar)】:
+\`\`\`json
+${JSON.stringify(exemplar, null, 2)}
+\`\`\`
+
+${
+  schemaContext?.jsonSchema
+    ? `【2. 完整 JSON Schema 契约定义】:\n\`\`\`json\n${JSON.stringify(schemaContext.jsonSchema, null, 2)}\n\`\`\`\n`
+    : ''
+}【3. 本轮残余违规处方】:
+${triadLines}
+
+【最终生成指令】:
+请严格对照上述黄金示例的每个字段名称与数据类型，逐一核验后重新生成完整、闭合的 JSON 对象！`;
   }
 
   return {
@@ -485,6 +721,31 @@ ${errorLines}
     userMsg: {
       role: 'user',
       content: promptDetails,
+    },
+  };
+}
+
+/**
+ * Builds feedback instructions specifically for Output Truncation (finish_reason === 'length').
+ * Commands the model to perform aggressive conciseness and character compression.
+ */
+export function buildTruncationFeedbackMessages(
+  rawText: string,
+  _attemptIndex: number = 0,
+): { assistantMsg: ChatMessage; userMsg: ChatMessage } {
+  return {
+    assistantMsg: {
+      role: 'assistant',
+      content: rawText,
+    },
+    userMsg: {
+      role: 'user',
+      content: `[输出截断警报 / Output Truncated due to Length Limit]
+你上一轮的输出因达到 Token 长度限制 (finish_reason: length) 被物理截断，导致 JSON 数据结构未能闭合。
+
+【自愈恢复处方】：
+1. 保持文字极简紧凑：请大幅精简文字表达，将所有文本字段（如 summary、description 等）严格压缩在 30 个字以内！
+2. 零冗余输出：严禁输出任何引言、开场白或解释性文本，必须直接输出完整、闭合的紧凑 JSON 对象！`,
     },
   };
 }
@@ -559,8 +820,8 @@ export const TEST_SCENARIOS: Record<LLMTestScenario, TestScenarioDefinition> = {
   },
   token_truncated: {
     id: 'token_truncated',
-    name: '4. 输出被 max_tokens 截断 (finishReason === length)',
-    description: '模型输出由于 max_tokens 过小被物理截断，状态机特异性走截断分支，停止无意义的校验盲目重试',
+    name: '4. 输出被 max_tokens 截断 ➔ 紧凑自愈重试成功',
+    description: '第 1 轮输出因达到 Token 长度被物理截断；状态机特异性走截断分支，注入紧凑压缩处方，第 2 轮紧凑输出自愈成功',
     schemaConfig: {
       name: 'TicketVerification',
       fields: {
@@ -570,9 +831,10 @@ export const TEST_SCENARIOS: Record<LLMTestScenario, TestScenarioDefinition> = {
     },
     defaultResponses: [
       '{"urgency": 3, "summary": "由于系统内存溢出，节点正在发生阶段性',
+      JSON.stringify({ urgency: 3, summary: '内存溢出排查已完成，已恢复正常' }),
     ],
-    defaultFinishReasons: ['length'],
-    expectedOutcome: '特异性识别 length 截断，输出 token_truncated 降级特征，不误报字段语义校验错误',
+    defaultFinishReasons: ['length', 'stop'],
+    expectedOutcome: '走截断特异性分支 -> 注入紧凑压缩处方 -> 第 2 轮修正成功 (healedFromTruncation: true)',
   },
   empty_output: {
     id: 'empty_output',
@@ -594,8 +856,8 @@ export const TEST_SCENARIOS: Record<LLMTestScenario, TestScenarioDefinition> = {
   },
   three_failures: {
     id: 'three_failures',
-    name: '6. 连续 3 次失败 → 优雅降级输出 _validationFailed',
-    description: '连续 3 轮均违规（耗尽 2 次重试预算），引擎绝对不 throw 崩溃，输出标准化契约供下游分支路由',
+    name: '6. 连续 3 次失败 → 阶梯递进升级并优雅降级',
+    description: 'R1 给出字段级手术刀处方；R2 识别同构微调并升级为全量 Schema 与黄金示例灌顶；3 次耗尽后优雅降级不抛错',
     schemaConfig: {
       name: 'TicketVerification',
       fields: {
@@ -609,7 +871,7 @@ export const TEST_SCENARIOS: Record<LLMTestScenario, TestScenarioDefinition> = {
       JSON.stringify({ urgency: 77, summary: 'xyz' }),
     ],
     defaultFinishReasons: ['stop', 'stop', 'stop'],
-    expectedOutcome: '3次调用耗尽，严禁 throw，正常产出 { _validationFailed: true, ... }',
+    expectedOutcome: '三轮反馈逐级升级 (R1手术刀->R2黄金示例)，预算耗尽后优雅降级输出 _validationFailed',
   },
   custom: {
     id: 'custom',
@@ -785,8 +1047,37 @@ export async function executeWithSelfHealing(
     if (lastFinishReason === 'length') {
       logger.warn(
         'WorkflowEngine',
-        `[失败形态特异性诊断] 识别到 max_tokens 物理截断 (finishReason === 'length')。特异性走截断分支，停止无意义的字段校验盲目重试。`,
+        `[失败形态特异性诊断] 识别到 max_tokens 物理截断 (finishReason === 'length')。启动截断紧凑自愈重试 (attempt ${attempt + 1}/${maxCalls})...`,
       );
+
+      // If we still have retry budget, attempt truncation recovery!
+      if (attempt < maxCalls - 1) {
+        trace.push({
+          round: attempt + 1,
+          rawOutput: lastRaw,
+          syntaxValid: false,
+          semanticValid: false,
+          finishReason: 'length',
+          errors: [
+            {
+              path: 'root',
+              message: 'Model output was truncated because max_tokens limit was reached.',
+              code: 'token_truncated',
+              suggestion: '将长文本压缩至30字以内并闭合JSON',
+            },
+          ],
+          feedbackPrompt: '[截断自愈启动 / Truncation Self-Healing Triggered]',
+          escalationLevel: 'truncation_compression',
+          timestamp: Date.now(),
+        });
+
+        const { assistantMsg, userMsg } = buildTruncationFeedbackMessages(lastRaw, attempt);
+        currentMessages = [...currentMessages, assistantMsg, userMsg];
+        attempt++;
+        continue;
+      }
+
+      // Retry budget exhausted on repeated truncation
       trace.push({
         round: attempt + 1,
         rawOutput: lastRaw,
@@ -796,11 +1087,12 @@ export async function executeWithSelfHealing(
         errors: [
           {
             path: 'root',
-            message: 'Model output was truncated because max_tokens limit was reached.',
+            message: 'Model output was truncated because max_tokens limit was reached after retries.',
             code: 'token_truncated',
           },
         ],
-        feedbackPrompt: '[物理截断分流 / Truncated Branch]',
+        feedbackPrompt: '[截断重试耗尽 / Truncation Budget Exhausted]',
+        escalationLevel: 'truncation_compression',
         timestamp: Date.now(),
       });
 
@@ -811,7 +1103,7 @@ export async function executeWithSelfHealing(
         errors: [
           {
             path: 'root',
-            message: 'Model output was truncated because max_tokens limit was reached.',
+            message: 'Model output was truncated because max_tokens limit was reached after retries.',
             code: 'token_truncated',
           },
         ],
@@ -828,10 +1120,15 @@ export async function executeWithSelfHealing(
     const parseResult = safeParseOutput(lastRaw, options.schema);
 
     if (parseResult.success) {
+      const healedFromTruncation = trace.some((t) => t.finishReason === 'length');
       logger.summary(
         'WorkflowEngine',
         `[L2 业务语义防御] 第 ${attempt + 1} 轮校验通过！${
-          attempt > 0 ? `(经历 ${attempt} 次错误回喂纠偏后自愈修复成功)` : '(一次性直接通过，未触发自愈)'
+          healedFromTruncation
+            ? '(经历 Token 截断紧凑压缩后自愈成功)'
+            : attempt > 0
+              ? `(经历 ${attempt} 次错误回喂纠偏后自愈修复成功)`
+              : '(一次性直接通过，未触发自愈)'
         }`,
       );
 
@@ -841,7 +1138,10 @@ export async function executeWithSelfHealing(
         syntaxValid: true,
         semanticValid: true,
         finishReason: lastFinishReason,
-        feedbackPrompt: '[校验通过 / Validation Passed]',
+        feedbackPrompt: healedFromTruncation
+          ? '[截断自愈成功 / Truncation Healed]'
+          : '[校验通过 / Validation Passed]',
+        healedFromTruncation,
         timestamp: Date.now(),
       });
 
@@ -862,19 +1162,31 @@ export async function executeWithSelfHealing(
     lastErrors = parseResult.errors || [];
     attempt++;
 
+    const escalationLevel: SelfHealingEscalationLevel =
+      attempt === 1 ? 'surgical_prescription' : 'golden_exemplar';
+
+    const goldenExemplar = generateGoldenExemplar(options.schema);
+
     logger.warn(
       'WorkflowEngine',
-      `[L2 业务语义防御] 第 ${attempt} 轮输出未通过校验 (${lastErrors.length} 处违规): ${lastErrors
+      `[L2 业务语义防御] 第 ${attempt} 轮输出未通过校验 (${lastErrors.length} 处违规, 自愈策略等级: ${escalationLevel}): ${lastErrors
         .map((e) => `[${e.path}]: ${e.message}`)
         .join('; ')}`,
-      { errorCount: lastErrors.length },
+      { errorCount: lastErrors.length, escalationLevel },
     );
 
-    // Inject Error Memory: Assistant previous raw + User precise field feedback
+    // Inject Error Memory:
+    // If attempt === 1 (first retry): Round 1 targeted surgical prescription (三要素)
+    // If attempt >= 2 (subsequent retries): Round 2 escalated global schema + golden few-shot exemplar grounding
     const { assistantMsg, userMsg } = buildErrorFeedbackMessages(
       lastRaw,
       lastErrors,
       parseResult.syntaxError,
+      attempt - 1,
+      {
+        jsonSchema: negotiated.apiFormat?.json_schema?.schema as Record<string, unknown> | undefined,
+        goldenExemplar,
+      },
     );
 
     trace.push({
@@ -885,6 +1197,7 @@ export async function executeWithSelfHealing(
       errors: lastErrors,
       finishReason: lastFinishReason,
       feedbackPrompt: userMsg.content || '',
+      escalationLevel,
       timestamp: Date.now(),
     });
 
@@ -895,7 +1208,9 @@ export async function executeWithSelfHealing(
 
     logger.detailed(
       'WorkflowEngine',
-      `[自愈错误记忆回喂] 注入 Assistant 现场 + User 精准字段级诊断，驱动大模型进入第 ${attempt + 1} 次再生成...`,
+      `[自愈错误记忆回喂] 注入 Assistant 现场 + User ${
+        escalationLevel === 'surgical_prescription' ? '精准手术刀处方' : '全量Schema与黄金示例灌顶'
+      }，驱动大模型进入第 ${attempt + 1} 次再生成...`,
     );
 
     currentMessages = [...currentMessages, assistantMsg, userMsg];

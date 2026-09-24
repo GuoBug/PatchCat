@@ -75,10 +75,33 @@ function formatPortfolioLog(
         : `❌ 规则拦截 (Caught by L2 Semantic Defense, ${step.errors?.length || 0} 处违规)`
     }\n`;
 
+    if (step.escalationLevel) {
+      const levelMap: Record<string, string> = {
+        surgical_prescription: '🎯 字段级靶向手术刀处方 (Triad Diagnostic)',
+        golden_exemplar: '🌟 全量 Schema 契约 + Few-Shot 黄金示例灌顶 (Global Grounding)',
+        clean_empty_retry: '🔄 原地干净重试 (Zero-Pollution Empty Retry)',
+        truncation_compression: '✂️ 截断特异性紧凑压缩自愈 (Adaptive Truncation Compaction)',
+      };
+      md += `- **自愈阶梯策略**: ${levelMap[step.escalationLevel] || step.escalationLevel}\n`;
+    }
+
+    if (step.healedFromTruncation) {
+      md += `- **特异性成效**: 🎉 成功从 Token 长度截断中自动压缩自愈！\n`;
+    }
+
     if (step.errors && step.errors.length > 0) {
-      md += `- **契约拦截明细 (Field Diagnostics)**:\n`;
+      md += `- **契约拦截明细 (Field Diagnostics - 违规值/约束/处方三要素)**:\n`;
       step.errors.forEach((err) => {
         md += `  - \`[${err.path}]\`: ${err.message}\n`;
+        if (err.receivedValue !== undefined) {
+          md += `    * 实际输出值: \`${typeof err.receivedValue === 'string' ? err.receivedValue : JSON.stringify(err.receivedValue)}\`\n`;
+        }
+        if (err.expectedRule) {
+          md += `    * 约束规则: ${err.expectedRule}\n`;
+        }
+        if (err.suggestion) {
+          md += `    * 修复处方: ${err.suggestion}\n`;
+        }
       });
     }
 
@@ -500,6 +523,22 @@ export const ExecutionResultViewer: React.FC<ExecutionResultViewerProps> = ({
                         >
                           {step.semanticValid ? 'L2 契约通过' : 'L2 契约拦截'}
                         </span>
+                        {step.escalationLevel && (
+                          <span className="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50 font-mono text-[9px]">
+                            {step.escalationLevel === 'surgical_prescription'
+                              ? '🎯 手术刀处方'
+                              : step.escalationLevel === 'golden_exemplar'
+                                ? '🌟 黄金示例灌顶'
+                                : step.escalationLevel === 'truncation_compression'
+                                  ? '✂️ 截断压缩自愈'
+                                  : '🔄 干净重试'}
+                          </span>
+                        )}
+                        {step.healedFromTruncation && (
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300 font-bold text-[9px]">
+                            🎉 截断自愈成功
+                          </span>
+                        )}
                         {step.finishReason && (
                           <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono">
                             {step.finishReason}
@@ -509,14 +548,42 @@ export const ExecutionResultViewer: React.FC<ExecutionResultViewerProps> = ({
                     </div>
 
                     {step.errors && step.errors.length > 0 && (
-                      <div className="p-2 rounded bg-rose-50/60 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/30 space-y-0.5">
+                      <div className="p-2 rounded bg-rose-50/60 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/30 space-y-1">
                         {step.errors.map((e, errIdx) => (
                           <div
                             key={errIdx}
-                            className="text-[10px] font-mono text-rose-700 dark:text-rose-300 flex items-start gap-1"
+                            className="text-[10px] font-mono text-rose-700 dark:text-rose-300 space-y-0.5"
                           >
-                            <span className="font-semibold shrink-0">[{e.path}]:</span>
-                            <span>{e.message}</span>
+                            <div className="flex items-start gap-1 font-semibold">
+                              <span className="shrink-0">[{e.path}]:</span>
+                              <span>{e.message}</span>
+                            </div>
+                            {(e.receivedValue !== undefined || e.expectedRule || e.suggestion) && (
+                              <div className="pl-3 text-[9px] text-slate-600 dark:text-slate-400 space-y-0.5 border-l border-rose-200 dark:border-rose-800/60">
+                                {e.receivedValue !== undefined && (
+                                  <div>
+                                    <span className="text-slate-400">输出值: </span>
+                                    <span className="font-semibold text-rose-600 dark:text-rose-400">
+                                      {typeof e.receivedValue === 'string'
+                                        ? e.receivedValue
+                                        : JSON.stringify(e.receivedValue)}
+                                    </span>
+                                  </div>
+                                )}
+                                {e.expectedRule && (
+                                  <div>
+                                    <span className="text-slate-400">约束: </span>
+                                    <span>{e.expectedRule}</span>
+                                  </div>
+                                )}
+                                {e.suggestion && (
+                                  <div>
+                                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">处方: </span>
+                                    <span className="text-emerald-700 dark:text-emerald-300">{e.suggestion}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>

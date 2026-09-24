@@ -178,22 +178,62 @@ describe('L2 Downstream Semantic Validation with safeParse', () => {
 });
 
 describe('Error Memory Injection & Feedback Prompt Formatting', () => {
-  it('constructs precise field-level feedback prompt', () => {
+  it('constructs precise field-level feedback prompt with Prescriptive Triad (Defect 1 Fix)', () => {
     const raw = '{"urgency": 9, "summary": ""}';
-    const errors = [
-      { path: 'urgency', message: 'Number must be less than or equal to 5', code: 'too_big' },
-      { path: 'summary', message: 'String must contain at least 5 character(s)', code: 'too_small' },
+    const errors: StructuredOutputError[] = [
+      {
+        path: 'urgency',
+        message: 'Number must be less than or equal to 5',
+        code: 'too_big',
+        receivedValue: 9,
+        expectedRule: '数值必须 <= 5',
+        suggestion: '请将数值纠偏至合法区间内，例如 "urgency": 5',
+      },
+      {
+        path: 'summary',
+        message: 'String must contain at least 5 character(s)',
+        code: 'too_small',
+        receivedValue: '',
+        expectedRule: '字符串长度必须 >= 5 字符',
+        suggestion: '当前内容过短，请充实文字内容至至少 5 字符',
+      },
     ];
 
-    const feedback = buildErrorFeedbackMessages(raw, errors, false);
+    const feedback = buildErrorFeedbackMessages(raw, errors, false, 0);
 
     assert.equal(feedback.assistantMsg.role, 'assistant');
     assert.equal(feedback.assistantMsg.content, raw);
 
     assert.equal(feedback.userMsg.role, 'user');
-    assert.ok(feedback.userMsg.content?.includes('字段 [urgency]: Number must be less than or equal to 5'));
-    assert.ok(feedback.userMsg.content?.includes('字段 [summary]: String must contain at least 5 character(s)'));
-    assert.ok(feedback.userMsg.content?.includes('请严格根据上述字段级错误修正'));
+    // Verifies the Triad three elements: Violating Value + Constraint Rule + Concrete Suggestion
+    assert.ok(feedback.userMsg.content?.includes('字段 [urgency]'));
+    assert.ok(feedback.userMsg.content?.includes('实际输出值: 9'));
+    assert.ok(feedback.userMsg.content?.includes('数值必须 <= 5'));
+    assert.ok(feedback.userMsg.content?.includes('修复处方: 请将数值纠偏至合法区间内'));
+    assert.ok(feedback.userMsg.content?.includes('字段 [summary]'));
+  });
+
+  it('Round 2+ escalates to Global Schema Contract + Golden Few-Shot Exemplar to prevent Isomorphic Retries (Defect 2 Fix)', () => {
+    const raw = '{"urgency": 88, "summary": "abc"}';
+    const errors: StructuredOutputError[] = [
+      {
+        path: 'urgency',
+        message: 'Number must be less than or equal to 5',
+        code: 'too_big',
+        receivedValue: 88,
+        expectedRule: '数值必须 <= 5',
+        suggestion: '请将数值纠偏至合法区间内，例如 "urgency": 5',
+      },
+    ];
+
+    const feedback = buildErrorFeedbackMessages(raw, errors, false, 1, {
+      goldenExemplar: { urgency: 5, summary: '合规标准工单摘要' },
+      jsonSchema: { type: 'object', properties: { urgency: { type: 'number', maximum: 5 } } },
+    });
+
+    assert.ok(feedback.userMsg.content?.includes('严重警报：检测到你连续多次未能生成合规数据'));
+    assert.ok(feedback.userMsg.content?.includes('100% 合法黄金示例 (Few-Shot Golden Exemplar)'));
+    assert.ok(feedback.userMsg.content?.includes('"urgency": 5'));
   });
 });
 
@@ -243,7 +283,49 @@ describe('Self-Healing State Machine Execution Loop', () => {
     assert.equal((result.data as { urgency: number }).urgency, 3);
   });
 
-  it('special failure mode: token truncation (finishReason === length) halts without invalid retry loop', async () => {
+  it('special failure mode: token truncation recovers and heals on round 2 with concise prompt (Defect 3 Fix)', async () => {
+    let callCount = 0;
+    const recordedPrompts: string[] = [];
+
+    const caller = async (overrides: Partial<LLMChatRequest>): Promise<LLMExecutionOutput> => {
+      callCount++;
+      const lastUser = overrides.messages?.filter((m) => m.role === 'user').pop();
+      if (lastUser?.content) recordedPrompts.push(lastUser.content);
+
+      if (callCount === 1) {
+        return {
+          response: '{"urgency": 2, "summary": "Truncated mid-sent',
+          usage: { prompt: 100, completion: 50, total: 150 },
+          finishReason: 'length',
+          durationMs: 80,
+        };
+      }
+      return {
+        response: JSON.stringify({ urgency: 2, summary: '紧凑摘要内容' }),
+        usage: { prompt: 120, completion: 20, total: 140 },
+        finishReason: 'stop',
+        durationMs: 40,
+      };
+    };
+
+    const initialMessages: ChatMessage[] = [{ role: 'user', content: 'Long prompt' }];
+    const result = await executeWithSelfHealing(caller, initialMessages, {
+      maxRetries: 2,
+      schema,
+      provider: 'openai',
+      model: 'gpt-4o',
+    });
+
+    assert.equal(result.success, true);
+    assert.equal(callCount, 2);
+    assert.equal(result.totalAttempts, 2);
+    assert.ok(recordedPrompts[1]?.includes('输出截断警报'));
+    assert.ok(recordedPrompts[1]?.includes('保持文字极简紧凑'));
+    assert.equal((result.data as { urgency: number }).urgency, 2);
+    assert.equal(result.trace[1].healedFromTruncation, true);
+  });
+
+  it('token truncation exhausts retries when model repeatedly truncates -> graceful degradation', async () => {
     let callCount = 0;
     const caller = async (): Promise<LLMExecutionOutput> => {
       callCount++;
@@ -264,7 +346,7 @@ describe('Self-Healing State Machine Execution Loop', () => {
     });
 
     assert.equal(result.success, false);
-    assert.equal(callCount, 1); // Does not retry with misleading validation prompt
+    assert.equal(callCount, 3); // Retried twice with truncation compression prompt before degrading
     assert.equal(result.fallbackReason, 'token_truncated');
     assert.equal(result.errors?.[0]?.code, 'token_truncated');
   });
@@ -671,7 +753,7 @@ describe('6 Required Test Scenarios & Portfolio Trace Asset Verification', () =>
     assert.ok(trace[0].errors?.some((e) => e.path === 'urgency'));
   });
 
-  it('Case 4: 输出被 max_tokens 截断（finishReason === length）→ 走截断分支而非校验分支', async () => {
+  it('Case 4: 输出被 max_tokens 截断（finishReason === length）→ 走截断分支并成功紧凑自愈 (Defect 3 Fix)', async () => {
     const node: WorkflowNode = {
       id: 'llm_test',
       type: 'llm',
@@ -687,6 +769,7 @@ describe('6 Required Test Scenarios & Portfolio Trace Asset Verification', () =>
           forceSimulation: true,
           zodSchemaConfig: TEST_SCENARIOS.token_truncated.schemaConfig,
           simulationResponses: TEST_SCENARIOS.token_truncated.defaultResponses,
+          simulationFinishReasons: TEST_SCENARIOS.token_truncated.defaultFinishReasons,
         },
       },
     };
@@ -702,10 +785,18 @@ describe('6 Required Test Scenarios & Portfolio Trace Asset Verification', () =>
 
     const nodeOut = outputs['llm_test'] as Record<string, unknown>;
     assert.ok(nodeOut);
-    assert.equal(nodeOut['_validationFailed'], true);
-    assert.equal(nodeOut['fallbackReason'], 'token_truncated');
-    // Did not waste attempts on meaningless field retries
-    assert.equal(nodeOut['selfHealingAttempts'], 1);
+    // Round 1 was truncated with length; state machine triggered truncation recovery and healed on Round 2!
+    assert.equal(nodeOut['_validationFailed'], undefined);
+    assert.equal(nodeOut['selfHealingAttempts'], 2);
+    assert.equal(nodeOut['urgency'], 3);
+
+    const trace = nodeOut['selfHealingTrace'] as SelfHealingTraceStep[];
+    assert.ok(trace);
+    assert.equal(trace.length, 2);
+    assert.equal(trace[0].finishReason, 'length');
+    assert.equal(trace[0].escalationLevel, 'truncation_compression');
+    assert.equal(trace[1].healedFromTruncation, true);
+    assert.equal(trace[1].syntaxValid, true);
   });
 
   it('Case 5: 输出为空 → 走空内容重试（DeepSeek 偶发空包）', async () => {
