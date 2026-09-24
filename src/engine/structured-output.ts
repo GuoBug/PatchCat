@@ -163,6 +163,26 @@ export function buildZodSchema(config: ZodSchemaConfig): z.ZodObject<Record<stri
 }
 
 /**
+ * Advanced Semantic & Cross-Field Business Invariant Schema.
+ * Used for testing L2 validation and multi-round self-healing when L1 passes.
+ */
+export const TicketSemanticSchema = z
+  .object({
+    urgency: z.number().int().min(1).max(5).describe('工单紧急度 1..5'),
+    category: z.enum(['logistics', 'refund', 'quality', 'other']).describe('工单类别'),
+    summary: z.string().min(5).max(30).describe('问题摘要（严格限制在 5-30 字内）'),
+    orderId: z.string().regex(/^ORD-\d{6}$/).describe('从文本中提取的订单号，形如 ORD-123456'),
+  })
+  .refine((d) => !(d.category === 'refund' && d.urgency < 4), {
+    message: '业务红线：退款类工单涉及资金流转，urgency 必须 ≥ 4',
+    path: ['urgency'],
+  })
+  .refine((d) => !(d.urgency >= 4 && d.summary.length < 15), {
+    message: '合规要求：高优先级工单 (urgency ≥ 4) 的 summary 至少需要 15 字阐述详情理由',
+    path: ['summary'],
+  });
+
+/**
  * Resolves a runtime ZodTypeAny from various config representations:
  * - Direct Zod schema (instance of z.ZodType or has safeParse)
  * - Declarative ZodSchemaConfig with field definitions
@@ -181,6 +201,9 @@ export function resolveZodSchema(input: unknown): z.ZodTypeAny | undefined {
 
   if (typeof input === 'object' && input !== null) {
     const obj = input as Record<string, unknown>;
+    if (obj['name'] === 'TicketSemanticSchema') {
+      return TicketSemanticSchema;
+    }
     if (obj['schema'] instanceof z.ZodType) {
       return obj['schema'] as z.ZodTypeAny;
     }
@@ -548,6 +571,11 @@ export function deriveDiagnosticTriad(
       suggestion = `请修正字段 "${fieldName}" 的格式`;
       break;
     }
+    case 'custom': {
+      expectedRule = issue.message;
+      suggestion = `检测到跨字段业务规则冲突，请调整字段 "${fieldName}" 以满足业务逻辑限制 (当前输出值: ${formatDiagnosticValue(rawVal)})`;
+      break;
+    }
     default: {
       expectedRule = issue.message;
       suggestion = `请根据契约规则修正字段 "${fieldName}"`;
@@ -575,10 +603,12 @@ export function generateGoldenExemplar(
     if (fields) {
       const exemplar: Record<string, unknown> = {};
       for (const [k, f] of Object.entries(fields)) {
-        if (f.type === 'number') {
+        if (k === 'orderId') {
+          exemplar[k] = 'ORD-123456';
+        } else if (f.type === 'number') {
           exemplar[k] = f.max ?? f.min ?? 5;
         } else if (f.type === 'string') {
-          exemplar[k] = f.description ? `合规${f.description}` : '合规标准业务文本内容';
+          exemplar[k] = f.description ? `合规${f.description}` : '合规工单业务摘要说明内容（长度符合规范）';
         } else if (f.type === 'enum' && f.enum && f.enum.length > 0) {
           exemplar[k] = f.enum[0];
         } else if (f.type === 'boolean') {
@@ -593,15 +623,23 @@ export function generateGoldenExemplar(
     }
   }
 
+  // Unwrap ZodEffects (.refine / .transform) if applicable
+  let targetZod: unknown = schema;
+  while (targetZod instanceof z.ZodEffects) {
+    targetZod = targetZod.innerType();
+  }
+
   // If Zod schema instance
-  if (schema instanceof z.ZodObject) {
-    const shape = schema.shape;
+  if (targetZod instanceof z.ZodObject) {
+    const shape = targetZod.shape;
     const exemplar: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(shape)) {
-      if (v instanceof z.ZodNumber) {
+      if (k === 'orderId') {
+        exemplar[k] = 'ORD-123456';
+      } else if (v instanceof z.ZodNumber) {
         exemplar[k] = 5;
       } else if (v instanceof z.ZodString) {
-        exemplar[k] = '合规示例摘要内容（不少于5字符）';
+        exemplar[k] = '合规工单业务摘要说明内容（长度符合规范）';
       } else if (v instanceof z.ZodEnum) {
         exemplar[k] = (v as unknown as { options: string[] }).options[0] ?? 'default';
       } else if (v instanceof z.ZodBoolean) {
@@ -872,6 +910,27 @@ export const TEST_SCENARIOS: Record<LLMTestScenario, TestScenarioDefinition> = {
     ],
     defaultFinishReasons: ['stop', 'stop', 'stop'],
     expectedOutcome: '三轮反馈逐级升级 (R1手术刀->R2黄金示例)，预算耗尽后优雅降级输出 _validationFailed',
+  },
+  semantic_refine_violation: {
+    id: 'semantic_refine_violation',
+    name: '7. 跨字段业务契约拦截 (Refine Invariant Violation)',
+    description: '受限解码(L1)放行，被 L2 Zod .refine() 拦截跨字段业务冲突（refund 但 urgency < 4；高优先级 summary < 15 字），经状态机处方精准自愈',
+    schemaConfig: {
+      name: 'TicketSemanticSchema',
+      fields: {
+        urgency: { type: 'number', min: 1, max: 5, description: '工单紧急度 1..5' },
+        category: { type: 'enum', enum: ['logistics', 'refund', 'quality', 'other'], description: '工单类别' },
+        summary: { type: 'string', minLength: 5, maxLength: 30, description: '问题摘要(5-30字)' },
+        orderId: { type: 'string', description: '订单号 ORD-123456' },
+      },
+      schema: TicketSemanticSchema,
+    },
+    defaultResponses: [
+      JSON.stringify({ urgency: 2, category: 'refund', summary: '键盘空格键失灵申请退款', orderId: 'ORD-882310' }),
+      JSON.stringify({ urgency: 4, category: 'refund', summary: '键盘空格键硬件失灵故障，用户申请退款并寄回处理', orderId: 'ORD-882310' }),
+    ],
+    defaultFinishReasons: ['stop', 'stop'],
+    expectedOutcome: 'L1语法通过 -> L2截获业务跨字段冲突 -> 注入三要素处方 -> 第2轮自愈成功',
   },
   custom: {
     id: 'custom',

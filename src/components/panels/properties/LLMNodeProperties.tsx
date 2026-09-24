@@ -536,6 +536,7 @@ export const LLMNodeProperties: React.FC<LLMNodePropertiesProps> = ({
                   'token_truncated',
                   'empty_output',
                   'three_failures',
+                  'semantic_refine_violation',
                 ] as LLMTestScenario[]
               ).map((scId) => {
                 const def = TEST_SCENARIOS[scId];

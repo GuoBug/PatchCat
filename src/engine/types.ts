@@ -597,6 +597,7 @@ export type LLMTestScenario =
   | 'token_truncated'
   | 'empty_output'
   | 'three_failures'
+  | 'semantic_refine_violation'
   | 'custom';
 
 export type SelfHealingEscalationLevel =
