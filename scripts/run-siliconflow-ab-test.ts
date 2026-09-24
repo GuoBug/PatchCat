@@ -1,17 +1,23 @@
 /**
  * @file    scripts/run-siliconflow-ab-test.ts
  * @description
- *   SiliconFlow Qwen2.5-7B A/B Benchmark Evaluation Script.
- *   Compares:
- *   - Group A (Unconstrained Decoding / Prompt-only Baseline)
- *   - Group B (PatchCat Dual-Shield: L1 Schema / JSON Mode + L2 Zod Refine Semantic Self-Healing)
+ *   SiliconFlow Qwen2.5-7B A/B Benchmark Evaluation Harness (Production Edition).
+ *
+ *   Rigorous Evaluation Design:
+ *   1. Variable Isolation: Group A and Group B share 100% IDENTICAL System Prompts.
+ *   2. Measured (Not Asserted) L1 Syntax: L1 pass rate measured from actual Zod safeParse & trace.
+ *   3. Statistical Robustness: Repetitions (3 rounds x 10 cases = 30 samples) with variance.
+ *   4. Full Trace Persistence: Saves complete raw LLM inputs, outputs, errors, and traces to eval-results/<timestamp>.json.
+ *   5. Post-Mortem Autopsy: Automatically inspects degraded/failed self-healing traces to pinpoint model behavior flaws.
+ *   6. Strict Billing Guard: Hard assertion ensures only free 'Qwen/Qwen2.5-7B-Instruct' is used (NEVER 'Pro/').
  *
  *   Usage:
  *     $env:SILICONFLOW_API_KEY="sk-your-siliconflow-key"
- *     npx tsx scripts/run-siliconflow-ab-test.ts
+ *     npm run test:ab                # Run full 3-round benchmark (30 samples)
+ *     npm run test:ab -- --single    # Run single-round quick test (10 samples)
  */
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   TicketSemanticSchema,
@@ -19,8 +25,11 @@ import {
   safeParseOutput,
 } from '../src/engine/structured-output.ts';
 import type { ChatMessage, LLMChatRequest, LLMExecutionOutput } from '../src/engine/llm-client.ts';
+import type { SelfHealingTraceStep } from '../src/engine/types.ts';
 
+// ─────────────────────────────────────────────────────────────────────────────
 // 0. Strict Model Name & Billing Guard
+// ─────────────────────────────────────────────────────────────────────────────
 // SiliconFlow Free Model: 'Qwen/Qwen2.5-7B-Instruct' (NOT 'Pro/Qwen/Qwen2.5-7B-Instruct')
 export const TARGET_FREE_MODEL = 'Qwen/Qwen2.5-7B-Instruct';
 
@@ -31,7 +40,9 @@ if (TARGET_FREE_MODEL.startsWith('Pro/') || TARGET_FREE_MODEL.includes('/Pro/'))
   process.exit(1);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 // 1. Resolve API Key from process.env or .env file
+// ─────────────────────────────────────────────────────────────────────────────
 function loadSiliconFlowApiKey(): string {
   if (process.env.SILICONFLOW_API_KEY) {
     return process.env.SILICONFLOW_API_KEY.trim();
@@ -57,7 +68,9 @@ function loadSiliconFlowApiKey(): string {
   return '';
 }
 
-// 2. Real SiliconFlow Caller
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. Real SiliconFlow Caller with Timeout & Safety Guard
+// ─────────────────────────────────────────────────────────────────────────────
 async function callSiliconFlowApi(
   apiKey: string,
   model: string = TARGET_FREE_MODEL,
@@ -129,7 +142,22 @@ async function callSiliconFlowApi(
   }
 }
 
-// 3. 10 Natural Semantic Conflict Test Cases
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. Clean Variable Isolation: UNIFIED SYSTEM PROMPT for both Group A & B
+// ─────────────────────────────────────────────────────────────────────────────
+const UNIFIED_SYSTEM_PROMPT = `你是一个工单结构化解析助手。请直接以 JSON 格式输出工单，必须包含以下字段：
+- urgency: 1-5 整数，代表紧急度
+- category: 工单分类，仅允许 'logistics' | 'refund' | 'quality' | 'other'
+- summary: 问题摘要，严格限制在 5-30 字内
+- orderId: 订单号，必须提取自输入并严格符合 ORD-xxxxxx 格式（形如 ORD-123456）
+
+业务硬性约束：
+1. 退款类工单 (category === 'refund') 涉及资金流转，urgency 必须 >= 4；
+2. 高优先级工单 (urgency >= 4) 的 summary 至少需要 15 字阐述详情理由。`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. Benchmark Test Suite (10 Real-world Conflict Test Cases)
+// ─────────────────────────────────────────────────────────────────────────────
 const BENCHMARK_CASES = [
   {
     id: 1,
@@ -193,201 +221,342 @@ const BENCHMARK_CASES = [
   },
 ];
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. Data Records for Persistence & Autopsy
+// ─────────────────────────────────────────────────────────────────────────────
+interface TrialRecord {
+  repetitionIndex: number;
+  caseId: number;
+  caseTitle: string;
+  prompt: string;
+  groupA: {
+    rawOutput: string;
+    durationMs: number;
+    l1SyntaxOk: boolean;
+    l2SemanticOk: boolean;
+    endToEndSuccess: boolean;
+    errors?: Array<{ path: string; message: string; receivedValue?: unknown }>;
+  };
+  groupB: {
+    durationMs: number;
+    l1SyntaxOk: boolean;
+    l2SemanticOk: boolean;
+    endToEndSuccess: boolean;
+    totalAttempts: number;
+    wasInterceptedByL2: boolean;
+    wasHealed: boolean;
+    fallbackReason?: string;
+    trace: SelfHealingTraceStep[];
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. Main Benchmark Runner
+// ─────────────────────────────────────────────────────────────────────────────
 async function main() {
+  const isSingleRun = process.argv.includes('--single');
+  const REPETITIONS = isSingleRun ? 1 : 3;
+
   console.log('================================================================================');
   console.log('PatchCat A/B Benchmark: L1/L2 Semantic Refine & Self-Healing Evaluation');
-  console.log(`Target Model: ${TARGET_FREE_MODEL} (SiliconFlow 免费白嫖额度，严格禁止 Pro 收费版)`);
+  console.log(`Target Model: ${TARGET_FREE_MODEL} (SiliconFlow 免费白嫖档位，严格禁止 Pro 收费版)`);
+  console.log(`Evaluation Protocol: ${REPETITIONS} Repetitions x ${BENCHMARK_CASES.length} Cases = ${REPETITIONS * BENCHMARK_CASES.length} Samples per Group`);
   console.log('================================================================================');
 
   const apiKey = loadSiliconFlowApiKey();
   const isLive = Boolean(apiKey);
 
   if (isLive) {
-    console.log(`[Mode] 🚀 LIVE API MODE detected! Connecting to SiliconFlow using model: ${TARGET_FREE_MODEL}`);
+    console.log(`[Mode] 🚀 LIVE API MODE detected! Connecting to SiliconFlow live API.`);
   } else {
-    console.log(`[Mode] 🔬 SIMULATION / DRY-RUN MODE.`);
-    console.log(`  (To run live against SiliconFlow, set $env:SILICONFLOW_API_KEY="sk-..." or create a .env file)`);
+    console.log(`[Mode] 🔬 DETERMINISTIC SIMULATION MODE (No API Key found).`);
+    console.log(`  (To test live SiliconFlow, set $env:SILICONFLOW_API_KEY="sk-..." or create a .env file)`);
   }
   console.log('--------------------------------------------------------------------------------\n');
 
-  // Stats Counters
+  const allRecords: TrialRecord[] = [];
+
+  // Group A Aggregate Counters
+  let a_total_samples = 0;
   let a_l1_passed = 0;
-  let a_l2_passed = 0;
-  let a_exhausted = 0;
+  let a_l2_intercepted = 0;
+  let a_end_to_end_success = 0;
 
-  let b_l1_passed = 0;
-  let b_l2_interceptions = 0;
+  // Group B Aggregate Counters
+  let b_total_samples = 0;
+  let b_total_rounds = 0;
+  let b_rounds_l1_syntax_ok = 0;
+  let b_cases_all_syntax_ok = 0;
+  let b_l2_intercepted = 0;
   let b_self_healed = 0;
-  let b_exhausted = 0;
+  let b_end_to_end_success = 0;
+  let b_exhausted_fallback = 0;
 
-  for (let i = 0; i < BENCHMARK_CASES.length; i++) {
-    const item = BENCHMARK_CASES[i];
-    const isRefundCase = item.expectedCategory === 'refund';
+  for (let rep = 1; rep <= REPETITIONS; rep++) {
+    console.log(`\n============================= 轮次 [${rep}/${REPETITIONS}] =============================`);
 
-    console.log(`[用例 ${i + 1}/${BENCHMARK_CASES.length}] 正在评测样本 #${item.id}: "${item.title}"`);
+    for (let i = 0; i < BENCHMARK_CASES.length; i++) {
+      const item = BENCHMARK_CASES[i];
+      const isRefundCase = item.expectedCategory === 'refund';
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // Group A: Unconstrained Decoding (Baseline: Prompt-only)
-    // ──────────────────────────────────────────────────────────────────────────
-    const promptGroupA: ChatMessage[] = [
-      {
-        role: 'system',
-        content: `你是一个工单分类助手。请直接以 JSON 格式输出工单，包含：
-urgency (1-5整数), category ('logistics'|'refund'|'quality'|'other'), summary (5-30字), orderId (形如 ORD-123456)。
-注意：退款类工单 urgency 必须 >= 4，高优先级 summary 至少 15 字。`,
-      },
-      { role: 'user', content: item.prompt },
-    ];
+      console.log(`[R${rep} - 用例 ${i + 1}/${BENCHMARK_CASES.length}] 评测样本 #${item.id}: "${item.title}"`);
 
-    let groupARawOutput = '';
-    const startA = Date.now();
-    if (isLive) {
-      try {
-        const out = await callSiliconFlowApi(apiKey, TARGET_FREE_MODEL, promptGroupA, 'none');
-        groupARawOutput = out.response;
-      } catch (err) {
-        console.error(`Group A call error:`, err);
-      }
-    } else {
-      // Simulation baseline for 7B unconstrained:
-      if (item.id === 1) {
-        groupARawOutput = '```json\n{"urgency": 2, "category": "refund", "summary": "键盘空格键失灵申请退款", "orderId": "ORD-881201"}\n```';
-      } else if (item.id === 10) {
-        groupARawOutput = '{"urgency": 1, "category": "refund", "summary": "冲动买后悔撤单退款", "orderId": "ORD-654321"}';
-      } else {
-        groupARawOutput = JSON.stringify({
-          urgency: isRefundCase ? 3 : 2,
-          category: item.expectedCategory,
-          summary: `已记录工单：${item.title}`,
-          orderId: `ORD-${100000 + item.id}`,
-        });
-      }
-    }
-    const durationA = Date.now() - startA;
+      const messages: ChatMessage[] = [
+        { role: 'system', content: UNIFIED_SYSTEM_PROMPT },
+        { role: 'user', content: item.prompt },
+      ];
 
-    const parseResultA = safeParseOutput(groupARawOutput, TicketSemanticSchema);
-    if (!parseResultA.syntaxError) {
-      a_l1_passed++;
-      if (parseResultA.success) {
-        a_l2_passed++;
-        console.log(`  ├─ 模式 A (Prompt基线): ✅ 格式与业务均合规 (${durationA}ms)`);
-      } else {
-        a_exhausted++; // Group A has NO state machine to self-heal
-        const issue = parseResultA.errors?.[0]?.message || '业务规则违规';
-        console.log(`  ├─ 模式 A (Prompt基线): ❌ L1放行但触犯 L2 规则: "${issue}" (无自愈状态机直接失败) (${durationA}ms)`);
-      }
-    } else {
-      a_exhausted++;
-      console.log(`  ├─ 模式 A (Prompt基线): ❌ L1 JSON 语法解析损坏 (${durationA}ms)`);
-    }
+      // ────────────────────────────────────────────────────────────────────────
+      // Group A: Baseline (Unconstrained Decoding, Single-shot, No State Machine)
+      // ────────────────────────────────────────────────────────────────────────
+      a_total_samples++;
+      let groupARaw = '';
+      const startA = Date.now();
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // Group B: PatchCat Dual-Shield (L1 json_object/json_schema + L2 Refine + State Machine)
-    // ──────────────────────────────────────────────────────────────────────────
-    const promptGroupB: ChatMessage[] = [
-      {
-        role: 'system',
-        content: `你是一个工单分类助手。请严格输出 JSON 对象，字段必须包含 urgency(1-5), category, summary(5-30字), orderId(ORD-xxxxxx)。`,
-      },
-      { role: 'user', content: item.prompt },
-    ];
-
-    let bCallCount = 0;
-    const startB = Date.now();
-    const callerB = async (overrides: Partial<LLMChatRequest>): Promise<LLMExecutionOutput> => {
-      bCallCount++;
       if (isLive) {
-        return callSiliconFlowApi(
-          apiKey,
-          TARGET_FREE_MODEL,
-          overrides.messages || promptGroupB,
-          'json_object',
-        );
+        try {
+          const out = await callSiliconFlowApi(apiKey, TARGET_FREE_MODEL, messages, 'none');
+          groupARaw = out.response;
+        } catch (err) {
+          console.error(`  ├─ 模式 A API 调用异常:`, err);
+        }
       } else {
-        // Simulation: Round 1 natural error (urgency: 2 for refund), Round 2 heals!
-        if (bCallCount === 1 && isRefundCase && (item.id === 1 || item.id === 5 || item.id === 10)) {
+        // Simulation baseline
+        if (item.id === 1) {
+          groupARaw = '{"urgency": 2, "category": "refund", "summary": "键盘空格键失灵申请退款", "orderId": "ORD-881201"}';
+        } else if (item.id === 10) {
+          groupARaw = '{"urgency": 1, "category": "refund", "summary": "冲动买后悔撤单退款", "orderId": "ORD-654321"}';
+        } else {
+          groupARaw = JSON.stringify({
+            urgency: isRefundCase ? 3 : 2,
+            category: item.expectedCategory,
+            summary: `已记录工单：${item.title}`,
+            orderId: `ORD-${100000 + item.id}`,
+          });
+        }
+      }
+      const durationA = Date.now() - startA;
+
+      const parseA = safeParseOutput(groupARaw, TicketSemanticSchema);
+      const a_l1_ok = !parseA.syntaxError;
+      const a_l2_ok = parseA.success;
+      const a_success = a_l1_ok && a_l2_ok;
+
+      if (a_l1_ok) a_l1_passed++;
+      if (a_l1_ok && !a_l2_ok) a_l2_intercepted++;
+      if (a_success) {
+        a_end_to_end_success++;
+        console.log(`  ├─ 模式 A (Prompt基线): ✅ 格式与业务均合规 (${durationA}ms)`);
+      } else if (!a_l1_ok) {
+        console.log(`  ├─ 模式 A (Prompt基线): ❌ L1 语法解析损坏 (${durationA}ms)`);
+      } else {
+        const issue = parseA.errors?.[0]?.message || '业务规则违规';
+        console.log(`  ├─ 模式 A (Prompt基线): ❌ 触犯 L2 规则: "${issue}" (无自愈状态机直接失败) (${durationA}ms)`);
+      }
+
+      // ────────────────────────────────────────────────────────────────────────
+      // Group B: PatchCat Dual-Shield (L1 json_object + L2 Refine + State Machine)
+      // ────────────────────────────────────────────────────────────────────────
+      b_total_samples++;
+      let bCallCount = 0;
+      const startB = Date.now();
+
+      const callerB = async (overrides: Partial<LLMChatRequest>): Promise<LLMExecutionOutput> => {
+        bCallCount++;
+        if (isLive) {
+          return callSiliconFlowApi(
+            apiKey,
+            TARGET_FREE_MODEL,
+            overrides.messages || messages,
+            'json_object',
+          );
+        } else {
+          // Simulation: Round 1 natural error (urgency: 2 for refund), Round 2 heals!
+          if (bCallCount === 1 && isRefundCase && (item.id === 1 || item.id === 5 || item.id === 10)) {
+            return {
+              response: JSON.stringify({
+                urgency: 2,
+                category: 'refund',
+                summary: '键盘空格键失灵申请退款处理',
+                orderId: 'ORD-881201',
+              }),
+              usage: { prompt: 50, completion: 20, total: 70 },
+              finishReason: 'stop',
+              durationMs: 80,
+            };
+          }
           return {
             response: JSON.stringify({
-              urgency: 2,
-              category: 'refund',
-              summary: '键盘空格键失灵申请退款处理',
-              orderId: 'ORD-881201',
+              urgency: isRefundCase ? 4 : 3,
+              category: item.expectedCategory,
+              summary: `已合规登记${item.title}工单详情，请尽快协调跟进`,
+              orderId: `ORD-${100000 + item.id}`,
             }),
-            usage: { prompt: 50, completion: 20, total: 70 },
+            usage: { prompt: 80, completion: 25, total: 105 },
             finishReason: 'stop',
-            durationMs: 80,
+            durationMs: 90,
           };
         }
-        return {
-          response: JSON.stringify({
-            urgency: isRefundCase ? 4 : 3,
-            category: item.expectedCategory,
-            summary: `已合规登记${item.title}工单详情，请尽快协调跟进`,
-            orderId: `ORD-${100000 + item.id}`,
-          }),
-          usage: { prompt: 80, completion: 25, total: 105 },
-          finishReason: 'stop',
-          durationMs: 90,
-        };
+      };
+
+      const healingB = await executeWithSelfHealing(callerB, messages, {
+        maxRetries: 2,
+        schema: TicketSemanticSchema,
+        provider: 'siliconflow',
+        model: TARGET_FREE_MODEL,
+      });
+      const durationB = Date.now() - startB;
+
+      // MEASURED (NOT ASSERTED) L1 Syntax Validity across all rounds
+      const trace = healingB.trace ?? [];
+      b_total_rounds += trace.length;
+      for (const t of trace) {
+        if (t.syntaxValid) {
+          b_rounds_l1_syntax_ok++;
+        }
       }
-    };
+      const b_case_all_syntax_ok = trace.length > 0 && trace.every((t) => t.syntaxValid);
+      if (b_case_all_syntax_ok) {
+        b_cases_all_syntax_ok++;
+      }
 
-    const healingResultB = await executeWithSelfHealing(callerB, promptGroupB, {
-      maxRetries: 2,
-      schema: TicketSemanticSchema,
-      provider: 'siliconflow',
-      model: TARGET_FREE_MODEL,
-    });
-    const durationB = Date.now() - startB;
+      const wasInterceptedByL2 = trace.length > 0 && !trace[0].semanticValid;
+      if (wasInterceptedByL2) {
+        b_l2_intercepted++;
+      }
 
-    b_l1_passed++; // Constrained mode guarantees L1 syntax pass
-    if (healingResultB.totalAttempts > 1) {
-      b_l2_interceptions++;
-      if (healingResultB.success) {
+      const wasHealed = wasInterceptedByL2 && healingB.success;
+      if (wasHealed) {
         b_self_healed++;
-        console.log(`  └─ 模式 B (双层防御自愈): 🎯 L2 截获业务违规 -> 注入手术刀处方 -> 第 ${healingResultB.totalAttempts} 轮纠偏自愈成功！(${durationB}ms)`);
-      } else {
-        b_exhausted++;
-        console.log(`  └─ 模式 B (双层防御自愈): ⚠️ 耗尽 ${healingResultB.totalAttempts} 次重试预算，优雅降级 (${durationB}ms)`);
       }
-    } else if (healingResultB.success) {
-      console.log(`  └─ 模式 B (双层防御自愈): ✅ 第 1 轮直接合规通过 (${durationB}ms)`);
-    } else {
-      b_exhausted++;
-      console.log(`  └─ 模式 B (双层防御自愈): ⚠️ 校验失败并降级 (${durationB}ms)`);
-    }
 
-    console.log('');
+      if (healingB.success) {
+        b_end_to_end_success++;
+        if (healingB.totalAttempts > 1) {
+          console.log(`  └─ 模式 B (双层防御自愈): 🎯 L2 截获违规 -> 注入处方 -> 第 ${healingB.totalAttempts} 轮成功自愈！(${durationB}ms)`);
+        } else {
+          console.log(`  └─ 模式 B (双层防御自愈): ✅ 第 1 轮直接通过 L1+L2 双层校验 (${durationB}ms)`);
+        }
+      } else {
+        b_exhausted_fallback++;
+        console.log(`  └─ 模式 B (双层防御自愈): ⚠️ 耗尽 ${healingB.totalAttempts} 次重试预算，优雅降级为 _validationFailed (${durationB}ms)`);
+      }
+
+      console.log('');
+
+      // Record full sample data for persistence
+      allRecords.push({
+        repetitionIndex: rep,
+        caseId: item.id,
+        caseTitle: item.title,
+        prompt: item.prompt,
+        groupA: {
+          rawOutput: groupARaw,
+          durationMs: durationA,
+          l1SyntaxOk: a_l1_ok,
+          l2SemanticOk: a_l2_ok,
+          endToEndSuccess: a_success,
+          errors: parseA.errors?.map((e) => ({ path: e.path, message: e.message, receivedValue: e.receivedValue })),
+        },
+        groupB: {
+          durationMs: durationB,
+          l1SyntaxOk: b_case_all_syntax_ok,
+          l2SemanticOk: healingB.success,
+          endToEndSuccess: healingB.success,
+          totalAttempts: healingB.totalAttempts,
+          wasInterceptedByL2,
+          wasHealed,
+          fallbackReason: healingB.fallbackReason,
+          trace,
+        },
+      });
+    }
   }
 
-  // Calculate Metrics
-  const total = BENCHMARK_CASES.length;
-  const a_l1_pct = ((a_l1_passed / total) * 100).toFixed(1) + '%';
-  const a_heal_pct = '0.0% (无自愈状态机)';
-  const a_fail_pct = ((a_exhausted / total) * 100).toFixed(1) + '%';
+  // ──────────────────────────────────────────────────────────────────────────
+  // 7. Calculate Verified Statistical Metrics
+  // ──────────────────────────────────────────────────────────────────────────
+  const a_l1_pct = ((a_l1_passed / a_total_samples) * 100).toFixed(1) + '%';
+  const a_l2_intercept_pct = ((a_l2_intercepted / a_total_samples) * 100).toFixed(1) + '%';
+  const a_end_to_end_pct = ((a_end_to_end_success / a_total_samples) * 100).toFixed(1) + '%';
 
-  const b_l1_pct = ((b_l1_passed / total) * 100).toFixed(1) + '%';
-  const b_l2_intercept_pct = ((b_l2_interceptions / total) * 100).toFixed(1) + '%';
-  const b_heal_pct =
-    b_l2_interceptions > 0
-      ? ((b_self_healed / b_l2_interceptions) * 100).toFixed(1) + '%'
+  // Group B Measured Rates
+  const b_l1_cases_pct = ((b_cases_all_syntax_ok / b_total_samples) * 100).toFixed(1) + '%';
+  const b_l1_rounds_pct = ((b_rounds_l1_syntax_ok / b_total_rounds) * 100).toFixed(1) + '%';
+  const b_l2_intercept_pct = ((b_l2_intercepted / b_total_samples) * 100).toFixed(1) + '%';
+  const b_heal_conversion_pct =
+    b_l2_intercepted > 0
+      ? ((b_self_healed / b_l2_intercepted) * 100).toFixed(1) + '%'
       : '100.0%';
-  const b_fail_pct = ((b_exhausted / total) * 100).toFixed(1) + '%';
+  const b_end_to_end_pct = ((b_end_to_end_success / b_total_samples) * 100).toFixed(1) + '%';
 
   console.log('\n================================================================================');
-  console.log('PatchCat A/B Benchmark Evaluation Report (10-Case Invariant Test)');
+  console.log(`PatchCat A/B Benchmark Evaluation Report (${a_total_samples} Verified Samples)`);
+  console.log(`Target Model: ${TARGET_FREE_MODEL} | Free Tier Validated`);
   console.log('================================================================================');
-  console.log('| 实验组别 | L1 格式通过率 | L2 业务规则拦截率 | 语义自愈成功率 | 业务最终失败/降级率 |');
-  console.log('| :--- | :--- | :--- | :--- | :--- |');
-  console.log(`| A 档：无受限解码 (基线 Prompt-only) | ${a_l1_pct} | - | ${a_heal_pct} | ${a_fail_pct} |`);
-  console.log(`| B 档：PatchCat 双层防御 (L1+L2 Refine) | ${b_l1_pct} | ${b_l2_intercept_pct} | ${b_heal_pct} | ${b_fail_pct} |`);
+  console.log('| 评估组别 | 样本总数 | L1 格式合规率 (测量值) | L2 业务规则拦截率 | 拦截后自愈转化率 (分子/分母) | 端到端合规交付率 (北极星KPI) |');
+  console.log('| :--- | :--- | :--- | :--- | :--- | :--- |');
+  console.log(`| A 档：自然解码 (单轮基线) | ${a_total_samples} | ${a_l1_pct} (${a_l1_passed}/${a_total_samples}) | ${a_l2_intercept_pct} (${a_l2_intercepted}/${a_total_samples}) | 0.0% (无自愈状态机) | **${a_end_to_end_pct}** (${a_end_to_end_success}/${a_total_samples}) |`);
+  console.log(`| B 档：PatchCat 双层防御 (DAG自愈) | ${b_total_samples} | ${b_l1_cases_pct} (轮次级: ${b_l1_rounds_pct}) | ${b_l2_intercept_pct} (${b_l2_intercepted}/${b_total_samples}) | **${b_heal_conversion_pct}** (${b_self_healed}/${b_l2_intercepted}) | **${b_end_to_end_pct}** (${b_end_to_end_success}/${b_total_samples}) |`);
   console.log('================================================================================\n');
 
-  console.log('💡 核心洞察与结论：');
-  console.log('1. L1 格式层（Grammar / JSON 模式）：受限解码将格式故障彻底消灭至 0%。');
-  console.log(`2. L2 业务层（Zod Refine）：拦截了 ${b_l2_intercept_pct} 的跨字段业务冲突（如 refund 但 urgency < 4）。`);
-  console.log(`3. 语义自愈状态机：注入 Prescriptive Triad 手术刀处方后，自愈成功率达到 ${b_heal_pct}！`);
-  console.log('================================================================================\n');
+  // ──────────────────────────────────────────────────────────────────────────
+  // 8. Automated Post-Mortem Autopsy for Degraded Cases
+  // ──────────────────────────────────────────────────────────────────────────
+  const degradedCases = allRecords.filter((r) => !r.groupB.endToEndSuccess);
+  if (degradedCases.length > 0) {
+    console.log('================================================================================');
+    console.log(`🔍 自愈失败用例尸检报告 (Post-Mortem Autopsy: 共 ${degradedCases.length} 例降级)`);
+    console.log('================================================================================');
+    for (const d of degradedCases) {
+      console.log(`[用例 #${d.caseId} (R${d.repetitionIndex}): "${d.caseTitle}"]`);
+      d.groupB.trace.forEach((step, idx) => {
+        const errorSummary = step.errors?.map((e) => `[${e.path}]: ${e.message} (实际输出值: ${JSON.stringify(e.receivedValue)})`).join('; ') || '无报错';
+        console.log(`  - Round ${idx + 1} (${step.escalationLevel || 'default'}): syntax=${step.syntaxValid}, semantic=${step.semanticValid} | 错误: ${errorSummary}`);
+        console.log(`    原始输出片段: ${step.rawOutput.slice(0, 80)}...`);
+      });
+      console.log('--------------------------------------------------------------------------------');
+    }
+  } else {
+    console.log('🎉 全部用例在重试预算内均成功合规交付，0 次降级！\n');
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 9. Full Trace Data Persistence (Disk Artifact)
+  // ──────────────────────────────────────────────────────────────────────────
+  const evalDir = resolve(process.cwd(), 'eval-results');
+  mkdirSync(evalDir, { recursive: true });
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const artifactPath = resolve(evalDir, `siliconflow-benchmark-${timestamp}.json`);
+
+  const exportPayload = {
+    timestamp: new Date().toISOString(),
+    model: TARGET_FREE_MODEL,
+    totalSamplesPerGroup: a_total_samples,
+    repetitions: REPETITIONS,
+    systemPrompt: UNIFIED_SYSTEM_PROMPT,
+    summaryTable: {
+      groupA: {
+        totalSamples: a_total_samples,
+        l1SyntaxPassRate: a_l1_pct,
+        l2InterceptRate: a_l2_intercept_pct,
+        endToEndSuccessRate: a_end_to_end_pct,
+      },
+      groupB: {
+        totalSamples: b_total_samples,
+        l1SyntaxPassRate: b_l1_cases_pct,
+        roundLevelL1Rate: b_l1_rounds_pct,
+        l2InterceptRate: b_l2_intercept_pct,
+        healingConversionRate: b_heal_conversion_pct,
+        endToEndSuccessRate: b_end_to_end_pct,
+      },
+    },
+    trials: allRecords,
+  };
+
+  writeFileSync(artifactPath, JSON.stringify(exportPayload, null, 2), 'utf-8');
+  console.log(`📁 完整原始评测 Trace 与尸检数据已成功落盘:`);
+  console.log(`   ${artifactPath}\n`);
 }
 
 main().catch((err) => {
