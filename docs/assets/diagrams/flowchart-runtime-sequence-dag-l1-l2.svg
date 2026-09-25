@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 550" width="960" height="550" style="background: transparent; display: block;">
+  <defs>
+    <!-- Background Dot Grid -->
+    <pattern id="dot-grid-p3" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.1" fill="#D4D4D8" />
+    </pattern>
+
+    <!-- Marker Arrowheads -->
+    <marker id="arrow-blk-p3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000" stroke="#000000" stroke-width="1.5"/>
+    </marker>
+    <marker id="arrow-grn-p3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#7FFF00" stroke="#000000" stroke-width="1.5"/>
+    </marker>
+    <marker id="arrow-red-p3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#FF4D4D" stroke="#000000" stroke-width="1.5"/>
+    </marker>
+
+    <style>
+      .font-mono { font-family: 'Space Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'PingFang SC', monospace; }
+      .font-heading { font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif; }
+      .bold { font-weight: 700; }
+      .border-main { stroke: #000000; stroke-width: 2.5; stroke-linecap: square; stroke-linejoin: miter; }
+      .border-card { stroke: #000000; stroke-width: 2; }
+      .border-thin { stroke: #000000; stroke-width: 1.5; }
+      .lifeline { stroke: #A1A1AA; stroke-width: 1.5; stroke-dasharray: 4 4; }
+    </style>
+  </defs>
+
+  <!-- ================= Outer Container ================= -->
+  <rect x="14" y="14" width="932" height="522" rx="6" fill="#000000" />
+  <rect x="10" y="10" width="932" height="522" rx="6" fill="#FAF9F5" class="border-main" />
+  <rect x="13" y="13" width="926" height="516" rx="4" fill="url(#dot-grid-p3)" />
+
+  <!-- ================= Header Bar ================= -->
+  <rect x="26" y="24" width="900" height="42" rx="4" fill="#000000" />
+  <rect x="23" y="21" width="900" height="42" rx="4" fill="#FFFFFF" class="border-card" />
+
+  <rect x="32" y="29" width="168" height="26" rx="3" fill="#7FFF00" class="border-thin" />
+  <text x="116" y="46" class="font-mono bold" font-size="10.5" fill="#000000" text-anchor="middle" letter-spacing="1">SEQUENCE // TIMELINE</text>
+
+  <text x="212" y="47" class="font-heading bold" font-size="13.5" fill="#000000" letter-spacing="0.5">RUNTIME INTERACTION FLOW: L1 &amp; L2 DEFENSE PIPELINE</text>
+  <text x="746" y="47" class="font-mono" font-size="10" fill="#52525B">DETERMINISTIC RUNTIME</text>
+
+  <!-- ================= Participants Header ================= -->
+  <!-- Col 1: DAG Engine (x=110) -->
+  <rect x="43" y="81" width="134" height="38" rx="4" fill="#000000" />
+  <rect x="40" y="78" width="134" height="38" rx="4" fill="#FFFFFF" class="border-card" />
+  <text x="107" y="102" class="font-heading bold" font-size="11.5" fill="#000000" text-anchor="middle">DAG 编排引擎</text>
+  <line x1="107" y1="116" x2="107" y2="505" class="lifeline" />
+
+  <!-- Col 2: LLM Node (x=290) -->
+  <rect x="223" y="81" width="134" height="38" rx="4" fill="#000000" />
+  <rect x="220" y="78" width="134" height="38" rx="4" fill="#FFFFFF" class="border-card" />
+  <text x="287" y="102" class="font-heading bold" font-size="11.5" fill="#000000" text-anchor="middle">LLM 节点执行器</text>
+  <line x1="287" y1="116" x2="287" y2="505" class="lifeline" />
+
+  <!-- Col 3: L1 Repair (x=470) -->
+  <rect x="403" y="81" width="134" height="38" rx="4" fill="#000000" />
+  <rect x="400" y="78" width="134" height="38" rx="4" fill="#F0FDFA" class="border-card" />
+  <text x="467" y="102" class="font-heading bold" font-size="11.5" fill="#0E7490" text-anchor="middle">L1 物理修补</text>
+  <line x1="467" y1="116" x2="467" y2="505" class="lifeline" />
+
+  <!-- Col 4: Provider API (x=650) -->
+  <rect x="583" y="81" width="134" height="38" rx="4" fill="#000000" />
+  <rect x="580" y="78" width="134" height="38" rx="4" fill="#FEFCE8" class="border-card" />
+  <text x="647" y="102" class="font-heading bold" font-size="11.5" fill="#A16207" text-anchor="middle">大模型 API</text>
+  <line x1="647" y1="116" x2="647" y2="505" class="lifeline" />
+
+  <!-- Col 5: L2 Guard (x=830) -->
+  <rect x="763" y="81" width="134" height="38" rx="4" fill="#000000" />
+  <rect x="760" y="78" width="134" height="38" rx="4" fill="#F0FDF4" class="border-card" />
+  <text x="827" y="102" class="font-heading bold" font-size="11.5" fill="#15803D" text-anchor="middle">L2 Zod 语义守卫</text>
+  <line x1="827" y1="116" x2="827" y2="505" class="lifeline" />
+
+  <!-- ================= Sequence Interactions ================= -->
+  <!-- 1. DAG -> Node -->
+  <line x1="107" y1="140" x2="282" y2="140" stroke="#000000" stroke-width="2" marker-end="url(#arrow-blk-p3)" />
+  <rect x="135" y="128" width="120" height="18" rx="2" fill="#FFFFFF" class="border-thin" />
+  <text x="195" y="141" class="font-mono" font-size="9" fill="#000000" text-anchor="middle">1. 调度触发执行</text>
+
+  <!-- 2. Node -> L1 -->
+  <line x1="287" y1="170" x2="462" y2="170" stroke="#000000" stroke-width="2" marker-end="url(#arrow-blk-p3)" />
+  <rect x="315" y="158" width="124" height="18" rx="2" fill="#FFFFFF" class="border-thin" />
+  <text x="377" y="171" class="font-mono" font-size="9" fill="#000000" text-anchor="middle">2. 协商 responseFormat</text>
+
+  <!-- 3. L1 -> Node -->
+  <line x1="467" y1="200" x2="292" y2="200" stroke="#000000" stroke-width="1.8" stroke-dasharray="3 3" marker-end="url(#arrow-blk-p3)" />
+  <rect x="315" y="188" width="124" height="18" rx="2" fill="#F0FDFA" class="border-thin" />
+  <text x="377" y="201" class="font-mono" font-size="8.5" fill="#0E7490" text-anchor="middle">3. 返回 Tier 降级参数</text>
+
+  <!-- 4. Node -> Provider -->
+  <line x1="287" y1="235" x2="642" y2="235" stroke="#000000" stroke-width="2" marker-end="url(#arrow-blk-p3)" />
+  <rect x="390" y="223" width="150" height="18" rx="2" fill="#FFFFFF" class="border-thin" />
+  <text x="465" y="236" class="font-mono" font-size="9" fill="#000000" text-anchor="middle">4. 发起 HTTP / SSE 请求</text>
+
+  <!-- 5. Provider -> Node -->
+  <line x1="647" y1="270" x2="292" y2="270" stroke="#000000" stroke-width="1.8" stroke-dasharray="3 3" marker-end="url(#arrow-blk-p3)" />
+  <rect x="390" y="258" width="150" height="18" rx="2" fill="#FEFCE8" class="border-thin" />
+  <text x="465" y="271" class="font-mono" font-size="8.5" fill="#A16207" text-anchor="middle">5. 返回生成原始文本流</text>
+
+  <!-- 6. Node -> L1 -->
+  <line x1="287" y1="305" x2="462" y2="305" stroke="#000000" stroke-width="2" marker-end="url(#arrow-blk-p3)" />
+  <rect x="325" y="293" width="104" height="18" rx="2" fill="#FFFFFF" class="border-thin" />
+  <text x="377" y="306" class="font-mono" font-size="9" fill="#000000" text-anchor="middle">6. 传入未洗文本</text>
+
+  <!-- 7. L1 Self Loop: repairJsonL1 -->
+  <path d="M 467 325 C 505 325, 505 345, 472 345" fill="none" stroke="#0E7490" stroke-width="2" marker-end="url(#arrow-blk-p3)" />
+  <rect x="490" y="326" width="156" height="18" rx="2" fill="#F0FDFA" class="border-thin" />
+  <text x="568" y="339" class="font-mono bold" font-size="8.5" fill="#0E7490" text-anchor="middle">7. repairJsonL1 剥壳补括号</text>
+
+  <!-- 8. L1 -> Node -->
+  <line x1="467" y1="365" x2="292" y2="365" stroke="#000000" stroke-width="1.8" stroke-dasharray="3 3" marker-end="url(#arrow-blk-p3)" />
+  <rect x="315" y="353" width="124" height="18" rx="2" fill="#F0FDFA" class="border-thin" />
+  <text x="377" y="366" class="font-mono" font-size="8.5" fill="#0E7490" text-anchor="middle">8. 输出物理合规 JSON</text>
+
+  <!-- 9. Node -> L2 -->
+  <line x1="287" y1="395" x2="822" y2="395" stroke="#000000" stroke-width="2" marker-end="url(#arrow-blk-p3)" />
+  <rect x="480" y="383" width="150" height="18" rx="2" fill="#FFFFFF" class="border-thin" />
+  <text x="555" y="396" class="font-mono" font-size="9" fill="#000000" text-anchor="middle">9. schema.safeParse(json)</text>
+
+  <!-- Branch Box (Alt) -->
+  <rect x="45" y="420" width="850" height="86" rx="4" fill="#FFFFFF" stroke="#000000" stroke-width="1.5" stroke-dasharray="4 4" />
+  <rect x="45" y="420" width="80" height="16" rx="2" fill="#000000" />
+  <text x="85" y="432" class="font-mono bold" font-size="8.5" fill="#FFFFFF" text-anchor="middle">BRANCH ALT</text>
+
+  <!-- Success Path -->
+  <line x1="827" y1="448" x2="112" y2="448" stroke="#7FFF00" stroke-width="2.5" marker-end="url(#arrow-grn-p3)" />
+  <rect x="360" y="438" width="220" height="18" rx="2" fill="#7FFF00" class="border-thin" />
+  <text x="470" y="451" class="font-mono bold" font-size="8.5" fill="#000000" text-anchor="middle">10. 契约合规 (true) → 传递强类型 Payload</text>
+
+  <!-- Fail Path -->
+  <line x1="827" y1="482" x2="292" y2="482" stroke="#FF4D4D" stroke-width="2.5" marker-end="url(#arrow-red-p3)" />
+  <rect x="360" y="472" width="220" height="18" rx="2" fill="#FF4D4D" class="border-thin" />
+  <text x="470" y="485" class="font-mono bold" font-size="8.5" fill="#000000" text-anchor="middle">11. 契约违规 (false) → 触发自愈/降级路由 (下一篇)</text>
+</svg>

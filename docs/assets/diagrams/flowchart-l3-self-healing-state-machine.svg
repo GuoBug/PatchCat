@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" width="960" height="520" style="background: transparent; display: block;">
+  <defs>
+    <!-- Background Dot Grid -->
+    <pattern id="dot-grid-matrix" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.1" fill="#D4D4D8" />
+    </pattern>
+
+    <!-- Marker Arrowheads -->
+    <marker id="arrow-black" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000" stroke="#000000" stroke-width="1.5"/>
+    </marker>
+    <marker id="arrow-cyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#00E5FF" stroke="#000000" stroke-width="1.5"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#7FFF00" stroke="#000000" stroke-width="1.5"/>
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#FBBF24" stroke="#000000" stroke-width="1.5"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#F97316" stroke="#000000" stroke-width="1.5"/>
+    </marker>
+
+    <style>
+      .font-mono { font-family: 'Space Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'PingFang SC', monospace; }
+      .font-heading { font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif; }
+      .bold { font-weight: 700; }
+      .border-main { stroke: #000000; stroke-width: 2.5; stroke-linecap: square; stroke-linejoin: miter; }
+      .border-card { stroke: #000000; stroke-width: 2; }
+      .border-thin { stroke: #000000; stroke-width: 1.5; }
+    </style>
+  </defs>
+
+  <!-- ================= Outer Container ================= -->
+  <rect x="14" y="14" width="932" height="492" rx="6" fill="#000000" />
+  <rect x="10" y="10" width="932" height="492" rx="6" fill="#FAF9F5" class="border-main" />
+  <rect x="13" y="13" width="926" height="486" rx="4" fill="url(#dot-grid-matrix)" />
+
+  <!-- ================= Header Bar ================= -->
+  <rect x="26" y="24" width="900" height="42" rx="4" fill="#000000" />
+  <rect x="23" y="21" width="900" height="42" rx="4" fill="#FFFFFF" class="border-card" />
+
+  <rect x="32" y="29" width="168" height="26" rx="3" fill="#7FFF00" class="border-thin" />
+  <text x="116" y="46" class="font-mono bold" font-size="10.5" fill="#000000" text-anchor="middle" letter-spacing="1">STATE MACHINE // MATRIX</text>
+
+  <text x="212" y="47" class="font-heading bold" font-size="13.5" fill="#000000" letter-spacing="0.5">L1-L2-L3 DIFFERENTIAL FAULT ROUTING ARCHITECTURE</text>
+  <text x="750" y="47" class="font-mono" font-size="10" fill="#52525B">DETERMINISTIC FSM v0.4.12</text>
+
+  <!-- ================= Left Pipeline: Intake & Gateways ================= -->
+  <!-- Step 1: Raw Output -->
+  <rect x="33" y="88" width="186" height="74" rx="4" fill="#000000" />
+  <rect x="30" y="85" width="186" height="74" rx="4" fill="#FFFFFF" class="border-card" />
+  <rect x="38" y="93" width="80" height="18" rx="2" fill="#F4F4F5" class="border-thin" />
+  <text x="78" y="106" class="font-mono bold" font-size="8.5" fill="#000000" text-anchor="middle">STAGE 01</text>
+  <text x="38" y="131" class="font-heading bold" font-size="12" fill="#000000">LLM 原始响应返回</text>
+  <text x="38" y="148" class="font-mono" font-size="8.5" fill="#71717A">接收 Provider 文本流</text>
+
+  <!-- Arrow: Step 1 -> Step 2 -->
+  <line x1="123" y1="160" x2="123" y2="185" stroke="#000000" stroke-width="2.5" marker-end="url(#arrow-black)" />
+
+  <!-- Step 2: L1 Syntax Check -->
+  <rect x="33" y="191" width="186" height="98" rx="4" fill="#000000" />
+  <rect x="30" y="188" width="186" height="98" rx="4" fill="#FFFFFF" class="border-card" />
+  <rect x="38" y="196" width="90" height="18" rx="2" fill="#00E5FF" class="border-thin" />
+  <text x="83" y="209" class="font-mono bold" font-size="8.5" fill="#000000" text-anchor="middle">L1 · 物理语法层</text>
+  <text x="38" y="233" class="font-heading bold" font-size="12" fill="#000000">物理闭合与代码围栏</text>
+  <text x="38" y="252" class="font-mono" font-size="8.5" fill="#52525B">• 尾部大括号配对校验</text>
+  <text x="38" y="268" class="font-mono" font-size="8.5" fill="#52525B">• Markdown ```json 探测</text>
+
+  <!-- Arrow: Step 2 -> Step 3 -->
+  <line x1="123" y1="287" x2="123" y2="312" stroke="#000000" stroke-width="2.5" marker-end="url(#arrow-black)" />
+
+  <!-- Step 3: L2 Zod Contract -->
+  <rect x="33" y="318" width="186" height="108" rx="4" fill="#000000" />
+  <rect x="30" y="315" width="186" height="108" rx="4" fill="#FFFFFF" class="border-card" />
+  <rect x="38" y="323" width="90" height="18" rx="2" fill="#7FFF00" class="border-thin" />
+  <text x="83" y="336" class="font-mono bold" font-size="8.5" fill="#000000" text-anchor="middle">L2 · 语义契约层</text>
+  <text x="38" y="360" class="font-heading bold" font-size="12" fill="#000000">Zod safeParse 校验</text>
+  <text x="38" y="379" class="font-mono" font-size="8.5" fill="#52525B">• 必填字段完整性</text>
+  <text x="38" y="395" class="font-mono" font-size="8.5" fill="#52525B">• 枚举范围与数值边界</text>
+  <text x="38" y="411" class="font-mono" font-size="8.5" fill="#52525B">• 异常结构化切片定位</text>
+
+  <!-- ================= Right Routing Matrix ================= -->
+  <!-- Lane 1: L1 Physical Stack Repair -->
+  <rect x="259" y="88" width="664" height="74" rx="4" fill="#000000" />
+  <rect x="256" y="85" width="664" height="74" rx="4" fill="#FFFFFF" class="border-card" />
+  <rect x="266" y="93" width="140" height="20" rx="2" fill="#00E5FF" class="border-thin" />
+  <text x="336" y="107" class="font-mono bold" font-size="9" fill="#000000" text-anchor="middle">形态一 · 语法截断/标记污染</text>
+
+  <text x="420" y="108" class="font-heading bold" font-size="12.5" fill="#000000">repairJson 本地字符栈自动补全</text>
+  <text x="268" y="132" class="font-mono" font-size="9" fill="#52525B">触发条件：未闭合的花括号、尾部截断、Markdown 代码围栏未剥离</text>
+  <text x="268" y="148" class="font-mono bold" font-size="9" fill="#0284C7">处理策略：本地正则状态机纳秒级修复 · 0ms 网络时延 · 0 Token 消耗 · 原地治愈交付 L2</text>
+
+  <!-- Connector from L1 to Lane 1 -->
+  <path d="M 216 237 L 236 237 L 236 122 L 250 122" fill="none" stroke="#00E5FF" stroke-width="2.5" marker-end="url(#arrow-cyan)" />
+
+  <!-- Lane 2: L2 Valid Pass -->
+  <rect x="259" y="172" width="664" height="74" rx="4" fill="#000000" />
+  <rect x="256" y="169" width="664" height="74" rx="4" fill="#F0FDF4" class="border-card" />
+  <rect x="266" y="177" width="140" height="20" rx="2" fill="#7FFF00" class="border-thin" />
+  <text x="336" y="191" class="font-mono bold" font-size="9" fill="#000000" text-anchor="middle">形态二 · 契约完全合规 (PASS)</text>
+
+  <text x="420" y="192" class="font-heading bold" font-size="12.5" fill="#166534">解包强类型 Payload 直接放行</text>
+  <text x="268" y="216" class="font-mono" font-size="9" fill="#52525B">触发条件：字段完备、类型严格吻合 Schema、无任何越界数值</text>
+  <text x="268" y="232" class="font-mono bold" font-size="9" fill="#15803D">处理策略：无需自愈介入 · 即时交付下游 DAG 节点 · 画布对应节点亮起绿灯</text>
+
+  <!-- Connector from L2 to Lane 2 -->
+  <path d="M 216 369 L 236 369 L 236 206 L 250 206" fill="none" stroke="#7FFF00" stroke-width="2.5" marker-end="url(#arrow-green)" />
+
+  <!-- Lane 3: DeepSeek Clean Retry -->
+  <rect x="259" y="256" width="664" height="74" rx="4" fill="#000000" />
+  <rect x="256" y="253" width="664" height="74" rx="4" fill="#FFFBEB" class="border-card" />
+  <rect x="266" y="261" width="140" height="20" rx="2" fill="#FBBF24" class="border-thin" />
+  <text x="336" y="275" class="font-mono bold" font-size="9" fill="#000000" text-anchor="middle">形态三 · 偶发性纯空响应</text>
+
+  <text x="420" y="276" class="font-heading bold" font-size="12.5" fill="#B45309">Clean Retry (零污染纯净重试)</text>
+  <text x="268" y="300" class="font-mono" font-size="9" fill="#52525B">触发条件：DeepSeek JSON Mode 偶发返回空文本串，无任何有效字符</text>
+  <text x="268" y="316" class="font-mono bold" font-size="9" fill="#D97706">处理策略：严禁拼接报错历史 (防前言不搭后语) · 以原始干净 Prompt 重新调用 1 次</text>
+
+  <!-- Connector from L2 to Lane 3 -->
+  <path d="M 216 369 L 246 369 L 246 290 L 250 290" fill="none" stroke="#FBBF24" stroke-width="2.5" marker-end="url(#arrow-amber)" />
+
+  <!-- Lane 4: Triad Feedback Retry -->
+  <rect x="259" y="340" width="664" height="74" rx="4" fill="#000000" />
+  <rect x="256" y="337" width="664" height="74" rx="4" fill="#FFF7ED" class="border-card" />
+  <rect x="266" y="345" width="140" height="20" rx="2" fill="#F97316" class="border-thin" />
+  <text x="336" y="359" class="font-mono bold" font-size="9" fill="#000000" text-anchor="middle">形态四 · 字段缺失 / 数值越界</text>
+
+  <text x="420" y="360" class="font-heading bold" font-size="12.5" fill="#C2410C">Triad Retry (三元组精准纠错)</text>
+  <text x="268" y="384" class="font-mono" font-size="9" fill="#52525B">触发条件：核心字段遗漏 (ticketId)、数值超出上限 (urgency: 9)、枚举值非法</text>
+  <text x="268" y="400" class="font-mono bold" font-size="9" fill="#EA580C">处理策略：注入原残片+字段诊断+黄金范式 · 注入去噪指令掐断客套 · 定向微创修正</text>
+
+  <!-- Connector from L2 to Lane 4 -->
+  <line x1="216" y1="374" x2="250" y2="374" stroke="#F97316" stroke-width="2.5" marker-end="url(#arrow-orange)" />
+
+  <!-- ================= Bottom Bar: L4 Circuit Breaker ================= -->
+  <rect x="259" y="424" width="664" height="46" rx="4" fill="#000000" />
+  <rect x="256" y="421" width="664" height="46" rx="4" fill="#FEF2F2" class="border-card" />
+  <rect x="266" y="429" width="120" height="20" rx="2" fill="#EF4444" class="border-thin" />
+  <text x="326" y="443" class="font-mono bold" font-size="8.5" fill="#FFFFFF" text-anchor="middle">L4 终极熔断防线</text>
+
+  <text x="398" y="448" class="font-mono bold" font-size="9.5" fill="#B91C1C">硬性规约：全局重试上限 = 1 次 · 严重语义崩塌坚决熔断，彻底杜绝死循环与 Token 白烧</text>
+</svg>

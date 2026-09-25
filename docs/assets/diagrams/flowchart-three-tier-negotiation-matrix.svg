@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 450" width="960" height="450" style="background: transparent; display: block;">
+  <defs>
+    <!-- Background Dot Grid -->
+    <pattern id="dot-grid-p2" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.1" fill="#D4D4D8" />
+    </pattern>
+
+    <!-- Marker Arrowheads -->
+    <marker id="arrow-black" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000" stroke="#000000" stroke-width="1.5"/>
+    </marker>
+    <marker id="arrow-green-p2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#7FFF00" stroke="#000000" stroke-width="1.5"/>
+    </marker>
+
+    <style>
+      .font-mono { font-family: 'Space Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'PingFang SC', monospace; }
+      .font-heading { font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif; }
+      .bold { font-weight: 700; }
+      .border-main { stroke: #000000; stroke-width: 2.5; stroke-linecap: square; stroke-linejoin: miter; }
+      .border-card { stroke: #000000; stroke-width: 2; }
+      .border-thin { stroke: #000000; stroke-width: 1.5; }
+    </style>
+  </defs>
+
+  <!-- ================= Outer Container ================= -->
+  <rect x="14" y="14" width="932" height="422" rx="6" fill="#000000" />
+  <rect x="10" y="10" width="932" height="422" rx="6" fill="#FAF9F5" class="border-main" />
+  <rect x="13" y="13" width="926" height="416" rx="4" fill="url(#dot-grid-p2)" />
+
+  <!-- ================= Header Bar ================= -->
+  <rect x="26" y="24" width="900" height="42" rx="4" fill="#000000" />
+  <rect x="23" y="21" width="900" height="42" rx="4" fill="#FFFFFF" class="border-card" />
+
+  <rect x="32" y="29" width="168" height="26" rx="3" fill="#7FFF00" class="border-thin" />
+  <text x="116" y="46" class="font-mono bold" font-size="10.5" fill="#000000" text-anchor="middle" letter-spacing="1">NEGOTIATION // MATRIX</text>
+
+  <text x="212" y="47" class="font-heading bold" font-size="13.5" fill="#000000" letter-spacing="0.5">3-TIER CAPABILITY MATRIX &amp; DESCENT PIPELINE</text>
+  <text x="746" y="47" class="font-mono" font-size="10" fill="#52525B">RUNTIME NEGOTIATION</text>
+
+  <!-- ================= Step 1: Trigger ================= -->
+  <rect x="29" y="200" width="130" height="74" rx="4" fill="#000000" />
+  <rect x="26" y="197" width="130" height="74" rx="4" fill="#FFFFFF" class="border-card" />
+  <rect x="34" y="205" width="80" height="18" rx="2" fill="#F4F4F5" class="border-thin" />
+  <text x="74" y="218" class="font-mono bold" font-size="9" fill="#000000" text-anchor="middle">STEP 01</text>
+  <text x="91" y="242" class="font-heading bold" font-size="12" fill="#000000" text-anchor="middle">节点执行发起</text>
+  <text x="91" y="259" class="font-mono" font-size="9" fill="#71717A" text-anchor="middle">载入 Prompt &amp; Schema</text>
+
+  <!-- Arrow: Step 1 -> Probe -->
+  <line x1="158" y1="234" x2="188" y2="234" stroke="#000000" stroke-width="2.5" marker-end="url(#arrow-black)" />
+
+  <!-- ================= Step 2: Probe ================= -->
+  <rect x="199" y="185" width="145" height="104" rx="4" fill="#000000" />
+  <rect x="196" y="182" width="145" height="104" rx="4" fill="#FFFFFF" class="border-card" />
+  <rect x="204" y="190" width="80" height="18" rx="2" fill="#7FFF00" class="border-thin" />
+  <text x="244" y="203" class="font-mono bold" font-size="9" fill="#000000" text-anchor="middle">PROBE // 探针</text>
+  <text x="268" y="227" class="font-heading bold" font-size="12.5" fill="#000000" text-anchor="middle">模型能力检查</text>
+  <text x="268" y="247" class="font-mono" font-size="9.5" fill="#18181B" text-anchor="middle">匹配 Provider 契约</text>
+  <text x="268" y="264" class="font-mono" font-size="8.5" fill="#71717A" text-anchor="middle">运行时自适应探测</text>
+
+  <!-- Diverging Arrows from Probe to Tiers -->
+  <!-- Top: to Tier 1 -->
+  <path d="M 343 210 L 375 210 L 375 125 L 398 125" fill="none" stroke="#00F0FF" stroke-width="2.5" marker-end="url(#arrow-black)" />
+  <!-- Middle: to Tier 2 -->
+  <path d="M 343 234 L 398 234" fill="none" stroke="#EAB308" stroke-width="2.5" marker-end="url(#arrow-black)" />
+  <!-- Bottom: to Tier 3 -->
+  <path d="M 343 258 L 375 258 L 375 343 L 398 343" fill="none" stroke="#A1A1AA" stroke-width="2.5" marker-end="url(#arrow-black)" />
+
+  <!-- ================= 3 Tiers (Middle Column) ================= -->
+  <!-- Tier 1: json_schema -->
+  <rect x="409" y="81" width="225" height="88" rx="4" fill="#000000" />
+  <rect x="406" y="78" width="225" height="88" rx="4" fill="#F0FDFA" class="border-card" />
+  <rect x="414" y="86" width="130" height="20" rx="2" fill="#00F0FF" class="border-thin" />
+  <text x="479" y="100" class="font-mono bold" font-size="9.5" fill="#000000" text-anchor="middle">Tier 1 · json_schema</text>
+  <text x="416" y="123" class="font-heading bold" font-size="11.5" fill="#0E7490">Strict 物理受限解码</text>
+  <text x="416" y="140" class="font-mono" font-size="9" fill="#155E75">适用：OpenAI gpt-4o 等端点</text>
+  <text x="416" y="154" class="font-mono" font-size="8.5" fill="#71717A">底层 Logits 语法掩码 · 采样前 100% 保证</text>
+
+  <!-- Tier 2: json_object -->
+  <rect x="409" y="190" width="225" height="88" rx="4" fill="#000000" />
+  <rect x="406" y="187" width="225" height="88" rx="4" fill="#FEFCE8" class="border-card" />
+  <rect x="414" y="195" width="130" height="20" rx="2" fill="#FFE600" class="border-thin" />
+  <text x="479" y="209" class="font-mono bold" font-size="9.5" fill="#000000" text-anchor="middle">Tier 2 · json_object</text>
+  <text x="416" y="232" class="font-heading bold" font-size="11.5" fill="#A16207">JSON Mode + Prompt 注入</text>
+  <text x="416" y="249" class="font-mono" font-size="9" fill="#854D0E">适用：DeepSeek / SiliconFlow / 开源</text>
+  <text x="416" y="263" class="font-mono" font-size="8.5" fill="#71717A">保证语法闭合 · 自动追加 Schema 至提示词</text>
+
+  <!-- Tier 3: none (Prompt-Only) -->
+  <rect x="409" y="299" width="225" height="88" rx="4" fill="#000000" />
+  <rect x="406" y="296" width="225" height="88" rx="4" fill="#F4F4F5" class="border-card" />
+  <rect x="414" y="304" width="130" height="20" rx="2" fill="#E4E4E7" class="border-thin" />
+  <text x="479" y="318" class="font-mono bold" font-size="9.5" fill="#000000" text-anchor="middle">Tier 3 · none (Prompt)</text>
+  <text x="416" y="341" class="font-heading bold" font-size="11.5" fill="#52525B">平滑降级 (Prompt-Only)</text>
+  <text x="416" y="358" class="font-mono" font-size="9" fill="#3F3F46">适用：本地 Ollama / 基础端点</text>
+  <text x="416" y="372" class="font-mono" font-size="8.5" fill="#71717A">Few-shot 样例硬约束 · 杜绝 400 暴毙</text>
+
+  <!-- Converging Lines from Tiers to Dispatch -->
+  <!-- Top: from Tier 1 -->
+  <path d="M 633 122 L 656 122 L 656 210 L 676 210" fill="none" stroke="#000000" stroke-width="2" marker-end="url(#arrow-black)" />
+  <!-- Middle: from Tier 2 -->
+  <path d="M 633 231 L 676 231" fill="none" stroke="#000000" stroke-width="2" marker-end="url(#arrow-black)" />
+  <!-- Bottom: from Tier 3 -->
+  <path d="M 633 340 L 656 340 L 656 252 L 676 252" fill="none" stroke="#000000" stroke-width="2" marker-end="url(#arrow-black)" />
+
+  <!-- ================= Right Pipeline: Dispatch & Repair ================= -->
+  <!-- Node: Dispatch -->
+  <rect x="687" y="145" width="230" height="66" rx="4" fill="#000000" />
+  <rect x="684" y="142" width="230" height="66" rx="4" fill="#FFFFFF" class="border-card" />
+  <text x="799" y="166" class="font-heading bold" font-size="12" fill="#000000" text-anchor="middle">发起统一 API 网络请求</text>
+  <text x="799" y="184" class="font-mono" font-size="9" fill="#16A34A" text-anchor="middle">参数精准对齐 · 0 次 400 Bad Request</text>
+  <text x="799" y="198" class="font-mono" font-size="8.5" fill="#71717A" text-anchor="middle">接收模型返回流式或标准文本</text>
+
+  <!-- Arrow: Dispatch -> Repair -->
+  <line x1="799" y1="210" x2="799" y2="235" stroke="#000000" stroke-width="2.5" marker-end="url(#arrow-black)" />
+
+  <!-- Node: L1 repairJsonL1 -->
+  <rect x="687" y="247" width="230" height="74" rx="4" fill="#000000" />
+  <rect x="684" y="244" width="230" height="74" rx="4" fill="#FFFFFF" class="border-card" />
+  <text x="799" y="268" class="font-heading bold" font-size="12" fill="#000000" text-anchor="middle">客户端 repairJsonL1 毫秒修补</text>
+  <text x="799" y="287" class="font-mono bold" font-size="9" fill="#0284C7" text-anchor="middle">纳秒级剥离 Markdown 代码块围栏</text>
+  <text x="799" y="303" class="font-mono" font-size="8.5" fill="#71717A" text-anchor="middle">自动配对补全尾部残缺花括号</text>
+
+  <!-- Arrow: Repair -> Output -->
+  <line x1="799" y1="320" x2="799" y2="345" stroke="#7FFF00" stroke-width="2.5" marker-end="url(#arrow-green-p2)" />
+
+  <!-- Output Badge -->
+  <rect x="687" y="356" width="230" height="46" rx="4" fill="#000000" />
+  <rect x="684" y="353" width="230" height="46" rx="4" fill="#7FFF00" class="border-card" />
+  <text x="799" y="374" class="font-heading bold" font-size="12" fill="#000000" text-anchor="middle">交付 L2 Zod 语义契约校验</text>
+  <text x="799" y="389" class="font-mono bold" font-size="8.5" fill="#000000" text-anchor="middle">进入 safeParse 业务截流防线</text>
+</svg>

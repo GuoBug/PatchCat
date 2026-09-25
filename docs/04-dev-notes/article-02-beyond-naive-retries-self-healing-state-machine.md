@@ -148,7 +148,7 @@ CRITICAL REPAIR INSTRUCTIONS:
 
 我们在这一步踩了怎样的坑？又是如何推演权衡、果断执行代码回滚并设计出 L4 终极兜底防线的？
 
-下一篇揭秘：《边写边学 AI 工作流引擎（三）：真实踩坑复盘 —— Case #7 的字段冻结陷阱与代码回滚》。
+下一篇揭秘：[《边写边学 AI 工作流引擎（三）：真实踩坑尸检 —— Case #7 的字段冻结陷阱与代码回滚复盘》](./article-03-case-7-field-freezing-trap-and-rollback.md)。
 
 ---
 
