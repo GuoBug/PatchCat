@@ -132,6 +132,8 @@ Case #7 模拟的是售后工单中严苛的“高危工单深度阐述”与“
 虽然回归全局修复在基准测试样本中大幅提升了自愈收敛率，但作为一个严肃的 [PatchCat](https://github.com/GuoBug/PatchCat) 编排引擎，我们必须面对不可回避的失效场景：
 > 如果模型遭遇了极端恶意的 Prompt 注入、API 彻底超时，或者 3 轮重试后依然无法合规，系统该怎么办？
 
+![L4 终极安全金库与 Never-Throw 确定性防线](../assets/l4-never-throw-vault.jpg)
+
 ### 1. 传统代码的灾难做法：`throw new Error()`
 在单体脚本或简单的 Demo 里，很多人的做法是在 3 次失败后直接抛出异常：
 ```typescript
