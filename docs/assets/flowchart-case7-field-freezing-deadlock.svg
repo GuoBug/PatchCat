@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="960" height="440" style="background: transparent; display: block;">
+  <defs>
+    <!-- Background Dot Grid -->
+    <pattern id="dot-grid-case7" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.1" fill="#D4D4D8" />
+    </pattern>
+
+    <!-- Marker Arrowheads -->
+    <marker id="arrow-black" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000" stroke="#000000" stroke-width="1.5"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#FF4D4D" stroke="#000000" stroke-width="1.5"/>
+    </marker>
+
+    <style>
+      .font-mono { font-family: 'Space Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'PingFang SC', monospace; }
+      .font-heading { font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif; }
+      .bold { font-weight: 700; }
+      .border-main { stroke: #000000; stroke-width: 2.5; stroke-linecap: square; stroke-linejoin: miter; }
+      .border-card { stroke: #000000; stroke-width: 2; }
+      .border-thin { stroke: #000000; stroke-width: 1.5; }
+    </style>
+  </defs>
+
+  <!-- ================= Outer Container ================= -->
+  <rect x="14" y="14" width="932" height="412" rx="6" fill="#000000" />
+  <rect x="10" y="10" width="932" height="412" rx="6" fill="#FAF9F5" class="border-main" />
+  <rect x="13" y="13" width="926" height="406" rx="4" fill="url(#dot-grid-case7)" />
+
+  <!-- ================= Header Bar ================= -->
+  <rect x="26" y="24" width="900" height="42" rx="4" fill="#000000" />
+  <rect x="23" y="21" width="900" height="42" rx="4" fill="#FFFFFF" class="border-card" />
+
+  <rect x="32" y="29" width="168" height="26" rx="3" fill="#FF4D4D" class="border-thin" />
+  <text x="116" y="46" class="font-mono bold" font-size="10.5" fill="#000000" text-anchor="middle" letter-spacing="1">POST-MORTEM // CASE #7</text>
+
+  <text x="212" y="47" class="font-heading bold" font-size="13.5" fill="#000000" letter-spacing="0.5">FIELD FREEZING FAILURE &amp; LOCAL OPTIMA DEADLOCK MECHANISM</text>
+  <text x="760" y="47" class="font-mono" font-size="10" fill="#52525B">RUNTIME AUTOPSY</text>
+
+  <!-- ================= Column 1: Step 1 Intercept ================= -->
+  <rect x="33" y="88" width="260" height="318" rx="5" fill="#000000" />
+  <rect x="30" y="85" width="260" height="318" rx="5" fill="#FFFFFF" class="border-card" />
+
+  <rect x="42" y="97" width="170" height="22" rx="3" fill="#F4F4F5" class="border-thin" />
+  <text x="127" y="112" class="font-mono bold" font-size="9.5" fill="#000000" text-anchor="middle">STEP 01 · 跨字段联动拦截</text>
+
+  <text x="42" y="145" class="font-heading bold" font-size="13.5" fill="#000000">L2 业务契约联动报错</text>
+  <text x="42" y="165" class="font-mono" font-size="9.5" fill="#71717A">Zod superRefine 深度守卫</text>
+
+  <rect x="42" y="185" width="236" height="115" rx="3" fill="#FFF5F5" class="border-thin" />
+  <text x="52" y="207" class="font-mono bold" font-size="9" fill="#DC2626">• 初次输出：urgency: 5 (最高危)</text>
+  <text x="52" y="227" class="font-mono bold" font-size="9" fill="#DC2626">• 伴生输出：summary 仅 10 字</text>
+  <text x="52" y="247" class="font-mono" font-size="8.5" fill="#71717A">• 契约规则：urgency ≥ 4 时</text>
+  <text x="52" y="265" class="font-mono" font-size="8.5" fill="#71717A">  summary 必须 ≥ 15 字阐述详情</text>
+  <text x="52" y="285" class="font-mono bold" font-size="8.5" fill="#DC2626">触发跨字段不自洽拦截</text>
+
+  <rect x="42" y="318" width="236" height="66" rx="3" fill="#F4F4F5" class="border-thin" />
+  <text x="52" y="340" class="font-mono bold" font-size="8.5" fill="#18181B">预期行为：</text>
+  <text x="52" y="358" class="font-mono" font-size="8.5" fill="#52525B">模型需协同调整 urgency 与</text>
+  <text x="52" y="374" class="font-mono" font-size="8.5" fill="#52525B">summary，在全局中重新平衡</text>
+
+  <!-- Arrow: Col 1 -> Col 2 -->
+  <line x1="293" y1="244" x2="330" y2="244" stroke="#FF4D4D" stroke-width="2.5" marker-end="url(#arrow-red)" />
+
+  <!-- ================= Column 2: Step 2 Field Freezing ================= -->
+  <rect x="338" y="88" width="284" height="318" rx="5" fill="#000000" />
+  <rect x="335" y="85" width="284" height="318" rx="5" fill="#FEFCE8" class="border-card" />
+
+  <rect x="347" y="97" width="180" height="22" rx="3" fill="#FBBF24" class="border-thin" />
+  <text x="437" y="112" class="font-mono bold" font-size="9.5" fill="#000000" text-anchor="middle">STEP 02 · 致命的“字段冻结”</text>
+
+  <text x="347" y="145" class="font-heading bold" font-size="13.5" fill="#A16207">静态代码强行内存锁定</text>
+  <text x="347" y="165" class="font-mono" font-size="9.5" fill="#71717A">人类机械拼图思维的典型误区</text>
+
+  <rect x="347" y="185" width="260" height="115" rx="3" fill="#FFFFFF" class="border-thin" />
+  <text x="357" y="207" class="font-mono bold" font-size="9" fill="#B45309">1. 内存硬冻结：</text>
+  <text x="367" y="225" class="font-mono" font-size="8.5" fill="#52525B">强制锁定已合格字段 (含 urgency: 5)</text>
+  <text x="357" y="247" class="font-mono bold" font-size="9" fill="#B45309">2. 局部抽离修补：</text>
+  <text x="367" y="265" class="font-mono" font-size="8.5" fill="#52525B">剥离全局语境，仅把 summary 喂还</text>
+  <text x="357" y="287" class="font-mono bold" font-size="8.5" fill="#D97706">初衷：试图节省 60% Token 开销</text>
+
+  <rect x="347" y="318" width="260" height="66" rx="3" fill="#18181B" class="border-thin" />
+  <text x="477" y="342" class="font-mono bold" font-size="9" fill="#FBBF24" text-anchor="middle">底层致命缺陷：</text>
+  <text x="477" y="362" class="font-mono" font-size="8.5" fill="#FFFFFF" text-anchor="middle">强行割裂了自回归注意力的</text>
+  <text x="477" y="378" class="font-mono" font-size="8.5" fill="#FFFFFF" text-anchor="middle">连续语义场 (Conditional Probability)</text>
+
+  <!-- Arrow: Col 2 -> Col 3 -->
+  <line x1="622" y1="244" x2="658" y2="244" stroke="#FF4D4D" stroke-width="2.5" marker-end="url(#arrow-red)" />
+
+  <!-- ================= Column 3: Step 3 Deadlock & Rollback ================= -->
+  <rect x="668" y="88" width="260" height="318" rx="5" fill="#000000" />
+  <rect x="665" y="85" width="260" height="318" rx="5" fill="#FFF5F5" class="border-card" />
+
+  <rect x="677" y="97" width="180" height="22" rx="3" fill="#EF4444" class="border-thin" />
+  <text x="767" y="112" class="font-mono bold" font-size="9.5" fill="#FFFFFF" text-anchor="middle">STEP 03 · 语义断层与死锁</text>
+
+  <text x="677" y="145" class="font-heading bold" font-size="13.5" fill="#B91C1C">局部修补反复冲突崩溃</text>
+  <text x="677" y="165" class="font-mono" font-size="9.5" fill="#71717A">局部最优解陷阱 (Local Optima)</text>
+
+  <rect x="677" y="185" width="236" height="115" rx="3" fill="#FFFFFF" class="border-thin" />
+  <text x="687" y="207" class="font-mono bold" font-size="9" fill="#DC2626">• 盲区修补：模型丢失全局视野</text>
+  <text x="687" y="225" class="font-mono" font-size="8.5" fill="#52525B">  无法理解为何短句报错，无法降级</text>
+  <text x="687" y="247" class="font-mono bold" font-size="9" fill="#DC2626">• 机械缝合：内存合并后再次撞毁</text>
+  <text x="687" y="265" class="font-mono" font-size="8.5" fill="#52525B">  Zod 重新校验依然判定跨字段冲突</text>
+  <text x="687" y="287" class="font-mono bold" font-size="8.5" fill="#991B1B">3 轮重试耗尽，流程彻底卡死</text>
+
+  <rect x="677" y="318" width="236" height="66" rx="3" fill="#F0FDF4" class="border-thin" />
+  <text x="795" y="340" class="font-mono bold" font-size="9" fill="#166534" text-anchor="middle">最终工程决策：果断回滚</text>
+  <text x="795" y="358" class="font-mono" font-size="8.5" fill="#15803D" text-anchor="middle">彻底删除 60 行局部冻结代码</text>
+  <text x="795" y="374" class="font-mono bold" font-size="8.5" fill="#166534" text-anchor="middle">回归全局三元组 · 2轮完美收敛</text>
+</svg>
