@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" width="960" height="420" style="background: transparent; display: block;">
+  <defs>
+    <!-- Background Dot Grid -->
+    <pattern id="dot-grid-triad" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.1" fill="#D4D4D8" />
+    </pattern>
+
+    <!-- Marker Arrowheads -->
+    <marker id="arrow-black" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000" stroke="#000000" stroke-width="1.5"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#7FFF00" stroke="#000000" stroke-width="1.5"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#FF4D4D" stroke="#000000" stroke-width="1.5"/>
+    </marker>
+
+    <style>
+      .font-mono { font-family: 'Space Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'PingFang SC', monospace; }
+      .font-heading { font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif; }
+      .bold { font-weight: 700; }
+      .border-main { stroke: #000000; stroke-width: 2.5; stroke-linecap: square; stroke-linejoin: miter; }
+      .border-card { stroke: #000000; stroke-width: 2; }
+      .border-thin { stroke: #000000; stroke-width: 1.5; }
+    </style>
+  </defs>
+
+  <!-- ================= Outer Container ================= -->
+  <rect x="14" y="14" width="932" height="392" rx="6" fill="#000000" />
+  <rect x="10" y="10" width="932" height="392" rx="6" fill="#FAF9F5" class="border-main" />
+  <rect x="13" y="13" width="926" height="386" rx="4" fill="url(#dot-grid-triad)" />
+
+  <!-- ================= Header Bar ================= -->
+  <rect x="26" y="24" width="900" height="42" rx="4" fill="#000000" />
+  <rect x="23" y="21" width="900" height="42" rx="4" fill="#FFFFFF" class="border-card" />
+
+  <rect x="32" y="29" width="150" height="26" rx="3" fill="#7FFF00" class="border-thin" />
+  <text x="107" y="46" class="font-mono bold" font-size="10.5" fill="#000000" text-anchor="middle" letter-spacing="1">TRIAD // FEEDBACK</text>
+
+  <text x="196" y="47" class="font-heading bold" font-size="13.5" fill="#000000" letter-spacing="0.5">L3 TRIAD DIAGNOSTIC &amp; SELF-HEALING ARCHITECTURE</text>
+  <text x="756" y="47" class="font-mono" font-size="10" fill="#52525B">RUNTIME PRECISION v0.4.12</text>
+
+  <!-- ================= Column 1: L2 Intercept ================= -->
+  <rect x="33" y="89" width="168" height="294" rx="5" fill="#000000" />
+  <rect x="30" y="86" width="168" height="294" rx="5" fill="#FFFFFF" class="border-card" />
+
+  <rect x="42" y="98" width="144" height="22" rx="3" fill="#FF4D4D" class="border-thin" />
+  <text x="114" y="113" class="font-mono bold" font-size="10" fill="#000000" text-anchor="middle">L2 契约拦截 (INTERCEPT)</text>
+
+  <text x="114" y="148" class="font-heading bold" font-size="13" fill="#000000" text-anchor="middle">捕获语义违规</text>
+  <text x="114" y="168" class="font-mono" font-size="9.5" fill="#71717A" text-anchor="middle">Zod SafeParse 拦截</text>
+
+  <rect x="42" y="190" width="144" height="96" rx="3" fill="#FFF5F5" class="border-thin" />
+  <text x="50" y="210" class="font-mono bold" font-size="9" fill="#DC2626">• 字段遗漏: ticketId</text>
+  <text x="50" y="230" class="font-mono bold" font-size="9" fill="#DC2626">• 数值越界: urgency: 9</text>
+  <text x="50" y="250" class="font-mono" font-size="8.5" fill="#71717A">拒绝机械重发</text>
+  <text x="50" y="270" class="font-mono" font-size="8.5" fill="#71717A">激活状态机自愈</text>
+
+  <rect x="42" y="306" width="144" height="58" rx="3" fill="#F4F4F5" class="border-thin" />
+  <text x="114" y="328" class="font-mono bold" font-size="9" fill="#18181B" text-anchor="middle">装配三元组补丁包</text>
+  <text x="114" y="348" class="font-mono" font-size="8.5" fill="#71717A" text-anchor="middle">避免注意力污染</text>
+
+  <!-- Arrow: Col 1 -> Col 2 -->
+  <line x1="200" y1="233" x2="232" y2="233" stroke="#000000" stroke-width="2.5" marker-end="url(#arrow-black)" />
+
+  <!-- ================= Column 2: Triad Core Assembly ================= -->
+  <rect x="238" y="89" width="480" height="294" rx="5" fill="#000000" />
+  <rect x="235" y="86" width="480" height="294" rx="5" fill="#FAF9F5" class="border-card" />
+
+  <!-- Triad Header -->
+  <rect x="247" y="98" width="456" height="24" rx="3" fill="#18181B" />
+  <text x="475" y="114" class="font-mono bold" font-size="10.5" fill="#7FFF00" text-anchor="middle" letter-spacing="1">TRIAD FEEDBACK PAYLOAD (三元组核心纠错载荷)</text>
+
+  <!-- Triad 1: Raw Fragment -->
+  <rect x="249" y="132" width="144" height="236" rx="4" fill="#000000" />
+  <rect x="246" y="129" width="144" height="236" rx="4" fill="#FFFFFF" class="border-thin" />
+  <rect x="254" y="137" width="128" height="20" rx="2" fill="#7FFF00" class="border-thin" />
+  <text x="318" y="151" class="font-mono bold" font-size="9" fill="#000000" text-anchor="middle">1. 原输出残片</text>
+  <text x="318" y="178" class="font-heading bold" font-size="11.5" fill="#000000" text-anchor="middle">保留思维连续性</text>
+  <text x="318" y="196" class="font-mono" font-size="8" fill="#71717A" text-anchor="middle">Corrupted Raw Output</text>
+
+  <rect x="254" y="210" width="128" height="142" rx="3" fill="#F0FDF4" class="border-thin" />
+  <text x="260" y="230" class="font-mono bold" font-size="8.5" fill="#166534">核心价值：</text>
+  <text x="260" y="248" class="font-mono" font-size="8" fill="#15803D">• 喂还上轮真实产出</text>
+  <text x="260" y="266" class="font-mono" font-size="8" fill="#15803D">• 锁定长文摘要推导</text>
+  <text x="260" y="284" class="font-mono" font-size="8" fill="#15803D">• 杜绝语义推导漂移</text>
+  <text x="260" y="310" class="font-mono bold" font-size="8" fill="#059669">“结论有效，微创修正”</text>
+
+  <!-- Triad 2: Path Diagnostic -->
+  <rect x="403" y="132" width="144" height="236" rx="4" fill="#000000" />
+  <rect x="400" y="129" width="144" height="236" rx="4" fill="#FFFFFF" class="border-thin" />
+  <rect x="408" y="137" width="128" height="20" rx="2" fill="#FF4D4D" class="border-thin" />
+  <text x="472" y="151" class="font-mono bold" font-size="9" fill="#000000" text-anchor="middle">2. 字段级错误诊断</text>
+  <text x="472" y="178" class="font-heading bold" font-size="11.5" fill="#000000" text-anchor="middle">激光准星制导</text>
+  <text x="472" y="196" class="font-mono" font-size="8" fill="#71717A" text-anchor="middle">Path-Specific Diagnostic</text>
+
+  <rect x="408" y="210" width="128" height="142" rx="3" fill="#FFF5F5" class="border-thin" />
+  <text x="414" y="230" class="font-mono bold" font-size="8.5" fill="#991B1B">核心价值：</text>
+  <text x="414" y="248" class="font-mono" font-size="8" fill="#B91C1C">• 精准定位违规属性</text>
+  <text x="414" y="266" class="font-mono" font-size="8" fill="#B91C1C">• 明确标定数值上下限</text>
+  <text x="414" y="284" class="font-mono" font-size="8" fill="#B91C1C">• 注意力集中消除猜谜</text>
+  <text x="414" y="310" class="font-mono bold" font-size="8" fill="#DC2626">“激光制导，收敛采样”</text>
+
+  <!-- Triad 3: Golden Exemplar -->
+  <rect x="557" y="132" width="144" height="236" rx="4" fill="#000000" />
+  <rect x="554" y="129" width="144" height="236" rx="4" fill="#FFFFFF" class="border-thin" />
+  <rect x="562" y="137" width="128" height="20" rx="2" fill="#00E5FF" class="border-thin" />
+  <text x="626" y="151" class="font-mono bold" font-size="9" fill="#000000" text-anchor="middle">3. 黄金范式参考</text>
+  <text x="626" y="178" class="font-heading bold" font-size="11.5" fill="#000000" text-anchor="middle">少样本格式锚定</text>
+  <text x="626" y="196" class="font-mono" font-size="8" fill="#71717A" text-anchor="middle">Golden Exemplar</text>
+
+  <rect x="562" y="210" width="128" height="142" rx="3" fill="#F0FDFA" class="border-thin" />
+  <text x="568" y="230" class="font-mono bold" font-size="8.5" fill="#0F766E">核心价值：</text>
+  <text x="568" y="248" class="font-mono" font-size="8" fill="#0D9488">• 纯净合规标杆数据</text>
+  <text x="568" y="266" class="font-mono" font-size="8" fill="#0D9488">• 抹平抽象语法理解</text>
+  <text x="568" y="284" class="font-mono" font-size="8" fill="#0D9488">• 上下文单轮模仿对齐</text>
+  <text x="568" y="310" class="font-mono bold" font-size="8" fill="#0F766E">“降低负载，一击即中”</text>
+
+  <!-- Arrow: Col 2 -> Col 3 -->
+  <line x1="718" y1="233" x2="748" y2="233" stroke="#7FFF00" stroke-width="2.5" marker-end="url(#arrow-green)" />
+
+  <!-- ================= Column 3: LLM Self-Healing ================= -->
+  <rect x="755" y="89" width="168" height="294" rx="5" fill="#000000" />
+  <rect x="752" y="86" width="168" height="294" rx="5" fill="#FFFFFF" class="border-card" />
+
+  <rect x="764" y="98" width="144" height="22" rx="3" fill="#7FFF00" class="border-thin" />
+  <text x="836" y="113" class="font-mono bold" font-size="10" fill="#000000" text-anchor="middle">L3 微创自愈 (HEALING)</text>
+
+  <text x="836" y="148" class="font-heading bold" font-size="13" fill="#000000" text-anchor="middle">定向单轮修正</text>
+  <text x="836" y="168" class="font-mono" font-size="9.5" fill="#71717A" text-anchor="middle">吸收补丁包一击即中</text>
+
+  <rect x="764" y="190" width="144" height="96" rx="3" fill="#F0FDF4" class="border-thin" />
+  <text x="772" y="210" class="font-mono bold" font-size="9" fill="#166534">✓ 补齐 ticketId 字段</text>
+  <text x="772" y="230" class="font-mono bold" font-size="9" fill="#166534">✓ urgency 安全收敛至 5</text>
+  <text x="772" y="250" class="font-mono" font-size="8.5" fill="#15803D">✓ 绝无客套废话污染</text>
+  <text x="772" y="270" class="font-mono bold" font-size="8.5" fill="#166534">L2 二次校验 100% 通过</text>
+
+  <rect x="764" y="306" width="144" height="58" rx="3" fill="#18181B" class="border-thin" />
+  <text x="836" y="328" class="font-mono bold" font-size="9" fill="#7FFF00" text-anchor="middle">下游 DAG 节点变绿</text>
+  <text x="836" y="348" class="font-mono" font-size="8.5" fill="#FFFFFF" text-anchor="middle">确定性安全交付</text>
+</svg>
