@@ -10,7 +10,7 @@ sqlalchemy[asyncio]>=2.0.30
 greenlet>=3.0.3
 asyncpg>=0.29.0
 pgvector>=0.3.0
-alembic>=1.13.0
+alembic>=1.20.0
 
 # Data Validation & Settings
 pydantic>=2.7.0
