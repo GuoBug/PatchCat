@@ -6,41 +6,89 @@ import { registerSchema } from '../engine/structured-output.ts';
  * Advanced Semantic & Cross-Field Business Invariant Schema for Customer Support Ticket Triage.
  * Used in presets and evaluation for L2 validation and multi-round self-healing when L1 passes.
  */
-export const TicketSemanticSchema = z
-  .object({
-    urgency: z.number().int().min(1).max(5).describe('工单紧急度 1..5'),
-    category: z.enum(['logistics', 'refund', 'quality', 'other']).describe('工单类别'),
-    summary: z.string().min(5).max(30).describe('问题摘要（严格限制在 5-30 字内）'),
-    orderId: z
-      .string()
-      .regex(/^ORD-\d{6}$/, '订单号格式必须为 ORD-xxxxxx（形如 ORD-123456）')
-      .describe('从文本中提取的订单号，形如 ORD-123456'),
-  })
-  .refine((d) => !(d.category === 'refund' && d.urgency < 4), {
-    message: '业务红线：退款类工单涉及资金流转，urgency 必须 ≥ 4',
-    path: ['urgency'],
-    params: { crossFields: ['category', 'urgency'] },
-  })
-  .refine((d) => !(d.urgency >= 4 && d.summary.length < 15), {
-    message: '合规要求：高优先级工单 (urgency ≥ 4) 的 summary 至少需要 15 字阐述详情理由',
-    path: ['summary'],
-    params: { crossFields: ['urgency', 'summary'] },
-  })
-  // ── 跨字段契约 C1: summary × orderId（订单号只允许出现在 orderId 字段）────────────
-  .refine((d) => !/ORD[-\s]?\d{4,}/i.test(d.summary), {
-    message: '跨字段契约：订单号只允许出现在 orderId 字段，summary 中不得复述任何订单号',
-    path: ['summary'],
-    params: { crossFields: ['summary', 'orderId'] },
-  })
-  // ── 跨字段契约 C2: urgency × category（物流类不占用高优先级处理通道）─────────────
-  .refine((d) => !(d.category === 'logistics' && d.urgency > 3), {
-    message: '跨字段契约：物流类工单不涉及资金流转，urgency 必须 ≤ 3',
-    path: ['urgency'],
-    params: { crossFields: ['category', 'urgency'] },
-  });
+/**
+ * Builds the ticket contract from a supplied `category` field definition.
+ *
+ * Factored out so that experiment variants (enum ordering / disambiguation wording)
+ * can reuse the exact same cross-field invariants without duplicating them —
+ * otherwise a variant silently drifts from the baseline contract and the
+ * experiment stops being single-variable.
+ */
+function buildTicketSemanticSchema(category: z.ZodType<string>) {
+  return z
+    .object({
+      urgency: z.number().int().min(1).max(5).describe('工单紧急度 1..5'),
+      category,
+      summary: z.string().min(5).max(30).describe('问题摘要（严格限制在 5-30 字内）'),
+      orderId: z
+        .string()
+        .regex(/^ORD-\d{6}$/, '订单号格式必须为 ORD-xxxxxx（形如 ORD-123456）')
+        .describe('从文本中提取的订单号，形如 ORD-123456'),
+    })
+    .refine((d) => !(d.category === 'refund' && d.urgency < 4), {
+      message: '业务红线：退款类工单涉及资金流转，urgency 必须 ≥ 4',
+      path: ['urgency'],
+      params: { crossFields: ['category', 'urgency'] },
+    })
+    .refine((d) => !(d.urgency >= 4 && d.summary.length < 15), {
+      message: '合规要求：高优先级工单 (urgency ≥ 4) 的 summary 至少需要 15 字阐述详情理由',
+      path: ['summary'],
+      params: { crossFields: ['urgency', 'summary'] },
+    })
+    // ── 跨字段契约 C1: summary × orderId（订单号只允许出现在 orderId 字段）────────────
+    .refine((d) => !/ORD[-\s]?\d{4,}/i.test(d.summary), {
+      message: '跨字段契约：订单号只允许出现在 orderId 字段，summary 中不得复述任何订单号',
+      path: ['summary'],
+      params: { crossFields: ['summary', 'orderId'] },
+    })
+    // ── 跨字段契约 C2: urgency × category（物流类不占用高优先级处理通道）─────────────
+    .refine((d) => !(d.category === 'logistics' && d.urgency > 3), {
+      message: '跨字段契约：物流类工单不涉及资金流转，urgency 必须 ≤ 3',
+      path: ['urgency'],
+      params: { crossFields: ['category', 'urgency'] },
+    });
+}
 
-// Register TicketSemanticSchema into engine's schema registry dynamically
+/** Baseline contract (v2.0.0 evaluation). Enum order is exactly as authored. */
+export const TicketSemanticSchema = buildTicketSemanticSchema(
+  z.enum(['logistics', 'refund', 'quality', 'other']).describe('工单类别'),
+);
+
+/**
+ * E0b variant — enum order permuted (`refund` moved to first position).
+ *
+ * Purpose: isolate whether the R1 category error on Case #7 is caused by enum
+ * position bias. Everything else (invariants, wording) is byte-identical to baseline.
+ */
+export const TicketSemanticSchemaE0b = buildTicketSemanticSchema(
+  z.enum(['refund', 'quality', 'other', 'logistics']).describe('工单类别'),
+);
+
+/**
+ * E2 variant — enum order UNCHANGED, only `category` description gains a
+ * disambiguation rule.
+ *
+ * Purpose: test the "weak description" hypothesis independently of enum ordering.
+ * Note the rule deliberately anchors on the user's FINAL ask, because Case #7
+ * mentions logistics first ("还没收到货") but its actual demand is a refund.
+ */
+export const TicketSemanticSchemaE2 = buildTicketSemanticSchema(
+  z
+    .enum(['logistics', 'refund', 'quality', 'other'])
+    .describe(
+      '工单类别（按用户的核心诉求判定，不要按诉求在文本中出现的先后判定）：' +
+        '明确要求退款 / 退货 / 撤单 → refund；' +
+        '仅查询或催促物流进度、未提出退款 → logistics；' +
+        '商品本身有瑕疵或损坏 → quality；' +
+        '其他咨询（索取附件、发票、说明书等）→ other。' +
+        '若同时提及多项诉求，以用户最终要求的结果为准。',
+    ),
+);
+
+// Register baseline into engine's schema registry dynamically
 registerSchema('TicketSemanticSchema', TicketSemanticSchema);
+registerSchema('TicketSemanticSchemaE0b', TicketSemanticSchemaE0b);
+registerSchema('TicketSemanticSchemaE2', TicketSemanticSchemaE2);
 
 export type LLMTestScenario =
   | 'valid'

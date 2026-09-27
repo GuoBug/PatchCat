@@ -1082,6 +1082,7 @@ describe('Workflow vs Node Test Decoupling: Global Run Retains Live API Behavior
             provider: 'openai',
             model: 'gpt-4o-mini',
             apiKey: 'sk-invalid-test-key-for-network-branch-check',
+            baseUrl: 'http://127.0.0.1:59999',
           },
         },
       })) {

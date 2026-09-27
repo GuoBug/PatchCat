@@ -36,7 +36,11 @@ import {
   executeWithSelfHealing,
   safeParseOutput,
 } from '../src/engine/structured-output.ts';
-import { TicketSemanticSchema } from '../src/presets/self-healing-scenarios.ts';
+import {
+  TicketSemanticSchema,
+  TicketSemanticSchemaE0b,
+  TicketSemanticSchemaE2,
+} from '../src/presets/self-healing-scenarios.ts';
 import type { ChatMessage, LLMChatRequest, LLMExecutionOutput } from '../src/engine/llm-client.ts';
 import type { SelfHealingTraceStep } from '../src/engine/types.ts';
 
@@ -188,6 +192,47 @@ const BENCHMARK_CASES: CaseDef[] = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 4b. Sentinel Watch-List — regression alarm for collateral damage
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * WHY THIS EXISTS (separate from ground-truth accuracy in 表 2):
+ *
+ * Every schema variant we ship (E0b enum reorder, E2 category disambiguation, ...)
+ * targets ONE specific failure. Category is a *closed set* with mutually exclusive
+ * values, so steering the model toward `refund` on case #7 can silently pull the
+ * semantically adjacent cases (#2 plain logistics inquiry, #13 furious logistics
+ * complaint) into `refund` too. Aggregate category accuracy would absorb that
+ * trade as a wash — 1 gain, 1 loss, net zero — and the report would read "no
+ * regression". That is exactly the failure mode this watch-list exists to catch:
+ * it holds the *identity* of the at-risk cases fixed, so a swap is never
+ * invisible.
+ *
+ * These are therefore declared up front, BEFORE the run, not cherry-picked from
+ * the results afterwards.
+ */
+interface WatchTarget {
+  caseId: number;
+  /** The category this case must hold. Drift away from it = collateral damage. */
+  mustHold: 'logistics' | 'refund' | 'quality' | 'other';
+  /** Why this specific case is on the list. */
+  risk: string;
+}
+
+const WATCH_LIST: WatchTarget[] = [
+  { caseId: 2, mustHold: 'logistics', risk: '最纯粹的物流查询，无任何退款措辞；一旦漂到 refund 说明消歧规则过强' },
+  { caseId: 7, mustHold: 'refund', risk: 'E2 的靶心（未收到货却显示签收）；漂到 logistics 说明修复未生效' },
+  { caseId: 13, mustHold: 'logistics', risk: '激烈情绪 + 物流投诉，措辞上最接近退款诉求，最容易被消歧规则误伤' },
+];
+
+// ANSI helpers. Red = drift detected on a guarded case; yellow = the targeted fix
+// did not land. Kept as raw escapes so the artifact JSON stays clean.
+const RED = '\x1b[31m';
+const YELLOW = '\x1b[33m';
+const GREEN = '\x1b[32m';
+const BOLD = '\x1b[1m';
+const RESET = '\x1b[0m';
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 5. Rule Classification — prevents "cross-field" from being claimed loosely
 // ─────────────────────────────────────────────────────────────────────────────
 type RuleClass =
@@ -287,6 +332,7 @@ interface TrialRecord {
     endToEndSuccess: boolean;
     ruleClasses: RuleClass[];
     categoryCorrect?: boolean;
+    finalCategory?: string;
     orderIdCorrect?: boolean;
     tokens: number;
   };
@@ -302,6 +348,7 @@ interface TrialRecord {
     round1RuleClasses: RuleClass[];
     finalRuleClasses: RuleClass[];
     categoryCorrect?: boolean;
+    finalCategory?: string;
     orderIdCorrect?: boolean;
     tokens: number;
     trace: SelfHealingTraceStep[];
@@ -313,13 +360,63 @@ interface TrialRecord {
 // ─────────────────────────────────────────────────────────────────────────────
 async function main() {
   const isSingleRun = process.argv.includes('--single');
-  const REPETITIONS = isSingleRun ? 1 : 3;
-  const totalSamples = REPETITIONS * BENCHMARK_CASES.length;
+  const isE0NoL1 = process.argv.includes('--e0-no-l1');
+  const isE0bEnumOrder = process.argv.includes('--e0b-enum-order');
+  const isE2Disambiguate = process.argv.includes('--e2-disambiguate');
+  const caseArg = process.argv.find((arg) => arg.startsWith('--case='));
+  const repsArg = process.argv.find((arg) => arg.startsWith('--reps='));
+  const targetCaseId = caseArg ? parseInt(caseArg.split('=')[1] ?? '', 10) : undefined;
+  const benchmarkCases = targetCaseId
+    ? BENCHMARK_CASES.filter((c) => c.id === targetCaseId)
+    : BENCHMARK_CASES;
+
+  // Experiment variants are mutually exclusive — mixing them would break single-variable attribution.
+  const activeVariants = [isE0NoL1, isE0bEnumOrder, isE2Disambiguate].filter(Boolean).length;
+  if (activeVariants > 1) {
+    console.error('[FATAL] --e0-no-l1 / --e0b-enum-order / --e2-disambiguate are mutually exclusive.');
+    process.exit(1);
+  }
+
+  // Contract used by Group B. Variants reuse the SAME cross-field invariants (see presets).
+  const activeSchema = isE0bEnumOrder
+    ? TicketSemanticSchemaE0b
+    : isE2Disambiguate
+      ? TicketSemanticSchemaE2
+      : TicketSemanticSchema;
+  const experimentTag = isE0NoL1
+    ? 'E0_no_l1'
+    : isE0bEnumOrder
+      ? 'E0b_enum_order'
+      : isE2Disambiguate
+        ? 'E2_disambiguate'
+        : 'baseline';
+
+  const REPETITIONS = repsArg
+    ? Math.max(1, parseInt(repsArg.split('=')[1] ?? '', 10) || 3)
+    : isSingleRun
+      ? 1
+      : 3;
+  const totalSamples = REPETITIONS * benchmarkCases.length;
 
   console.log('='.repeat(80));
   console.log('PatchCat A/B Benchmark v3 — Compliance + Correctness');
   console.log(`Model: ${TARGET_FREE_MODEL}  (free tier only; "Pro/" hard-blocked)`);
-  console.log(`Protocol: ${REPETITIONS} rounds x ${BENCHMARK_CASES.length} cases = ${totalSamples} samples/group`);
+  console.log(`Protocol: ${REPETITIONS} rounds x ${benchmarkCases.length} cases = ${totalSamples} samples/group`);
+  if (experimentTag !== 'baseline') {
+    console.log(`[Experiment ${experimentTag}] B group contract variant active`);
+  }
+  if (isE0NoL1) {
+    console.log('  └─ L1 API-level response_format disabled (mode = none)');
+  }
+  if (isE0bEnumOrder) {
+    console.log('  └─ enum order permuted: refund first (tests position-bias hypothesis)');
+  }
+  if (isE2Disambiguate) {
+    console.log('  └─ category description gains disambiguation rule (enum order UNCHANGED)');
+  }
+  if (targetCaseId) {
+    console.log(`[Filter] Targeting single Case #${targetCaseId} only`);
+  }
   console.log('='.repeat(80));
 
   const apiKey = loadSiliconFlowApiKey();
@@ -370,7 +467,7 @@ async function main() {
   for (let rep = 1; rep <= REPETITIONS; rep++) {
     console.log(`\n=============== ROUND [${rep}/${REPETITIONS}] ===============`);
 
-    for (const item of BENCHMARK_CASES) {
+    for (const item of benchmarkCases) {
       console.log(`[R${rep} #${item.id}] ${item.title} (${item.difficulty})`);
 
       const messages: ChatMessage[] = [
@@ -404,6 +501,8 @@ async function main() {
 
       // Timeout / empty-response must NOT be counted as a decoding failure.
       const aNetworkFailure = !groupARaw.trim() || durationA >= REQUEST_TIMEOUT_MS - 100;
+      // Group A is the untouched control: always validated against the BASELINE contract,
+      // even when B runs an experiment variant.
       const parseA = safeParseOutput(groupARaw, TicketSemanticSchema);
       const aL1 = !aNetworkFailure && !parseA.syntaxError;
       const aL2 = parseA.success;
@@ -449,7 +548,10 @@ async function main() {
         bCallCount++;
         if (isLive) {
           try {
-            return await callSiliconFlowApi(apiKey, TARGET_FREE_MODEL, overrides.messages || messages, 'json_object');
+            const apiMode = isE0NoL1
+              ? 'none'
+              : (overrides.response_format?.type === 'json_object' ? 'json_object' : 'none');
+            return await callSiliconFlowApi(apiKey, TARGET_FREE_MODEL, overrides.messages || messages, apiMode);
           } catch (err) {
             // A transient timeout must not destroy a multi-minute run. Surface it as an
             // empty response so the state machine's empty-output triage can retry.
@@ -478,7 +580,7 @@ async function main() {
 
       const healingB = await executeWithSelfHealing(callerB, messages, {
         maxRetries: 2,
-        schema: TicketSemanticSchema,
+        schema: activeSchema,
         provider: 'siliconflow',
         model: TARGET_FREE_MODEL,
       });
@@ -544,6 +646,7 @@ async function main() {
           endToEndSuccess: aE2E,
           ruleClasses: aRuleClasses,
           categoryCorrect: aCatOk,
+          finalCategory: aObj ? String(aObj['category']) : undefined,
           orderIdCorrect: aOrdOk,
           tokens: aTok,
         },
@@ -559,6 +662,7 @@ async function main() {
           round1RuleClasses: round1Classes,
           finalRuleClasses: (healingB.errors || []).map((e) => classifyError(e.message)),
           categoryCorrect: bCatOk,
+          finalCategory: bObj ? String(bObj['category']) : undefined,
           orderIdCorrect: bOrdOk,
           tokens: healingB.usage?.total || 0,
           trace,
@@ -638,10 +742,28 @@ async function main() {
   const caseC = new Set(allRecords.filter((r) => r.groupA.endToEndSuccess && !r.groupB.endToEndSuccess).map((r) => r.caseId)).size;
   console.log(`| 按样本配对 (n=${bPair + cPair}, b=${bPair}, c=${cPair}) | p = ${mcnemarExact(bPair, cPair).toFixed(4)} |`);
   console.log(`| 按独立用例 (n=${caseB + caseC}, b=${caseB}, c=${caseC}) | p = ${mcnemarExact(caseB, caseC).toFixed(4)}  ← 重复是对同用例的重测，此口径更保守 |`);
-  console.log('  * 统计口径说明：按样本配对具有统计显著性 (p < 0.01)，但按独立用例不显著 (p = 0.125)。');
-  console.log('  * 收益归因：结构类错误由 L1 抹平 (3->0)，跨字段违规初始依然存在 (8->13)；');
-  console.log('  * 端到端提升 (+23.9pt) 几乎完全源于 L2/L3 自愈状态机的高效挽回，而非模型首轮犯错减少。');
-  console.log('  * 结论表述必须严格限定口径为：“端到端 69.0% -> 92.9%（按样本配对 McNemar p < 0.01）”。');
+  // NOTE: these lines previously hardcoded numbers from one specific run. Hardcoded
+  // narratives silently go stale and then misreport the very experiment they describe —
+  // always derive them from the current run's counters.
+  const caseP = mcnemarExact(caseB, caseC);
+  const sampleP = mcnemarExact(bPair, cPair);
+  const deltaPt = ((b_e2e / b_total - a_e2e / a_total) * 100).toFixed(1);
+  const healPt = ((b_healed / b_total) * 100).toFixed(1);
+  const firstPassPt = (((b_e2e - b_healed) / b_total - a_e2e / a_total) * 100).toFixed(1);
+  console.log(
+    `  * 统计口径说明：按样本配对 p = ${sampleP.toFixed(4)}${sampleP < 0.01 ? '（显著）' : '（未达显著）'}；` +
+      `按独立用例 p = ${caseP.toFixed(4)}${caseP < 0.05 ? '（显著）' : '（未达显著，样本量不足，非效果问题）'}。`,
+  );
+  console.log(
+    `  * 收益归因：结构类错误由 L1 抹平 (${structTotal.a}->${structTotal.b})，跨字段违规初始依然存在 (${crossTotal.a}->${crossTotal.b})；`,
+  );
+  console.log(
+    `  * 端到端提升 (${deltaPt}pt) 中，L1/提示词（首轮）贡献 ${firstPassPt}pt，L3 自愈救回 ${b_healed} 次贡献 ${healPt}pt。`,
+  );
+  console.log(
+    `  * 结论表述必须严格限定口径为：“端到端 ${pct(a_e2e, a_total)} -> ${pct(b_e2e, b_total)}` +
+      `（按样本配对 McNemar p = ${sampleP.toFixed(4)}，按独立用例 p = ${caseP.toFixed(4)}）”。`,
+  );
 
   console.log(`\n[表 6] 逐用例（${REPETITIONS} 轮合并）`);
   console.log('| # | 用例 | 难度 | A 合规 | B 合规 | B 拦截 | A 分类正确 | B 分类正确 |');
@@ -655,6 +777,71 @@ async function main() {
     const bC = rs.filter((x) => x.groupB.categoryCorrect).length;
     const flag = aOk === rs.length && bOk === rs.length ? '  (无区分力)' : '';
     console.log(`| ${c.id} | ${c.title} | ${c.difficulty} | ${aOk}/${rs.length} | ${bOk}/${rs.length} | ${bi} | ${aC}/${rs.length} | ${bC}/${rs.length}${flag} |`);
+  }
+
+  // ── Sentinel Watch-List ────────────────────────────────────────────────────
+  // Declared before the run (see WATCH_LIST). A group always runs the BASELINE
+  // schema, so it doubles as the in-run control: if A holds and B drifts, the
+  // variant caused it; if A also drifts, the case is unstable independent of the
+  // variant and must not be blamed on it.
+  const sentinel = WATCH_LIST.map((w) => {
+    const rs = allRecords.filter((x) => x.caseId === w.caseId);
+    const bHold = rs.filter((x) => x.groupB.finalCategory === w.mustHold).length;
+    const aHold = rs.filter((x) => x.groupA.finalCategory === w.mustHold).length;
+    const drifted = rs
+      .filter((x) => x.groupB.finalCategory !== undefined && x.groupB.finalCategory !== w.mustHold)
+      .map((x) => `R${x.repetitionIndex}:${x.groupB.finalCategory}`);
+    const bVals = [...new Set(rs.map((x) => x.groupB.finalCategory ?? 'n/a'))];
+    const aVals = [...new Set(rs.map((x) => x.groupA.finalCategory ?? 'n/a'))];
+    return { ...w, samples: rs.length, bHold, aHold, drifted, bVals, aVals, ran: rs.length > 0 };
+  });
+
+  const guardCases = sentinel.filter((s) => s.caseId !== 7);
+  const targetCase = sentinel.find((s) => s.caseId === 7);
+  const collateralHit = guardCases.filter((s) => s.ran && s.drifted.length > 0);
+  const targetMissed = targetCase?.ran && targetCase.drifted.length > 0;
+
+  console.log('\n[哨兵监控 Watch-List]  #2 物流 · #7 退款 · #13 物流');
+  for (const s of sentinel) {
+    if (!s.ran) {
+      console.log(`  #${s.caseId} 必须=${s.mustHold} — 本次未运行（--case 过滤），跳过`);
+      continue;
+    }
+    const ok = s.drifted.length === 0;
+    const marker = s.caseId === 7
+      ? ok ? `${GREEN}靶心命中${RESET}` : `${YELLOW}靶心未命中${RESET}`
+      : ok ? `${GREEN}守住了${RESET}` : `${RED}${BOLD}漂 移${RESET}`;
+    console.log(
+      `  #${s.caseId} 必须=${s.mustHold.padEnd(9)} B 持守 ${s.bHold}/${s.samples}` +
+        ` (B 取值 ${s.bVals.join('/')}；A 对照组 ${s.aHold}/${s.samples}，取值 ${s.aVals.join('/')})  ${marker}`,
+    );
+    if (!ok) {
+      console.log(`${RED}      ↳ 漂移明细: ${s.drifted.join('  ')}   — ${s.risk}${RESET}`);
+    }
+  }
+
+  if (collateralHit.length > 0) {
+    console.log(
+      `\n${RED}${BOLD}🚨 哨兵告警：改动造成连带损伤 — #${collateralHit.map((s) => s.caseId).join(', #')} 从原分类漂走。` +
+        `这是「修好一个、打坏一个」的信号：聚合分类准确率会把这种互换当成打平而掩盖它。${RESET}`,
+    );
+    console.log(`${RED}   判定：本变体在当前形态下不应合入；需收窄消歧规则的适用面后重跑。${RESET}`);
+  } else if (targetMissed) {
+    console.log(
+      `\n${YELLOW}⚠ 哨兵提示：#7 未命中靶心，但 #2/#13 未受连带损伤 — 修复无效但无害，需换思路重做。${RESET}`,
+    );
+  } else {
+    const skipped = sentinel.filter((s) => !s.ran);
+    if (skipped.length > 0) {
+      // Do NOT claim "all green" when part of the list never ran — a partial pass
+      // is not a pass, and an unrun guard case is an untested risk, not a cleared one.
+      console.log(
+        `\n${YELLOW}⚠ 哨兵结论不完整：#${skipped.map((s) => s.caseId).join(', #')} 本次未运行，` +
+          `已跑的 #${sentinel.filter((s) => s.ran).map((s) => s.caseId).join(', #')} 无漂移。尚未构成完整无连带损伤的证据。${RESET}`,
+      );
+    } else {
+      console.log(`\n${GREEN}✅ 哨兵全绿：#2/#13 保持 logistics，#7 保持 refund — 本变体无连带损伤。${RESET}`);
+    }
   }
 
   // ── Autopsy ────────────────────────────────────────────────────────────────
@@ -684,6 +871,8 @@ async function main() {
       {
         timestamp: new Date().toISOString(),
         harnessVersion: 3,
+        experiment: experimentTag,
+        filterCase: targetCaseId,
         mode: isLive ? 'live' : 'simulation',
         model: TARGET_FREE_MODEL,
         repetitions: REPETITIONS,
@@ -721,6 +910,19 @@ async function main() {
           significance: {
             mcnemarBySample: mcnemarExact(bPair, cPair),
             mcnemarByCase: mcnemarExact(caseB, caseC),
+          },
+          sentinel: {
+            // Declared before the run — see WATCH_LIST. Never post-hoc.
+            watchList: WATCH_LIST,
+            results: sentinel,
+            verdict:
+              collateralHit.length > 0
+                ? 'COLLATERAL_DAMAGE'
+                : targetMissed
+                  ? 'TARGET_MISSED_NO_HARM'
+                  : sentinel.some((s) => !s.ran)
+                    ? 'INCOMPLETE'
+                    : 'ALL_GREEN',
           },
         },
         trials: allRecords,
