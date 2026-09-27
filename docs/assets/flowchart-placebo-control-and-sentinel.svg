@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 550" width="960" height="550" style="background: transparent; display: block;">
+  <defs>
+    <!-- Background Dot Grid -->
+    <pattern id="dot-grid-placebo" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.1" fill="#D4D4D8" />
+    </pattern>
+
+    <!-- Marker Arrowheads -->
+    <marker id="arrow-black" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000" stroke="#000000" stroke-width="1.5"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#7FFF00" stroke="#000000" stroke-width="1.5"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#00E5FF" stroke="#000000" stroke-width="1.5"/>
+    </marker>
+
+    <style>
+      .font-mono { font-family: 'Space Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'PingFang SC', monospace; }
+      .font-heading { font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif; }
+      .bold { font-weight: 700; }
+      .border-main { stroke: #000000; stroke-width: 2.5; stroke-linecap: square; stroke-linejoin: miter; }
+      .border-card { stroke: #000000; stroke-width: 2; }
+      .border-thin { stroke: #000000; stroke-width: 1.5; }
+    </style>
+  </defs>
+
+  <!-- ================= Outer Container ================= -->
+  <rect x="14" y="14" width="932" height="522" rx="6" fill="#000000" />
+  <rect x="10" y="10" width="932" height="522" rx="6" fill="#FAF9F5" class="border-main" />
+  <rect x="13" y="13" width="926" height="516" rx="4" fill="url(#dot-grid-placebo)" />
+
+  <!-- ================= Header Bar ================= -->
+  <rect x="26" y="24" width="900" height="42" rx="4" fill="#000000" />
+  <rect x="23" y="21" width="900" height="42" rx="4" fill="#FFFFFF" class="border-card" />
+
+  <rect x="32" y="29" width="185" height="26" rx="3" fill="#7FFF00" class="border-thin" />
+  <text x="124" y="46" class="font-mono bold" font-size="10" fill="#000000" text-anchor="middle" letter-spacing="1">EMPIRICAL CLOSURE // MOD-1</text>
+
+  <text x="228" y="47" class="font-heading bold" font-size="13" fill="#000000" letter-spacing="0.5">SINGLE-VARIABLE PLACEBO CONTROL &amp; SENTINEL PIPELINE</text>
+  <text x="765" y="47" class="font-mono" font-size="10" fill="#52525B">N=42 PAIRED SAMPLES</text>
+
+  <!-- ================= Row 1: Single-Variable Isolation Tree ================= -->
+  <!-- Problem Box -->
+  <rect x="26" y="74" width="200" height="96" rx="4" fill="#000000" />
+  <rect x="23" y="71" width="200" height="96" rx="4" fill="#FEF2F2" class="border-card" />
+  <rect x="33" y="79" width="110" height="18" rx="2" fill="#FF4D4D" class="border-thin" />
+  <text x="88" y="92" class="font-mono bold" font-size="8.5" fill="#FFFFFF" text-anchor="middle">SUSPICION / 异常悬念</text>
+  <text x="33" y="116" class="font-heading bold" font-size="12" fill="#991B1B">合规率 +23.9pt 飙升</text>
+  <text x="33" y="134" class="font-heading bold" font-size="12" fill="#B91C1C">意图准确率 −7.1pt 倒跌</text>
+  <text x="33" y="152" class="font-mono" font-size="8.5" fill="#7F1D1D">Case #7 退款被合法化为物流</text>
+
+  <!-- Arrow Problem -> E0 -->
+  <line x1="223" y1="119" x2="247" y2="119" stroke="#000000" stroke-width="2" marker-end="url(#arrow-black)" />
+
+  <!-- E0 Box -->
+  <rect x="252" y="74" width="205" height="96" rx="4" fill="#000000" />
+  <rect x="249" y="71" width="205" height="96" rx="4" fill="#F8FAFC" class="border-card" />
+  <rect x="259" y="79" width="115" height="18" rx="2" fill="#64748B" class="border-thin" />
+  <text x="316" y="92" class="font-mono bold" font-size="8.5" fill="#FFFFFF" text-anchor="middle">EXP E0 · 摘除受限解码</text>
+  <text x="259" y="115" class="font-heading bold" font-size="11" fill="#0F172A">验证采样约束是否扭曲概率</text>
+  <text x="259" y="133" class="font-mono" font-size="8.5" fill="#52525B">• 拔掉 API 层 json_schema 参数</text>
+  <text x="259" y="150" class="font-mono bold" font-size="9" fill="#0F172A">实测：指标纹丝不动 (+0.0pt)</text>
+
+  <!-- Arrow E0 -> E0b -->
+  <line x1="454" y1="119" x2="478" y2="119" stroke="#000000" stroke-width="2" marker-end="url(#arrow-black)" />
+
+  <!-- E0b Box (Placebo) -->
+  <rect x="483" y="74" width="215" height="96" rx="4" fill="#000000" />
+  <rect x="480" y="71" width="215" height="96" rx="4" fill="#FFFBEB" class="border-card" />
+  <rect x="490" y="79" width="135" height="18" rx="2" fill="#F59E0B" class="border-thin" />
+  <text x="557" y="92" class="font-mono bold" font-size="8.5" fill="#000000" text-anchor="middle">EXP E0b · 假药对照 (PLACEBO)</text>
+  <text x="490" y="115" class="font-heading bold" font-size="11" fill="#78350F">打乱枚举：refund 前置，logistics 后置</text>
+  <text x="490" y="133" class="font-mono" font-size="8.5" fill="#52525B">• 检验是否存在首位选项位置偏见</text>
+  <text x="490" y="150" class="font-mono bold" font-size="9" fill="#B45309">实测：14 用例 100% 同构 (+0.0pt)</text>
+
+  <!-- Arrow E0b -> E2 -->
+  <line x1="695" y1="119" x2="719" y2="119" stroke="#000000" stroke-width="2" marker-end="url(#arrow-black)" />
+
+  <!-- E2 Box (Success) -->
+  <rect x="724" y="74" width="202" height="96" rx="4" fill="#000000" />
+  <rect x="721" y="71" width="202" height="96" rx="4" fill="#F0FDF4" class="border-card" />
+  <rect x="731" y="79" width="130" height="18" rx="2" fill="#7FFF00" class="border-thin" />
+  <text x="796" y="92" class="font-mono bold" font-size="8.5" fill="#000000" text-anchor="middle">EXP E2 · 注入实质判据</text>
+  <text x="731" y="115" class="font-heading bold" font-size="11" fill="#15803D">明确“最终诉求优于先后顺序”</text>
+  <text x="731" y="133" class="font-mono" font-size="8.5" fill="#166534">准确率 78.6% ➔ 92.9% (+14.3pt)</text>
+  <text x="731" y="150" class="font-mono bold" font-size="9" fill="#15803D">退款 Case 4/4 靶向治愈 (p=0.003)</text>
+
+  <!-- ================= Row 2: Sentinel Monitoring & White-box Pathology ================= -->
+  <!-- Left Box: Sentinel Watch-List -->
+  <rect x="26" y="186" width="440" height="252" rx="4" fill="#000000" />
+  <rect x="23" y="183" width="440" height="252" rx="4" fill="#FFFFFF" class="border-card" />
+
+  <rect x="33" y="193" width="190" height="22" rx="2" fill="#000000" />
+  <text x="128" y="208" class="font-mono bold" font-size="9.5" fill="#7FFF00" text-anchor="middle">SENTINEL WATCH-LIST // 哨兵监控</text>
+  <text x="235" y="208" class="font-mono" font-size="9" fill="#52525B">杜绝“按下葫芦浮起瓢”</text>
+
+  <!-- Sentinel Items -->
+  <rect x="33" y="225" width="420" height="54" rx="3" fill="#F0FDF4" class="border-thin" />
+  <text x="43" y="244" class="font-mono bold" font-size="10" fill="#15803D">Case #2 [纯物流查询工单]</text>
+  <text x="43" y="261" class="font-mono" font-size="8.5" fill="#3F3F46">预期 logistics ➔ 实测 4/4 logistics [未被退款判据误伤 · 附带损伤 0]</text>
+
+  <rect x="33" y="287" width="420" height="54" rx="3" fill="#EFF6FF" class="border-thin" />
+  <text x="43" y="306" class="font-mono bold" font-size="10" fill="#1D4ED8">Case #7 [退款夹杂物流诉求]</text>
+  <text x="43" y="323" class="font-mono" font-size="8.5" fill="#3F3F46">预期 refund ➔ 实测 4/4 refund [核心缺陷靶向治愈 · 准确率归位]</text>
+
+  <rect x="33" y="349" width="420" height="54" rx="3" fill="#F0FDF4" class="border-thin" />
+  <text x="43" y="368" class="font-mono bold" font-size="10" fill="#15803D">Case #13 [高急度物流投诉工单]</text>
+  <text x="43" y="385" class="font-mono" font-size="8.5" fill="#3F3F46">预期 logistics ➔ 实测 4/4 logistics [情绪激烈依然稳健识别 · 零误伤]</text>
+
+  <text x="43" y="420" class="font-mono bold" font-size="9.5" fill="#15803D">哨兵巡检裁决：ALL_GREEN（核心目标治愈，外围哨兵 0 误伤）</text>
+
+  <!-- Right Box: White-box Pathology & State Machine Dispatch -->
+  <rect x="486" y="186" width="440" height="252" rx="4" fill="#000000" />
+  <rect x="483" y="183" width="440" height="252" rx="4" fill="#FFFFFF" class="border-card" />
+
+  <rect x="493" y="193" width="220" height="22" rx="2" fill="#000000" />
+  <text x="603" y="208" class="font-mono bold" font-size="9.5" fill="#00E5FF" text-anchor="middle">WHITE-BOX PATHOLOGY // 物理形态解构</text>
+
+  <!-- Form A -->
+  <rect x="493" y="225" width="420" height="86" rx="3" fill="#FEF3C7" class="border-thin" />
+  <text x="503" y="244" class="font-mono bold" font-size="10" fill="#92400E">形态 A：不动点卡死 (Fixed-Point Lock-in, Case #11 真实病状)</text>
+  <text x="503" y="261" class="font-mono" font-size="8.5" fill="#78350F">第1轮违背单号契约 ➔ 第2轮删单号违背字数 ➔ 第3轮逐字同构死锁</text>
+  <text x="503" y="278" class="font-mono" font-size="8.5" fill="#52525B">病因：四重负向提示词剥夺解空间，模型巧妇难为无米之炊</text>
+  <text x="503" y="295" class="font-mono bold" font-size="8.5" fill="#B45309">➔ DAG 药方：落地 groundedInInput 输入溯源原语，直接递砖头</text>
+
+  <!-- Form B -->
+  <rect x="493" y="321" width="420" height="86" rx="3" fill="#F1F5F9" class="border-thin" />
+  <text x="503" y="340" class="font-mono bold" font-size="10" fill="#334155">形态 B：动态振荡 (Oscillation, Case #3 真实病状)</text>
+  <text x="503" y="357" class="font-mono" font-size="8.5" fill="#475569">第1轮 13字 (太短) ➔ 第2轮 31字 (用力过猛超限) ➔ 第3轮 14字 (退缩违规)</text>
+  <text x="503" y="374" class="font-mono" font-size="8.5" fill="#52525B">病因：具备创作能力但缺乏反馈标尺，在上下限之间反复钟摆漂移</text>
+  <text x="503" y="391" class="font-mono bold" font-size="8.5" fill="#1E293B">➔ DAG 药方：状态机提供 Midpoint Anchor (区间中值锚点)，收敛振荡</text>
+
+  <text x="503" y="420" class="font-mono" font-size="9" fill="#DC2626">推翻误判：Case #11 并非自愈成功，而是注意力微调后绕路避开</text>
+
+  <!-- ================= Bottom Architectural Banner ================= -->
+  <rect x="26" y="452" width="900" height="74" rx="4" fill="#000000" />
+  <rect x="23" y="449" width="900" height="74" rx="4" fill="#FFFFFF" class="border-card" />
+
+  <rect x="33" y="457" width="165" height="20" rx="2" fill="#7FFF00" class="border-thin" />
+  <text x="115" y="471" class="font-mono bold" font-size="9.5" fill="#000000" text-anchor="middle">EMPIRICAL PHILOSOPHY</text>
+
+  <text x="210" y="471" class="font-heading bold" font-size="11.5" fill="#000000">受限解码保的是确定性的下限，而业务判据才决定了智能化的上限！</text>
+
+  <text x="33" y="497" class="font-mono" font-size="9" fill="#52525B">• 拒绝炼金术：选项枚举微调纯属吃假药；必须依托严格单变量隔离，在 Schema 描述中注入实质判定标准</text>
+  <text x="33" y="513" class="font-mono" font-size="9" fill="#52525B">• 统计学敬畏：主动划掉落在 10.7pt 随机方差内的 5.3pt 虚假增益 ($p &gt; 0.05$)；不拿伪数据忽悠业务，守住工程底线</text>
+</svg>
