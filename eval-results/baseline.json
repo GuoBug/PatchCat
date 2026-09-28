@@ -9,15 +9,23 @@
   "metrics": {
     "groupA": {
       "complianceRate": "69.6%",
+      "complianceCI95": [56.5, 80.1],
       "categoryAccuracy": "85.2%",
-      "orderIdAccuracy": "100.0%"
+      "categoryAccuracyCI95": [73.4, 92.4],
+      "orderIdAccuracy": "100.0%",
+      "meanTokens": 333,
+      "meanDurationMs": 2150
     },
     "groupB": {
       "complianceRate": "98.2%",
+      "complianceCI95": [90.6, 99.7],
       "categoryAccuracy": "92.9%",
+      "categoryAccuracyCI95": [83.0, 97.2],
       "orderIdAccuracy": "100.0%",
       "r2EscalationRate": "8.9%",
       "healingConversionRate": "96.3%",
+      "meanTokens": 1291,
+      "meanDurationMs": 4210,
       "avgTokenCost": 1291
     }
   },

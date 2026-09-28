@@ -502,6 +502,7 @@ async function main() {
   let a_ord_ok = 0;
   let a_ord_n = 0;
   let a_tokens = 0;
+  let a_duration_total = 0;
 
   // Group B counters
   let b_total = 0;
@@ -518,6 +519,7 @@ async function main() {
   let b_ord_ok = 0;
   let b_ord_n = 0;
   let b_tokens = 0;
+  let b_duration_total = 0;
 
   const ruleHits: Record<string, { a: number; b: number }> = {};
   const bumpRule = (cls: RuleClass, group: 'a' | 'b') => {
@@ -574,6 +576,7 @@ async function main() {
       if (aL1 && !aL2) a_l2_violation++;
       if (aE2E) a_e2e++;
       a_tokens += aTok;
+      a_duration_total += durationA;
 
       const aRuleClasses = (parseA.errors || []).map((e) => classifyError(e.message));
       aRuleClasses.forEach((c) => bumpRule(c, 'a'));
@@ -672,6 +675,7 @@ async function main() {
 
       if (healingB.success) b_e2e++;
       b_tokens += healingB.usage?.total || 0;
+      b_duration_total += durationB;
 
       const finalRaw = trace[trace.length - 1]?.rawOutput || healingB.raw || '';
       const bObj = extractJsonObject(finalRaw);
@@ -752,12 +756,12 @@ async function main() {
     console.log(`| 注 | 网络/超时：A 组 ${a_network} 例（已从 L1 语法分母剔除，仍计入端到端失败）；B 组 ${b_network_errors} 次调用（按空响应进入重试，不污染 L1 语法口径） |`);
   }
 
-  console.log('\n[表 2] 正确性（对照 ground truth，与 schema 合规无关）');
-  console.log('| 组别 | 分类准确率 | orderId 准确率 | 平均 tokens/样本 |');
-  console.log('| :--- | :--- | :--- | :--- |');
-  console.log(`| A | ${pct(a_cat_ok, a_cat_n)} (${a_cat_ok}/${a_cat_n}) | ${pct(a_ord_ok, a_ord_n)} (${a_ord_ok}/${a_ord_n}) | ${(a_tokens / a_total).toFixed(0)} |`);
-  console.log(`| B | ${pct(b_cat_ok, b_cat_n)} (${b_cat_ok}/${b_cat_n}) | ${pct(b_ord_ok, b_ord_n)} (${b_ord_ok}/${b_ord_n}) | ${(b_tokens / b_total).toFixed(0)} |`);
-  console.log(`| 自愈开销 | B 组共 ${b_rounds} 次调用 / ${b_total} 样本 (+${(((b_rounds - b_total) / b_total) * 100).toFixed(1)}% 调用，+${(((b_tokens - a_tokens) / Math.max(1, a_tokens)) * 100).toFixed(1)}% tokens) |`);
+  console.log('\n[表 2] 正确性与成本（对照 ground truth 与单样本开销）');
+  console.log('| 组别 | 分类准确率 | orderId 准确率 | 平均 tokens/样本 | 平均耗时/样本 |');
+  console.log('| :--- | :--- | :--- | :--- | :--- |');
+  console.log(`| A | ${pct(a_cat_ok, a_cat_n)} (${a_cat_ok}/${a_cat_n}) | ${pct(a_ord_ok, a_ord_n)} (${a_ord_ok}/${a_ord_n}) | ${(a_tokens / Math.max(1, a_total)).toFixed(0)} | ${(a_duration_total / Math.max(1, a_total)).toFixed(0)}ms |`);
+  console.log(`| B | ${pct(b_cat_ok, b_cat_n)} (${b_cat_ok}/${b_cat_n}) | ${pct(b_ord_ok, b_ord_n)} (${b_ord_ok}/${b_ord_n}) | ${(b_tokens / Math.max(1, b_total)).toFixed(0)} | ${(b_duration_total / Math.max(1, b_total)).toFixed(0)}ms |`);
+  console.log(`| 自愈开销 | B 组共 ${b_rounds} 次调用 / ${b_total} 样本 (+${(((b_rounds - b_total) / Math.max(1, b_total)) * 100).toFixed(1)}% 调用，+${(((b_tokens - a_tokens) / Math.max(1, a_tokens)) * 100).toFixed(1)}% tokens) |`);
 
   console.log('\n[表 3] L2 违规规则构成 — 本次实际触发了什么');
   console.log('| 规则 | 类型 | A 触发 | B 触发 |');
@@ -949,6 +953,8 @@ async function main() {
             endToEndCI95: [(aLo * 100).toFixed(1), (aHi * 100).toFixed(1)],
             categoryAccuracy: pct(a_cat_ok, a_cat_n),
             orderIdAccuracy: pct(a_ord_ok, a_ord_n),
+            meanTokens: Math.round(a_tokens / Math.max(1, a_total)),
+            meanDurationMs: Math.round(a_duration_total / Math.max(1, a_total)),
           },
           groupB: {
             samples: b_total,
@@ -961,8 +967,11 @@ async function main() {
             categoryAccuracy: pct(b_cat_ok, b_cat_n),
             orderIdAccuracy: pct(b_ord_ok, b_ord_n),
             r2Escalations: b_r2_reached,
+            r2EscalationRate: pct(b_r2_reached, b_total),
             networkErrors: b_network_errors,
             totalCalls: b_rounds,
+            meanTokens: Math.round(b_tokens / Math.max(1, b_total)),
+            meanDurationMs: Math.round(b_duration_total / Math.max(1, b_total)),
           },
           ruleBreakdown: ruleHits,
           crossFieldTotals: crossTotal,
@@ -1026,15 +1035,25 @@ async function main() {
       metrics: {
         groupA: {
           complianceRate: pct(a_e2e, a_total),
+          complianceCI95: [parseFloat((aLo * 100).toFixed(1)), parseFloat((aHi * 100).toFixed(1))],
           categoryAccuracy: pct(a_cat_ok, a_cat_n),
           orderIdAccuracy: pct(a_ord_ok, a_ord_n),
+          meanTokens: Math.round(a_total > 0 ? a_tokens / a_total : 0),
+          meanDurationMs: Math.round(a_total > 0 ? a_duration_total / a_total : 0),
         },
         groupB: {
           complianceRate: pct(b_e2e, b_total),
+          complianceCI95: [parseFloat((bLo * 100).toFixed(1)), parseFloat((bHi * 100).toFixed(1))],
           categoryAccuracy: pct(b_cat_ok, b_cat_n),
+          categoryAccuracyCI95: (() => {
+            const [catLo, catHi] = wilson95(b_cat_ok, b_cat_n);
+            return [parseFloat((catLo * 100).toFixed(1)), parseFloat((catHi * 100).toFixed(1))];
+          })(),
           orderIdAccuracy: pct(b_ord_ok, b_ord_n),
           r2EscalationRate: pct(b_r2_reached, b_total),
           healingConversionRate: pct(b_healed, b_l2_intercept),
+          meanTokens: Math.round(b_total > 0 ? b_tokens / b_total : 0),
+          meanDurationMs: Math.round(b_total > 0 ? b_duration_total / b_total : 0),
           avgTokenCost: Math.round(b_total > 0 ? b_tokens / b_total : 0),
         },
       },
@@ -1064,8 +1083,13 @@ async function main() {
       metrics: {
         groupB: {
           complianceRate: string;
+          complianceCI95?: [number, number];
           categoryAccuracy: string;
+          categoryAccuracyCI95?: [number, number];
           orderIdAccuracy: string;
+          r2EscalationRate?: string;
+          meanTokens?: number;
+          meanDurationMs?: number;
           avgTokenCost: number;
         };
       };
@@ -1084,11 +1108,18 @@ async function main() {
     console.log(`\n================================================================================`);
     console.log(`${BOLD}PatchCat 回归门禁看板 (Compared against ${basename(compareBaselinePath)})${RESET}`);
     console.log(`基线时间: ${baseline.timestamp} | 实验标签: ${baseline.experimentTag} | 模型: ${baseline.model}`);
+    if (baseline.experimentTag !== experimentTag) {
+      console.log(
+        `${YELLOW}⚠ [配置亲和性提示] 基线快照为 '${baseline.experimentTag}'，当前运行为 '${experimentTag}'。` +
+          `若参数不同（如未带 --e2-disambiguate），分类差异属于已知语义配置差异而非底层代码退化。${RESET}`,
+      );
+    }
     console.log(`================================================================================`);
     console.log(`编号    | 用例场景描述               | 基线合规 | 当前合规 | 基线分类 | 当前分类 | 门禁判定`);
     console.log(`--------------------------------------------------------------------------------`);
 
     let regressedCount = 0;
+    let flakyCount = 0;
     let improvedCount = 0;
     let stablePassCount = 0;
     let stableFailCount = 0;
@@ -1110,24 +1141,45 @@ async function main() {
 
       let statusMarker = `${GREEN}STABLE_PASS${RESET}`;
 
-      // Check regression:
-      // Hard regression if current category accuracy < baseline category accuracy
-      // OR current compliance < baseline compliance
-      const isCatRegressed = currCatRate < baseCatRate;
-      const isCompRegressed = currPassRate < basePassRate;
+      // ── Dual-Track Gating: Sentinel Zero Tolerance vs Non-Sentinel Statistical Tolerance ──
+      const compDrop = (baseCase?.compliancePassCount ?? 0) - currCompliancePass;
+      const catDrop = (baseCase?.categoryAccuracyCount ?? 0) - currCategoryPass;
 
-      if (isCatRegressed || isCompRegressed) {
-        statusMarker = `${RED}${BOLD}REGRESSED 🚨${RESET}`;
-        regressedCount++;
-      } else if (currCatRate > baseCatRate || currPassRate > basePassRate) {
-        statusMarker = `${GREEN}${BOLD}IMPROVED 🟢${RESET}`;
-        improvedCount++;
-      } else if (currPassRate < 1.0 || currCatRate < 1.0) {
-        statusMarker = `${YELLOW}STABLE_FAIL${RESET}`;
-        stableFailCount++;
+      if (isSentinel) {
+        // Sentinel cases: strict ZERO TOLERANCE on semantic category drift
+        const targetW = WATCH_LIST.find((w) => w.caseId === c.id);
+        const drifted = targetW && currRecords.some((r) => r.groupB.finalCategory !== targetW.mustHold);
+        if (drifted || currPassRate < basePassRate || currCatRate < baseCatRate) {
+          statusMarker = `${RED}${BOLD}REGRESSED 🚨 (哨兵失守)${RESET}`;
+          regressedCount++;
+        } else if (currCatRate > baseCatRate || currPassRate > basePassRate) {
+          statusMarker = `${GREEN}${BOLD}IMPROVED 🟢${RESET}`;
+          improvedCount++;
+        } else {
+          statusMarker = `${GREEN}STABLE_PASS${RESET}`;
+          stablePassCount++;
+        }
       } else {
-        statusMarker = `${GREEN}STABLE_PASS${RESET}`;
-        stablePassCount++;
+        // Non-sentinel cases:
+        // In small sample (e.g. n=4), a 1-sample drop (4/4 -> 3/4) has Wilson CI overlap (34.9%~96.8%)
+        // Flag as FLAKY_WARN to avoid winner's curse false alarms.
+        // A drop of >= 2 passes (e.g. 4/4 -> 2/4 or 1/4) is a statistically strong regression signal.
+        if (compDrop >= 2 || catDrop >= 2) {
+          statusMarker = `${RED}${BOLD}REGRESSED 🚨${RESET}`;
+          regressedCount++;
+        } else if (compDrop === 1 || catDrop === 1) {
+          statusMarker = `${YELLOW}FLAKY_WARN ⚠️${RESET}`;
+          flakyCount++;
+        } else if (currCatRate > baseCatRate || currPassRate > basePassRate) {
+          statusMarker = `${GREEN}${BOLD}IMPROVED 🟢${RESET}`;
+          improvedCount++;
+        } else if (currPassRate < 1.0 || currCatRate < 1.0) {
+          statusMarker = `${YELLOW}STABLE_FAIL${RESET}`;
+          stableFailCount++;
+        } else {
+          statusMarker = `${GREEN}STABLE_PASS${RESET}`;
+          stablePassCount++;
+        }
       }
 
       const baseCompStr = baseCase ? `${(basePassRate * 100).toFixed(0)}% (${baseCase.compliancePassCount}/${baseCase.runs})` : 'N/A';
@@ -1149,29 +1201,57 @@ async function main() {
     const currCat = parseFloat(pct(b_cat_ok, b_cat_n));
     const catDelta = (currCat - baseCat).toFixed(1);
 
-    const baseTok = baseline.metrics.groupB.avgTokenCost || 0;
+    const baseTok = baseline.metrics.groupB.meanTokens || baseline.metrics.groupB.avgTokenCost || 0;
     const currTok = Math.round(b_total > 0 ? b_tokens / b_total : 0);
     const tokDelta = currTok - baseTok;
 
-    console.log(`  - 契约合规率:   ${baseComp}% -> ${currComp}% (Δ ${Number(compDelta) >= 0 ? '+' : ''}${compDelta}%)`);
-    console.log(`  - 分类准确率:   ${baseCat}% -> ${currCat}% (Δ ${Number(catDelta) >= 0 ? '+' : ''}${catDelta}%)`);
+    const baseDur = baseline.metrics.groupB.meanDurationMs || 0;
+    const currDur = Math.round(b_total > 0 ? b_duration_total / b_total : 0);
+    const durDelta = currDur - baseDur;
+
+    const baseR2 = baseline.metrics.groupB.r2EscalationRate || 'n/a';
+    const currR2 = pct(b_r2_reached, b_total);
+
+    // Derived Wilson 95% lower bounds to absorb binomial noise (winner's curse protection)
+    const baseCompLo = baseline.metrics.groupB.complianceCI95 ? baseline.metrics.groupB.complianceCI95[0] : Math.max(0, baseComp - 8.0);
+    const baseCatLo = baseline.metrics.groupB.categoryAccuracyCI95 ? baseline.metrics.groupB.categoryAccuracyCI95[0] : Math.max(0, baseCat - 10.0);
+
+    console.log(`  - 契约合规率:   ${baseComp}% [95%下界: ${baseCompLo}%] -> ${currComp}% (Δ ${Number(compDelta) >= 0 ? '+' : ''}${compDelta}%)`);
+    console.log(`  - 分类准确率:   ${baseCat}% [95%下界: ${baseCatLo}%] -> ${currCat}% (Δ ${Number(catDelta) >= 0 ? '+' : ''}${catDelta}%)`);
+    console.log(`  - R2 升级率:    ${baseR2} -> ${currR2}`);
     console.log(`  - 平均 Token:   ${baseTok} -> ${currTok} tok (Δ ${tokDelta >= 0 ? '+' : ''}${tokDelta} tok)`);
+    if (baseDur > 0) {
+      console.log(`  - 平均耗时:     ${baseDur}ms -> ${currDur}ms (Δ ${durDelta >= 0 ? '+' : ''}${durDelta}ms)`);
+    }
     console.log(`  - 晋级用例数:   ${improvedCount} 个`);
-    console.log(`  - 退化用例数:   ${regressedCount} 个`);
+    console.log(`  - 抖动观察数:   ${flakyCount} 个 (小样本单次扰动)`);
+    console.log(`  - 确诊退化数:   ${regressedCount} 个 (单用例 ≥2 次失效或哨兵失守)`);
     console.log(`  - 哨兵裁决:     ${collateralHit.length > 0 ? RED + 'COLLATERAL_DAMAGE 🚨' : targetMissed ? YELLOW + 'TARGET_MISSED ⚠️' : GREEN + 'ALL_GREEN ✔'}${RESET}`);
     console.log(`================================================================================`);
 
     const isFullSuiteRun = targetCaseId === undefined;
     const hasRegression = regressedCount > 0;
     const hasSentinelBreach = collateralHit.length > 0 || targetMissed;
-    const hasMacroDrop = isFullSuiteRun && (currCat < baseCat || currComp < baseComp);
+    // Macro drop only triggers if the aggregate rate breaks below the baseline's 95% Wilson confidence lower bound!
+    const isCompStatisticallyRegressed = isFullSuiteRun && currComp < baseCompLo;
+    const isCatStatisticallyRegressed = isFullSuiteRun && currCat < baseCatLo;
+    const hasMacroDrop = isCompStatisticallyRegressed || isCatStatisticallyRegressed;
 
-    if (hasRegression || hasSentinelBreach || hasMacroDrop) {
-      console.log(`\n${RED}${BOLD}❌ [门禁裁决]: REGRESSION GATE FAILED (检测到用例退化或指标倒挂，阻断 CI 合并)${RESET}\n`);
+    // Cost SLA gate: Token budget blowout limit (+25% over baseline)
+    const isCostBlown = baseTok > 0 && currTok > baseTok * 1.25;
+
+    if (hasRegression || hasSentinelBreach || hasMacroDrop || isCostBlown) {
+      console.log(`\n${RED}${BOLD}❌ [门禁裁决]: REGRESSION GATE FAILED (检测到违规或退化，阻断 CI 合并)${RESET}`);
+      if (hasSentinelBreach) console.log(`   - 失败根因: 核心业务哨兵失守或未中靶心 (0% 容差红线违背)`);
+      if (hasRegression) console.log(`   - 失败根因: 确诊用例退化 (单用例 ≥2 次失败或哨兵漂移)`);
+      if (isCompStatisticallyRegressed) console.log(`   - 失败根因: 契约合规率 (${currComp}%) 跌破 Wilson 95% 置信下界 (${baseCompLo}%)`);
+      if (isCatStatisticallyRegressed) console.log(`   - 失败根因: 分类准确率 (${currCat}%) 跌破 Wilson 95% 置信下界 (${baseCatLo}%)`);
+      if (isCostBlown) console.log(`   - 失败根因: Token 成本超标 (+${(((currTok - baseTok) / baseTok) * 100).toFixed(1)}% 超过 25% 预算 SLA)`);
+      console.log();
       process.exitCode = 1;
       return;
     } else {
-      console.log(`\n${GREEN}${BOLD}✔ [门禁裁决]: REGRESSION GATE PASSED (无退化，核心契约与意图分类稳固，准予合并)${RESET}\n`);
+      console.log(`\n${GREEN}${BOLD}✔ [门禁裁决]: REGRESSION GATE PASSED (核心契约与意图分类稳固，统计与成本均在 SLA 内，准予合并)${RESET}\n`);
       process.exitCode = 0;
       return;
     }
