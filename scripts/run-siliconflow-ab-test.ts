@@ -31,7 +31,7 @@
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve, basename } from 'node:path';
 import {
   executeWithSelfHealing,
   safeParseOutput,
@@ -151,6 +151,7 @@ const UNIFIED_SYSTEM_PROMPT = `你是一个工单结构化解析助手。请直�
 // ─────────────────────────────────────────────────────────────────────────────
 interface CaseDef {
   id: number;
+  semanticKey: string;
   title: string;
   prompt: string;
   expectedCategory: 'logistics' | 'refund' | 'quality' | 'other';
@@ -159,59 +160,45 @@ interface CaseDef {
 }
 
 const BENCHMARK_CASES: CaseDef[] = [
-  { id: 1, title: '不着急的退款申请', difficulty: 'easy', expectedCategory: 'refund', expectedOrderId: 'ORD-881201',
+  { id: 1, semanticKey: 'refund_gentle', title: '不着急的退款申请', difficulty: 'easy', expectedCategory: 'refund', expectedOrderId: 'ORD-881201',
     prompt: '请解析工单：客服你好，我收到的键盘空格键坏了，我要申请退款（订单号 ORD-881201）。我不着急用，下周退也行。' },
-  { id: 2, title: '普通物流查询', difficulty: 'easy', expectedCategory: 'logistics', expectedOrderId: 'ORD-119202',
+  { id: 2, semanticKey: 'logistics_query', title: '普通物流查询', difficulty: 'easy', expectedCategory: 'logistics', expectedOrderId: 'ORD-119202',
     prompt: '请解析工单：帮我查一下包裹 ORD-119202 的物流状态，两天没更新了。' },
-  { id: 3, title: '客户很生气的退全款', difficulty: 'easy', expectedCategory: 'refund', expectedOrderId: 'ORD-772103',
+  { id: 3, semanticKey: 'refund_furious', title: '客户很生气的退全款', difficulty: 'easy', expectedCategory: 'refund', expectedOrderId: 'ORD-772103',
     prompt: '请解析工单：机器刚拆开就冒烟，必须立刻给我全额退款（订单号 ORD-772103）！立刻！' },
-  { id: 4, title: '轻微质量瑕疵', difficulty: 'easy', expectedCategory: 'quality', expectedOrderId: 'ORD-554402',
+  { id: 4, semanticKey: 'quality_scratch', title: '轻微质量瑕疵', difficulty: 'easy', expectedCategory: 'quality', expectedOrderId: 'ORD-554402',
     prompt: '请解析工单：订单号 ORD-554402，鼠标外壳有点轻微划痕，能凑合用，问问有没有补偿。' },
-  { id: 5, title: '退货退款寄回咨询', difficulty: 'easy', expectedCategory: 'refund', expectedOrderId: 'ORD-662301',
+  { id: 5, semanticKey: 'refund_wrong_size', title: '退货退款寄回咨询', difficulty: 'easy', expectedCategory: 'refund', expectedOrderId: 'ORD-662301',
     prompt: '请解析工单：订单号 ORD-662301，衣服尺码买小了，我要退款退货，请问退货地址是哪里？' },
-  { id: 6, title: '说明书丢失咨询', difficulty: 'easy', expectedCategory: 'other', expectedOrderId: 'ORD-991122',
+  { id: 6, semanticKey: 'other_manual', title: '说明书丢失咨询', difficulty: 'easy', expectedCategory: 'other', expectedOrderId: 'ORD-991122',
     prompt: '请解析工单：订单 ORD-991122 刚签收，找不到说明书了，能发一份电子版吗？' },
-  { id: 7, title: '未收到货却显示签收', difficulty: 'easy', expectedCategory: 'refund', expectedOrderId: 'ORD-443322',
+  { id: 7, semanticKey: 'refund_unreceived_signed', title: '未收到货却显示签收', difficulty: 'easy', expectedCategory: 'refund', expectedOrderId: 'ORD-443322',
     prompt: '请解析工单：订单号 ORD-443322 还没收到货怎么就签收了？如果是丢件了就赶紧给我退款！' },
-  { id: 8, title: '外包装破损严重', difficulty: 'easy', expectedCategory: 'logistics', expectedOrderId: 'ORD-123456',
+  { id: 8, semanticKey: 'logistics_damaged_box', title: '外包装破损严重', difficulty: 'easy', expectedCategory: 'logistics', expectedOrderId: 'ORD-123456',
     prompt: '请解析工单：订单 ORD-123456，快递箱全压扁了，里面的杯子碎了，需要处理。' },
-  { id: 9, title: '发错颜色退款申请', difficulty: 'easy', expectedCategory: 'refund', expectedOrderId: 'ORD-987654',
+  { id: 9, semanticKey: 'refund_wrong_color', title: '发错颜色退款申请', difficulty: 'easy', expectedCategory: 'refund', expectedOrderId: 'ORD-987654',
     prompt: '请解析工单：我要的是白色发了黑色，申请退款退货，订单号是 ORD-987654。' },
-  { id: 10, title: '冲动消费后悔退款', difficulty: 'easy', expectedCategory: 'refund', expectedOrderId: 'ORD-654321',
+  { id: 10, semanticKey: 'refund_impulse_cancel', title: '冲动消费后悔退款', difficulty: 'easy', expectedCategory: 'refund', expectedOrderId: 'ORD-654321',
     prompt: '请解析工单：订单号 ORD-654321，刚买完后悔了，还没发货，直接给我退款撤单吧。' },
 
   // ── Adversarial cases (added in v3: force genuinely cross-field invariants to fire) ──
-  { id: 11, title: '一单双号混淆', difficulty: 'hard', expectedCategory: 'refund', expectedOrderId: 'ORD-222222',
+  { id: 11, semanticKey: 'refund_two_orders_dual_id', title: '一单双号混淆', difficulty: 'hard', expectedCategory: 'refund', expectedOrderId: 'ORD-222222',
     prompt: '请解析工单：我有两个订单，ORD-111111 上个星期已经退款完成了，ORD-222222 的保温杯内胆生锈，这个我要申请退款。' },
-  { id: 12, title: '极长描述诱导冗长摘要', difficulty: 'hard', expectedCategory: 'refund', expectedOrderId: 'ORD-555555',
+  { id: 12, semanticKey: 'refund_long_description', title: '极长描述诱导冗长摘要', difficulty: 'hard', expectedCategory: 'refund', expectedOrderId: 'ORD-555555',
     prompt: '请解析工单：订单号 ORD-555555，我于上周五下单的那台显示器，昨天终于收到货了，拆开之后发现屏幕右下角有三处非常明显的坏点，而且外包装纸箱有严重的挤压变形痕迹，我在此之前已经主动联系过一次客服但至今没有收到任何回复，现在我的诉求是要求全额退款并且由你们承担退回的运费。' },
-  { id: 13, title: '激烈情绪的物流投诉', difficulty: 'hard', expectedCategory: 'logistics', expectedOrderId: 'ORD-333333',
+  { id: 13, semanticKey: 'logistics_angry_complaint', title: '激烈情绪的物流投诉', difficulty: 'hard', expectedCategory: 'logistics', expectedOrderId: 'ORD-333333',
     prompt: '请解析工单：订单号 ORD-333333 的包裹卡在中转站整整三天没有任何动静了，客服电话打了五遍都没人接，我非常愤怒，必须马上给我一个说法！' },
-  { id: 14, title: '退款与发票混合诉求', difficulty: 'hard', expectedCategory: 'refund', expectedOrderId: 'ORD-444444',
+  { id: 14, semanticKey: 'refund_invoice_mix', title: '退款与发票混合诉求', difficulty: 'hard', expectedCategory: 'refund', expectedOrderId: 'ORD-444444',
     prompt: '请解析工单：订单号 ORD-444444，这件衣服第一次下水洗就严重褪色，根本没法穿了，我要求退款，另外发票的抬头也开错了需要重开一张。' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 4b. Sentinel Watch-List — regression alarm for collateral damage
 // ─────────────────────────────────────────────────────────────────────────────
-/**
- * WHY THIS EXISTS (separate from ground-truth accuracy in 表 2):
- *
- * Every schema variant we ship (E0b enum reorder, E2 category disambiguation, ...)
- * targets ONE specific failure. Category is a *closed set* with mutually exclusive
- * values, so steering the model toward `refund` on case #7 can silently pull the
- * semantically adjacent cases (#2 plain logistics inquiry, #13 furious logistics
- * complaint) into `refund` too. Aggregate category accuracy would absorb that
- * trade as a wash — 1 gain, 1 loss, net zero — and the report would read "no
- * regression". That is exactly the failure mode this watch-list exists to catch:
- * it holds the *identity* of the at-risk cases fixed, so a swap is never
- * invisible.
- *
- * These are therefore declared up front, BEFORE the run, not cherry-picked from
- * the results afterwards.
- */
 interface WatchTarget {
   caseId: number;
+  semanticKey: string;
+  expectedKeywordInPrompt: string;
   /** The category this case must hold. Drift away from it = collateral damage. */
   mustHold: 'logistics' | 'refund' | 'quality' | 'other';
   /** Why this specific case is on the list. */
@@ -219,10 +206,56 @@ interface WatchTarget {
 }
 
 const WATCH_LIST: WatchTarget[] = [
-  { caseId: 2, mustHold: 'logistics', risk: '最纯粹的物流查询，无任何退款措辞；一旦漂到 refund 说明消歧规则过强' },
-  { caseId: 7, mustHold: 'refund', risk: 'E2 的靶心（未收到货却显示签收）；漂到 logistics 说明修复未生效' },
-  { caseId: 13, mustHold: 'logistics', risk: '激烈情绪 + 物流投诉，措辞上最接近退款诉求，最容易被消歧规则误伤' },
+  {
+    caseId: 2,
+    semanticKey: 'logistics_query',
+    expectedKeywordInPrompt: '物流状态',
+    mustHold: 'logistics',
+    risk: '最纯粹的物流查询，无任何退款措辞；一旦漂到 refund 说明消歧规则过强',
+  },
+  {
+    caseId: 7,
+    semanticKey: 'refund_unreceived_signed',
+    expectedKeywordInPrompt: '还没收到货怎么就签收了',
+    mustHold: 'refund',
+    risk: 'E2 的靶心（未收到货却显示签收）；漂到 logistics 说明修复未生效',
+  },
+  {
+    caseId: 13,
+    semanticKey: 'logistics_angry_complaint',
+    expectedKeywordInPrompt: '包裹卡在中转站整整三天',
+    mustHold: 'logistics',
+    risk: '激烈情绪 + 物流投诉，措辞上最接近退款诉求，最容易被消歧规则误伤',
+  },
 ];
+
+/**
+ * Defensive Fail-Fast Assertion:
+ * Protects against index drift if benchmark cases are reordered or inserted.
+ */
+function assertSentinelIntegrity(cases: CaseDef[], watchList: WatchTarget[]) {
+  for (const w of watchList) {
+    const c = cases.find((x) => x.id === w.caseId);
+    if (!c) {
+      throw new Error(`🚨 [哨兵契约断言失败] BENCHMARK_CASES 中未找到 caseId=${w.caseId}！用例集可能已被重排或删除！`);
+    }
+    if (c.semanticKey !== w.semanticKey) {
+      throw new Error(
+        `🚨 [哨兵契约断言失败] Case #${w.caseId} 的 semanticKey 不匹配！预期 '${w.semanticKey}'，实测 '${c.semanticKey}'！请检查是否有中间插入用例导致下标漂移！`,
+      );
+    }
+    if (!c.prompt.includes(w.expectedKeywordInPrompt)) {
+      throw new Error(
+        `🚨 [哨兵契约断言失败] Case #${w.caseId} 的提示词内容发生变动！未包含关键词 "${w.expectedKeywordInPrompt}"！`,
+      );
+    }
+    if (c.expectedCategory !== w.mustHold) {
+      throw new Error(
+        `🚨 [哨兵契约断言失败] Case #${w.caseId} 的预期类别已改变！预期 '${w.mustHold}'，实测 '${c.expectedCategory}'！`,
+      );
+    }
+  }
+}
 
 // ANSI helpers. Red = drift detected on a guarded case; yellow = the targeted fix
 // did not land. Kept as raw escapes so the artifact JSON stays clean.
@@ -365,6 +398,34 @@ async function main() {
   const isE2Disambiguate = process.argv.includes('--e2-disambiguate');
   const caseArg = process.argv.find((arg) => arg.startsWith('--case='));
   const repsArg = process.argv.find((arg) => arg.startsWith('--reps='));
+  const saveBaselineArg = process.argv.find((arg) => arg.startsWith('--save-baseline'));
+  const compareBaselineArg = process.argv.find((arg) => arg.startsWith('--compare-baseline'));
+  const saveBaselinePath = saveBaselineArg?.includes('=')
+    ? resolve(process.cwd(), saveBaselineArg.split('=')[1] ?? '')
+    : saveBaselineArg
+      ? resolve(process.cwd(), 'eval-results/baseline.json')
+      : undefined;
+  const compareBaselinePath = compareBaselineArg?.includes('=')
+    ? resolve(process.cwd(), compareBaselineArg.split('=')[1] ?? '')
+    : compareBaselineArg
+      ? resolve(process.cwd(), 'eval-results/baseline.json')
+      : undefined;
+
+  if (saveBaselinePath && compareBaselinePath) {
+    console.error('[FATAL] --save-baseline and --compare-baseline cannot be used in the same run.');
+    process.exit(1);
+  }
+
+  // Pre-flight check: if compare-baseline is requested, make sure baseline file exists before making costly API calls!
+  if (compareBaselinePath && !existsSync(compareBaselinePath)) {
+    console.error(`\n${RED}${BOLD}❌ [回归门禁预检失败] 未找到基线快照文件: ${compareBaselinePath}${RESET}`);
+    console.error(`提示: 请先运行 npm run eval:baseline 固化黄金基线后再执行回归门禁！\n`);
+    process.exit(1);
+  }
+
+  // Pre-flight check: assert sentinel integrity across cases to avoid silent drift
+  assertSentinelIntegrity(BENCHMARK_CASES, WATCH_LIST);
+
   const targetCaseId = caseArg ? parseInt(caseArg.split('=')[1] ?? '', 10) : undefined;
   const benchmarkCases = targetCaseId
     ? BENCHMARK_CASES.filter((c) => c.id === targetCaseId)
@@ -933,6 +994,188 @@ async function main() {
     'utf-8',
   );
   console.log(`\n完整 trace 已落盘: ${artifactPath}`);
+
+  // ── Baseline Snapshot Save ──────────────────────────────────────────────────
+  if (saveBaselinePath) {
+    const caseRecords = benchmarkCases.map((c) => {
+      const rs = allRecords.filter((x) => x.caseId === c.id);
+      const runs = rs.length;
+      const compliancePassCount = rs.filter((x) => x.groupB.endToEndSuccess).length;
+      const categoryAccuracyCount = rs.filter((x) => x.groupB.categoryCorrect).length;
+      const orderIdAccuracyCount = rs.filter((x) => x.groupB.orderIdCorrect).length;
+      return {
+        caseId: c.id,
+        semanticKey: c.semanticKey,
+        title: c.title,
+        expectedCategory: c.expectedCategory,
+        runs,
+        compliancePassCount,
+        categoryAccuracyCount,
+        orderIdAccuracyCount,
+      };
+    });
+
+    const baselineSnapshot = {
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      model: TARGET_FREE_MODEL,
+      experimentTag,
+      repetitions: REPETITIONS,
+      totalCases: benchmarkCases.length,
+      totalSamples: b_total,
+      metrics: {
+        groupA: {
+          complianceRate: pct(a_e2e, a_total),
+          categoryAccuracy: pct(a_cat_ok, a_cat_n),
+          orderIdAccuracy: pct(a_ord_ok, a_ord_n),
+        },
+        groupB: {
+          complianceRate: pct(b_e2e, b_total),
+          categoryAccuracy: pct(b_cat_ok, b_cat_n),
+          orderIdAccuracy: pct(b_ord_ok, b_ord_n),
+          r2EscalationRate: pct(b_r2_reached, b_total),
+          healingConversionRate: pct(b_healed, b_l2_intercept),
+          avgTokenCost: Math.round(b_total > 0 ? b_tokens / b_total : 0),
+        },
+      },
+      sentinelVerdict:
+        collateralHit.length > 0
+          ? 'COLLATERAL_DAMAGE'
+          : targetMissed
+            ? 'TARGET_MISSED_NO_HARM'
+            : sentinel.some((s) => !s.ran)
+              ? 'INCOMPLETE'
+              : 'ALL_GREEN',
+      cases: caseRecords,
+    };
+
+    writeFileSync(saveBaselinePath, JSON.stringify(baselineSnapshot, null, 2), 'utf-8');
+    console.log(`\n${GREEN}${BOLD}✔ 黄金基线已成功固化到:${RESET} ${saveBaselinePath}`);
+  }
+
+  // ── Baseline Regression Comparison & Gating ─────────────────────────────────
+  if (compareBaselinePath) {
+    const baselineRaw = readFileSync(compareBaselinePath, 'utf-8');
+    const baseline = JSON.parse(baselineRaw) as {
+      version: string;
+      timestamp: string;
+      model: string;
+      experimentTag: string;
+      metrics: {
+        groupB: {
+          complianceRate: string;
+          categoryAccuracy: string;
+          orderIdAccuracy: string;
+          avgTokenCost: number;
+        };
+      };
+      cases: Array<{
+        caseId: number;
+        semanticKey: string;
+        title: string;
+        expectedCategory: string;
+        runs: number;
+        compliancePassCount: number;
+        categoryAccuracyCount: number;
+        orderIdAccuracyCount: number;
+      }>;
+    };
+
+    console.log(`\n================================================================================`);
+    console.log(`${BOLD}PatchCat 回归门禁看板 (Compared against ${basename(compareBaselinePath)})${RESET}`);
+    console.log(`基线时间: ${baseline.timestamp} | 实验标签: ${baseline.experimentTag} | 模型: ${baseline.model}`);
+    console.log(`================================================================================`);
+    console.log(`编号    | 用例场景描述               | 基线合规 | 当前合规 | 基线分类 | 当前分类 | 门禁判定`);
+    console.log(`--------------------------------------------------------------------------------`);
+
+    let regressedCount = 0;
+    let improvedCount = 0;
+    let stablePassCount = 0;
+    let stableFailCount = 0;
+
+    for (const c of benchmarkCases) {
+      const baseCase = baseline.cases.find((x) => x.semanticKey === c.semanticKey || x.caseId === c.id);
+      const currRecords = allRecords.filter((r) => r.caseId === c.id);
+      const currRuns = currRecords.length;
+      const currCompliancePass = currRecords.filter((r) => r.groupB.endToEndSuccess).length;
+      const currCategoryPass = currRecords.filter((r) => r.groupB.categoryCorrect).length;
+
+      const basePassRate = baseCase && baseCase.runs > 0 ? baseCase.compliancePassCount / baseCase.runs : 0;
+      const currPassRate = currRuns > 0 ? currCompliancePass / currRuns : 0;
+      const baseCatRate = baseCase && baseCase.runs > 0 ? baseCase.categoryAccuracyCount / baseCase.runs : 0;
+      const currCatRate = currRuns > 0 ? currCategoryPass / currRuns : 0;
+
+      const isSentinel = WATCH_LIST.some((w) => w.caseId === c.id);
+      const sentinelTag = isSentinel ? ' [哨兵]' : '';
+
+      let statusMarker = `${GREEN}STABLE_PASS${RESET}`;
+
+      // Check regression:
+      // Hard regression if current category accuracy < baseline category accuracy
+      // OR current compliance < baseline compliance
+      const isCatRegressed = currCatRate < baseCatRate;
+      const isCompRegressed = currPassRate < basePassRate;
+
+      if (isCatRegressed || isCompRegressed) {
+        statusMarker = `${RED}${BOLD}REGRESSED 🚨${RESET}`;
+        regressedCount++;
+      } else if (currCatRate > baseCatRate || currPassRate > basePassRate) {
+        statusMarker = `${GREEN}${BOLD}IMPROVED 🟢${RESET}`;
+        improvedCount++;
+      } else if (currPassRate < 1.0 || currCatRate < 1.0) {
+        statusMarker = `${YELLOW}STABLE_FAIL${RESET}`;
+        stableFailCount++;
+      } else {
+        statusMarker = `${GREEN}STABLE_PASS${RESET}`;
+        stablePassCount++;
+      }
+
+      const baseCompStr = baseCase ? `${(basePassRate * 100).toFixed(0)}% (${baseCase.compliancePassCount}/${baseCase.runs})` : 'N/A';
+      const currCompStr = `${(currPassRate * 100).toFixed(0)}% (${currCompliancePass}/${currRuns})`;
+      const baseCatStr = baseCase ? `${(baseCatRate * 100).toFixed(0)}% (${baseCase.categoryAccuracyCount}/${baseCase.runs})` : 'N/A';
+      const currCatStr = `${(currCatRate * 100).toFixed(0)}% (${currCategoryPass}/${currRuns})`;
+      const titlePadded = (c.title + sentinelTag).padEnd(20);
+
+      console.log(`Case ${String(c.id).padStart(2, '0')} | ${titlePadded} | ${baseCompStr.padEnd(8)} | ${currCompStr.padEnd(8)} | ${baseCatStr.padEnd(8)} | ${currCatStr.padEnd(8)} | ${statusMarker}`);
+    }
+
+    console.log(`================================================================================`);
+    console.log(`【差分汇总对账】`);
+    const baseComp = parseFloat(baseline.metrics.groupB.complianceRate);
+    const currComp = parseFloat(pct(b_e2e, b_total));
+    const compDelta = (currComp - baseComp).toFixed(1);
+
+    const baseCat = parseFloat(baseline.metrics.groupB.categoryAccuracy);
+    const currCat = parseFloat(pct(b_cat_ok, b_cat_n));
+    const catDelta = (currCat - baseCat).toFixed(1);
+
+    const baseTok = baseline.metrics.groupB.avgTokenCost || 0;
+    const currTok = Math.round(b_total > 0 ? b_tokens / b_total : 0);
+    const tokDelta = currTok - baseTok;
+
+    console.log(`  - 契约合规率:   ${baseComp}% -> ${currComp}% (Δ ${Number(compDelta) >= 0 ? '+' : ''}${compDelta}%)`);
+    console.log(`  - 分类准确率:   ${baseCat}% -> ${currCat}% (Δ ${Number(catDelta) >= 0 ? '+' : ''}${catDelta}%)`);
+    console.log(`  - 平均 Token:   ${baseTok} -> ${currTok} tok (Δ ${tokDelta >= 0 ? '+' : ''}${tokDelta} tok)`);
+    console.log(`  - 晋级用例数:   ${improvedCount} 个`);
+    console.log(`  - 退化用例数:   ${regressedCount} 个`);
+    console.log(`  - 哨兵裁决:     ${collateralHit.length > 0 ? RED + 'COLLATERAL_DAMAGE 🚨' : targetMissed ? YELLOW + 'TARGET_MISSED ⚠️' : GREEN + 'ALL_GREEN ✔'}${RESET}`);
+    console.log(`================================================================================`);
+
+    const isFullSuiteRun = targetCaseId === undefined;
+    const hasRegression = regressedCount > 0;
+    const hasSentinelBreach = collateralHit.length > 0 || targetMissed;
+    const hasMacroDrop = isFullSuiteRun && (currCat < baseCat || currComp < baseComp);
+
+    if (hasRegression || hasSentinelBreach || hasMacroDrop) {
+      console.log(`\n${RED}${BOLD}❌ [门禁裁决]: REGRESSION GATE FAILED (检测到用例退化或指标倒挂，阻断 CI 合并)${RESET}\n`);
+      process.exitCode = 1;
+      return;
+    } else {
+      console.log(`\n${GREEN}${BOLD}✔ [门禁裁决]: REGRESSION GATE PASSED (无退化，核心契约与意图分类稳固，准予合并)${RESET}\n`);
+      process.exitCode = 0;
+      return;
+    }
+  }
 }
 
 main().catch((err) => {

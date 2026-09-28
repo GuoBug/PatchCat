@@ -108,4 +108,5 @@ patchcat/
 eval-results/*
 !eval-results/*.md
 !eval-results/*.py
+!eval-results/baseline.json
 

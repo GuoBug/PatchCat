@@ -1,14 +1,15 @@
 # PatchCat 评测体系（Module 1）：失败模式病理学分析与分类表 (Error Analysis Taxonomy)
 
-> **版本**：v2.1.0（完整版 + E0b 阴性对照）  
-> **历史版本归档**：[v2.0.0 基准诊断版](./error-analysis-taxonomy-v2.0.0.md)  
+> **版本**：v2.2.0（完整版 + E0b 阴性对照 + 自动化回归门禁）  
+> **历史版本归档**：[v2.0.0 基准诊断版](./error-analysis-taxonomy-v2.0.0.md) · [v2.1.0 对照闭环版](./error-analysis-taxonomy-v2.1.0.md)  
 > **基准数据源**：`eval-results/siliconflow-benchmark-2026-09-24T11-28-09-916Z.json`（42 组配对样本，Qwen/Qwen2.5-7B-Instruct）  
 > **对照实验数据源**：
 > - E0　`...2026-09-27T07-58-43-287Z.json`（排除 `response_format` 假说）
 > - **E0b `...2026-09-27T09-33-55-270Z.json`（56 组配对样本，排除「枚举首因效应」假说，并充当 E2 的阴性对照）**
 > - E2　`...2026-09-27T09-13-16-397Z.json`（56 组配对样本，验证「description 过弱」假说）
-> **上游实现**：`scripts/run-siliconflow-ab-test.ts`（含哨兵监控 Watch-List）· `src/presets/self-healing-scenarios.ts`（三变体 Schema）
-> **日期**：2026-09-27
+> - **固化黄金基线**：`eval-results/baseline.json`（56 样本全量向量，合规率 98.2%，分类准确率 92.9%）
+> **上游实现**：`scripts/run-siliconflow-ab-test.ts`（含哨兵监控、Fail-Fast 契约断言、`--save-baseline` / `--compare-baseline` 门禁）· `src/presets/self-healing-scenarios.ts`（三变体 Schema）
+> **日期**：2026-09-28
 
 ---
 
@@ -594,6 +595,39 @@ A 组合规率的跨度是 **10.7pt**，而 B 组端到端合规率的跨实验�
 | **先用 SIMULATION** | 零成本验证 harness 改动无误后，再切 live |
 | **成本量级** | 全量一次（14 × 4 × 2 组）112 次调用 ≈ 7 万 tokens，约 6 分钟 |
 
+### 7.5 治无 CI 回归门禁：实装自动化防退化门禁与黄金基线快照
+
+为解决「无法一条命令回答这次改动是否退步」的工程断点，评测流水线已正式实装基于黄金快照的自动化回归门禁：
+
+#### 7.5.1 黄金基线快照（`eval-results/baseline.json`）
+将已验证收敛的 E2 实验（56 组配对样本全量运行）固化为机器可读的黄金基准快照，解除 gitignore 限制并作为版本资产纳入 Git 版本追踪（`!eval-results/baseline.json`）。该快照永久锁定以下指标基准：
+- **契约合规交付率**：98.2%
+- **意图分类准确率**：92.9%
+- **平均 Token 成本**：1291 tok
+- **用例级向量状态**：14 个用例的每一项通过率、意图正确率与历史输出分布；
+- **哨兵仲裁结果**：`ALL_GREEN`。
+
+#### 7.5.2 哨兵防漂移双重防御机制（Anti-Drift Guardrails）
+针对「外部修改用例库导致下标错位、哨兵静默失效」的隐性工程隐患，实现双重防呆：
+1. **语义唯一标识绑定**：每个 Case 强制绑定 `semanticKey`（如 `logistics_query`、`refund_unreceived_signed`、`logistics_angry_complaint`），哨兵监控根据业务语义而非脆弱的数组下标进行绑定；
+2. **Fail-Fast 契约自检**：测试脚本在启动执行的第 0 秒（调用 API 之前）执行 `assertSentinelIntegrity`，校验用例 ID、语义 Key、提示词核心关键词以及预期类别是否完全吻合。一旦用例集被重排或篡改，脚本在 1 毫秒内硬性抛错中止，严禁静默错位运行。
+
+#### 7.5.3 差分判定状态机与退出码熔断
+在执行 `npm run eval:regression` 时，系统自动读取基线快照并执行逐用例差分计算：
+- **`STABLE_PASS`**：基线全过，当前版本依然全过（稳固）；
+- **`STABLE_FAIL`**：基线未过，当前版本依然未过（已知历史缺陷，未恶化）；
+- **`IMPROVED 🟢`**：基线有瑕疵，当前版本全部通过（有效修复/晋级）；
+- **`REGRESSED 🚨`**：**基线原本通过，当前版本发生翻车（硬退化报警）**。
+
+**门禁阻断策略**：
+- **硬阻断（Exit Code 1）**：只要检测到任何用例发生 `REGRESSED`、或哨兵名单发生漂移（`COLLATERAL_DAMAGE` / `TARGET_MISSED`）、或全量意图准确率低于基线，终端高亮标红并以退出码 1 阻断 CI；
+- **放行（Exit Code 0）**：零退化且核心指标稳固，打印绿灯对账看板并以退出码 0 放行。
+
+#### 7.5.4 标准运行命令
+- `npm run eval:baseline`：重新固化并保存当前最新黄金基线至 `eval-results/baseline.json`；
+- `npm run eval:regression`：一键全量运行并比对基线，输出回归门禁看板；
+- `npm run eval:regression -- --case=N`：靶向针对单个 Case 执行差分回归验证。
+
 ---
 
 ## 八、结论表述模板（限定口径，可直接引用）
@@ -624,7 +658,7 @@ A 组合规率的跨度是 **10.7pt**，而 B 组端到端合规率的跨实验�
 | 2 | 仅测试**单个模型**（Qwen2.5-7B-Instruct） | 结论不可直接外推至其他模型或尺寸 |
 | 3 | 无 LLM judge，规则外质量维度仅由 GT 覆盖 `category` / `orderId` 两维 | `summary` 的语义质量（是否准确复述诉求、是否幻觉）**完全未被度量** |
 | 4 | 无数据集增长机制 | 修一个 bug 未对应新增一个用例 |
-| 5 | 未固化 baseline，无 CI 回归 | 无法一条命令回答"这次改动是否退步" |
+| 5 | ~~未固化 baseline，无 CI 回归~~ | **已解决**（§7.5）：已固化 `eval-results/baseline.json`，并支持 `npm run eval:regression` 一键差分对账与 Exit Code 0/1 CI 阻断 |
 | 6 | **跨实验噪声大于部分效应量**：恒定对照 A 组的合规率跨三次实验跨度 10.7pt，而 B 组跨实验差异仅 5.3pt | 小样本下单次实验的**合规率**差异不可与噪声分离（§6.8.6）；扩充用例数前，只能对**完全分离**的指标（如 #7 的 0/7 → 4/4）做断言 |
 | 7 | **声明式单变量无法保证行为单变量**（§6.8.5） | 改一处 field description 会改变其他字段的生成分布；"我只改了一处"不构成其他指标未受影响的证据 |
 
@@ -659,3 +693,14 @@ A 组合规率的跨度是 **10.7pt**，而 B 组端到端合规率的跨实验�
 | ✏️ 更正 | **统计强度**：#7 的证据由 0/3 vs 4/4 合并为 **0/7 vs 4/4（p 由 0.0286 降至 0.0030）** |
 | ⚠️ 自我更正 | 初版写"基线 vs E2 的 p = 0.0571（边缘）"是**错的**，实算为 **0.0286**。Fisher 两尾在**不等组样本量**（3 vs 4）时，另一侧尾部概率（0.1143）大于观测值（0.0286）而不计入，故 3v4 与 4v4 的 p 相同。**p 值禁止凭直觉估，必须实算** |
 | ❌ 裁决 | 「枚举首因效应」假说**证伪**（三向：剥夺 / 授予 / 抗性）；F6 根因唯一收敛到 **category description 过弱** |
+
+### v2.1.0 → v2.2.0（自动化防退化门禁与哨兵双重防呆）
+
+| 变更 | 说明 |
+|---|---|
+| ➕ 新增 | **§7.5 自动化防退化门禁**：实现 `--save-baseline` 与 `--compare-baseline`，支持 `npm run eval:baseline` 与 `npm run eval:regression` |
+| ➕ 新增 | **黄金基线快照**：固化 `eval-results/baseline.json`（98.2% 合规率、92.9% 准确率、14 个用例向量快照），纳入 Git 版本资产追踪 |
+| ➕ 新增 | **哨兵防漂移双重防御**：用例强制注入 `semanticKey` 语义锚点，第 0 秒通过 `assertSentinelIntegrity` 文本与类别强断言，彻底消除下标重排带来的静默错位隐患 |
+| ➕ 新增 | **差分状态机与 CI 退出码**：自动判定 `STABLE_PASS` / `STABLE_FAIL` / `IMPROVED` / `REGRESSED`，遇退化或哨兵失守输出 Exit Code 1，全绿输出 Exit Code 0 |
+| ✏️ 更正 | 第九章「已知局限」第 5 项由未完成更正为**已解决** |
+

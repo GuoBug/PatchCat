@@ -1,0 +1,167 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-09-27T09:13:16.401Z",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "experimentTag": "E2_disambiguate",
+  "repetitions": 4,
+  "totalCases": 14,
+  "totalSamples": 56,
+  "metrics": {
+    "groupA": {
+      "complianceRate": "69.6%",
+      "categoryAccuracy": "85.2%",
+      "orderIdAccuracy": "100.0%"
+    },
+    "groupB": {
+      "complianceRate": "98.2%",
+      "categoryAccuracy": "92.9%",
+      "orderIdAccuracy": "100.0%",
+      "r2EscalationRate": "8.9%",
+      "healingConversionRate": "96.3%",
+      "avgTokenCost": 1291
+    }
+  },
+  "sentinelVerdict": "ALL_GREEN",
+  "cases": [
+    {
+      "caseId": 1,
+      "semanticKey": "refund_gentle",
+      "title": "不着急的退款申请",
+      "expectedCategory": "refund",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 2,
+      "semanticKey": "logistics_query",
+      "title": "普通物流查询",
+      "expectedCategory": "logistics",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 3,
+      "semanticKey": "refund_furious",
+      "title": "客户很生气的退全款",
+      "expectedCategory": "refund",
+      "runs": 4,
+      "compliancePassCount": 3,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 4,
+      "semanticKey": "quality_scratch",
+      "title": "轻微质量瑕疵",
+      "expectedCategory": "quality",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 5,
+      "semanticKey": "refund_wrong_size",
+      "title": "退货退款寄回咨询",
+      "expectedCategory": "refund",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 6,
+      "semanticKey": "other_manual",
+      "title": "说明书丢失咨询",
+      "expectedCategory": "other",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 7,
+      "semanticKey": "refund_unreceived_signed",
+      "title": "未收到货却显示签收",
+      "expectedCategory": "refund",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 8,
+      "semanticKey": "logistics_damaged_box",
+      "title": "外包装破损严重",
+      "expectedCategory": "logistics",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 0,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 9,
+      "semanticKey": "refund_wrong_color",
+      "title": "发错颜色退款申请",
+      "expectedCategory": "refund",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 10,
+      "semanticKey": "refund_impulse_cancel",
+      "title": "冲动消费后悔退款",
+      "expectedCategory": "refund",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 11,
+      "semanticKey": "refund_two_orders_dual_id",
+      "title": "一单双号混淆",
+      "expectedCategory": "refund",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 12,
+      "semanticKey": "refund_long_description",
+      "title": "极长描述诱导冗长摘要",
+      "expectedCategory": "refund",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 13,
+      "semanticKey": "logistics_angry_complaint",
+      "title": "激烈情绪的物流投诉",
+      "expectedCategory": "logistics",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 14,
+      "semanticKey": "refund_invoice_mix",
+      "title": "退款与发票混合诉求",
+      "expectedCategory": "refund",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    }
+  ]
+}
