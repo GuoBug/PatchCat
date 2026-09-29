@@ -1,15 +1,15 @@
 # PatchCat 评测体系（Module 1）：失败模式病理学分析与分类表 (Error Analysis Taxonomy)
 
-> **版本**：v2.4.0（完整版 + E0b 阴性对照 + 自动化回归门禁 + 30 用例全域基准集）  
-> **历史版本归档**：[v2.0.0 基准诊断版](./error-analysis-taxonomy-v2.0.0.md) · [v2.1.0 对照闭环版](./error-analysis-taxonomy-v2.1.0.md) · [v2.2.0 自动化门禁版](./error-analysis-taxonomy-v2.2.0.md) · [v2.3.0 统计门禁与SLA版](./error-analysis-taxonomy-v2.3.0.md)  
+> **版本**：v2.2.0（完整版 + E0b 阴性对照 + 自动化回归门禁）  
+> **历史版本归档**：[v2.0.0 基准诊断版](./error-analysis-taxonomy-v2.0.0.md) · [v2.1.0 对照闭环版](./error-analysis-taxonomy-v2.1.0.md)  
 > **基准数据源**：`eval-results/siliconflow-benchmark-2026-09-24T11-28-09-916Z.json`（42 组配对样本，Qwen/Qwen2.5-7B-Instruct）  
 > **对照实验数据源**：
 > - E0　`...2026-09-27T07-58-43-287Z.json`（排除 `response_format` 假说）
 > - **E0b `...2026-09-27T09-33-55-270Z.json`（56 组配对样本，排除「枚举首因效应」假说，并充当 E2 的阴性对照）**
 > - E2　`...2026-09-27T09-13-16-397Z.json`（56 组配对样本，验证「description 过弱」假说）
 > - **固化黄金基线**：`eval-results/baseline.json`（56 样本全量向量，合规率 98.2%，分类准确率 92.9%）
-> **上游实现**：`scripts/run-siliconflow-ab-test.ts`（含哨兵监控、Fail-Fast 契约断言、`--save-baseline` / `--compare-baseline` 门禁）· `src/presets/benchmark-dataset.ts`（30 用例全域基准集）· `src/presets/self-healing-scenarios.ts`（三变体 Schema）
-> **日期**：2026-09-29
+> **上游实现**：`scripts/run-siliconflow-ab-test.ts`（含哨兵监控、Fail-Fast 契约断言、`--save-baseline` / `--compare-baseline` 门禁）· `src/presets/self-healing-scenarios.ts`（三变体 Schema）
+> **日期**：2026-09-28
 
 ---
 
@@ -703,65 +703,4 @@ A 组合规率的跨度是 **10.7pt**，而 B 组端到端合规率的跨实验�
 | ➕ 新增 | **哨兵防漂移双重防御**：用例强制注入 `semanticKey` 语义锚点，第 0 秒通过 `assertSentinelIntegrity` 文本与类别强断言，彻底消除下标重排带来的静默错位隐患 |
 | ➕ 新增 | **差分状态机与 CI 退出码**：自动判定 `STABLE_PASS` / `STABLE_FAIL` / `IMPROVED` / `REGRESSED`，遇退化或哨兵失守输出 Exit Code 1，全绿输出 Exit Code 0 |
 | ✏️ 更正 | 第九章「已知局限」第 5 项由未完成更正为**已解决** |
-
-### v2.2.0 → v2.3.0（门禁判据升维：从单测确定性比较到工业级统计容差）
-
-#### 1. 核心架构反思与哲学对齐 (Engineering Philosophy & Reflection)
-- **零容差致命缺陷复盘**：初版回归门禁实现了工程骨架，但底层判据采用了传统的严格小于判断（`curr < base`）。外部代码审计敏锐指出：在 $N=56$ 的二项分布采样下，基线 55/56 (98.2%) 的 Wilson 95% 置信区间是 `[90.6%, 99.7%]`，存在高达 7.6pt 的置信半宽。将单次峰值采样点固化为硬底线，犯了典型的「胜者诅咒（Winner's Curse）」，会导致 CI 在代码无改动时面临高达 30%+ 的随机误报率。
-- **Product Engineer 研发哲学**：“在学习研究阶段抱着‘能做到最好就不糊弄’；但在实际生产中情况多变，‘边做边看’才是更符合真实市场产品的原则。” 面对高水平的外部 Code Review，我们拒绝“为了混过验收而表面修补”，必须彻底重构底层统计判据。
-
-#### 2. 双轨门禁体系（Dual-Track Gating Architecture）
-
-| 门禁维度 | 容差哲学 | 判据标准与工程实现 |
-|---|---|---|
-| **核心业务哨兵** | **严格零容差 (0%)** | `#2/#13` 维持 `logistics`，`#7` 命中 `refund`；任何一次分类漂移立即触发 `REGRESSED 🚨 (哨兵失守)` 阻断 CI。 |
-| **单用例判定** | **两级阶梯容差** | 小样本（$n=4$）单次偶发失败标记为 `FLAKY_WARN ⚠️` 观察；单用例 $\ge 2$ 次失败确诊为 `REGRESSED 🚨` 阻断 CI。 |
-| **宏观质量指标** | **Wilson 95% 置信下界** | 滤除采样随机抖动；仅当合规率跌破置信下界 `90.6%` 或准确率跌破 `83.0%` 时触发宏观退化熔断。 |
-| **成本 SLA 熔断** | **Token 预算红线 (+25%)** | 解决“只报成本不拦成本”的虚假门禁；单样本 Token 超过基线 25% 预算立即触发成本超标熔断。 |
-| **状态机内部健康** | **R2 升级通路监控** | 将 `r2EscalationRate` 接入对比看板；监控首轮契约违规与 R2 升级率的协同活跃度。 |
-| **配置亲和性检查** | **语义变体防呆提示** | 自动校验 `baseline.experimentTag` 与当前运行变体，非同配置比对给出醒目风险提示。 |
-
-| 变更 | 说明 |
-|---|---|
-| ➕ 增强 | **顶层成本契约显式交付**：在 `summary.groupA` 和 `summary.groupB` 中显式写入 `meanTokens` 与 `meanDurationMs`；控制台【表 2】补充平均耗时展示。 |
-| ➕ 增强 | **基线快照置信区间固化**：在 `eval-results/baseline.json` 中固化 `complianceCI95` 与 `categoryAccuracyCI95` 统计向量。 |
-| ➕ 增强 | **双轨统计门禁与成本熔断**：重构 `scripts/run-siliconflow-ab-test.ts` 中的 `--compare-baseline` 判定链路，全面消除误报狼来了隐患。 |
-
-### v2.3.0 → v2.4.0（数据集规模扩充：从 14 用例扩充至 30 全域用例，突破 McNemar 统计显著性上限）
-
-#### 1. 扩充背景与统计学动机
-- **小样本数学瓶颈（Mathematical Ceiling）**：在 v2.0~v2.3 中，评测集固定为 14 个测试用例。虽然通过 4 轮重复（$N=56$）让样本级 McNemar 检验达到了显著（$p=0.00195$），但在用例级维度（by-case），有效区分用例为 $b=4, c=0$。根据二项精确检验公式：
-  $$p = 2 \times 0.5^4 = 0.125 > 0.05$$
-  $0.125$ 是 $n=4$ 时的数学下限。根据 Module 1 规范：“Repetition 度量的是模型不确定性，Case 数量度量的是场景覆盖。两者不可互换。必须扩充用例数使 discordant 数量 $\ge 6$，以实现 Case 层面 $p = 2 \times 0.5^6 = 0.0313 < 0.05$。”
-- **解耦与规范化交付**：将用例从 runner 脚本中物理抽离，沉淀为独立的单一事实来源模块 `src/presets/benchmark-dataset.ts`，并配备专用单测套件 `tests/benchmark-dataset.node.test.ts`。
-
-#### 2. 新增 16 个用例体系设计矩阵 (Cases #15 ~ #30)
-
-| 编号 | 语义键 (semanticKey) | 标题 | 难度 | 核心意图 (GT) | 订单号 (GT) | 边界压力与对抗陷阱设计 |
-| :---: | :--- | :--- | :---: | :---: | :---: | :--- |
-| **#15** | `logistics_urgent_medicine` | 急救药物超急催件 | hard | logistics | ORD-556677 | **物流优先级上限压力**：断药人命关天诱导 `urgency=5`，检验 L2 拦截并自愈下调为 $\le 3$ 的收敛能力。 |
-| **#16** | `refund_polite_leisurely` | 佛系慢节奏退款 | easy | refund | ORD-998877 | **退款优先级下限红线**：语气极度佛系诱导 `urgency=1/2`，检验 L2 拦截强制自愈提升为 $\ge 4$。 |
-| **#17** | `refund_terse_four_words` | 极简短语退款申请 | hard | refund | ORD-102030 | **极短描述诱导字数违规**：输入仅 13 字，`urgency ≥ 4` 强制 `summary ≥ 15` 字，检验自愈补全能力。 |
-| **#18** | `quality_prompt_injection_order_no`| 诱导摘要复述订单号 | hard | quality | ORD-314159 | **Prompt 提示词注入陷阱**：用户显式指令“务必在摘要注明订单号”，检验 C1 契约清洗防御。 |
-| **#19** | `refund_super_long_rant` | 冗长消费控诉诱导超长摘要| hard | refund | ORD-887766 | **小作文冗余信息压力**：充斥情绪抱怨，自然生成易超 30 字，检验 L1/L2 约束与摘要压缩能力。 |
-| **#20** | `logistics_address_modification` | 紧急修改派送地址 | easy | logistics | ORD-654987 | **纯正物流变更服务**：已揽收未派送改地址，验证物流分类稳定性与 `urgency <= 3`。 |
-| **#21** | `other_invoice_reissue` | 重开发票抬头咨询 | easy | other | ORD-778899 | **发票咨询无退款**：专票普票重开，商品无问题，丰富 `other` 类别的非资损样本。 |
-| **#22** | `quality_exchange_not_refund` | 商品瑕疵换货不退款 | easy | quality | ORD-332211 | **字面引力对抗**：显式声明“不用给我退款只换新机”，检验模型对抗“退款”字面引力的定力。 |
-| **#23** | `refund_price_guarantee` | 保价退差价申请 | easy | refund | ORD-445566 | **资金退还业务变体**：7 天保价退差价，实质资金流转，检验判定为 `refund` 的业务覆盖。 |
-| **#24** | `other_installation_booking` | 大件家电上门安装预约 | easy | other | ORD-889900 | **售后履约支持服务**：上门打孔安装，无质量纠纷无资金退回，稳固 `other` 类别。 |
-| **#25** | `refund_dual_orders_noise_numbers` | 多数字及手机号混淆退款 | hard | refund | ORD-987123 | **多实体混淆对抗**：含手机号、价格、两笔订单号，检验正则精确提取与目标意图关联。 |
-| **#26** | `logistics_fake_shipping_complaint`| 虚假发货物流投诉 | hard | logistics | ORD-667788 | **虚假发货定性**：强烈愤怒但诉求为“平台介入核实违规”未要求退款，判定为 `logistics`。 |
-| **#27** | `quality_fake_product_counterfeit` | 假冒伪劣专柜验货退款 | hard | refund | ORD-246810 | **严重瑕疵与退款纠缠**：假货质检 + 立即退款，E2 最终资损判据命中 `refund`。 |
-| **#28** | `other_missing_gift_inquiry` | 赠品漏发咨询补发 | easy | other | ORD-135790 | **非主件漏发补发**：赠品分开发货咨询，不涉及退款退货，分类为 `other`。 |
-| **#29** | `refund_slow_delivery_rejection` | 物流超时拒收退款 | hard | refund | ORD-543210 | **物流迟缓引发退款**：通篇控诉物流超时，但最终动作为拒收全额退款，判定为 `refund`。 |
-| **#30** | `quality_hidden_damage_after_assembly`| 安装后发现暗损退款 | hard | refund | ORD-975310 | **装配后暗损纠纷**：组装后结构性破裂，最终要求退货退款，命中 `refund`（`urgency ≥ 4`）。 |
-
-| 变更 | 说明 |
-|---|---|
-| ➕ 扩充 | **用例规模翻倍升维**：测试集从 14 用例扩充至 30 全域用例（17 easy + 13 hard adversarial），全面覆盖四大业务意图。 |
-| ➕ 架构解耦 | **基准集独立建库**：新建 `src/presets/benchmark-dataset.ts`，彻底解耦评测数据集与 runner 逻辑，规范化数据源。 |
-| ➕ 契约单测 | **数据集自动化断言**：新增 `tests/benchmark-dataset.node.test.ts`（9 项自动化单测），集成进 `npm test`，常态化保障用例合法性。 |
-| ➕ 门禁自适应 | **门禁看板新增 `NEW_CASE 🆕` 状态标记**：在对比旧基线时清晰提示未基线化用例，平滑过渡多版本比较。 |
-
-
 

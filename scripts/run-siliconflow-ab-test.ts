@@ -149,119 +149,20 @@ const UNIFIED_SYSTEM_PROMPT = `你是一个工单结构化解析助手。请直�
 //    `expectedCategory` / `expectedOrderId` are GROUND TRUTH used only for the
 //    correctness metric; they are never fed to the contract validator.
 // ─────────────────────────────────────────────────────────────────────────────
-interface CaseDef {
-  id: number;
-  semanticKey: string;
-  title: string;
-  prompt: string;
-  expectedCategory: 'logistics' | 'refund' | 'quality' | 'other';
-  expectedOrderId: string;
-  difficulty: 'easy' | 'hard';
-}
-
-const BENCHMARK_CASES: CaseDef[] = [
-  { id: 1, semanticKey: 'refund_gentle', title: '不着急的退款申请', difficulty: 'easy', expectedCategory: 'refund', expectedOrderId: 'ORD-881201',
-    prompt: '请解析工单：客服你好，我收到的键盘空格键坏了，我要申请退款（订单号 ORD-881201）。我不着急用，下周退也行。' },
-  { id: 2, semanticKey: 'logistics_query', title: '普通物流查询', difficulty: 'easy', expectedCategory: 'logistics', expectedOrderId: 'ORD-119202',
-    prompt: '请解析工单：帮我查一下包裹 ORD-119202 的物流状态，两天没更新了。' },
-  { id: 3, semanticKey: 'refund_furious', title: '客户很生气的退全款', difficulty: 'easy', expectedCategory: 'refund', expectedOrderId: 'ORD-772103',
-    prompt: '请解析工单：机器刚拆开就冒烟，必须立刻给我全额退款（订单号 ORD-772103）！立刻！' },
-  { id: 4, semanticKey: 'quality_scratch', title: '轻微质量瑕疵', difficulty: 'easy', expectedCategory: 'quality', expectedOrderId: 'ORD-554402',
-    prompt: '请解析工单：订单号 ORD-554402，鼠标外壳有点轻微划痕，能凑合用，问问有没有补偿。' },
-  { id: 5, semanticKey: 'refund_wrong_size', title: '退货退款寄回咨询', difficulty: 'easy', expectedCategory: 'refund', expectedOrderId: 'ORD-662301',
-    prompt: '请解析工单：订单号 ORD-662301，衣服尺码买小了，我要退款退货，请问退货地址是哪里？' },
-  { id: 6, semanticKey: 'other_manual', title: '说明书丢失咨询', difficulty: 'easy', expectedCategory: 'other', expectedOrderId: 'ORD-991122',
-    prompt: '请解析工单：订单 ORD-991122 刚签收，找不到说明书了，能发一份电子版吗？' },
-  { id: 7, semanticKey: 'refund_unreceived_signed', title: '未收到货却显示签收', difficulty: 'easy', expectedCategory: 'refund', expectedOrderId: 'ORD-443322',
-    prompt: '请解析工单：订单号 ORD-443322 还没收到货怎么就签收了？如果是丢件了就赶紧给我退款！' },
-  { id: 8, semanticKey: 'logistics_damaged_box', title: '外包装破损严重', difficulty: 'easy', expectedCategory: 'logistics', expectedOrderId: 'ORD-123456',
-    prompt: '请解析工单：订单 ORD-123456，快递箱全压扁了，里面的杯子碎了，需要处理。' },
-  { id: 9, semanticKey: 'refund_wrong_color', title: '发错颜色退款申请', difficulty: 'easy', expectedCategory: 'refund', expectedOrderId: 'ORD-987654',
-    prompt: '请解析工单：我要的是白色发了黑色，申请退款退货，订单号是 ORD-987654。' },
-  { id: 10, semanticKey: 'refund_impulse_cancel', title: '冲动消费后悔退款', difficulty: 'easy', expectedCategory: 'refund', expectedOrderId: 'ORD-654321',
-    prompt: '请解析工单：订单号 ORD-654321，刚买完后悔了，还没发货，直接给我退款撤单吧。' },
-
-  // ── Adversarial cases (added in v3: force genuinely cross-field invariants to fire) ──
-  { id: 11, semanticKey: 'refund_two_orders_dual_id', title: '一单双号混淆', difficulty: 'hard', expectedCategory: 'refund', expectedOrderId: 'ORD-222222',
-    prompt: '请解析工单：我有两个订单，ORD-111111 上个星期已经退款完成了，ORD-222222 的保温杯内胆生锈，这个我要申请退款。' },
-  { id: 12, semanticKey: 'refund_long_description', title: '极长描述诱导冗长摘要', difficulty: 'hard', expectedCategory: 'refund', expectedOrderId: 'ORD-555555',
-    prompt: '请解析工单：订单号 ORD-555555，我于上周五下单的那台显示器，昨天终于收到货了，拆开之后发现屏幕右下角有三处非常明显的坏点，而且外包装纸箱有严重的挤压变形痕迹，我在此之前已经主动联系过一次客服但至今没有收到任何回复，现在我的诉求是要求全额退款并且由你们承担退回的运费。' },
-  { id: 13, semanticKey: 'logistics_angry_complaint', title: '激烈情绪的物流投诉', difficulty: 'hard', expectedCategory: 'logistics', expectedOrderId: 'ORD-333333',
-    prompt: '请解析工单：订单号 ORD-333333 的包裹卡在中转站整整三天没有任何动静了，客服电话打了五遍都没人接，我非常愤怒，必须马上给我一个说法！' },
-  { id: 14, semanticKey: 'refund_invoice_mix', title: '退款与发票混合诉求', difficulty: 'hard', expectedCategory: 'refund', expectedOrderId: 'ORD-444444',
-    prompt: '请解析工单：订单号 ORD-444444，这件衣服第一次下水洗就严重褪色，根本没法穿了，我要求退款，另外发票的抬头也开错了需要重开一张。' },
-];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 4b. Sentinel Watch-List — regression alarm for collateral damage
-// ─────────────────────────────────────────────────────────────────────────────
-interface WatchTarget {
-  caseId: number;
-  semanticKey: string;
-  expectedKeywordInPrompt: string;
-  /** The category this case must hold. Drift away from it = collateral damage. */
-  mustHold: 'logistics' | 'refund' | 'quality' | 'other';
-  /** Why this specific case is on the list. */
-  risk: string;
-}
-
-const WATCH_LIST: WatchTarget[] = [
-  {
-    caseId: 2,
-    semanticKey: 'logistics_query',
-    expectedKeywordInPrompt: '物流状态',
-    mustHold: 'logistics',
-    risk: '最纯粹的物流查询，无任何退款措辞；一旦漂到 refund 说明消歧规则过强',
-  },
-  {
-    caseId: 7,
-    semanticKey: 'refund_unreceived_signed',
-    expectedKeywordInPrompt: '还没收到货怎么就签收了',
-    mustHold: 'refund',
-    risk: 'E2 的靶心（未收到货却显示签收）；漂到 logistics 说明修复未生效',
-  },
-  {
-    caseId: 13,
-    semanticKey: 'logistics_angry_complaint',
-    expectedKeywordInPrompt: '包裹卡在中转站整整三天',
-    mustHold: 'logistics',
-    risk: '激烈情绪 + 物流投诉，措辞上最接近退款诉求，最容易被消歧规则误伤',
-  },
-];
-
-/**
- * Defensive Fail-Fast Assertion:
- * Protects against index drift if benchmark cases are reordered or inserted.
- */
-function assertSentinelIntegrity(cases: CaseDef[], watchList: WatchTarget[]) {
-  for (const w of watchList) {
-    const c = cases.find((x) => x.id === w.caseId);
-    if (!c) {
-      throw new Error(`🚨 [哨兵契约断言失败] BENCHMARK_CASES 中未找到 caseId=${w.caseId}！用例集可能已被重排或删除！`);
-    }
-    if (c.semanticKey !== w.semanticKey) {
-      throw new Error(
-        `🚨 [哨兵契约断言失败] Case #${w.caseId} 的 semanticKey 不匹配！预期 '${w.semanticKey}'，实测 '${c.semanticKey}'！请检查是否有中间插入用例导致下标漂移！`,
-      );
-    }
-    if (!c.prompt.includes(w.expectedKeywordInPrompt)) {
-      throw new Error(
-        `🚨 [哨兵契约断言失败] Case #${w.caseId} 的提示词内容发生变动！未包含关键词 "${w.expectedKeywordInPrompt}"！`,
-      );
-    }
-    if (c.expectedCategory !== w.mustHold) {
-      throw new Error(
-        `🚨 [哨兵契约断言失败] Case #${w.caseId} 的预期类别已改变！预期 '${w.mustHold}'，实测 '${c.expectedCategory}'！`,
-      );
-    }
-  }
-}
+import {
+  type CaseDef,
+  type WatchTarget,
+  BENCHMARK_CASES,
+  WATCH_LIST,
+  assertSentinelIntegrity,
+} from '../src/presets/benchmark-dataset.ts';
 
 // ANSI helpers. Red = drift detected on a guarded case; yellow = the targeted fix
 // did not land. Kept as raw escapes so the artifact JSON stays clean.
 const RED = '\x1b[31m';
 const YELLOW = '\x1b[33m';
 const GREEN = '\x1b[32m';
+const CYAN = '\x1b[36m';
 const BOLD = '\x1b[1m';
 const RESET = '\x1b[0m';
 
@@ -1145,7 +1046,14 @@ async function main() {
       const compDrop = (baseCase?.compliancePassCount ?? 0) - currCompliancePass;
       const catDrop = (baseCase?.categoryAccuracyCount ?? 0) - currCategoryPass;
 
-      if (isSentinel) {
+      if (!baseCase) {
+        statusMarker = `${CYAN}NEW_CASE 🆕${RESET}`;
+        if (currPassRate === 1.0 && currCatRate === 1.0) {
+          stablePassCount++;
+        } else {
+          flakyCount++;
+        }
+      } else if (isSentinel) {
         // Sentinel cases: strict ZERO TOLERANCE on semantic category drift
         const targetW = WATCH_LIST.find((w) => w.caseId === c.id);
         const drifted = targetW && currRecords.some((r) => r.groupB.finalCategory !== targetW.mustHold);
