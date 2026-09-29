@@ -145,6 +145,11 @@
 
 ---
 
+> **下一篇预告**  
+> 📖 [《边写边学 AI 工作流引擎（七）：告别“有进无出的上下文黑洞” —— 双锚点滑动窗口与原子事务裁剪实战》](./article-07-context-engineering-dual-anchor-pruning.md)
+
+---
+
 > **关于作者**  
 > **郭强 (GuoBug)**，Product Engineer，做平台工程也做业务增长。目前主要在折腾 AI 工作流编排、DAG 状态机与确定性系统架构。  
 > 开源项目与主页：[https://github.com/GuoBug](https://github.com/GuoBug) · [https://guobug.github.io](https://guobug.github.io)  

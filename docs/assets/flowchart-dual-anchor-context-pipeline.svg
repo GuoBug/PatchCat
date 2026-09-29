@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 680" width="960" height="680" style="background: transparent; display: block; max-width: 100%; height: auto;">
+  <defs>
+    <!-- Dot Grid Pattern -->
+    <pattern id="dot-grid-dacp" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2.5" cy="2.5" r="1.2" fill="#D4D4D8" />
+    </pattern>
+
+    <!-- Arrow Markers -->
+    <marker id="arrow-blk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000" stroke="#000000" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#7FFF00" stroke="#000000" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-cyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#06B6D4" stroke="#000000" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#F59E0B" stroke="#000000" stroke-width="1"/>
+    </marker>
+
+    <style>
+      .font-mono { font-family: 'Space Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'PingFang SC', monospace; }
+      .font-heading { font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif; }
+      .bold { font-weight: 700; }
+      .bolder { font-weight: 800; }
+      .black { font-weight: 900; }
+      .border-main { stroke: #000000; stroke-width: 2.5; stroke-linecap: square; stroke-linejoin: miter; }
+      .border-card { stroke: #000000; stroke-width: 2; }
+      .border-thin { stroke: #000000; stroke-width: 1.5; }
+      .border-dashed { stroke: #000000; stroke-width: 1.5; stroke-dasharray: 4 3; }
+    </style>
+  </defs>
+
+  <!-- Outer Shadow & Background Frame -->
+  <rect x="14" y="14" width="932" height="652" rx="8" fill="#000000" />
+  <rect x="10" y="10" width="932" height="652" rx="8" fill="#FAF9F5" class="border-main" />
+  <rect x="14" y="14" width="924" height="644" rx="6" fill="url(#dot-grid-dacp)" />
+
+  <!-- ================= Top Header Bar ================= -->
+  <rect x="28" y="26" width="896" height="52" rx="6" fill="#000000" />
+  <rect x="25" y="23" width="896" height="52" rx="6" fill="#FFFFFF" class="border-card" />
+
+  <rect x="36" y="31" width="190" height="34" rx="4" fill="#7FFF00" class="border-thin" />
+  <text x="131" y="53" class="font-mono bolder" font-size="12" fill="#000000" text-anchor="middle" letter-spacing="1">PATCHCAT ARCH // CE</text>
+
+  <text x="242" y="54" class="font-heading black" font-size="15" fill="#000000" letter-spacing="0.5">THREE-TIER CONTEXT ENGINEERING &amp; DUAL-ANCHOR PRUNING</text>
+  <text x="895" y="53" class="font-mono bold" font-size="11" fill="#71717A" text-anchor="end">DETERMINISTIC PIPELINE</text>
+
+  <!-- ================= Tier 0: Context Observability (Left Column) ================= -->
+  <g transform="translate(25, 90)">
+    <!-- Shadow & Card -->
+    <rect x="3" y="3" width="280" height="540" rx="6" fill="#000000" />
+    <rect x="0" y="0" width="280" height="540" rx="6" fill="#FFFFFF" class="border-card" />
+
+    <!-- Card Header Badge -->
+    <rect x="12" y="12" width="256" height="32" rx="4" fill="#E0F2FE" class="border-thin" />
+    <text x="140" y="33" class="font-mono bolder" font-size="11" fill="#0369A1" text-anchor="middle">LAYER 0: OBSERVABILITY</text>
+
+    <!-- Subtitle -->
+    <text x="14" y="66" class="font-heading bold" font-size="13" fill="#0F172A">纯端侧微秒级轻量可观测</text>
+    <text x="14" y="84" class="font-mono" font-size="10" fill="#64748B">Zero-Native Dependencies (&lt;0.05ms)</text>
+
+    <!-- Module 1: Heuristic BPE Estimator -->
+    <rect x="12" y="102" width="256" height="110" rx="4" fill="#F8FAFC" class="border-thin" />
+    <rect x="20" y="110" width="130" height="20" rx="3" fill="#BAE6FD" class="border-thin" />
+    <text x="85" y="124" class="font-mono bold" font-size="9.5" fill="#0C4A6E" text-anchor="middle">BPE TOKEN ESTIMATOR</text>
+    <text x="20" y="146" class="font-mono" font-size="10" fill="#334155">• ASCII / 英文代码：折算比 0.27</text>
+    <text x="20" y="166" class="font-mono" font-size="10" fill="#334155">• CJK 汉字/日韩文：折算比 1.25</text>
+    <text x="20" y="186" class="font-mono" font-size="10" fill="#334155">• ChatML/Tool JSON：每帧固定 4t</text>
+    <text x="20" y="204" class="font-mono bold" font-size="9" fill="#0284C7">运行耗时 &lt; 0.05ms · 绝不卡死主线程</text>
+
+    <!-- Module 2: Capacity Resolver -->
+    <rect x="12" y="224" width="256" height="100" rx="4" fill="#F8FAFC" class="border-thin" />
+    <rect x="20" y="232" width="140" height="20" rx="3" fill="#E2E8F0" class="border-thin" />
+    <text x="90" y="246" class="font-mono bold" font-size="9.5" fill="#334155" text-anchor="middle">CAPACITY RESOLVER</text>
+    <text x="20" y="268" class="font-mono" font-size="10" fill="#475569">• Gemini: 1,048,576t | GPT-4o: 128kt</text>
+    <text x="20" y="288" class="font-mono" font-size="10" fill="#475569">• DeepSeek: 64kt | Qwen: 32kt</text>
+    <text x="20" y="308" class="font-mono bold" font-size="9.5" fill="#475569">• 未知模型安全兜底: 8,192t</text>
+
+    <!-- Module 3: Dual Snapshot Tracker -->
+    <rect x="12" y="336" width="256" height="100" rx="4" fill="#F8FAFC" class="border-thin" />
+    <rect x="20" y="344" width="130" height="20" rx="3" fill="#E2E8F0" class="border-thin" />
+    <text x="85" y="358" class="font-mono bold" font-size="9.5" fill="#334155" text-anchor="middle">CONTEXT TRACKER</text>
+    <text x="20" y="380" class="font-heading bold" font-size="10.5" fill="#1E293B">1. Pre-call Snapshot (预发抓取)</text>
+    <text x="20" y="400" class="font-heading bold" font-size="10.5" fill="#1E293B">2. Post-call Reconciliation (修正)</text>
+    <text x="20" y="420" class="font-mono" font-size="9.5" fill="#64748B">以服务端真实 usage 校验消除误差</text>
+
+    <!-- Module 4: 75% Watermark Alert -->
+    <rect x="12" y="448" width="256" height="78" rx="4" fill="#FEF3C7" class="border-thin" />
+    <rect x="20" y="456" width="115" height="20" rx="3" fill="#F59E0B" class="border-thin" />
+    <text x="77" y="470" class="font-mono bold" font-size="9.5" fill="#FFFFFF" text-anchor="middle">75% WATERMARK</text>
+    <text x="20" y="492" class="font-heading bold" font-size="11" fill="#92400E">容量水位预警哨兵</text>
+    <text x="20" y="512" class="font-mono" font-size="9.5" fill="#78350F">预留 25% 空间供复杂 CoT 推理输出</text>
+  </g>
+
+  <!-- ================= Tier 1: Tool Clamping (Middle Column) ================= -->
+  <g transform="translate(325, 90)">
+    <!-- Shadow & Card -->
+    <rect x="3" y="3" width="290" height="540" rx="6" fill="#000000" />
+    <rect x="0" y="0" width="290" height="540" rx="6" fill="#FFFFFF" class="border-card" />
+
+    <!-- Card Header Badge -->
+    <rect x="12" y="12" width="266" height="32" rx="4" fill="#DCFCE7" class="border-thin" />
+    <text x="145" y="33" class="font-mono bolder" font-size="11" fill="#15803D" text-anchor="middle">LAYER 1: TOOL CLAMPING</text>
+
+    <!-- Subtitle -->
+    <text x="14" y="66" class="font-heading bold" font-size="13" fill="#0F172A">单步突发截断与首尾两极哲学</text>
+    <text x="14" y="84" class="font-mono" font-size="10" fill="#64748B">Threshold: 4,000 Chars (~1,000 Tokens)</text>
+
+    <!-- Box 1: Why Not Naive Slice -->
+    <rect x="12" y="102" width="266" height="74" rx="4" fill="#FEF2F2" class="border-thin" />
+    <text x="20" y="122" class="font-heading bold" font-size="11" fill="#991B1B">拒绝朴素截断 str.slice(0, 4000)</text>
+    <text x="20" y="142" class="font-mono" font-size="9.5" fill="#7F1D1D">✖ 丢失尾部 JSON 闭合结构与括号</text>
+    <text x="20" y="160" class="font-mono" font-size="9.5" fill="#7F1D1D">✖ 丢失分页游标 (Cursor) 与底层错误栈</text>
+
+    <!-- Box 2: Head 60% / Tail 40% Schematic -->
+    <rect x="12" y="188" width="266" height="210" rx="4" fill="#F8FAFC" class="border-thin" />
+    <text x="20" y="210" class="font-mono bold" font-size="10.5" fill="#0F172A">HEAD 60% / TAIL 40% BIPOLAR</text>
+
+    <!-- Head Block -->
+    <rect x="20" y="222" width="250" height="42" rx="3" fill="#BBF7D0" class="border-thin" />
+    <text x="30" y="240" class="font-mono bold" font-size="10" fill="#14532D">HEAD 60% (2,400 chars)</text>
+    <text x="30" y="256" class="font-mono" font-size="9" fill="#166534">保全 Schema、状态码、首屏关键业务实体</text>
+
+    <!-- Middle Omitted Banner -->
+    <rect x="20" y="272" width="250" height="52" rx="3" fill="#FDE047" class="border-dashed" />
+    <text x="145" y="292" class="font-mono bold" font-size="9.5" fill="#713F12" text-anchor="middle">SENTINEL OMISSION BANNER</text>
+    <text x="145" y="308" class="font-mono" font-size="8.5" fill="#854D0E" text-anchor="middle">[... Truncated 12,000 Chars by Guard ...]</text>
+    <text x="145" y="318" class="font-mono" font-size="8" fill="#A16207" text-anchor="middle">动态注入分页/过滤参数建议 (Hint)</text>
+
+    <!-- Tail Block -->
+    <rect x="20" y="332" width="250" height="42" rx="3" fill="#BAE6FD" class="border-thin" />
+    <text x="30" y="350" class="font-mono bold" font-size="10" fill="#075985">TAIL 40% (1,600 chars)</text>
+    <text x="30" y="366" class="font-mono" font-size="9" fill="#0369A1">保留分页游标、错误根因最底层、汇总指标</text>
+
+    <!-- Outcome Box -->
+    <rect x="12" y="410" width="266" height="116" rx="4" fill="#F0FDF4" class="border-thin" />
+    <rect x="20" y="418" width="100" height="20" rx="3" fill="#22C55E" class="border-thin" />
+    <text x="70" y="432" class="font-mono bold" font-size="9.5" fill="#FFFFFF" text-anchor="middle">DEFENSE RESULT</text>
+    <text x="20" y="454" class="font-heading bold" font-size="11" fill="#14532D">斩断单步雪崩 · 引导定向过滤</text>
+    <text x="20" y="474" class="font-mono" font-size="9.5" fill="#166534">• 单步工具输出锁死在 ≤1,500 Tokens</text>
+    <text x="20" y="494" class="font-mono" font-size="9.5" fill="#166534">• 彻底根除 HTTP 400 物理溢出</text>
+    <text x="20" y="514" class="font-mono" font-size="9.5" fill="#166534">• 零侵入代码，运行时自动化介入</text>
+  </g>
+
+  <!-- ================= Tier 2: Dual Anchors & Sliding Window (Right Column) ================= -->
+  <g transform="translate(635, 90)">
+    <!-- Shadow & Card -->
+    <rect x="3" y="3" width="290" height="540" rx="6" fill="#000000" />
+    <rect x="0" y="0" width="290" height="540" rx="6" fill="#FFFFFF" class="border-card" />
+
+    <!-- Card Header Badge -->
+    <rect x="12" y="12" width="266" height="32" rx="4" fill="#F3E8FF" class="border-thin" />
+    <text x="145" y="33" class="font-mono bolder" font-size="11" fill="#7E22CE" text-anchor="middle">LAYER 2: DUAL-ANCHOR &amp; TURNS</text>
+
+    <!-- Subtitle -->
+    <text x="14" y="66" class="font-heading bold" font-size="13" fill="#0F172A">双锚点不可变与原子轮次裁剪</text>
+    <text x="14" y="84" class="font-mono" font-size="10" fill="#64748B">Invariant Contracts &amp; O(K) Space</text>
+
+    <!-- Invariant 1: Dual Anchors -->
+    <rect x="12" y="102" width="266" height="110" rx="4" fill="#FAF5FF" class="border-thin" />
+    <rect x="20" y="110" width="165" height="20" rx="3" fill="#A855F7" class="border-thin" />
+    <text x="102" y="124" class="font-mono bold" font-size="9.5" fill="#FFFFFF" text-anchor="middle">INVARIANT 1: DUAL ANCHORS</text>
+    <text x="20" y="146" class="font-mono bold" font-size="10" fill="#581C87">🔒 messages[0]: System Global Prompt</text>
+    <text x="20" y="164" class="font-mono bold" font-size="10" fill="#581C87">🔒 messages[1]: User Original Task Goal</text>
+    <text x="20" y="184" class="font-heading bold" font-size="10.5" fill="#6B21A8">收益 1：首部目标零漂移 (No Drift)</text>
+    <text x="20" y="202" class="font-heading bold" font-size="10.5" fill="#6B21A8">收益 2：100% 命中云端前缀缓存 (Cache)</text>
+
+    <!-- Invariant 2: Atomic Interaction Turns -->
+    <rect x="12" y="222" width="266" height="136" rx="4" fill="#FFF7ED" class="border-thin" />
+    <rect x="20" y="230" width="165" height="20" rx="3" fill="#F97316" class="border-thin" />
+    <text x="102" y="244" class="font-mono bold" font-size="9.5" fill="#FFFFFF" text-anchor="middle">INVARIANT 2: ATOMIC TURNS</text>
+    <text x="20" y="266" class="font-heading bold" font-size="10.5" fill="#9A3412">原子协议完整性打包：</text>
+    <rect x="20" y="274" width="250" height="38" rx="3" fill="#FFEDD5" class="border-thin" />
+    <text x="28" y="290" class="font-mono" font-size="9" fill="#7C2D12">assistant (with tool_calls)</text>
+    <text x="28" y="304" class="font-mono" font-size="9" fill="#7C2D12">+ N × tool (matching tool_call_id)</text>
+    <text x="20" y="326" class="font-heading bold" font-size="10" fill="#C2410C">整体保留 / 整体沉降 · 杜绝孤立节点</text>
+    <text x="20" y="344" class="font-mono" font-size="8.5" fill="#9A3412">根除 OpenAI/ChatML 400 Invalid Sequence</text>
+
+    <!-- Module 3: Sliding Window & Tombstone -->
+    <rect x="12" y="368" width="266" height="158" rx="4" fill="#F8FAFC" class="border-thin" />
+    <rect x="20" y="376" width="165" height="20" rx="3" fill="#334155" class="border-thin" />
+    <text x="102" y="390" class="font-mono bold" font-size="9.5" fill="#FFFFFF" text-anchor="middle">SLIDING WINDOW: K = 4</text>
+    <text x="20" y="412" class="font-mono bold" font-size="10" fill="#0F172A">O(K) 确定性空间上界：</text>
+    <text x="20" y="430" class="font-mono" font-size="9.5" fill="#475569">• 超出 K=4 轮时沉降早期轮次</text>
+    <text x="20" y="448" class="font-mono" font-size="9.5" fill="#475569">• 注入极轻量 user Tombstone 墓碑消息</text>
+    <rect x="20" y="456" width="250" height="32" rx="3" fill="#F1F5F9" class="border-thin" />
+    <text x="26" y="470" class="font-mono" font-size="8" fill="#475569">[Context Guard: Retained Anchors +</text>
+    <text x="26" y="482" class="font-mono" font-size="8" fill="#475569">latest 4 turns. Pruned M earlier turns]</text>
+    <text x="20" y="506" class="font-heading bold" font-size="10.5" fill="#16A34A">✔ 历史栈摆脱 O(N²) · 永久收敛于 O(K)</text>
+    <text x="20" y="520" class="font-mono" font-size="9" fill="#15803D">Token 开销降 60%~80% · 首包延迟平稳</text>
+  </g>
+
+  <!-- Connective Arrows between Tiers -->
+  <line x1="305" y1="210" x2="323" y2="210" stroke="#000000" stroke-width="2" marker-end="url(#arrow-blk)" />
+  <line x1="615" y1="210" x2="633" y2="210" stroke="#000000" stroke-width="2" marker-end="url(#arrow-blk)" />
+</svg>
