@@ -1,32 +1,40 @@
 {
   "version": "1.0.0",
-  "timestamp": "2026-09-27T09:13:16.401Z",
+  "timestamp": "2026-09-29T10:19:46.402Z",
   "model": "Qwen/Qwen2.5-7B-Instruct",
   "experimentTag": "E2_disambiguate",
   "repetitions": 4,
-  "totalCases": 14,
-  "totalSamples": 56,
+  "totalCases": 30,
+  "totalSamples": 120,
   "metrics": {
     "groupA": {
-      "complianceRate": "69.6%",
-      "complianceCI95": [56.5, 80.1],
-      "categoryAccuracy": "85.2%",
-      "categoryAccuracyCI95": [73.4, 92.4],
+      "complianceRate": "68.3%",
+      "complianceCI95": [
+        59.6,
+        76
+      ],
+      "categoryAccuracy": "75.9%",
       "orderIdAccuracy": "100.0%",
-      "meanTokens": 333,
-      "meanDurationMs": 2150
+      "meanTokens": 337,
+      "meanDurationMs": 3185
     },
     "groupB": {
-      "complianceRate": "98.2%",
-      "complianceCI95": [90.6, 99.7],
-      "categoryAccuracy": "92.9%",
-      "categoryAccuracyCI95": [83.0, 97.2],
+      "complianceRate": "95.0%",
+      "complianceCI95": [
+        89.5,
+        97.7
+      ],
+      "categoryAccuracy": "80.7%",
+      "categoryAccuracyCI95": [
+        72.7,
+        86.8
+      ],
       "orderIdAccuracy": "100.0%",
-      "r2EscalationRate": "8.9%",
-      "healingConversionRate": "96.3%",
-      "meanTokens": 1291,
-      "meanDurationMs": 4210,
-      "avgTokenCost": 1291
+      "r2EscalationRate": "16.7%",
+      "healingConversionRate": "92.4%",
+      "meanTokens": 1472,
+      "meanDurationMs": 6059,
+      "avgTokenCost": 1472
     }
   },
   "sentinelVerdict": "ALL_GREEN",
@@ -58,8 +66,8 @@
       "expectedCategory": "refund",
       "runs": 4,
       "compliancePassCount": 3,
-      "categoryAccuracyCount": 4,
-      "orderIdAccuracyCount": 4
+      "categoryAccuracyCount": 3,
+      "orderIdAccuracyCount": 3
     },
     {
       "caseId": 4,
@@ -77,7 +85,7 @@
       "title": "退货退款寄回咨询",
       "expectedCategory": "refund",
       "runs": 4,
-      "compliancePassCount": 4,
+      "compliancePassCount": 3,
       "categoryAccuracyCount": 4,
       "orderIdAccuracyCount": 4
     },
@@ -169,6 +177,166 @@
       "runs": 4,
       "compliancePassCount": 4,
       "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 15,
+      "semanticKey": "logistics_urgent_medicine",
+      "title": "急救药物超急催件",
+      "expectedCategory": "logistics",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 16,
+      "semanticKey": "refund_polite_leisurely",
+      "title": "佛系慢节奏退款",
+      "expectedCategory": "refund",
+      "runs": 4,
+      "compliancePassCount": 3,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 17,
+      "semanticKey": "refund_terse_four_words",
+      "title": "极简短语退款申请",
+      "expectedCategory": "refund",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 18,
+      "semanticKey": "quality_prompt_injection_order_no",
+      "title": "诱导摘要复述订单号",
+      "expectedCategory": "quality",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 19,
+      "semanticKey": "refund_super_long_rant",
+      "title": "冗长消费控诉诱导超长摘要",
+      "expectedCategory": "refund",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 20,
+      "semanticKey": "logistics_address_modification",
+      "title": "紧急修改派送地址",
+      "expectedCategory": "logistics",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 21,
+      "semanticKey": "other_invoice_reissue",
+      "title": "重开发票抬头咨询",
+      "expectedCategory": "other",
+      "runs": 4,
+      "compliancePassCount": 3,
+      "categoryAccuracyCount": 0,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 22,
+      "semanticKey": "quality_exchange_not_refund",
+      "title": "商品瑕疵换货不退款",
+      "expectedCategory": "quality",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 23,
+      "semanticKey": "refund_price_guarantee",
+      "title": "保价退差价申请",
+      "expectedCategory": "refund",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 24,
+      "semanticKey": "other_installation_booking",
+      "title": "大件家电上门安装预约",
+      "expectedCategory": "other",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 1,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 25,
+      "semanticKey": "refund_dual_orders_noise_numbers",
+      "title": "多数字及手机号混淆退款",
+      "expectedCategory": "refund",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 26,
+      "semanticKey": "logistics_fake_shipping_complaint",
+      "title": "虚假发货物流投诉",
+      "expectedCategory": "logistics",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 27,
+      "semanticKey": "quality_fake_product_counterfeit",
+      "title": "假冒伪劣专柜验货退款",
+      "expectedCategory": "refund",
+      "runs": 4,
+      "compliancePassCount": 3,
+      "categoryAccuracyCount": 0,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 28,
+      "semanticKey": "other_missing_gift_inquiry",
+      "title": "赠品漏发咨询补发",
+      "expectedCategory": "other",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 0,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 29,
+      "semanticKey": "refund_slow_delivery_rejection",
+      "title": "物流超时拒收退款",
+      "expectedCategory": "refund",
+      "runs": 4,
+      "compliancePassCount": 4,
+      "categoryAccuracyCount": 4,
+      "orderIdAccuracyCount": 4
+    },
+    {
+      "caseId": 30,
+      "semanticKey": "quality_hidden_damage_after_assembly",
+      "title": "安装后发现暗损退款",
+      "expectedCategory": "refund",
+      "runs": 4,
+      "compliancePassCount": 3,
+      "categoryAccuracyCount": 0,
       "orderIdAccuracyCount": 4
     }
   ]
