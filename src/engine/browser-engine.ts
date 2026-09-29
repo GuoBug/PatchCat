@@ -55,6 +55,14 @@ import { TelemetryTracer } from '../services/telemetry/otel-tracer.ts';
 import { estimateTokenCostUSD } from '../config/model-pricing.ts';
 import { indexedDb } from '../services/storage/indexeddb-adapter.ts';
 import { NODE_EXECUTORS } from './nodes/index.ts';
+import {
+  estimateContextBreakdown,
+  resolveModelContextLimit,
+  clampToolResult,
+  applySlidingWindowPruning,
+  ContextTracker,
+  type ClampedToolMetric,
+} from './context-manager.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Internal Types & Evaluators
@@ -2144,7 +2152,7 @@ export class BrowserWorkflowEngine {
             },
           }));
 
-          const messages: ChatMessage[] = [];
+          let messages: ChatMessage[] = [];
           if (systemPrompt) {
             messages.push({ role: 'system', content: systemPrompt });
           }
@@ -2157,6 +2165,18 @@ export class BrowserWorkflowEngine {
             settings.model,
           );
 
+          // ── Module 2 (Context Engineering): Context Limits & Tracker ──────
+          const effectiveContextLimit = (config.maxContextTokens as number) > 0
+            ? (config.maxContextTokens as number)
+            : resolveModelContextLimit(targetModel);
+          const effectiveMaxToolResultChars = (config.maxToolResultChars as number) > 0
+            ? (config.maxToolResultChars as number)
+            : RUNTIME_DEFAULTS.TOOL_RESULT_MAX_CHARS;
+          const effectiveMaxHistoryTurns = typeof config.maxHistoryTurns === 'number'
+            ? config.maxHistoryTurns
+            : RUNTIME_DEFAULTS.AGENT_MAX_HISTORY_TURNS;
+          const contextTracker = new ContextTracker(effectiveContextLimit);
+
           const isValidationOnly = Boolean(options?.skipLLM || options?.validationOnly);
 
           let finalResponse = '';
@@ -2168,6 +2188,34 @@ export class BrowserWorkflowEngine {
               iterationCount = iter;
               if (signal.aborted) {
                 throw new Error('Workflow execution aborted by user.');
+              }
+
+              // ── Layer 2: Dual Anchor + Atomic Turn Sliding Window Pruning ──
+              if (effectiveMaxHistoryTurns > 0) {
+                const pruneRes = applySlidingWindowPruning(messages, {
+                  maxTurns: effectiveMaxHistoryTurns,
+                  maxTokens: Math.floor(effectiveContextLimit * RUNTIME_DEFAULTS.CONTEXT_WARNING_THRESHOLD_RATIO),
+                });
+                if (pruneRes.isPruned) {
+                  messages = pruneRes.messages;
+                  contextTracker.recordPrune(pruneRes.prunedTurnCount, pruneRes.omittedTokensEstimated);
+                  const pruneNotice = `\n[Context Pruned] Retained initial goal & latest ${pruneRes.retainedTurnCount} turns. Pruned ${pruneRes.prunedTurnCount} earlier turns (saved ~${pruneRes.omittedTokensEstimated.toLocaleString()} tokens).\n`;
+                  if (onChunk) {
+                    onChunk({
+                      delta: pruneNotice,
+                      fullContent: finalResponse + pruneNotice,
+                    });
+                  }
+                }
+              }
+
+              // Layer 0: Context Observability Snapshot
+              const preMetric = contextTracker.recordPreCall(iter, messages);
+              if (preMetric.warning && onChunk) {
+                onChunk({
+                  delta: `\n[Agent Context Warning] ${preMetric.warningReason}\n`,
+                  fullContent: finalResponse + `\n[Agent Context Warning] ${preMetric.warningReason}\n`,
+                });
               }
 
               if (onChunk) {
@@ -2203,6 +2251,7 @@ export class BrowserWorkflowEngine {
                 totalUsage.prompt += llmResult.usage.prompt;
                 totalUsage.completion += llmResult.usage.completion;
                 totalUsage.total += llmResult.usage.total;
+                contextTracker.recordPostCall(llmResult.usage.prompt);
               }
 
               // ── Safeguard: Token Budget Limiter ─────────────────────────
@@ -2360,10 +2409,38 @@ export class BrowserWorkflowEngine {
                     }
                   }
 
+                  // ── Module 2: Layer 1 Tool Result Clamping & Safe Offloading ──
+                  const clamped = clampToolResult(toolResultStr, {
+                    maxChars: effectiveMaxToolResultChars,
+                    toolName,
+                  });
+
+                  if (clamped.isClamped) {
+                    const clampMetric: ClampedToolMetric = {
+                      toolName,
+                      originalChars: clamped.originalChars,
+                      clampedChars: clamped.clampedChars,
+                      originalTokensEstimated: clamped.originalTokensEstimated,
+                      clampedTokensEstimated: clamped.clampedTokensEstimated,
+                    };
+                    const allMetrics = contextTracker.getAllMetrics();
+                    const lastMetric = allMetrics[allMetrics.length - 1];
+                    if (lastMetric) {
+                      lastMetric.clampedTools.push(clampMetric);
+                    }
+                    if (onChunk) {
+                      const clampMsg = `\n[Context Guard] Tool "${toolName}" output clamped from ${clamped.originalChars.toLocaleString()} to ${clamped.clampedChars.toLocaleString()} chars (saved approx. ${clamped.omittedTokensEstimated.toLocaleString()} tokens).\n`;
+                      onChunk({
+                        delta: clampMsg,
+                        fullContent: finalResponse + clampMsg,
+                      });
+                    }
+                  }
+
                   messages.push({
                     role: 'tool',
                     tool_call_id: tc.id,
-                    content: toolResultStr,
+                    content: clamped.content,
                   });
                 }
 
@@ -2384,6 +2461,7 @@ export class BrowserWorkflowEngine {
                     content:
                       'You have reached the maximum tool-calling iteration limit. Please synthesize your final conclusion based on all prior findings and tool results.',
                   });
+                  contextTracker.recordPreCall(iter + 1, messages);
                   try {
                     const terminalLlmResult = await streamChatCompletion(
                       {
@@ -2415,6 +2493,7 @@ export class BrowserWorkflowEngine {
                       totalUsage.prompt += terminalLlmResult.usage.prompt;
                       totalUsage.completion += terminalLlmResult.usage.completion;
                       totalUsage.total += terminalLlmResult.usage.total;
+                      contextTracker.recordPostCall(terminalLlmResult.usage.prompt);
                     }
                   } catch {
                     // Fallback to existing response
@@ -2439,6 +2518,11 @@ export class BrowserWorkflowEngine {
               iterations: iterationCount,
               model: targetModel,
               messages: messages as unknown as Record<string, unknown>[],
+              contextMetrics: contextTracker.getAllMetrics(),
+              maxContextTokens: effectiveContextLimit,
+              peakContextTokens: contextTracker.getPeakEstimatedTokens(),
+              clampedToolCallsCount: contextTracker.getClampedToolCount(),
+              totalTokensSavedByPruning: contextTracker.getTotalTokensSavedByPruning(),
               output: finalResponse
             };
           } else {
@@ -2451,6 +2535,23 @@ export class BrowserWorkflowEngine {
               usage: { prompt: 50, completion: 50, total: 100 },
               iterations: 1,
               model: configuredModel || settings.model || 'mock-agent',
+              contextMetrics: [
+                {
+                  iteration: 1,
+                  messageCount: messages.length,
+                  estimatedPromptTokens: 50,
+                  actualPromptTokens: 50,
+                  breakdown: estimateContextBreakdown(messages),
+                  contextLimit: effectiveContextLimit,
+                  utilizationRatio: 50 / effectiveContextLimit,
+                  warning: false,
+                  clampedTools: [],
+                },
+              ],
+              maxContextTokens: effectiveContextLimit,
+              peakContextTokens: 50,
+              clampedToolCallsCount: 0,
+              totalTokensSavedByPruning: 0,
               output: mockText
             };
           }

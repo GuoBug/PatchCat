@@ -47,6 +47,14 @@ export const RUNTIME_DEFAULTS = {
   LOOP_NODE_ITEM_TIMEOUT_MS: 30000,
   MAX_LAYER_CONCURRENCY: 10,
   MAX_DELEGATION_DEPTH: 5,
+
+  // ── 7. Context Engineering & Safeguards (Module 2) ──────────────────────────
+  CONTEXT_WARNING_THRESHOLD_RATIO: 0.75, // Trigger warning if active context > 75% of model limit
+  DEFAULT_CONTEXT_WINDOW_LIMIT: 8192, // Safe fallback context limit when model specs unstated
+  TOOL_RESULT_MAX_CHARS: 4000, // Safe default clamp for single tool output (~1000 tokens)
+  TOOL_RESULT_HEAD_RATIO: 0.6, // Keep first 60% of allowed budget on clamp
+  TOOL_RESULT_TAIL_RATIO: 0.4, // Keep last 40% of allowed budget on clamp
+  AGENT_MAX_HISTORY_TURNS: 4, // Default sliding window retained turns (K=4 turns)
 } as const;
 
 export interface RuntimeProtectionSettings {

@@ -40,6 +40,8 @@ export const AgentNodeProperties: React.FC<AgentNodePropertiesProps> = ({
   const maxIterations = (config.maxIterations as number) ?? 10;
   const temperature = (config.temperature as number) ?? 0.7;
   const maxTokenBudget = (config.maxTokenBudget as number) ?? 0;
+  const maxContextTokens = (config.maxContextTokens as number) ?? 0;
+  const maxToolResultChars = (config.maxToolResultChars as number) ?? 4000;
   const loopDetectionEnabled = (config.loopDetectionEnabled as boolean) ?? true;
   const loopDetectionThreshold = (config.loopDetectionThreshold as number) ?? 3;
 
@@ -276,6 +278,54 @@ export const AgentNodeProperties: React.FC<AgentNodePropertiesProps> = ({
             }}
             className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono"
             placeholder="0 = Unlimited"
+          />
+        </div>
+
+        {/* Context Window Limit */}
+        <div className="space-y-1">
+          <div className="flex justify-between items-center">
+            <label className="text-xs text-slate-600 dark:text-slate-300">
+              {t.propertyPanel.agentMaxContext}
+            </label>
+            <span className="text-xs font-mono text-slate-500">
+              {maxContextTokens > 0 ? `${maxContextTokens} tokens` : '0 (Auto)'}
+            </span>
+          </div>
+          <input
+            type="number"
+            min="0"
+            step="1000"
+            value={maxContextTokens}
+            onChange={(e) => {
+              const val = Math.max(0, parseInt(e.target.value, 10) || 0);
+              updateNodeConfig(nodeId, { maxContextTokens: val });
+            }}
+            className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+            placeholder="0 = Auto"
+          />
+        </div>
+
+        {/* Tool Output Clamping Threshold */}
+        <div className="space-y-1">
+          <div className="flex justify-between items-center">
+            <label className="text-xs text-slate-600 dark:text-slate-300">
+              {t.propertyPanel.agentMaxToolResult}
+            </label>
+            <span className="text-xs font-mono text-slate-500">
+              {`${maxToolResultChars} chars`}
+            </span>
+          </div>
+          <input
+            type="number"
+            min="500"
+            step="500"
+            value={maxToolResultChars}
+            onChange={(e) => {
+              const val = Math.max(200, parseInt(e.target.value, 10) || 4000);
+              updateNodeConfig(nodeId, { maxToolResultChars: val });
+            }}
+            className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+            placeholder="4000"
           />
         </div>
 

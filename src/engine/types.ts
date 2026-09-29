@@ -522,6 +522,10 @@ export interface AgentNodeConfig {
   maxTokenBudget?: number;
   loopDetectionEnabled?: boolean;
   loopDetectionThreshold?: number;
+  // Module 2: Context Engineering options (optional per-node overrides)
+  maxContextTokens?: number;
+  maxToolResultChars?: number;
+  maxHistoryTurns?: number;
 }
 
 export interface LoopNodeConfig {
@@ -708,6 +712,9 @@ export function getDefaultNodeConfig(type: NodeType): Record<string, unknown> {
         maxTokenBudget: RUNTIME_DEFAULTS.AGENT_TOKEN_BUDGET,
         loopDetectionEnabled: RUNTIME_DEFAULTS.AGENT_LOOP_DETECTION_ENABLED,
         loopDetectionThreshold: RUNTIME_DEFAULTS.AGENT_LOOP_DETECTION_THRESHOLD,
+        maxContextTokens: 0,
+        maxToolResultChars: RUNTIME_DEFAULTS.TOOL_RESULT_MAX_CHARS,
+        maxHistoryTurns: RUNTIME_DEFAULTS.AGENT_MAX_HISTORY_TURNS,
       };
     case 'loop':
       return {

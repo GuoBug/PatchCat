@@ -219,6 +219,8 @@ export interface Translations {
     agentToolUrl: string;
     agentToolSchema: string;
     agentTokenBudget: string;
+    agentMaxContext: string;
+    agentMaxToolResult: string;
     agentLoopDetection: string;
     agentLoopThreshold: string;
     // Loop Node
@@ -833,6 +835,8 @@ export const translations: Record<Language, Translations> = {
       agentToolUrl: 'API URL',
       agentToolSchema: 'JSON Schema',
       agentTokenBudget: 'Token Budget Limit (0 = Unlimited)',
+      agentMaxContext: 'Context Window Limit (0 = Auto)',
+      agentMaxToolResult: 'Tool Output Clamp Limit (chars)',
       agentLoopDetection: 'Deadlock Loop Detection',
       agentLoopThreshold: 'Trip Threshold',
       // Loop Node
@@ -1469,6 +1473,8 @@ export const translations: Record<Language, Translations> = {
       agentToolUrl: 'API 地址',
       agentToolSchema: 'JSON Schema',
       agentTokenBudget: 'Token 预算上限 (0 = 不限制)',
+      agentMaxContext: '上下文窗口上限 (0 = 自动匹配模型)',
+      agentMaxToolResult: '工具输出截断上限 (字符数)',
       agentLoopDetection: '死锁循环检测',
       agentLoopThreshold: '判定熔断阈值',
       // Loop Node
