@@ -567,8 +567,8 @@ export function applySlidingWindowPruning(
   }
 
   // 1. Initial slice to retain latest maxTurns
-  let retainedTurns = turns.slice(Math.max(0, totalTurns - maxTurns));
-  let prunedTurns = turns.slice(0, Math.max(0, totalTurns - maxTurns));
+  const retainedTurns = turns.slice(Math.max(0, totalTurns - maxTurns));
+  const prunedTurns = turns.slice(0, Math.max(0, totalTurns - maxTurns));
 
   // 2. If token ceiling specified and still exceeded, drop additional older turns (keep at least 1 turn)
   if (maxTokens && maxTokens > 0) {
