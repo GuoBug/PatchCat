@@ -35,6 +35,10 @@ import {
   executeWithSelfHealing,
   resolveZodSchema,
 } from './structured-output.ts';
+import {
+  executeWithModelRouting,
+  detectSemanticConflict,
+} from './model-router.ts';
 import { getTestScenario } from '../presets/self-healing-scenarios.ts';
 import {
   topologicalSort,
@@ -131,6 +135,10 @@ interface InternalNodeResult {
   tokens?: TokenUsage;
   model?: string;
   ttftMs?: number;
+  modelTier?: string;
+  routedModel?: string;
+  escalated?: boolean;
+  escalationReason?: string;
 }
 
 interface GraphInput {
@@ -1266,7 +1274,117 @@ export class BrowserWorkflowEngine {
             const llmCallStart = Date.now();
             let firstChunkReceived = false;
 
-            if (hasStructuredOutput) {
+            const modelRoutingConfig = nodeConfig.modelRouting;
+            const isRoutingActive = Boolean(modelRoutingConfig?.enabled);
+
+            if (hasStructuredOutput && isRoutingActive) {
+              const routingRes = await executeWithModelRouting(
+                async (req) => {
+                  logger.summary(
+                    'WorkflowEngine',
+                    `[模型级联路由] 节点 "${node.id}" (${node.data.label}) 调用 ${req.modelTier}: ${req.targetModel}...`,
+                    { tier: req.modelTier, model: req.targetModel },
+                    node.id,
+                  );
+
+                  let callBaseUrl = settings.baseUrl;
+                  let callApiKey = settings.apiKey;
+
+                  // Cross-provider dynamic resolution for Google Gemini models
+                  if (req.targetModel.toLowerCase().includes('gemini') && settings.provider !== 'google') {
+                    if (typeof window !== 'undefined') {
+                      try {
+                        const googleConfig = useSettingsStore.getState().providers['google'];
+                        if (googleConfig && googleConfig.apiKey) {
+                          callBaseUrl = googleConfig.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai';
+                          callApiKey = googleConfig.apiKey;
+                        }
+                      } catch {
+                        // fallback to ambient settings
+                      }
+                    }
+                  }
+
+                  return streamChatCompletion(
+                    {
+                      baseUrl: callBaseUrl,
+                      apiKey: callApiKey,
+                      model: req.targetModel,
+                      messages: req.messages || messages,
+                      temperature,
+                      signal,
+                      response_format: req.response_format,
+                    },
+                    {
+                      onChunk: (chunk) => {
+                        if (!firstChunkReceived) {
+                          firstChunkReceived = true;
+                          capturedTtftMs = Date.now() - llmCallStart;
+                        }
+                        if (onChunk) {
+                          onChunk(chunk);
+                        }
+                      },
+                    },
+                  );
+                },
+                messages,
+                {
+                  routingConfig: modelRoutingConfig,
+                  schema,
+                  responseFormat: responseFormatConfig,
+                  provider: settings.provider,
+                  configuredModel: targetModel,
+                  signal,
+                  userPrompt,
+                },
+              );
+
+              const parsedObject =
+                routingRes.data && typeof routingRes.data === 'object'
+                  ? (routingRes.data as Record<string, unknown>)
+                  : {};
+
+              if (routingRes.success) {
+                output = {
+                  response: routingRes.raw,
+                  parsed: routingRes.data,
+                  ...parsedObject,
+                  ...(routingRes.reasoning ? { reasoning: routingRes.reasoning } : {}),
+                  usage: routingRes.usage,
+                  model: routingRes.routedModel,
+                  modelTier: routingRes.modelTier,
+                  routedModel: routingRes.routedModel,
+                  escalated: routingRes.escalated,
+                  escalationReason: routingRes.escalationReason,
+                  costSavingsRatio: routingRes.costSavingsRatio,
+                  finishReason: routingRes.finishReason || 'stop',
+                  selfHealingAttempts: routingRes.totalAttempts,
+                  selfHealingTrace: routingRes.trace,
+                  routingTrace: routingRes.routingTrace,
+                };
+              } else {
+                output = {
+                  _validationFailed: true,
+                  errors: routingRes.errors || [],
+                  raw: routingRes.raw,
+                  fallbackReason: 'max_retries_exceeded',
+                  response: routingRes.raw,
+                  ...(routingRes.reasoning ? { reasoning: routingRes.reasoning } : {}),
+                  usage: routingRes.usage,
+                  model: routingRes.routedModel,
+                  modelTier: routingRes.modelTier,
+                  routedModel: routingRes.routedModel,
+                  escalated: routingRes.escalated,
+                  escalationReason: routingRes.escalationReason,
+                  costSavingsRatio: routingRes.costSavingsRatio,
+                  finishReason: routingRes.finishReason || 'stop',
+                  selfHealingAttempts: routingRes.totalAttempts,
+                  selfHealingTrace: routingRes.trace,
+                  routingTrace: routingRes.routingTrace,
+                };
+              }
+            } else if (hasStructuredOutput) {
               let callAttemptIndex = 0;
 
               // Execute with L1 capability negotiation, L2 semantic validation, and self-healing state machine
@@ -2169,8 +2287,8 @@ export class BrowserWorkflowEngine {
           const effectiveContextLimit = (config.maxContextTokens as number) > 0
             ? (config.maxContextTokens as number)
             : resolveModelContextLimit(targetModel);
-          const effectiveMaxToolResultChars = (config.maxToolResultChars as number) > 0
-            ? (config.maxToolResultChars as number)
+          const effectiveMaxToolResultChars = typeof config.maxToolResultChars === 'number'
+            ? config.maxToolResultChars
             : RUNTIME_DEFAULTS.TOOL_RESULT_MAX_CHARS;
           const effectiveMaxHistoryTurns = typeof config.maxHistoryTurns === 'number'
             ? config.maxHistoryTurns
@@ -3016,6 +3134,10 @@ export class BrowserWorkflowEngine {
 
       const usage = output['usage'] as TokenUsage | undefined;
       const model = (output['model'] as string | undefined) ?? (node.data.config?.['model'] as string | undefined);
+      const modelTier = output['modelTier'] as string | undefined;
+      const routedModel = output['routedModel'] as string | undefined;
+      const escalated = output['escalated'] as boolean | undefined;
+      const escalationReason = output['escalationReason'] as string | undefined;
 
       return {
         nodeId: node.id,
@@ -3025,6 +3147,10 @@ export class BrowserWorkflowEngine {
         tokens: usage,
         model,
         ttftMs: capturedTtftMs,
+        modelTier,
+        routedModel,
+        escalated,
+        escalationReason,
       };
     } catch (err: unknown) {
       return {

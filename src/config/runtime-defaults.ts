@@ -55,6 +55,12 @@ export const RUNTIME_DEFAULTS = {
   TOOL_RESULT_HEAD_RATIO: 0.6, // Keep first 60% of allowed budget on clamp
   TOOL_RESULT_TAIL_RATIO: 0.4, // Keep last 40% of allowed budget on clamp
   AGENT_MAX_HISTORY_TURNS: 4, // Default sliding window retained turns (K=4 turns)
+
+  // ── 8. Model Routing & Cascading Safeguards (Module 3) ─────────────────────
+  ROUTING_PRIMARY_MODEL: 'Qwen/Qwen2.5-7B-Instruct',
+  ROUTING_FALLBACK_MODEL: 'deepseek-ai/DeepSeek-V3',
+  ROUTING_MAX_CHEAP_RETRIES: 2, // Allow cheap model to self-heal up to 2 times before escalating
+  ROUTING_ENABLE_SEMANTIC_GATE: true, // Enable heuristic F7 description-action conflict detection
 } as const;
 
 export interface RuntimeProtectionSettings {

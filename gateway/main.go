@@ -123,21 +123,55 @@ func isPrivateOrReservedIP(ip net.IP) bool {
 	}
 
 	if ip4 := ip.To4(); ip4 != nil {
+		// 10.0.0.0/8 (Private RFC 1918)
 		if ip4[0] == 10 {
 			return true
 		}
+		// 172.16.0.0/12 (Private RFC 1918)
 		if ip4[0] == 172 && ip4[1] >= 16 && ip4[1] <= 31 {
 			return true
 		}
+		// 192.168.0.0/16 (Private RFC 1918)
 		if ip4[0] == 192 && ip4[1] == 168 {
 			return true
 		}
+		// 169.254.0.0/16 (Link Local RFC 3927 & AWS/GCP/Azure Cloud Metadata 169.254.169.254)
 		if ip4[0] == 169 && ip4[1] == 254 {
 			return true
 		}
+		// 100.64.0.0/10 (CGNAT / Shared Address Space RFC 6598)
+		if ip4[0] == 100 && (ip4[1]&0xc0) == 64 {
+			return true
+		}
+		// 127.0.0.0/8 (Loopback RFC 1122)
+		if ip4[0] == 127 {
+			return true
+		}
+		// 0.0.0.0/8 (Current network RFC 1122)
 		if ip4[0] == 0 {
 			return true
 		}
+		// 192.0.0.0/24 (IETF Protocol Assignments RFC 6890)
+		if ip4[0] == 192 && ip4[1] == 0 && ip4[2] == 0 {
+			return true
+		}
+		// 192.0.2.0/24 (TEST-NET-1 RFC 5737)
+		if ip4[0] == 192 && ip4[1] == 0 && ip4[2] == 2 {
+			return true
+		}
+		// 198.18.0.0/15 (Benchmarking RFC 2544)
+		if ip4[0] == 198 && (ip4[1] == 18 || ip4[1] == 19) {
+			return true
+		}
+		// 198.51.100.0/24 (TEST-NET-2 RFC 5737)
+		if ip4[0] == 198 && ip4[1] == 51 && ip4[2] == 100 {
+			return true
+		}
+		// 203.0.113.0/24 (TEST-NET-3 RFC 5737)
+		if ip4[0] == 203 && ip4[1] == 0 && ip4[2] == 113 {
+			return true
+		}
+		// >= 224: Multicast (224.0.0.0/4), Reserved (240.0.0.0/4), Broadcast (255.255.255.255)
 		if ip4[0] >= 224 {
 			return true
 		}
@@ -146,9 +180,101 @@ func isPrivateOrReservedIP(ip net.IP) bool {
 		if len(ip) == 16 && (ip[0]&0xfe) == 0xfc {
 			return true
 		}
+		// IPv6 site-local addresses (fec0::/10, deprecated RFC 3879)
+		if len(ip) == 16 && ip[0] == 0xfe && (ip[1]&0xc0) == 0xc0 {
+			return true
+		}
+		// IPv6 documentation addresses (2001:db8::/32 RFC 3849)
+		if len(ip) == 16 && ip[0] == 0x20 && ip[1] == 0x01 && ip[2] == 0x0d && ip[3] == 0xb8 {
+			return true
+		}
+		// IPv6 discard-only prefix (100::/64 RFC 6666)
+		if len(ip) == 16 && ip[0] == 0x01 && ip[1] == 0x00 {
+			return true
+		}
 	}
 	return false
 }
+
+// safeDialerControl validates that the target socket IP right before OS connect() is not private or reserved.
+// This provides critical kernel-boundary defense against DNS Rebinding attacks.
+func safeDialerControl(network, address string, c syscall.RawConn) error {
+	host, _, err := net.SplitHostPort(address)
+	if err != nil {
+		return fmt.Errorf("invalid socket address %q: %w", address, err)
+	}
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return fmt.Errorf("invalid socket IP %q", host)
+	}
+	if isPrivateOrReservedIP(ip) {
+		return fmt.Errorf("SSRF/DNS-Rebinding blocked: connection to private/reserved IP %s is strictly forbidden", host)
+	}
+	return nil
+}
+
+// checkHostResolvedIPs resolves host and ensures none of the returned IPs are private or reserved.
+func checkHostResolvedIPs(ctx context.Context, host string) error {
+	if ip := net.ParseIP(host); ip != nil {
+		if isPrivateOrReservedIP(ip) {
+			return fmt.Errorf("target IP %s is private or reserved (SSRF protection)", host)
+		}
+		return nil
+	}
+
+	ips, err := net.DefaultResolver.LookupIP(ctx, "ip", host)
+	if err != nil {
+		return fmt.Errorf("DNS resolution failed for host %s: %w", host, err)
+	}
+	if len(ips) == 0 {
+		return fmt.Errorf("no IP address found for host %s", host)
+	}
+
+	for _, ip := range ips {
+		if isPrivateOrReservedIP(ip) {
+			return fmt.Errorf("SSRF blocked: host %s resolves to private or reserved IP %s", host, ip.String())
+		}
+	}
+	return nil
+}
+
+// createSafeTransport instantiates an http.Transport with dual-layer SSRF & DNS Rebinding protection.
+func createSafeTransport(dialTimeout time.Duration) *http.Transport {
+	if dialTimeout <= 0 {
+		dialTimeout = 30 * time.Second
+	}
+	safeDialer := &net.Dialer{
+		Timeout:   dialTimeout,
+		KeepAlive: 30 * time.Second,
+		Control:   safeDialerControl,
+	}
+
+	return &http.Transport{
+		Proxy: nil, // Strictly disallow inheriting ambient/system proxies that could redirect traffic
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			host, _, err := net.SplitHostPort(addr)
+			if err != nil {
+				return nil, fmt.Errorf("invalid target address %q: %w", addr, err)
+			}
+
+			// Pre-dial verification: ensure all resolved IPs are public
+			if err := checkHostResolvedIPs(ctx, host); err != nil {
+				return nil, err
+			}
+
+			// Dial with socket-level Control function (defends against DNS rebinding race conditions)
+			return safeDialer.DialContext(ctx, network, addr)
+		},
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+}
+
+// Global safe HTTP transport for forward proxying
+var safeTransport = createSafeTransport(30 * time.Second)
 
 // isAllowedTargetURL validates that targetURL is an http/https URL pointing to a whitelisted AI domain and NOT a private IP.
 func isAllowedTargetURL(rawURL string, extraAllowedDomains []string) (*url.URL, error) {
@@ -172,8 +298,11 @@ func isAllowedTargetURL(rawURL string, extraAllowedDomains []string) (*url.URL, 
 	}
 
 	lowerHost := strings.ToLower(hostname)
-	if lowerHost == "localhost" || strings.HasSuffix(lowerHost, ".local") || strings.HasSuffix(lowerHost, ".internal") {
-		return nil, fmt.Errorf("access to internal/local host '%s' is strictly forbidden", hostname)
+	forbiddenSuffixes := []string{".local", ".internal", ".lan", ".home", ".corp", ".arpa", ".test", ".localhost"}
+	for _, suffix := range forbiddenSuffixes {
+		if lowerHost == strings.TrimPrefix(suffix, ".") || strings.HasSuffix(lowerHost, suffix) {
+			return nil, fmt.Errorf("access to internal/local host '%s' is strictly forbidden", hostname)
+		}
 	}
 
 	// Check if hostname is an IP directly
@@ -374,9 +503,10 @@ func handleProxy(w http.ResponseWriter, r *http.Request) {
 	// Ensure Host header matches upstream destination
 	req.Host = targetParsed.Host
 
-	// 4. Send request via HTTP Client
+	// 4. Send request via HTTP Client using SSRF & DNS Rebinding hardened safeTransport
 	client := &http.Client{
-		Timeout: timeout,
+		Transport: safeTransport,
+		Timeout:   timeout,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			// Disallow redirects to prevent open-redirect SSRF bypasses
 			return http.ErrUseLastResponse

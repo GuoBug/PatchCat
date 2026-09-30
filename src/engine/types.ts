@@ -102,6 +102,14 @@ export interface NodeExecutionResult {
   error?: string;
   /** Unix-epoch timestamp (ms) when execution completed or failed. */
   timestamp?: number;
+  /** Model tier deployed during execution (Module 3) */
+  modelTier?: ModelTier;
+  /** Actual model identifier routed to (Module 3) */
+  routedModel?: string;
+  /** Whether execution escalated from primary to fallback tier (Module 3) */
+  escalated?: boolean;
+  /** Reason for escalation or routing decision (Module 3) */
+  escalationReason?: ModelRoutingTriggerReason;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -526,6 +534,8 @@ export interface AgentNodeConfig {
   maxContextTokens?: number;
   maxToolResultChars?: number;
   maxHistoryTurns?: number;
+  // Module 3: Model Routing & Multi-Tier Cascade options
+  modelRouting?: ModelRoutingConfig;
 }
 
 export interface LoopNodeConfig {
@@ -632,6 +642,56 @@ export interface LLMNodeConfig {
   forceSimulation?: boolean;
   simulationMode?: LLMSimulationMode;
   mockFirstRoundOnly?: boolean;
+  // Module 3: Model Routing & Multi-Tier Cascade options
+  modelRouting?: ModelRoutingConfig;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 11c. Module 3: Model Routing & Multi-Tier Cascade Configuration
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Model tier for multi-model cascade routing.
+ * Strictly decoupled from prompt-level `SelfHealingEscalationLevel` ('surgical_prescription' | 'golden_exemplar')
+ * to eliminate naming collision between prompt repairs and model escalations.
+ */
+export type ModelTier = 'tier1_cheap' | 'tier2_strong';
+
+export type ModelRoutingTriggerReason =
+  | 'primary_default'
+  | 'cheap_self_healing'
+  | 'cheap_budget_exhausted'
+  | 'semantic_conflict_gate';
+
+export interface ModelRoutingConfig {
+  /** Whether multi-model cascading routing is enabled */
+  enabled?: boolean;
+  /** Primary / cheap tier model (e.g. 'Qwen/Qwen2.5-7B-Instruct') */
+  primaryModel?: string;
+  /** Fallback / strong tier model (e.g. 'deepseek-ai/DeepSeek-V3' or 'gemini-2.5-flash') */
+  fallbackModel?: string;
+  /**
+   * Maximum self-healing retries with the cheap model before escalating to strong model.
+   * Default: 2.
+   * Architectural rule: T2 cases (37%) self-heal on cheap model without escalating.
+   * Escalation only triggers after cheap retries are exhausted (attempt >= maxCheapRetries).
+   */
+  maxCheapRetries?: number;
+  /**
+   * Dual-track Track 2: Heuristic semantic conflict detection.
+   * When enabled, checks for action-description precedence conflicts (F7).
+   */
+  enableSemanticConflictGate?: boolean;
+}
+
+export interface ModelRoutingTraceStep {
+  round: number;
+  modelTier: ModelTier;
+  model: string;
+  reason: ModelRoutingTriggerReason;
+  escalated: boolean;
+  costSavingsRatio?: number;
+  timestamp: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -223,12 +223,12 @@ export function clampToolResult(
   const originalChars = content ? content.length : 0;
   const originalTokens = estimateTextTokens(content);
 
-  const maxChars = options.maxChars ?? RUNTIME_DEFAULTS.TOOL_RESULT_MAX_CHARS;
+  const maxChars = options.maxChars !== undefined ? options.maxChars : RUNTIME_DEFAULTS.TOOL_RESULT_MAX_CHARS;
   const headRatio = options.headRatio ?? RUNTIME_DEFAULTS.TOOL_RESULT_HEAD_RATIO;
   const tailRatio = options.tailRatio ?? RUNTIME_DEFAULTS.TOOL_RESULT_TAIL_RATIO;
   const toolName = options.toolName || 'tool';
 
-  if (!content || originalChars <= maxChars) {
+  if (!content || maxChars <= 0 || originalChars <= maxChars) {
     return {
       content: content ?? '',
       isClamped: false,

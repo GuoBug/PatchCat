@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" width="960" height="720" style="background: transparent; display: block; max-width: 100%; height: auto;">
+  <defs>
+    <!-- Dot Grid Pattern -->
+    <pattern id="dot-grid-dl" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2.5" cy="2.5" r="1.2" fill="#D4D4D8" />
+    </pattern>
+
+    <!-- Arrow Markers -->
+    <marker id="arrow-blk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000" stroke="#000000" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#10B981" stroke="#000000" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#F59E0B" stroke="#000000" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#EF4444" stroke="#000000" stroke-width="1"/>
+    </marker>
+
+    <style>
+      .font-mono { font-family: 'Space Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'PingFang SC', monospace; }
+      .font-heading { font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif; }
+      .bold { font-weight: 700; }
+      .bolder { font-weight: 800; }
+      .black { font-weight: 900; }
+      .border-main { stroke: #000000; stroke-width: 2.5; stroke-linecap: square; stroke-linejoin: miter; }
+      .border-card { stroke: #000000; stroke-width: 2; }
+      .border-thin { stroke: #000000; stroke-width: 1.5; }
+      .border-dashed { stroke: #000000; stroke-width: 1.5; stroke-dasharray: 4 3; }
+      .border-dashed-red { stroke: #EF4444; stroke-width: 2; stroke-dasharray: 4 3; }
+    </style>
+  </defs>
+
+  <!-- Outer Shadow & Background Frame -->
+  <rect x="14" y="14" width="932" height="692" rx="8" fill="#000000" />
+  <rect x="10" y="10" width="932" height="692" rx="8" fill="#FAF9F5" class="border-main" />
+  <rect x="14" y="14" width="924" height="684" rx="6" fill="url(#dot-grid-dl)" />
+
+  <!-- ================= Top Header Bar ================= -->
+  <rect x="28" y="26" width="896" height="54" rx="6" fill="#000000" />
+  <rect x="25" y="23" width="896" height="54" rx="6" fill="#FFFFFF" class="border-card" />
+
+  <rect x="36" y="32" width="210" height="34" rx="4" fill="#7FFF00" class="border-thin" />
+  <text x="141" y="54" class="font-mono bolder" font-size="12" fill="#000000" text-anchor="middle" letter-spacing="1">PATCHCAT // RUNTIME GUARD</text>
+
+  <text x="262" y="55" class="font-heading black" font-size="15" fill="#000000" letter-spacing="0.5">AGENT DEADLOCK BREAKER &amp; SOFT HINT STATE MACHINE</text>
+  <text x="895" y="54" class="font-mono bold" font-size="11" fill="#71717A" text-anchor="end">AUTONOMOUS REACT DEFENSE</text>
+
+  <!-- ================= Left Column: ReAct Loop & Call Signature (Width: 320) ================= -->
+  <g transform="translate(25, 92)">
+    <rect x="3" y="3" width="315" height="470" rx="6" fill="#000000" />
+    <rect x="0" y="0" width="315" height="470" rx="6" fill="#FFFFFF" class="border-card" />
+
+    <rect x="12" y="12" width="291" height="30" rx="4" fill="#F3E8FF" class="border-thin" />
+    <text x="157" y="32" class="font-mono bolder" font-size="11" fill="#7E22CE" text-anchor="middle">1. REACT LOOP &amp; CALL SIGNATURE</text>
+
+    <!-- Step 1: LLM Reasoning -->
+    <rect x="16" y="56" width="283" height="74" rx="4" fill="#F5F3FF" class="border-thin" />
+    <text x="26" y="76" class="font-mono bolder" font-size="11" fill="#6B21A8">LLM Reasoning Step</text>
+    <text x="26" y="94" class="font-mono" font-size="9" fill="#4B5563">Model decides next action:</text>
+    <rect x="26" y="100" width="263" height="20" rx="3" fill="#EDE9FE" />
+    <text x="34" y="114" class="font-mono bold" font-size="9" fill="#5B21B6">toolCalls: [{ name, arguments }]</text>
+
+    <!-- Arrow Down -->
+    <path d="M 157 130 L 157 150" fill="none" stroke="#000000" stroke-width="1.8" marker-end="url(#arrow-blk)" />
+
+    <!-- Step 2: Signature Extraction -->
+    <rect x="16" y="152" width="283" height="88" rx="4" fill="#EFF6FF" class="border-thin" />
+    <text x="26" y="172" class="font-mono bolder" font-size="11" fill="#1E40AF">Signature Formulation</text>
+    <text x="26" y="190" class="font-mono" font-size="9" fill="#3B82F6">callSig = `${toolName}:${toolArgsStr}`</text>
+    <rect x="26" y="198" width="263" height="32" rx="3" fill="#DBEAFE" />
+    <text x="34" y="212" class="font-mono bold" font-size="9" fill="#1E3A8A">eg: query_sql:{"table":"users"}</text>
+    <text x="34" y="224" class="font-mono" font-size="8.5" fill="#475569">Deterministic serialization hash</text>
+
+    <!-- Arrow Down -->
+    <path d="M 157 240 L 157 260" fill="none" stroke="#000000" stroke-width="1.8" marker-end="url(#arrow-blk)" />
+
+    <!-- Step 3: Comparative Evaluator -->
+    <rect x="16" y="262" width="283" height="98" rx="4" fill="#FEFCE8" class="border-thin" />
+    <text x="26" y="282" class="font-mono bolder" font-size="11" fill="#854D0E">Comparator &amp; Counter</text>
+    <text x="26" y="300" class="font-mono" font-size="9" fill="#713F12">if (callSig === lastCallSig) {</text>
+    <text x="40" y="316" class="font-mono bold" font-size="9" fill="#B45309">consecutiveCount++;</text>
+    <text x="26" y="332" class="font-mono" font-size="9" fill="#713F12">} else { count = 1; sig = now; }</text>
+    <text x="26" y="348" class="font-mono" font-size="8.5" fill="#A16207">Linear state memory: O(1) space</text>
+
+    <!-- Arrow Down -->
+    <path d="M 157 360 L 157 380" fill="none" stroke="#000000" stroke-width="1.8" marker-end="url(#arrow-blk)" />
+
+    <!-- Step 4: Dispatcher -->
+    <rect x="16" y="382" width="283" height="72" rx="4" fill="#F1F5F9" class="border-card" />
+    <text x="157" y="402" class="font-mono bolder" font-size="11" fill="#0F172A" text-anchor="middle">Multi-Tier Policy Dispatcher</text>
+    <text x="157" y="420" class="font-mono" font-size="9" fill="#475569" text-anchor="middle">Threshold Routing &amp; Circuit Trip</text>
+    <text x="157" y="438" class="font-mono bold" font-size="9.5" fill="#2563EB" text-anchor="middle">Count: [ 1 ] ➔ [ 2 ] ➔ [ &gt;= 3 ]</text>
+  </g>
+
+  <!-- ================= Right Column: Dual-Tier State Transitions (Width: 570) ================= -->
+  <g transform="translate(365, 92)">
+    <rect x="3" y="3" width="556" height="470" rx="6" fill="#000000" />
+    <rect x="0" y="0" width="556" height="470" rx="6" fill="#FFFFFF" class="border-card" />
+
+    <rect x="14" y="12" width="528" height="30" rx="4" fill="#E0F2FE" class="border-thin" />
+    <text x="278" y="32" class="font-mono bolder" font-size="11" fill="#0369A1" text-anchor="middle">2. GRADUATED DEFENSE: STATE TRANSITIONS &amp; SYSTEM REACTION</text>
+
+    <!-- Branch 1: Normal Tool Call (count = 1) -->
+    <g transform="translate(14, 52)">
+      <rect x="2" y="2" width="528" height="92" rx="4" fill="#000000" />
+      <rect x="0" y="0" width="528" height="92" rx="4" fill="#F0FDF4" class="border-card" />
+      
+      <rect x="12" y="10" width="90" height="22" rx="3" fill="#22C55E" />
+      <text x="57" y="25" class="font-mono bolder" font-size="10" fill="#FFFFFF" text-anchor="middle">COUNT = 1</text>
+      <text x="115" y="26" class="font-mono bolder" font-size="11" fill="#15803D">PASS-THROUGH // NORMAL EXECUTION</text>
+
+      <text x="14" y="48" class="font-mono" font-size="9" fill="#166534">• Execution status: Legitimate exploration / first discovery attempt.</text>
+      <text x="14" y="64" class="font-mono" font-size="9" fill="#166534">• Action: Dispatch tool execution (Code sandbox / HTTP / Mock) and return Observation.</text>
+      <text x="14" y="80" class="font-mono bold" font-size="9" fill="#15803D">➔ ReAct iteration proceeds unobstructed: LLM plans next reasoning step.</text>
+    </g>
+
+    <!-- Branch 2: Soft Hint (count = 2) -->
+    <g transform="translate(14, 156)">
+      <rect x="2" y="2" width="528" height="136" rx="4" fill="#000000" />
+      <rect x="0" y="0" width="528" height="136" rx="4" fill="#FEF3C7" class="border-card" />
+
+      <rect x="12" y="10" width="90" height="22" rx="3" fill="#F59E0B" />
+      <text x="57" y="25" class="font-mono bolder" font-size="10" fill="#000000" text-anchor="middle">COUNT = 2</text>
+      <text x="115" y="26" class="font-mono bolder" font-size="11" fill="#B45309">TIER 1: SOFT SYSTEM HINT (柔性引导)</text>
+
+      <text x="14" y="48" class="font-mono" font-size="9" fill="#78350F">• Condition: Consecutive call matched last signature exactly once.</text>
+      <text x="14" y="64" class="font-mono" font-size="9" fill="#78350F">• Strategy: Do NOT halt execution. Allow tool invocation to support legitimate polling.</text>
+      
+      <!-- Injected Prompt Box -->
+      <rect x="14" y="74" width="500" height="38" rx="3" fill="#FDE68A" class="border-thin" />
+      <text x="22" y="90" class="font-mono bold" font-size="8.5" fill="#92400E">messages.push({ role: 'user', content: `[System Hint: You invoked tool "${toolName}"</text>
+      <text x="22" y="104" class="font-mono bold" font-size="8.5" fill="#92400E">twice with identical parameters. If polling, continue; otherwise synthesize answer.]` })</text>
+
+      <text x="14" y="126" class="font-mono bold" font-size="9" fill="#B45309">➔ Psychological trigger: Prompts model self-reflection to break mode-collapse lock-in.</text>
+    </g>
+
+    <!-- Branch 3: Hard Deadlock Breaker (count = 3) -->
+    <g transform="translate(14, 304)">
+      <rect x="2" y="2" width="528" height="152" rx="4" fill="#000000" />
+      <rect x="0" y="0" width="528" height="152" rx="4" fill="#FEE2E2" class="border-card" />
+
+      <rect x="12" y="10" width="90" height="22" rx="3" fill="#EF4444" />
+      <text x="57" y="25" class="font-mono bolder" font-size="10" fill="#FFFFFF" text-anchor="middle">COUNT &gt;= 3</text>
+      <text x="115" y="26" class="font-mono bolder" font-size="11" fill="#B91C1C">TIER 2: HARD CIRCUIT BREAKER (硬熔断看门狗)</text>
+
+      <text x="14" y="48" class="font-mono" font-size="9" fill="#991B1B">• State Mutation: isDeadlockTripped = true. Tool execution is hard-aborted immediately.</text>
+      
+      <!-- Terminal Injections -->
+      <rect x="14" y="58" width="500" height="52" rx="3" fill="#FECACA" class="border-thin" />
+      <text x="22" y="74" class="font-mono bold" font-size="8.5" fill="#7F1D1D">Stream Delta: "\n[Agent Deadlock Protection] Tripped: 3 consecutive calls. Halting...\n"</text>
+      <text x="22" y="90" class="font-mono bold" font-size="8.5" fill="#7F1D1D">messages.push({ role: 'tool', content: "Observation: Execution halted by Deadlock Breaker</text>
+      <text x="22" y="102" class="font-mono bold" font-size="8.5" fill="#7F1D1D">(3 identical calls). Please synthesize conclusion immediately." })</text>
+
+      <text x="14" y="124" class="font-mono bold" font-size="9" fill="#991B1B">➔ Loop Break: `if (isDeadlockTripped) break;` halts ReAct loop to prevent token bleed.</text>
+      <text x="14" y="139" class="font-mono" font-size="8.5" fill="#B91C1C">➔ Graceful Exit: Preserves all partial outputs, emitting structured final node payload.</text>
+    </g>
+  </g>
+
+  <!-- ================= Bottom Bar: Trade-offs & Companion Guardrails ================= -->
+  <g transform="translate(25, 574)">
+    <rect x="3" y="3" width="896" height="114" rx="6" fill="#000000" />
+    <rect x="0" y="0" width="896" height="114" rx="6" fill="#FFFFFF" class="border-card" />
+
+    <!-- Header -->
+    <rect x="12" y="10" width="220" height="22" rx="3" fill="#E2E8F0" class="border-thin" />
+    <text x="122" y="25" class="font-mono bolder" font-size="10" fill="#334155" text-anchor="middle">TRADE-OFFS &amp; SAFETY VAULT</text>
+
+    <!-- Item 1: Token Budget -->
+    <g transform="translate(14, 38)">
+      <rect x="0" y="0" width="275" height="66" rx="4" fill="#F8FAFC" class="border-thin" />
+      <text x="10" y="18" class="font-mono bolder" font-size="10" fill="#0F172A">1. Max Token Budget Guard</text>
+      <text x="10" y="34" class="font-mono" font-size="8.5" fill="#475569">Guardrail: totalUsage &gt;= maxTokenBudget</text>
+      <text x="10" y="48" class="font-mono" font-size="8.5" fill="#475569">Terminates runaway loops gracefully</text>
+      <text x="10" y="60" class="font-mono bold" font-size="8.5" fill="#15803D">✓ Hard cost ceiling protection</text>
+    </g>
+
+    <!-- Item 2: Watchdog Timeouts -->
+    <g transform="translate(303, 38)">
+      <rect x="0" y="0" width="275" height="66" rx="4" fill="#F8FAFC" class="border-thin" />
+      <text x="10" y="18" class="font-mono bolder" font-size="10" fill="#0F172A">2. Step Watchdog Timeouts</text>
+      <text x="10" y="34" class="font-mono" font-size="8.5" fill="#475569">Sandbox timeout: 5s Web Worker kill</text>
+      <text x="10" y="48" class="font-mono" font-size="8.5" fill="#475569">HTTP tool timeout: AbortSignal.timeout(30s)</text>
+      <text x="10" y="60" class="font-mono bold" font-size="8.5" fill="#2563EB">✓ Prevents main-thread UI lockup</text>
+    </g>
+
+    <!-- Item 3: Key Serialization Drift -->
+    <g transform="translate(592, 38)">
+      <rect x="0" y="0" width="290" height="66" rx="4" fill="#FFFBEB" class="border-thin" />
+      <text x="10" y="18" class="font-mono bolder" font-size="10" fill="#92400E">3. Serialization Drift Boundary</text>
+      <text x="10" y="34" class="font-mono" font-size="8.5" fill="#B45309">JSON stringify drift: {a:1, b:2} vs {b:2, a:1}</text>
+      <text x="10" y="48" class="font-mono" font-size="8.5" fill="#B45309">Boundary: string match vs deep canonical hash</text>
+      <text x="10" y="60" class="font-mono bold" font-size="8.5" fill="#D97706">! Trade-off: Microsecond speed vs AST sorting</text>
+    </g>
+  </g>
+</svg>

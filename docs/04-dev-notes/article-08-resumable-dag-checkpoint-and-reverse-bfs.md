@@ -185,7 +185,7 @@ const prunedNodeIds = new Set<string>([...targetNodesToRun, ...targetDescendants
 ---
 
 > 下一篇预告  
-> 📖 《边写边学 AI 工作流引擎（九）：别让 Agent 原地鬼打墙！连续 3 次相同工具调用的柔性引导与硬熔断》
+> 📖 [《边写边学 AI 工作流引擎（九）：别让 Agent 原地鬼打墙！连续 3 次相同工具调用的柔性引导与硬熔断》](./article-09-agent-deadlock-and-circuit-breaker.md)
 
 ---
 

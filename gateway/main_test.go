@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestIsPrivateOrReservedIP(t *testing.T) {
@@ -29,6 +32,28 @@ func TestIsPrivateOrReservedIP(t *testing.T) {
 		{"0.0.0.0", true},
 		{"224.0.0.1", true},       // Multicast
 		{"255.255.255.255", true}, // Broadcast
+
+		// RFC 6598 CGNAT
+		{"100.64.0.1", true},
+		{"100.127.255.255", true},
+
+		// RFC 2544 Benchmarking & RFC 5737 Testnets
+		{"198.18.0.1", true},
+		{"192.0.2.1", true},
+		{"198.51.100.1", true},
+		{"203.0.113.1", true},
+
+		// IPv6 unique local, link-local, documentation, discard
+		{"fc00::1", true},
+		{"fd12:3456:789a::1", true},
+		{"fe80::1", true},
+		{"2001:db8::1", true},
+		{"100::1", true},
+
+		// IPv4-mapped IPv6
+		{"::ffff:127.0.0.1", true},
+		{"::ffff:192.168.1.1", true},
+		{"::ffff:8.8.8.8", false},
 
 		// Public non-reserved IPs
 		{"8.8.8.8", false},
@@ -66,8 +91,15 @@ func TestIsAllowedTargetURL(t *testing.T) {
 		{"http://192.168.1.1/admin", true, "strictly forbidden"},
 		{"http://127.0.0.1:8899/api/proxy", true, "strictly forbidden"},
 		{"http://169.254.169.254/latest/meta-data/", true, "strictly forbidden"},
+		{"http://100.64.0.1:8080/secret", true, "strictly forbidden"},
 		{"http://localhost:8080/secret", true, "strictly forbidden"},
 		{"http://router.local/", true, "strictly forbidden"},
+		{"http://gateway.internal/", true, "strictly forbidden"},
+		{"http://router.lan/api", true, "strictly forbidden"},
+		{"http://myhome.home/status", true, "strictly forbidden"},
+		{"http://device.corp/admin", true, "strictly forbidden"},
+		{"http://test.arpa/", true, "strictly forbidden"},
+		{"http://server.test/", true, "strictly forbidden"},
 
 		// Blocked unlisted external domains (prevent open forward proxy)
 		{"https://attacker.evil.com/steal-key", true, "not in the allowed"},
@@ -219,5 +251,133 @@ func TestProxySSRFSafety(t *testing.T) {
 	}
 	if !strings.Contains(rec.Body.String(), "Target URL blocked") {
 		t.Errorf("Expected blocking message in body, got: %s", rec.Body.String())
+	}
+}
+
+func TestSafeDialerControl(t *testing.T) {
+	blockedAddresses := []string{
+		"127.0.0.1:80",
+		"127.0.0.2:8080",
+		"192.168.1.1:443",
+		"192.168.50.1:8899",
+		"10.0.0.1:80",
+		"172.16.0.1:80",
+		"169.254.169.254:80",
+		"100.64.0.1:80",
+		"[::1]:8899",
+		"[fe80::1]:443",
+		"[fc00::1]:80",
+	}
+
+	for _, addr := range blockedAddresses {
+		err := safeDialerControl("tcp", addr, nil)
+		if err == nil {
+			t.Errorf("safeDialerControl should block private/reserved address %q, but got nil", addr)
+		} else if !strings.Contains(err.Error(), "blocked") {
+			t.Errorf("safeDialerControl error for %q should mention blocked, got: %v", addr, err)
+		}
+	}
+
+	allowedAddresses := []string{
+		"8.8.8.8:53",
+		"1.1.1.1:443",
+		"142.250.190.46:443",
+	}
+
+	for _, addr := range allowedAddresses {
+		err := safeDialerControl("tcp", addr, nil)
+		if err != nil {
+			t.Errorf("safeDialerControl should allow public address %q, but got error: %v", addr, err)
+		}
+	}
+}
+
+func TestCheckHostResolvedIPs(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	blockedHosts := []string{
+		"127.0.0.1",
+		"192.168.1.1",
+		"169.254.169.254",
+		"10.0.0.1",
+		"100.64.0.1",
+		"::1",
+		"localhost",
+	}
+
+	for _, host := range blockedHosts {
+		err := checkHostResolvedIPs(ctx, host)
+		if err == nil {
+			t.Errorf("checkHostResolvedIPs should block host %q, but got nil", host)
+		}
+	}
+
+	// Public IP check
+	if err := checkHostResolvedIPs(ctx, "8.8.8.8"); err != nil {
+		t.Errorf("checkHostResolvedIPs should allow public IP 8.8.8.8, got: %v", err)
+	}
+}
+
+func TestSafeTransportDialContextSSRF(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	transport := createSafeTransport(1 * time.Second)
+
+	privateTargets := []string{
+		"127.0.0.1:8899",
+		"192.168.1.1:80",
+		"169.254.169.254:80",
+		"localhost:8899",
+	}
+
+	for _, target := range privateTargets {
+		conn, err := transport.DialContext(ctx, "tcp", target)
+		if err == nil {
+			conn.Close()
+			t.Errorf("transport.DialContext should block private target %q, but connection succeeded", target)
+		}
+	}
+}
+
+func TestProxySSRFDNSRebindingAndInternalServerProtection(t *testing.T) {
+	config = defaultConfig()
+
+	// Spin up simulated internal router admin service
+	internalHitCount := 0
+	internalServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		internalHitCount++
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"admin_credentials": "LEAKED"}`))
+	}))
+	defer internalServer.Close()
+
+	// Case 1: Direct attack using internal server URL (e.g., http://127.0.0.1:PORT)
+	req1 := httptest.NewRequest(http.MethodPost, "/api/proxy", strings.NewReader(`{"test":1}`))
+	req1.Header.Set("X-Target-URL", internalServer.URL+"/api/admin")
+	rec1 := httptest.NewRecorder()
+
+	handleProxy(rec1, req1)
+
+	if rec1.Code != http.StatusForbidden {
+		t.Errorf("Direct private IP proxy expected 403 Forbidden, got %d", rec1.Code)
+	}
+	if internalHitCount != 0 {
+		t.Fatalf("CRITICAL SECURITY LEAK: internal server was reached %d times!", internalHitCount)
+	}
+
+	// Case 2: Custom allowed domain pointing to loopback or private address
+	// Even if an administrator configured a custom domain or DNS points to private IP,
+	// the safe transport DialContext & Control hooks must intercept before connection
+	customDomainURL := fmt.Sprintf("http://127.0.0.1:%s/v1/chat/completions", strings.Split(internalServer.Listener.Addr().String(), ":")[1])
+	req2 := httptest.NewRequest(http.MethodPost, "/api/proxy", strings.NewReader(`{"test":2}`))
+	req2.Header.Set("X-Target-URL", customDomainURL)
+	rec2 := httptest.NewRecorder()
+
+	handleProxy(rec2, req2)
+
+	if internalHitCount != 0 {
+		t.Fatalf("CRITICAL SECURITY LEAK: internal server was reached via custom domain bypass! Hits: %d", internalHitCount)
 	}
 }
