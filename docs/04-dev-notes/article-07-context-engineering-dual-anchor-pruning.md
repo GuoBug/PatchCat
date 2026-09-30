@@ -249,7 +249,7 @@ npm run typecheck
 ---
 
 > **下一篇预告**  
-> 📖 《边写边学 AI 工作流引擎（八）：多智能体拓扑调度与状态隔离 —— 递归子图与并发隔离实战》
+> 📖 [《边写边学 AI 工作流引擎（八）：失败了别全盘重来！逆向 BFS 拓扑回溯与 DAG 检查点断点续跑》](./article-08-resumable-dag-checkpoint-and-reverse-bfs.md)
 
 ---
 

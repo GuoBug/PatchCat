@@ -15,6 +15,7 @@
 | **05** | [合规率暴涨 23.9%，语义准确率却跌了 7.1%？自愈病理学与双轴归因复盘](./article-05-eval-error-analysis-taxonomy.md) | 格式合规掩盖语义退化（F6）、自愈病理学分类法、双轴归因矩阵 |
 | **06** | [用一次“假药对照”，我们在大模型自愈中抓出了真凶](./article-06-placebo-control-and-empirical-closure.md) | 安慰剂组（Placebo Control）单变量隔离实验、不动点卡死 vs. 动态振荡机制 |
 | **07** | [告别“有进无出的上下文黑洞” —— 双锚点滑动窗口与原子事务裁剪实战](./article-07-context-engineering-dual-anchor-pruning.md) | 上下文工程三层防御、双锚点前缀缓存优化、协议原子事务完整性、$O(K)$ 滑动窗口 |
+| **08** | [失败了别全盘重来！逆向 BFS 拓扑回溯与 DAG 检查点断点续跑](./article-08-resumable-dag-checkpoint-and-reverse-bfs.md) | 逆向依赖图遍历、自适应向上扩充、菱形依赖空洞化解、5-Record FIFO 存储防线 |
 
 ---
 

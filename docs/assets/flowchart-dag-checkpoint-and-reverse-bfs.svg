@@ -1,0 +1,184 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 650" width="960" height="650" style="background: transparent; display: block; max-width: 100%; height: auto;">
+  <defs>
+    <!-- Dot Grid Pattern -->
+    <pattern id="dot-grid-rbfs" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2.5" cy="2.5" r="1.2" fill="#D4D4D8" />
+    </pattern>
+
+    <!-- Arrow Markers -->
+    <marker id="arrow-blk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000" stroke="#000000" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#10B981" stroke="#000000" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#EF4444" stroke="#000000" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284C7" stroke="#000000" stroke-width="1"/>
+    </marker>
+
+    <style>
+      .font-mono { font-family: 'Space Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'PingFang SC', monospace; }
+      .font-heading { font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif; }
+      .bold { font-weight: 700; }
+      .bolder { font-weight: 800; }
+      .black { font-weight: 900; }
+      .border-main { stroke: #000000; stroke-width: 2.5; stroke-linecap: square; stroke-linejoin: miter; }
+      .border-card { stroke: #000000; stroke-width: 2; }
+      .border-thin { stroke: #000000; stroke-width: 1.5; }
+      .border-dashed { stroke: #000000; stroke-width: 1.5; stroke-dasharray: 4 3; }
+      .border-dashed-red { stroke: #EF4444; stroke-width: 2; stroke-dasharray: 4 3; }
+    </style>
+  </defs>
+
+  <!-- Outer Shadow & Background Frame -->
+  <rect x="14" y="14" width="932" height="622" rx="8" fill="#000000" />
+  <rect x="10" y="10" width="932" height="622" rx="8" fill="#FAF9F5" class="border-main" />
+  <rect x="14" y="14" width="924" height="614" rx="6" fill="url(#dot-grid-rbfs)" />
+
+  <!-- ================= Top Header Bar ================= -->
+  <rect x="28" y="26" width="896" height="52" rx="6" fill="#000000" />
+  <rect x="25" y="23" width="896" height="52" rx="6" fill="#FFFFFF" class="border-card" />
+
+  <rect x="36" y="31" width="200" height="34" rx="4" fill="#7FFF00" class="border-thin" />
+  <text x="136" y="53" class="font-mono bolder" font-size="12" fill="#000000" text-anchor="middle" letter-spacing="1">PATCHCAT ARCH // FT</text>
+
+  <text x="252" y="54" class="font-heading black" font-size="15" fill="#000000" letter-spacing="0.5">REVERSE BFS TOPOLOGICAL RESUMPTION &amp; DAG CHECKPOINTING</text>
+  <text x="895" y="53" class="font-mono bold" font-size="11" fill="#71717A" text-anchor="end">DETERMINISTIC FAULT-TOLERANCE</text>
+
+  <!-- ================= Left Column: Pitfall (Diamond Dependency Void) ================= -->
+  <g transform="translate(25, 90)">
+    <!-- Shadow & Card -->
+    <rect x="3" y="3" width="425" height="525" rx="6" fill="#000000" />
+    <rect x="0" y="0" width="425" height="525" rx="6" fill="#FFFFFF" class="border-card" />
+
+    <!-- Badge Header -->
+    <rect x="12" y="12" width="401" height="32" rx="4" fill="#FEE2E2" class="border-thin" />
+    <text x="212" y="33" class="font-mono bolder" font-size="11" fill="#DC2626" text-anchor="middle" letter-spacing="0.5">PITFALL: THE DIAMOND DEPENDENCY VOID</text>
+
+    <!-- Subtitle / Context -->
+    <text x="14" y="65" class="font-mono bold" font-size="11" fill="#4B5563">SCENARIO: RESTARTING AT NODE D IN A DIAMOND DAG</text>
+
+    <!-- Topology Canvas Box -->
+    <rect x="14" y="78" width="397" height="235" rx="6" fill="#F8FAFC" class="border-thin" />
+
+    <!-- Node A (Root) -->
+    <rect x="150" y="92" width="125" height="34" rx="4" fill="#DCFCE7" class="border-thin" />
+    <text x="212" y="108" class="font-mono bolder" font-size="11" fill="#15803D" text-anchor="middle">NODE A (Root)</text>
+    <text x="212" y="120" class="font-mono bold" font-size="9" fill="#166534" text-anchor="middle">Cached [0 Token]</text>
+
+    <!-- Edge A -> B -->
+    <path d="M 180 126 L 105 160" fill="none" stroke="#000000" stroke-width="1.8" marker-end="url(#arrow-blk)" />
+    <!-- Edge A -> C -->
+    <path d="M 245 126 L 320 160" fill="none" stroke="#000000" stroke-width="1.8" marker-end="url(#arrow-blk)" />
+
+    <!-- Node B (Healthy Branch) -->
+    <rect x="40" y="162" width="130" height="42" rx="4" fill="#DCFCE7" class="border-thin" />
+    <text x="105" y="180" class="font-mono bolder" font-size="11" fill="#15803D" text-anchor="middle">NODE B (Branch 1)</text>
+    <text x="105" y="195" class="font-mono bold" font-size="9" fill="#166534" text-anchor="middle">Cached [Output Ready]</text>
+
+    <!-- Node C (Void Branch) -->
+    <rect x="255" y="162" width="130" height="42" rx="4" fill="#FEE2E2" class="border-dashed-red" />
+    <text x="320" y="180" class="font-mono bolder" font-size="11" fill="#DC2626" text-anchor="middle">NODE C (Branch 2)</text>
+    <text x="320" y="195" class="font-mono bold" font-size="9" fill="#B91C1C" text-anchor="middle">FAILED / NO OUTPUT</text>
+
+    <!-- Edge B -> D -->
+    <path d="M 105 204 L 180 248" fill="none" stroke="#000000" stroke-width="1.8" marker-end="url(#arrow-blk)" />
+    <!-- Edge C -> D -->
+    <path d="M 320 204 L 245 248" fill="none" stroke="#EF4444" stroke-width="2" stroke-dasharray="3 3" marker-end="url(#arrow-red)" />
+
+    <!-- Node D (Resumption Target) -->
+    <rect x="150" y="250" width="125" height="44" rx="4" fill="#FEF08A" class="border-thin" />
+    <text x="212" y="268" class="font-mono bolder" font-size="11" fill="#854D0E" text-anchor="middle">NODE D (Aggregate)</text>
+    <text x="212" y="284" class="font-mono bold" font-size="9" fill="#A16207" text-anchor="middle">Target Resumption</text>
+
+    <!-- Failure Analysis Box -->
+    <rect x="14" y="325" width="397" height="185" rx="6" fill="#FFF1F2" class="border-thin" />
+    <rect x="26" y="337" width="150" height="22" rx="3" fill="#FFE4E6" class="border-thin" />
+    <text x="101" y="352" class="font-mono bolder" font-size="10" fill="#BE123C" text-anchor="middle">NAIVE FORWARD DIFFUSION</text>
+
+    <text x="26" y="380" class="font-mono bold" font-size="10" fill="#9F1239">Formula: CandidateSet = {D} ∪ Descendants(D)</text>
+    
+    <text x="26" y="405" class="font-mono" font-size="10" fill="#4B5563">• Scheduler only reruns [Node D].</text>
+    <text x="26" y="425" class="font-mono" font-size="10" fill="#4B5563">• Upstream parallel Node C has NO cached output.</text>
+    <text x="26" y="445" class="font-mono bold" font-size="10" fill="#E11D48">• Fatal: `{{C.output}}` expression resolution FAILS!</text>
+    <text x="26" y="465" class="font-mono" font-size="10" fill="#4B5563">• Triggers secondary crash despite Node D being valid.</text>
+    
+    <rect x="26" y="480" width="373" height="20" rx="3" fill="#FDA4AF" />
+    <text x="212" y="494" class="font-mono bolder" font-size="10" fill="#881337" text-anchor="middle">RESULT: CASCADING FAILURE DUE TO MISSING PREDECESSOR</text>
+  </g>
+
+  <!-- ================= Right Column: Solution (Reverse BFS & Pruning) ================= -->
+  <g transform="translate(470, 90)">
+    <!-- Shadow & Card -->
+    <rect x="3" y="3" width="455" height="525" rx="6" fill="#000000" />
+    <rect x="0" y="0" width="455" height="525" rx="6" fill="#FFFFFF" class="border-card" />
+
+    <!-- Badge Header -->
+    <rect x="12" y="12" width="431" height="32" rx="4" fill="#ECFDF5" class="border-thin" />
+    <text x="227" y="33" class="font-mono bolder" font-size="11" fill="#047857" text-anchor="middle" letter-spacing="0.5">SOLUTION: ADAPTIVE REVERSE EXPANSION &amp; KAHN RESORT</text>
+
+    <!-- Step 1: Reverse In-Edge Traversal -->
+    <g transform="translate(14, 55)">
+      <rect x="0" y="0" width="427" height="95" rx="5" fill="#F8FAFC" class="border-thin" />
+      <rect x="10" y="8" width="130" height="20" rx="3" fill="#E0F2FE" class="border-thin" />
+      <text x="75" y="22" class="font-mono bolder" font-size="10" fill="#0284C7" text-anchor="middle">STEP 1: IN-EDGE TRACE</text>
+      
+      <text x="150" y="22" class="font-mono bold" font-size="10" fill="#64748B">incomingEdgesMap.get(tId)</text>
+      <text x="12" y="44" class="font-mono" font-size="10" fill="#334155">Traverse backward from Target Node D along incoming edges.</text>
+      <text x="12" y="62" class="font-mono" font-size="10" fill="#334155">Inspect predecessor outputs: Node B has cached output; Node C is empty.</text>
+      <text x="12" y="80" class="font-mono bold" font-size="10" fill="#0284C7">Hook: Detect dependency void at predecessor Node C.</text>
+    </g>
+
+    <!-- Step 2: Adaptive Upward Expansion Loop -->
+    <g transform="translate(14, 160)">
+      <rect x="0" y="0" width="427" height="110" rx="5" fill="#F0FDF4" class="border-thin" />
+      <rect x="10" y="8" width="165" height="20" rx="3" fill="#DCFCE7" class="border-thin" />
+      <text x="92" y="22" class="font-mono bolder" font-size="10" fill="#15803D" text-anchor="middle">STEP 2: EXPANSION LOOP</text>
+      
+      <text x="185" y="22" class="font-mono bold" font-size="10" fill="#16A34A">while (expanded) { ... }</text>
+      <text x="12" y="44" class="font-mono" font-size="10" fill="#334155">Condition: `!hasCachedOutput &amp;&amp; !targetNodesToRun.has(pId)`</text>
+      <text x="12" y="62" class="font-mono" font-size="10" fill="#334155">Dynamically add Node C into `targetNodesToRun` (expanded = true).</text>
+      <text x="12" y="80" class="font-mono" font-size="10" fill="#334155">Continue upward: Node A has cached output → Loop terminates safely.</text>
+      <text x="12" y="98" class="font-mono bold" font-size="10" fill="#15803D">Result Set: targetNodesToRun = { Node C, Node D }</text>
+    </g>
+
+    <!-- Step 3: Descendant Closure & Pruned Subgraph -->
+    <g transform="translate(14, 280)">
+      <rect x="0" y="0" width="427" height="85" rx="5" fill="#FAF5FF" class="border-thin" />
+      <rect x="10" y="8" width="180" height="20" rx="3" fill="#F3E8FF" class="border-thin" />
+      <text x="100" y="22" class="font-mono bolder" font-size="10" fill="#7E22CE" text-anchor="middle">STEP 3: FORWARD CLOSURE</text>
+
+      <text x="12" y="44" class="font-mono" font-size="10" fill="#334155">Compute `targetDescendants = computeDescendants(targetNodesToRun)`.</text>
+      <text x="12" y="62" class="font-mono" font-size="10" fill="#334155">Minimal execution set: prunedNodeIds = targetNodesToRun ∪ descendants.</text>
+      <text x="12" y="78" class="font-mono bold" font-size="10" fill="#7E22CE">Guarantees zero collateral damage to unaffected branches.</text>
+    </g>
+
+    <!-- Step 4: Kahn Topological Sorting & Waves -->
+    <g transform="translate(14, 375)">
+      <rect x="0" y="0" width="427" height="135" rx="5" fill="#FEFCE8" class="border-thin" />
+      <rect x="10" y="8" width="175" height="20" rx="3" fill="#FEF08A" class="border-thin" />
+      <text x="97" y="22" class="font-mono bolder" font-size="10" fill="#854D0E" text-anchor="middle">STEP 4: KAHN LOCAL RESORT</text>
+
+      <!-- Wave Visual Pipeline -->
+      <g transform="translate(12, 38)">
+        <rect x="0" y="0" width="185" height="42" rx="4" fill="#FFFFFF" class="border-thin" />
+        <text x="92" y="18" class="font-mono bolder" font-size="10" fill="#B45309" text-anchor="middle">WAVE 0: [ NODE C ]</text>
+        <text x="92" y="32" class="font-mono bold" font-size="9" fill="#047857" text-anchor="middle">Repair Void Output</text>
+
+        <path d="M 190 21 L 215 21" fill="none" stroke="#000000" stroke-width="2" marker-end="url(#arrow-blk)" />
+
+        <rect x="220" y="0" width="185" height="42" rx="4" fill="#FFFFFF" class="border-thin" />
+        <text x="312" y="18" class="font-mono bolder" font-size="10" fill="#B45309" text-anchor="middle">WAVE 1: [ NODE D ]</text>
+        <text x="312" y="32" class="font-mono bold" font-size="9" fill="#0284C7" text-anchor="middle">Execute Resumption Target</text>
+      </g>
+
+      <!-- Bottom Zero Cost Banner -->
+      <rect x="12" y="90" width="403" height="34" rx="4" fill="#7FFF00" class="border-thin" />
+      <text x="213" y="106" class="font-mono bolder" font-size="10" fill="#000000" text-anchor="middle">ZERO-COST ANCESTOR CONTRACT</text>
+      <text x="213" y="118" class="font-mono bold" font-size="9" fill="#000000" text-anchor="middle">Node A &amp; Node B status: cached | tokensUsed: 0 | executionTime: 0ms</text>
+    </g>
+  </g>
+</svg>
