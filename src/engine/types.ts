@@ -700,6 +700,14 @@ export interface ModelRoutingTraceStep {
   timestamp: number;
 }
 
+export interface CandidateAttemptRecord {
+  model: string;
+  attemptIndex: number;
+  outcome: 'ok' | 'contract_fail' | 'http_429' | 'http_503' | 'network' | 'error';
+  errorMessage?: string;
+  durationMs: number;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 12. Node Default Config Factories
 // ─────────────────────────────────────────────────────────────────────────────

@@ -30,6 +30,7 @@ import type {
   ModelRoutingConfig,
   ModelRoutingTriggerReason,
   ModelRoutingTraceStep,
+  CandidateAttemptRecord,
   StructuredOutputError,
   TokenUsage,
   ResponseFormatConfig,
@@ -56,6 +57,8 @@ export const MODEL_RELATIVE_PRICING: Record<string, number> = {
   // Tier 1 (Free / Economy)
   'Qwen/Qwen2.5-7B-Instruct': 0.05,
   'qwen2.5-7b-instruct': 0.05,
+  'gemini-3.5-flash-lite': 0.05,
+  'gemini-3.1-flash-lite': 0.05,
   'gemini-2.5-flash': 0.075,
   'gemini-2.5-flash-lite': 0.04,
   'gemini-2.0-flash': 0.075,
@@ -63,6 +66,8 @@ export const MODEL_RELATIVE_PRICING: Record<string, number> = {
   'gemini-flash-latest': 0.075,
 
   // Tier 2 (Strong / Heavy Reasoning)
+  'gemini-3.8-flash': 0.15,
+  'gemini-3.5-flash': 0.15,
   'gemini-2.5-pro': 1.25,
   'gemini-1.5-pro': 1.25,
   'gemini-pro-latest': 1.25,
@@ -144,6 +149,8 @@ export interface ModelRoutingExecutionResult {
   escalationReason: ModelRoutingTriggerReason;
   cheapAttempts: number;
   strongAttempts: number;
+  candidateAttempts?: CandidateAttemptRecord[];
+  candidateRotations?: number;
   totalAttempts: number;
   costSavingsRatio: number;
   negotiated: NegotiatedResponseFormat;
@@ -219,6 +226,8 @@ export async function executeWithModelRouting(
       escalationReason: closureReason,
       cheapAttempts: singleRes.totalAttempts,
       strongAttempts: 0,
+      candidateAttempts: [],
+      candidateRotations: 0,
       costSavingsRatio: 0,
       routingTrace: [
         {
@@ -387,6 +396,8 @@ export async function executeWithModelRouting(
         escalationReason: isSelfHealed ? 'cheap_self_healing' : 'primary_default',
         cheapAttempts,
         strongAttempts: 0,
+        candidateAttempts: [],
+        candidateRotations: 0,
         totalAttempts: cheapAttempts,
         costSavingsRatio,
         negotiated,
@@ -479,6 +490,7 @@ export async function executeWithModelRouting(
 
   currentMessages = [...currentMessages, assistantMsg, userMsg];
 
+  const candidateAttempts: CandidateAttemptRecord[] = [];
   let routedStrongModel = fallbackCandidates[0] || fallbackModel;
   let strongSuccess = false;
   let strongData: unknown = undefined;
@@ -488,6 +500,7 @@ export async function executeWithModelRouting(
     const candidateModel = fallbackCandidates[candidateIdx]!;
     routedStrongModel = candidateModel;
     strongAttempts++;
+    const candStart = Date.now();
 
     try {
       if (candidateIdx > 0) {
@@ -528,6 +541,12 @@ export async function executeWithModelRouting(
       if (strongParseResult.success) {
         strongSuccess = true;
         strongData = strongParseResult.data;
+        candidateAttempts.push({
+          model: candidateModel,
+          attemptIndex: candidateIdx,
+          outcome: 'ok',
+          durationMs: Date.now() - candStart,
+        });
         logger.summary(
           'ModelRouter',
           `[Tier 2 强模型成功闭合 ✅] 候选模型 "${candidateModel}" 继承前序诊断上下文后一次性修复成功！任务被成功救回。`,
@@ -535,25 +554,66 @@ export async function executeWithModelRouting(
         break;
       } else {
         lastErrors = strongParseResult.errors || [];
+        candidateAttempts.push({
+          model: candidateModel,
+          attemptIndex: candidateIdx,
+          outcome: 'contract_fail',
+          errorMessage: strongParseResult.errors?.[0]?.message || 'Schema validation failed',
+          durationMs: Date.now() - candStart,
+        });
         logger.warn(
           'ModelRouter',
           `[Tier 2 强模型返回契约未通过] 候选模型 "${candidateModel}" 输出未能满足 Schema，准备尝试队列后续模型或后置降级`,
         );
       }
     } catch (callerErr: any) {
+      const errMsg = String(callerErr?.message || callerErr);
+      let outcome: CandidateAttemptRecord['outcome'] = 'error';
+      if (
+        errMsg.includes('429') ||
+        errMsg.toLowerCase().includes('resourceexhausted') ||
+        errMsg.toLowerCase().includes('quota')
+      ) {
+        outcome = 'http_429';
+      } else if (
+        errMsg.includes('503') ||
+        errMsg.toLowerCase().includes('unavailable') ||
+        errMsg.toLowerCase().includes('high demand')
+      ) {
+        outcome = 'http_503';
+      } else if (
+        errMsg.toLowerCase().includes('timeout') ||
+        errMsg.toLowerCase().includes('abort') ||
+        errMsg.toLowerCase().includes('network') ||
+        errMsg.toLowerCase().includes('econnreset') ||
+        errMsg.toLowerCase().includes('fetch failed')
+      ) {
+        outcome = 'network';
+      }
+
+      candidateAttempts.push({
+        model: candidateModel,
+        attemptIndex: candidateIdx,
+        outcome,
+        errorMessage: errMsg,
+        durationMs: Date.now() - candStart,
+      });
+
       logger.warn(
         'ModelRouter',
-        `[Tier 2 候选模型调用异常 (429/503/网络)] "${candidateModel}": ${callerErr.message}，启动队列顺延轮换`,
+        `[Tier 2 候选模型调用异常 (${outcome})] "${candidateModel}": ${errMsg}，启动队列顺延轮换`,
       );
       lastErrors = [
         {
           path: '',
-          message: `Tier 2 model call failed for "${candidateModel}": ${callerErr.message}`,
+          message: `Tier 2 model call failed for "${candidateModel}": ${errMsg}`,
           code: 'tier2_call_failure',
         },
       ];
     }
   }
+
+  const candidateRotations = Math.max(0, candidateAttempts.length - 1);
 
   if (strongSuccess) {
     trace.push({
@@ -576,6 +636,8 @@ export async function executeWithModelRouting(
       escalationReason,
       cheapAttempts,
       strongAttempts,
+      candidateAttempts,
+      candidateRotations,
       totalAttempts: cheapAttempts + strongAttempts,
       costSavingsRatio: 0,
       negotiated,
@@ -603,6 +665,8 @@ export async function executeWithModelRouting(
       escalationReason,
       cheapAttempts,
       strongAttempts,
+      candidateAttempts,
+      candidateRotations,
       totalAttempts: cheapAttempts + strongAttempts,
       costSavingsRatio,
       negotiated,
@@ -640,6 +704,8 @@ export async function executeWithModelRouting(
     escalationReason,
     cheapAttempts,
     strongAttempts,
+    candidateAttempts,
+    candidateRotations,
     totalAttempts: cheapAttempts + strongAttempts,
     costSavingsRatio: 0,
     negotiated,
