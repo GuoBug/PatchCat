@@ -437,9 +437,14 @@ export async function executeWithModelRouting(
       ? 'semantic_conflict_gate'
       : 'cheap_budget_exhausted';
 
+  const fallbackCandidates: string[] =
+    routing.fallbackModels && routing.fallbackModels.length > 0
+      ? routing.fallbackModels
+      : [fallbackModel];
+
   logger.warn(
     'ModelRouter',
-    `[触发模型级联升级 🚨] 经济模型预算耗尽或触发语义门禁 (原因: ${escalationReason})。立即升级至 Tier 2 强模型: "${fallbackModel}"！继承前序 ${cheapAttempts} 次自愈失败现场与诊断三元组...`,
+    `[触发模型级联升级 🚨] 经济模型预算耗尽或触发语义门禁 (原因: ${escalationReason})。立即升级至 Tier 2 强模型候选队列: [${fallbackCandidates.join(', ')}]！继承前序 ${cheapAttempts} 次自愈失败现场与诊断三元组...`,
   );
 
   options.onTierSwitch?.('tier1_cheap', 'tier2_strong', escalationReason);
@@ -447,7 +452,7 @@ export async function executeWithModelRouting(
   routingTrace.push({
     round: cheapAttempts + 1,
     modelTier: 'tier2_strong',
-    model: fallbackModel,
+    model: fallbackCandidates[0] || fallbackModel,
     reason: escalationReason,
     escalated: true,
     costSavingsRatio: 0,
@@ -474,63 +479,99 @@ export async function executeWithModelRouting(
 
   currentMessages = [...currentMessages, assistantMsg, userMsg];
 
-  strongAttempts++;
-  try {
-    const strongRes = await caller({
-      targetModel: fallbackModel,
-      modelTier: 'tier2_strong',
-      messages: currentMessages,
-      response_format: negotiated.apiFormat,
-    });
+  let routedStrongModel = fallbackCandidates[0] || fallbackModel;
+  let strongSuccess = false;
+  let strongData: unknown = undefined;
+  let lastStrongSyntaxValid = true;
 
-    lastRaw = strongRes.response || '';
-    lastFinishReason = strongRes.finishReason;
-    if (strongRes.usage) {
-      totalUsage.prompt += strongRes.usage.prompt;
-      totalUsage.completion += strongRes.usage.completion;
-      totalUsage.total += strongRes.usage.total;
+  for (let candidateIdx = 0; candidateIdx < fallbackCandidates.length; candidateIdx++) {
+    const candidateModel = fallbackCandidates[candidateIdx]!;
+    routedStrongModel = candidateModel;
+    strongAttempts++;
+
+    try {
+      if (candidateIdx > 0) {
+        logger.warn(
+          'ModelRouter',
+          `[Tier 2 候选模型轮换触发 🔄] 切换至候选队列第 ${candidateIdx + 1} 位模型: "${candidateModel}"...`,
+        );
+        routingTrace.push({
+          round: cheapAttempts + strongAttempts,
+          modelTier: 'tier2_strong',
+          model: candidateModel,
+          reason: escalationReason,
+          escalated: true,
+          costSavingsRatio: 0,
+          timestamp: Date.now(),
+        });
+      }
+
+      const strongRes = await caller({
+        targetModel: candidateModel,
+        modelTier: 'tier2_strong',
+        messages: currentMessages,
+        response_format: negotiated.apiFormat,
+      });
+
+      lastRaw = strongRes.response || '';
+      lastFinishReason = strongRes.finishReason;
+      if (strongRes.usage) {
+        totalUsage.prompt += strongRes.usage.prompt;
+        totalUsage.completion += strongRes.usage.completion;
+        totalUsage.total += strongRes.usage.total;
+      }
+      if (strongRes.reasoning) {
+        lastReasoning = strongRes.reasoning;
+      }
+
+      const strongParseResult = safeParseOutput(lastRaw, options.schema);
+      if (strongParseResult.success) {
+        strongSuccess = true;
+        strongData = strongParseResult.data;
+        logger.summary(
+          'ModelRouter',
+          `[Tier 2 强模型成功闭合 ✅] 候选模型 "${candidateModel}" 继承前序诊断上下文后一次性修复成功！任务被成功救回。`,
+        );
+        break;
+      } else {
+        lastErrors = strongParseResult.errors || [];
+        logger.warn(
+          'ModelRouter',
+          `[Tier 2 强模型返回契约未通过] 候选模型 "${candidateModel}" 输出未能满足 Schema，准备尝试队列后续模型或后置降级`,
+        );
+      }
+    } catch (callerErr: any) {
+      logger.warn(
+        'ModelRouter',
+        `[Tier 2 候选模型调用异常 (429/503/网络)] "${candidateModel}": ${callerErr.message}，启动队列顺延轮换`,
+      );
+      lastErrors = [
+        {
+          path: '',
+          message: `Tier 2 model call failed for "${candidateModel}": ${callerErr.message}`,
+          code: 'tier2_call_failure',
+        },
+      ];
     }
-    if (strongRes.reasoning) {
-      lastReasoning = strongRes.reasoning;
-    }
-  } catch (callerErr: any) {
-    logger.warn(
-      'ModelRouter',
-      `[Tier 2 强模型调用异常 / Rate Limit / Quota] ${callerErr.message}，启动后置容错保护`,
-    );
-    lastErrors = [
-      {
-        path: '',
-        message: `Tier 2 model call failed: ${callerErr.message}`,
-        code: 'tier2_call_failure',
-      },
-    ];
   }
 
-  const strongParseResult = safeParseOutput(lastRaw, options.schema);
-
-  if (strongParseResult.success) {
-    logger.summary(
-      'ModelRouter',
-      `[Tier 2 强模型成功闭合 ✅] 强模型 "${fallbackModel}" 继承前序诊断上下文后一次性修复成功！任务被成功救回。`,
-    );
-
+  if (strongSuccess) {
     trace.push({
       round: cheapAttempts + strongAttempts,
       rawOutput: lastRaw,
       syntaxValid: true,
       semanticValid: true,
       finishReason: lastFinishReason,
-      feedbackPrompt: `[强模型升级修复成功 / Tier 2 Escalation Healed: ${escalationReason}]`,
+      feedbackPrompt: `[强模型升级修复成功 / Tier 2 Escalation Healed: ${escalationReason} via ${routedStrongModel}]`,
       timestamp: Date.now(),
     });
 
     return {
       success: true,
-      data: strongParseResult.data,
+      data: strongData,
       raw: lastRaw,
       modelTier: 'tier2_strong',
-      routedModel: fallbackModel,
+      routedModel: routedStrongModel,
       escalated: true,
       escalationReason,
       cheapAttempts,
@@ -573,7 +614,6 @@ export async function executeWithModelRouting(
     };
   }
 
-  lastErrors = strongParseResult.errors || lastErrors;
   logger.warn(
     'ModelRouter',
     `[级联全量耗尽] 经济模型与强模型均未能通过契约校验，输出优雅降级契约。`,
@@ -582,7 +622,7 @@ export async function executeWithModelRouting(
   trace.push({
     round: cheapAttempts + strongAttempts,
     rawOutput: lastRaw,
-    syntaxValid: !strongParseResult.syntaxError,
+    syntaxValid: lastStrongSyntaxValid,
     semanticValid: false,
     errors: lastErrors,
     finishReason: lastFinishReason,

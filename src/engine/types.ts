@@ -668,8 +668,14 @@ export interface ModelRoutingConfig {
   enabled?: boolean;
   /** Primary / cheap tier model (e.g. 'Qwen/Qwen2.5-7B-Instruct') */
   primaryModel?: string;
-  /** Fallback / strong tier model (e.g. 'deepseek-ai/DeepSeek-V3' or 'gemini-2.5-flash') */
+  /** Fallback / strong tier model (e.g. 'deepseek-ai/DeepSeek-V3' or 'gemini-3.5-flash-lite') */
   fallbackModel?: string;
+  /**
+   * Optional candidate rotation queue for strong tier models.
+   * If provided, the router tries each model in order upon failure (429/503/error),
+   * providing multi-model quota pooling and automatic failover.
+   */
+  fallbackModels?: string[];
   /**
    * Maximum self-healing retries with the cheap model before escalating to strong model.
    * Default: 2.

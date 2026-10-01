@@ -497,4 +497,64 @@ describe('Module 3: Deterministic Model Routing & Cascade State Machine', () => 
       assert.equal(res.escalated, true);
     });
   });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // 8. Multi-Candidate Model Rotation Queue (Quota Pooling & Automatic Failover)
+  // ───────────────────────────────────────────────────────────────────────────
+  describe('8. Multi-Candidate Model Rotation Queue', () => {
+    it('rotates to next candidate model in fallbackModels when first candidate fails with 429/quota', async () => {
+      const schema = z.object({
+        orderId: z.string(),
+        category: z.enum(['logistics', 'refund', 'quality', 'other']),
+      });
+
+      const calledModels: string[] = [];
+
+      const mockCaller = async (req: ModelRoutingCallerRequest): Promise<LLMExecutionOutput> => {
+        calledModels.push(req.targetModel);
+        if (req.targetModel === 'Qwen/Qwen2.5-7B-Instruct') {
+          return {
+            response: 'Invalid format on cheap',
+            usage: { prompt: 50, completion: 10, total: 60 },
+            finishReason: 'stop',
+          };
+        }
+        if (req.targetModel === 'gemini-3.8-flash') {
+          throw new Error('HTTP 429: ResourceExhausted quota exceeded');
+        }
+        if (req.targetModel === 'gemini-3.5-flash-lite') {
+          return {
+            response: JSON.stringify({ orderId: 'ORD-888888', category: 'refund' }),
+            usage: { prompt: 100, completion: 20, total: 120 },
+            finishReason: 'stop',
+          };
+        }
+        throw new Error('Unexpected model');
+      };
+
+      const res = await executeWithModelRouting(
+        mockCaller,
+        [{ role: 'user', content: '测试轮换' }],
+        {
+          schema,
+          provider: 'google',
+          routingConfig: {
+            enabled: true,
+            primaryModel: 'Qwen/Qwen2.5-7B-Instruct',
+            fallbackModels: ['gemini-3.8-flash', 'gemini-3.5-flash-lite'],
+            maxCheapRetries: 0,
+          },
+        },
+      );
+
+      assert.equal(res.success, true);
+      assert.equal(res.routedModel, 'gemini-3.5-flash-lite');
+      assert.equal(res.escalated, true);
+      assert.deepEqual(calledModels, [
+        'Qwen/Qwen2.5-7B-Instruct',
+        'gemini-3.8-flash',
+        'gemini-3.5-flash-lite',
+      ]);
+    });
+  });
 });
