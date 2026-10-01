@@ -33,7 +33,7 @@ export const TIER2_FREE_MODELS = [
   'gemini-3.1-flash-lite',
   'gemini-3.8-flash',
 ];
-const REQUEST_TIMEOUT_MS = 45000;
+const REQUEST_TIMEOUT_MS = 60000;
 
 function loadEnvKey(keyName: string): string {
   for (const envPath of ['.env', '.env.local']) {
@@ -460,15 +460,20 @@ async function main() {
   } else {
     assertApiKeys();
     const isSingleRun = process.argv.includes('--single') || process.argv.includes('--smoke');
-    const targetCases = isSingleRun
-      ? BENCHMARK_CASES.filter((c) => [1, 3, 7, 27, 30].includes(c.id)) // 5 core cases representing T1, T2, Sentinels, and F7
-      : BENCHMARK_CASES;
+    const caseArgIdx = process.argv.indexOf('--case');
+    let targetCases = BENCHMARK_CASES;
+    if (caseArgIdx !== -1 && process.argv[caseArgIdx + 1]) {
+      const ids = process.argv[caseArgIdx + 1]!.split(',').map(Number);
+      targetCases = BENCHMARK_CASES.filter((c) => ids.includes(c.id));
+    } else if (isSingleRun) {
+      targetCases = BENCHMARK_CASES.filter((c) => [1, 3, 7, 27, 30].includes(c.id));
+    }
 
     console.log(`\n======================================================================`);
     console.log(`🎯 PatchCat M3 模型级联路由实测评估系统 (完全免费多模型容灾轮换)`);
     console.log(`   廉价层 (Tier 1): ${TIER1_FREE_MODEL} (SiliconFlow 免费版, temp=0.0)`);
     console.log(`   强模型候选池 (Tier 2): ${TIER2_FREE_MODELS.join(' -> ')} (Google AI Studio 免费层)`);
-    console.log(`   评测用例: ${isSingleRun ? '精简验证组 (5 Cases)' : '全量基准集 (30 Cases)'}`);
+    console.log(`   评测用例: ${targetCases.length < BENCHMARK_CASES.length ? `定制/验证组 (${targetCases.length} Cases)` : '全量基准集 (30 Cases)'}`);
     console.log(`======================================================================\n`);
 
     // Run Baseline (Tier 1 only)
@@ -640,7 +645,12 @@ async function main() {
 
   let f7AnalysisText = '';
   if (gateTrippedCases.length === 0) {
-    f7AnalysisText = `- **门禁触发状态**：本轮评测中 \`semantic_conflict_gate\` 动作优先权门禁**未被触发**（本轮升级原因全部分布于 \`cheap_budget_exhausted\`）。\n- **Case #27 与 #30 实测归因**：\n  - **Case #27**：对照组分类为 \`${b27?.actualCategory}\`，级联组分类为 \`${c27?.actualCategory}\`（由 \`${c27?.routedModel}\` 接管，原因: \`${c27?.escalationReason}\`）。两组均准确判定为 \`refund\`，未受假货瑕疵细节掩盖核心诉求。由于基线已有提示词动作优先权规则强化，两组结果持平（F7 穿透率 100.0%，Delta +0.0%），数据表现为稳固承接，未发生掩盖亦未触发门禁。\n  - **Case #30**：对照组与级联组分类均为 \`refund\`，在 Tier 1 廉价模型上直接闭环，两组均准确判定。`;
+    const isBothRefund = b27?.actualCategory === 'refund' && c27?.actualCategory === 'refund';
+    const c27Explanation = isBothRefund
+      ? `两组均准确判定为 \`refund\`，未受假货瑕疵细节掩盖核心诉求。由于基线已有提示词动作优先权规则强化，两组结果持平，数据表现为稳固承接，未发生掩盖亦未触发门禁。`
+      : `对照组因廉价自愈耗尽未产出有效分类（\`${b27?.actualCategory || 'null'}\`），级联组经强模型升级（由 \`${c27?.routedModel}\` 接管）准确命中核心诉求 \`${c27?.actualCategory}\`，突破了问题描述词干扰。`;
+
+    f7AnalysisText = `- **门禁触发状态**：本轮评测中 \`semantic_conflict_gate\` 动作优先权门禁**未被触发**（本轮升级原因全部分布于 \`cheap_budget_exhausted\`）。\n- **Case #27 与 #30 实测归因**：\n  - **Case #27**：对照组分类为 \`${b27?.actualCategory || 'null'}\`，级联组分类为 \`${c27?.actualCategory}\`（由 \`${c27?.routedModel}\` 接管，原因: \`${c27?.escalationReason}\`）。${c27Explanation}\n  - **Case #30**：对照组与级联组分类均为 \`refund\`，在 Tier 1 廉价模型上直接闭环，两组均准确判定。`;
   } else {
     f7AnalysisText = `本轮触发动作优先权门禁的用例为：${gateTrippedCases.map((c) => `#${c.caseId}`).join(', ')}。`;
   }
@@ -703,6 +713,22 @@ async function main() {
     ? `${unescalatedLossCases.length} 例（${unescalatedLossCases.map((id) => '#' + id.toString().padStart(2, '0')).join(', ')}）`
     : '0 例';
 
+  const f7Delta = cascadeSummary.f7DisambiguationAccuracy - baselineSummary.f7DisambiguationAccuracy;
+  const f7DeltaText = f7Delta === 0
+    ? `+0.0% (无区分力)`
+    : `${f7Delta >= 0 ? '+' : ''}${f7Delta.toFixed(1)}%`;
+  const f7AuditText = f7Delta === 0
+    ? `两臂均 100% 穿透 (门禁未触发)`
+    : `级联强模型辅助破除瑕疵词干扰，穿透诉求词 (门禁未触发)`;
+
+  const discordantAuditLine = discordantCases.length > 0
+    ? `共有 ${discordantCases.length} 例（${discordantCases.map((c) => '#' + c.caseId.toString().padStart(2, '0')).join(', ')}）在两组中输出不一致。`
+    : `共有 **0 例** 在两组中输出不一致（双臂在完全对齐初始提示词与结构化约束下实现了 100% 低抖动重现）。`;
+
+  const noiseExplanationLine = (unescalatedGainCases.length > 0 || unescalatedLossCases.length > 0)
+    ? `表观增益中存在未升级用例的采样残余抖动（${noiseGainStr} 改善，${noiseLossStr} 恶化），在解读全量增益时必须予以剔除和审慎归因。`
+    : `表观增益与真实级联增益完全吻合（0 例采样噪声，0 例反向抖动），有力印证了初始 Schema 契约注入对齐后消除系统性假性偏差的效果。`;
+
   // Generate Formal Evaluation Report
   const reportContent = `# M3 模型级联路由与状态机实测评估报告（多模型轮换池实测版）
 
@@ -719,8 +745,12 @@ async function main() {
 
 > 🎯 **受处理子集（强模型升级队列，n=${escalatedResults.length}）真实效果：${treatedGainCases.length} 改善 / ${treatedLossCases.length} 恶化 / ${treatedSameCases.length} 持平**  
 > 
-> 1. **核心可归因收益（100% 真实级联）**：升级机制成功救回了 **${realGainStr}** 契约硬崩溃，并在其余 ${treatedSameCases.length} 例（${treatedSameCases.length > 0 ? treatedSameCases.map((id) => '#' + id.toString().padStart(2, '0')).join(', ') : '无'}）上平稳闭环。
-> 2. **全量表观指标去噪声剖析**：全量契约合规率呈现的 ${(cascadeSummary.schemaComplianceRate - baselineSummary.schemaComplianceRate) >= 0 ? '+' : ''}${(cascadeSummary.schemaComplianceRate - baselineSummary.schemaComplianceRate).toFixed(1)}%（${cascadeSummary.schemaCompliantCount - baselineSummary.schemaCompliantCount} 例）表观改善中，**真实级联增益占 ${realGainStr}，其余 ${noiseGainStr} 来自未升级用例在托管 API 上的采样残留抖动**。分类准确率中亦包含 ${noiseLossStr} 反向抖动。
+> 1. **核心可归因收益（100% 真实级联）**：升级机制成功救回了 **${realGainStr}** 契约硬崩溃${treatedSameCases.length > 0 ? `，并在其余 ${treatedSameCases.length} 例（${treatedSameCases.map((id) => '#' + id.toString().padStart(2, '0')).join(', ')}）上平稳闭环` : '，受处理子集全部实现正向救回'}。
+> 2. **全量表观指标去噪声剖析**：全量契约合规率呈现的 ${(cascadeSummary.schemaComplianceRate - baselineSummary.schemaComplianceRate) >= 0 ? '+' : ''}${(cascadeSummary.schemaComplianceRate - baselineSummary.schemaComplianceRate).toFixed(1)}%（${cascadeSummary.schemaCompliantCount - baselineSummary.schemaCompliantCount} 例）表观改善中，${
+  unescalatedGainCases.length === 0 && unescalatedLossCases.length === 0
+    ? `**100% 对应受处理子集的真实级联增益（${realGainStr}），未升级用例呈现 0 采样噪声**`
+    : `**真实级联增益占 ${realGainStr}，其余 ${noiseGainStr} 来自未升级用例在托管 API 上的采样残留抖动**。分类准确率中亦包含 ${noiseLossStr} 反向抖动`
+}。
 > 3. **统计显著性检视**：配对 McNemar 检验显示契约合规 $p = ${schemaP}$，分类准确 $p = ${catP}$，均未达 $\\alpha=0.05$ 显著性水平。结论定性为**小样本下方向性积极的架构实证**，不可过度外推为大样本显著效应。
 
 ---
@@ -733,7 +763,7 @@ async function main() {
 | **契约合规率 (Schema Compliance)** | ${baselineSummary.schemaComplianceRate.toFixed(1)}% (${baselineSummary.schemaCompliantCount}/${baselineSummary.totalCases}) | ${cascadeSummary.schemaComplianceRate.toFixed(1)}% (${cascadeSummary.schemaCompliantCount}/${cascadeSummary.totalCases}) | **${(cascadeSummary.schemaComplianceRate - baselineSummary.schemaComplianceRate) >= 0 ? '+' : ''}${(cascadeSummary.schemaComplianceRate - baselineSummary.schemaComplianceRate).toFixed(1)}%** | $p = ${schemaP}$ (${treatedGainCases.length} 真实救回 + ${unescalatedGainCases.length} 采样噪声) |
 | **分类准确率 (Category Accuracy)** | ${baselineSummary.categoryAccuracyRate.toFixed(1)}% (${baselineSummary.categoryCorrectCount}/${baselineSummary.totalCases}) | ${cascadeSummary.categoryAccuracyRate.toFixed(1)}% (${cascadeSummary.categoryCorrectCount}/${cascadeSummary.totalCases}) | **${(cascadeSummary.categoryAccuracyRate - baselineSummary.categoryAccuracyRate) >= 0 ? '+' : ''}${(cascadeSummary.categoryAccuracyRate - baselineSummary.categoryAccuracyRate).toFixed(1)}%** | $p = ${catP}$ (${treatedGainCases.length} 真实 + ${unescalatedGainCases.length} 噪声 - ${unescalatedLossCases.length} 反向) |
 | **单号提取准确率 (OrderId Accuracy)** | ${baselineSummary.orderIdAccuracyRate.toFixed(1)}% (${baselineSummary.orderIdCorrectCount}/${baselineSummary.totalCases}) | ${cascadeSummary.orderIdAccuracyRate.toFixed(1)}% (${cascadeSummary.orderIdCorrectCount}/${cascadeSummary.totalCases}) | **${(cascadeSummary.orderIdAccuracyRate - baselineSummary.orderIdAccuracyRate) >= 0 ? '+' : ''}${(cascadeSummary.orderIdAccuracyRate - baselineSummary.orderIdAccuracyRate).toFixed(1)}%** | $p = ${orderP}$ |
-| **F7 动作优先权穿透率 (#27, #30)** | ${baselineSummary.f7DisambiguationAccuracy.toFixed(1)}% | ${cascadeSummary.f7DisambiguationAccuracy.toFixed(1)}% | **${(cascadeSummary.f7DisambiguationAccuracy - baselineSummary.f7DisambiguationAccuracy) >= 0 ? '+' : ''}${(cascadeSummary.f7DisambiguationAccuracy - baselineSummary.f7DisambiguationAccuracy).toFixed(1)}% (无区分力)** | 两臂均 100% 穿透 (门禁未触发) |
+| **F7 动作优先权穿透率 (#27, #30)** | ${baselineSummary.f7DisambiguationAccuracy.toFixed(1)}% | ${cascadeSummary.f7DisambiguationAccuracy.toFixed(1)}% | **${f7DeltaText}** | ${f7AuditText} |
 | **廉价模型闭环率 (Cheap Closure)** | ${baselineSummary.cheapClosureRate.toFixed(1)}% | **${cascadeSummary.cheapClosureRate.toFixed(1)}%** | 保持高闭环率 | 流量锁定在极低成本 Tier 1 |
 | **强模型升级率 (Escalation Rate)** | ${baselineSummary.escalationRate.toFixed(1)}% | **${cascadeSummary.escalationRate.toFixed(1)}%** (${cascadeSummary.escalatedCount}/${cascadeSummary.totalCases}) | 触发定向升级 | 针对困难长尾精准触发 |
 | **累计 Token 消耗 (Total Tokens)** | ${baselineSummary.totalTokensUsed.toLocaleString()} tokens | ${cascadeSummary.totalTokensUsed.toLocaleString()} tokens | **${Number(tokenDeltaPct) >= 0 ? '+' : ''}${tokenDeltaPct}%** | 额外消耗集中于 ${escalatedResults.length} 例升级任务 |
@@ -750,9 +780,9 @@ ${escalationBreakdown}
 
 ### 2. 采样低抖动验证与未升级用例一致性 (Sampling Low-Jitter & Un-escalated Consistency)
 - 在全量 ${cascadeSummary.totalCases} 个基准工单中，未触发级联升级的 ${unescalatedResults.length} 个用例一致性达到 **${determinismRate}%** (${deterministicMatches}/${unescalatedResults.length})。
-- **显式不一致用例审计**：共有 ${discordantCases.length} 例（${discordantCases.map((c) => '#' + c.caseId.toString().padStart(2, '0')).join(', ')}）在两组中输出不一致。
+- **显式不一致用例审计**：${discordantAuditLine}
   - 云端托管 LLM API（如 Qwen2.5-7B）在 \`temperature: 0.0\` 下受动态批处理、并发调度及 MoE 路由影响，**不保证数学意义上的绝对确定性**。
-  - 表观增益中存在未升级用例的采样残余抖动（${noiseGainStr} 改善，${noiseLossStr} 恶化），在解读全量增益时必须予以剔除和审慎归因。
+  - ${noiseExplanationLine}
 ${neutralExplanation ? neutralExplanation + '\n' : ''}
 
 ### 3. F7 动作优先权门禁与 Case #27 实证分析

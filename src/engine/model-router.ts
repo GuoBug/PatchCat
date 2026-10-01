@@ -307,22 +307,47 @@ export async function executeWithModelRouting(
       `[Tier 1 试探执行] 第 ${cheapAttempts} 次尝试调用经济模型: ${primaryModel} (${isRetry ? '原地自愈纠偏' : '首轮试探'})...`,
     );
 
-    const llmRes = await caller({
-      targetModel: primaryModel,
-      modelTier: 'tier1_cheap',
-      messages: currentMessages,
-      response_format: negotiated.apiFormat,
-    });
-
-    lastRaw = llmRes.response || '';
-    lastFinishReason = llmRes.finishReason;
-    if (llmRes.usage) {
-      totalUsage.prompt += llmRes.usage.prompt;
-      totalUsage.completion += llmRes.usage.completion;
-      totalUsage.total += llmRes.usage.total;
-    }
-    if (llmRes.reasoning) {
-      lastReasoning = llmRes.reasoning;
+    let llmRes: LLMExecutionOutput;
+    try {
+      llmRes = await caller({
+        targetModel: primaryModel,
+        modelTier: 'tier1_cheap',
+        messages: currentMessages,
+        response_format: negotiated.apiFormat,
+      });
+      lastRaw = llmRes.response || '';
+      lastFinishReason = llmRes.finishReason;
+      if (llmRes.usage) {
+        totalUsage.prompt += llmRes.usage.prompt;
+        totalUsage.completion += llmRes.usage.completion;
+        totalUsage.total += llmRes.usage.total;
+      }
+      if (llmRes.reasoning) {
+        lastReasoning = llmRes.reasoning;
+      }
+    } catch (callerErr: any) {
+      logger.warn(
+        'ModelRouter',
+        `[Tier 1 调用异常] 经济模型调用失败: ${callerErr.message || callerErr}`,
+      );
+      lastRaw = '';
+      lastErrors = [
+        {
+          path: 'root',
+          message: `Cheap tier execution failed: ${callerErr.message || callerErr}`,
+          code: 'CHEAP_CALLER_ERROR',
+        },
+      ];
+      trace.push({
+        round: cheapAttempts,
+        rawOutput: '',
+        syntaxValid: false,
+        semanticValid: false,
+        errors: lastErrors,
+        finishReason: 'error',
+        timestamp: Date.now(),
+      });
+      continue;
     }
 
     // Verify format and schema
@@ -734,6 +759,18 @@ async function runSingleTierLoop(
   );
 
   let currentMessages: ChatMessage[] = [...initialMessages];
+
+  if (negotiated.injectedPromptGuidance) {
+    const lastUserIdx = currentMessages.map((m) => m.role).lastIndexOf('user');
+    if (lastUserIdx >= 0) {
+      const orig = currentMessages[lastUserIdx]!.content || '';
+      currentMessages[lastUserIdx] = {
+        ...currentMessages[lastUserIdx]!,
+        content: orig + negotiated.injectedPromptGuidance,
+      };
+    }
+  }
+
   let attempt = 0;
   let lastRaw = '';
   let lastErrors: StructuredOutputError[] = [];
@@ -744,20 +781,41 @@ async function runSingleTierLoop(
 
   while (attempt <= maxRetries) {
     attempt++;
-    const res = await caller({
-      targetModel: model,
-      modelTier,
-      messages: currentMessages,
-      response_format: negotiated.apiFormat,
-    });
-    lastRaw = res.response || '';
-    lastFinishReason = res.finishReason;
-    if (res.usage) {
-      usage.prompt += res.usage.prompt;
-      usage.completion += res.usage.completion;
-      usage.total += res.usage.total;
+    try {
+      const res = await caller({
+        targetModel: model,
+        modelTier,
+        messages: currentMessages,
+        response_format: negotiated.apiFormat,
+      });
+      lastRaw = res.response || '';
+      lastFinishReason = res.finishReason;
+      if (res.usage) {
+        usage.prompt += res.usage.prompt;
+        usage.completion += res.usage.completion;
+        usage.total += res.usage.total;
+      }
+      if (res.reasoning) lastReasoning = res.reasoning;
+    } catch (err: any) {
+      lastRaw = '';
+      lastErrors = [
+        {
+          path: 'root',
+          message: `Single tier execution failed: ${err.message || err}`,
+          code: 'SINGLE_TIER_CALLER_ERROR',
+        },
+      ];
+      trace.push({
+        round: attempt,
+        rawOutput: '',
+        syntaxValid: false,
+        semanticValid: false,
+        errors: lastErrors,
+        finishReason: 'error',
+        timestamp: Date.now(),
+      });
+      continue;
     }
-    if (res.reasoning) lastReasoning = res.reasoning;
 
     const parseResult = safeParseOutput(lastRaw, options.schema);
     if (parseResult.success) {
