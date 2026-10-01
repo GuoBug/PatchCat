@@ -83,72 +83,34 @@ export function calculateCostSavingsRatio(primaryModel: string, fallbackModel: s
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. Track 2: Heuristic Semantic Conflict Detector (F7 Defense)
+// 2. Track 2: Generic Semantic Conflict Gate Interface
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface SemanticConflictResult {
   hasConflict: boolean;
-  conflictType?: 'f7_description_action_inversion' | 'f3_ground_truth_ambiguity';
+  conflictType?: string;
   reason?: string;
+  suggestedAction?: string;
   suggestedCategory?: string;
-  detectedSymptomTerms: string[];
-  detectedActionTerms: string[];
+  detectedTerms?: string[];
+  detectedSymptomTerms?: string[];
+  detectedActionTerms?: string[];
+  directive?: string;
 }
-
-/** Strong symptom / defect terms that commonly anchor LLM attention */
-const SYMPTOM_TERMS = [
-  '假货', '仿冒', '伪劣', '大牌假货', '假冒伪劣', '做工粗糙',
-  '破损', '暗损', '大裂缝', '贯穿性', '压扁', '碎了', '质量太次', '质量问题',
-  '划痕', '漏发', '少配件', '少件', '瑕疵',
-];
-
-/** Explicit core action request terms (refund/return) that take precedence */
-const ACTION_REFUND_TERMS = [
-  '退款', '退货', '退货退款', '要求退款', '立即退款', '我要退款',
-  '帮忙退', '申请退款', '全额退款', '退钱', '退货赔付',
-];
 
 /**
- * Inspects user input prompt and model output object to catch F7:
- * Problem Description Overpowering Core Action Request.
- *
- * If a prompt contains both vivid defect descriptions AND explicit refund demands,
- * but the model classified as `quality` without honoring `refund`, this gate trips!
+ * Pluggable heuristic gate interface for detecting domain-specific semantic blind spots (e.g. F7).
+ * "引擎认接口，preset 认业务" (Engine recognizes interfaces, preset owns domain logic).
  */
-export function detectSemanticConflict(
-  userPrompt?: string,
-  outputData?: unknown,
-): SemanticConflictResult {
-  if (!userPrompt || typeof outputData !== 'object' || outputData === null) {
-    return { hasConflict: false, detectedSymptomTerms: [], detectedActionTerms: [] };
-  }
-
-  const promptText = userPrompt.toLowerCase();
-  const detectedSymptomTerms = SYMPTOM_TERMS.filter((term) => promptText.includes(term.toLowerCase()));
-  const detectedActionTerms = ACTION_REFUND_TERMS.filter((term) => promptText.includes(term.toLowerCase()));
-
-  const category = (outputData as Record<string, unknown>)['category'];
-
-  // F7: Prompt has strong defect details AND explicit refund action, but output category is 'quality'
-  if (detectedSymptomTerms.length > 0 && detectedActionTerms.length > 0) {
-    if (category === 'quality' || category === 'other') {
-      return {
-        hasConflict: true,
-        conflictType: 'f7_description_action_inversion',
-        reason: `工单同时包含浓重缺陷描述 (${detectedSymptomTerms.join('/')}) 与核心退款诉求 (${detectedActionTerms.join('/')})，模型受前置细节锚定误判为 "${String(category)}"，触发动作优先权 (Action Precedence) 语义门禁！`,
-        suggestedCategory: 'refund',
-        detectedSymptomTerms,
-        detectedActionTerms,
-      };
-    }
-  }
-
-  return {
-    hasConflict: false,
-    detectedSymptomTerms,
-    detectedActionTerms,
-  };
+export interface ISemanticConflictGate {
+  evaluate(userPrompt?: string, outputData?: unknown): SemanticConflictResult;
 }
+
+/**
+ * @deprecated Use `detectTicketSemanticConflict` from `src/presets/ticket-semantic-gate.ts`.
+ * Kept for backward compatibility with existing tests.
+ */
+export { detectTicketSemanticConflict as detectSemanticConflict } from '../presets/ticket-semantic-gate.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. Multi-Tier Model Router State Machine
@@ -167,6 +129,7 @@ export interface ModelRoutingExecutionOptions {
   configuredModel?: string;
   signal?: AbortSignal;
   userPrompt?: string;
+  semanticConflictGate?: ISemanticConflictGate;
   onTierSwitch?: (fromTier: ModelTier, toTier: ModelTier, reason: ModelRoutingTriggerReason) => void;
 }
 
@@ -242,12 +205,18 @@ export async function executeWithModelRouting(
       maxCheapRetries,
       options,
     );
+    const isSelfHealed = singleRes.totalAttempts > 1;
+    const closureReason: ModelRoutingTriggerReason = !singleRes.success
+      ? 'cheap_budget_exhausted'
+      : isSelfHealed
+        ? 'cheap_self_healing'
+        : 'primary_default';
     return {
       ...singleRes,
       modelTier: 'tier1_cheap',
       routedModel: primaryModel,
       escalated: false,
-      escalationReason: 'primary_default',
+      escalationReason: closureReason,
       cheapAttempts: singleRes.totalAttempts,
       strongAttempts: 0,
       costSavingsRatio: 0,
@@ -256,7 +225,7 @@ export async function executeWithModelRouting(
           round: 1,
           modelTier: 'tier1_cheap',
           model: primaryModel,
-          reason: 'primary_default',
+          reason: closureReason,
           escalated: false,
           timestamp: Date.now(),
         },
@@ -273,6 +242,8 @@ export async function executeWithModelRouting(
   let lastFinishReason: string | undefined = undefined;
   const totalUsage: TokenUsage = { prompt: 0, completion: 0, total: 0 };
   let lastReasoning: string | undefined = undefined;
+  let lastSemanticDirective: string | undefined = undefined;
+  let hasSemanticConflict = false;
   const trace: SelfHealingTraceStep[] = [];
 
   logger.summary(
@@ -312,7 +283,6 @@ export async function executeWithModelRouting(
     timestamp: Date.now(),
   });
 
-  let tier1Success = false;
   let tier1Data: unknown = undefined;
 
   while (cheapAttempts <= maxCheapRetries) {
@@ -353,13 +323,14 @@ export async function executeWithModelRouting(
       // Contract passed on cheap tier!
       tier1Data = parseResult.data;
 
-      // Track 2: Heuristic Semantic Conflict Check (F7 Defense)
-      if (enableSemanticGate) {
-        const semanticCheck = detectSemanticConflict(options.userPrompt, tier1Data);
+      // Track 2: Heuristic Semantic Conflict Check (via pluggable ISemanticConflictGate)
+      const gate = options.semanticConflictGate;
+      if (enableSemanticGate && gate) {
+        const semanticCheck = gate.evaluate(options.userPrompt, tier1Data);
         if (semanticCheck.hasConflict) {
           logger.warn(
             'ModelRouter',
-            `[Track 2 语义冲突门禁触发] ${semanticCheck.reason} 契约虽通过但语义命中 F7 盲区，立即触发向 Tier 2 强模型升级！`,
+            `[Track 2 语义冲突门禁触发] ${semanticCheck.reason || 'Semantic conflict detected'} 契约虽通过但触发冲突门禁，立即触发向 Tier 2 强模型升级！`,
           );
 
           trace.push({
@@ -368,18 +339,19 @@ export async function executeWithModelRouting(
             syntaxValid: true,
             semanticValid: false,
             finishReason: lastFinishReason,
-            feedbackPrompt: `[语义冲突触发升级] ${semanticCheck.reason}`,
+            feedbackPrompt: `[语义冲突触发升级] ${semanticCheck.reason || 'Semantic conflict'}`,
             timestamp: Date.now(),
           });
 
-          // Break to Phase 2 with semantic escalation trigger!
+          hasSemanticConflict = true;
+          lastSemanticDirective = semanticCheck.directive;
           lastErrors = [
             {
               path: 'category',
               message: semanticCheck.reason || 'Semantic precedence conflict detected',
-              code: 'f7_semantic_conflict',
-              expectedRule: '核心退款诉求动作优先于瑕疵描述细节',
-              suggestion: '将分类归为 refund',
+              code: semanticCheck.conflictType || 'semantic_conflict_gate',
+              expectedRule: '核心诉求优先权',
+              suggestion: semanticCheck.suggestedAction,
             },
           ];
           break;
@@ -387,7 +359,6 @@ export async function executeWithModelRouting(
       }
 
       // Safe closure on Tier 1!
-      tier1Success = true;
       const isSelfHealed = cheapAttempts > 1;
       logger.summary(
         'ModelRouter',
@@ -442,7 +413,6 @@ export async function executeWithModelRouting(
 
     // If cheap self-healing budget remains, feed error memory back to Tier 1
     if (cheapAttempts <= maxCheapRetries) {
-      const escalationLevel = cheapAttempts === 1 ? 'surgical_prescription' : 'golden_exemplar';
       const goldenExemplar = generateGoldenExemplar(options.schema);
       const { assistantMsg, userMsg } = buildErrorFeedbackMessages(
         lastRaw,
@@ -463,7 +433,7 @@ export async function executeWithModelRouting(
   // ───────────────────────────────────────────────────────────────────────────
 
   const escalationReason: ModelRoutingTriggerReason =
-    lastErrors.some((e) => e.code === 'f7_semantic_conflict')
+    hasSemanticConflict
       ? 'semantic_conflict_gate'
       : 'cheap_budget_exhausted';
 
@@ -497,9 +467,9 @@ export async function executeWithModelRouting(
     },
   );
 
-  // If escalation was triggered by semantic conflict gate, prepend Action Precedence directive!
-  if (escalationReason === 'semantic_conflict_gate') {
-    userMsg.content = `[业务动作优先权消歧指令 / Action Precedence Disambiguation Directive]\n系统检测到工单包含强烈的退款退货诉求，而上一轮经济模型受商品瑕疵细节误导。请务必以用户最终诉求动作作为第一判据，优先归类为 refund！\n\n` + userMsg.content;
+  // If escalation was triggered by semantic conflict gate, prepend custom directive from gate!
+  if (escalationReason === 'semantic_conflict_gate' && lastSemanticDirective) {
+    userMsg.content = `${lastSemanticDirective}\n\n` + userMsg.content;
   }
 
   currentMessages = [...currentMessages, assistantMsg, userMsg];
@@ -718,11 +688,16 @@ async function runSingleTierLoop(
     });
 
     if (attempt <= maxRetries) {
+      const goldenExemplar = generateGoldenExemplar(options.schema);
       const { assistantMsg, userMsg } = buildErrorFeedbackMessages(
         lastRaw,
         lastErrors,
         parseResult.syntaxError,
         attempt - 1,
+        {
+          jsonSchema: negotiated.apiFormat?.json_schema?.schema as Record<string, unknown> | undefined,
+          goldenExemplar,
+        },
       );
       currentMessages = [...currentMessages, assistantMsg, userMsg];
     }

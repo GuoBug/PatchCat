@@ -37,7 +37,6 @@ import {
 } from './structured-output.ts';
 import {
   executeWithModelRouting,
-  detectSemanticConflict,
 } from './model-router.ts';
 import { getTestScenario } from '../presets/self-healing-scenarios.ts';
 import {

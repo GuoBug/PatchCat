@@ -23,6 +23,7 @@ import {
   executeWithModelRouting,
   type ModelRoutingCallerRequest,
 } from '../src/engine/model-router.ts';
+import { defaultTicketSemanticGate } from '../src/presets/ticket-semantic-gate.ts';
 import type { LLMExecutionOutput } from '../src/engine/llm-client.ts';
 
 describe('Module 3: Deterministic Model Routing & Cascade State Machine', () => {
@@ -431,6 +432,7 @@ describe('Module 3: Deterministic Model Routing & Cascade State Machine', () => 
           schema,
           provider: 'siliconflow',
           userPrompt,
+          semanticConflictGate: defaultTicketSemanticGate,
           routingConfig: {
             enabled: true,
             primaryModel: 'Qwen/Qwen2.5-7B-Instruct',
