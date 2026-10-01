@@ -347,7 +347,7 @@ export class BrowserWorkflowEngine {
       return;
     }
 
-    let executionLayers: string[][] = [];
+    let executionLayers: string[][];
     const nodeMap = new Map(graph.nodes.map((n) => [n.id, n]));
 
     // Graph topology adjacency for dynamic conditional routing & skipping
@@ -2045,13 +2045,15 @@ export class BrowserWorkflowEngine {
           if (Array.isArray(config.queryParams)) {
             for (const item of config.queryParams) {
               if (item && typeof item === 'object' && 'key' in item) {
-                rawQueryParams[String((item as any).key)] = (item as any).value ?? '';
+                const rec = item as Record<string, unknown>;
+                rawQueryParams[String(rec.key)] = rec.value ?? '';
               }
             }
           } else if (config.queryParams && typeof config.queryParams === 'object') {
             for (const [k, v] of Object.entries(config.queryParams as Record<string, unknown>)) {
               if (v && typeof v === 'object' && 'key' in v) {
-                rawQueryParams[String((v as any).key || k)] = (v as any).value ?? '';
+                const rec = v as Record<string, unknown>;
+                rawQueryParams[String(rec.key || k)] = rec.value ?? '';
               } else {
                 rawQueryParams[k] = v;
               }
@@ -2071,13 +2073,15 @@ export class BrowserWorkflowEngine {
           if (Array.isArray(config.headers)) {
             for (const item of config.headers) {
               if (item && typeof item === 'object' && 'key' in item) {
-                rawHeaders[String((item as any).key)] = (item as any).value ?? '';
+                const rec = item as Record<string, unknown>;
+                rawHeaders[String(rec.key)] = rec.value ?? '';
               }
             }
           } else if (config.headers && typeof config.headers === 'object') {
             for (const [k, v] of Object.entries(config.headers as Record<string, unknown>)) {
               if (v && typeof v === 'object' && 'key' in v) {
-                rawHeaders[String((v as any).key || k)] = (v as any).value ?? '';
+                const rec = v as Record<string, unknown>;
+                rawHeaders[String(rec.key || k)] = rec.value ?? '';
               } else {
                 rawHeaders[k] = v;
               }

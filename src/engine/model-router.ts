@@ -325,16 +325,18 @@ export async function executeWithModelRouting(
       if (llmRes.reasoning) {
         lastReasoning = llmRes.reasoning;
       }
-    } catch (callerErr: any) {
+    } catch (callerErr: unknown) {
+      const err = callerErr as Error;
+      const errMsg = String(err?.message || callerErr);
       logger.warn(
         'ModelRouter',
-        `[Tier 1 调用异常] 经济模型调用失败: ${callerErr.message || callerErr}`,
+        `[Tier 1 调用异常] 经济模型调用失败: ${errMsg}`,
       );
       lastRaw = '';
       lastErrors = [
         {
           path: 'root',
-          message: `Cheap tier execution failed: ${callerErr.message || callerErr}`,
+          message: `Cheap tier execution failed: ${errMsg}`,
           code: 'CHEAP_CALLER_ERROR',
         },
       ];
@@ -563,6 +565,7 @@ export async function executeWithModelRouting(
       }
 
       const strongParseResult = safeParseOutput(lastRaw, options.schema);
+      lastStrongSyntaxValid = !strongParseResult.syntaxError;
       if (strongParseResult.success) {
         strongSuccess = true;
         strongData = strongParseResult.data;
@@ -591,8 +594,10 @@ export async function executeWithModelRouting(
           `[Tier 2 强模型返回契约未通过] 候选模型 "${candidateModel}" 输出未能满足 Schema，准备尝试队列后续模型或后置降级`,
         );
       }
-    } catch (callerErr: any) {
-      const errMsg = String(callerErr?.message || callerErr);
+    } catch (callerErr: unknown) {
+      lastStrongSyntaxValid = false;
+      const err = callerErr as Error;
+      const errMsg = String(err?.message || callerErr);
       let outcome: CandidateAttemptRecord['outcome'] = 'error';
       if (
         errMsg.includes('429') ||
@@ -796,12 +801,13 @@ async function runSingleTierLoop(
         usage.total += res.usage.total;
       }
       if (res.reasoning) lastReasoning = res.reasoning;
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const e = err as Error;
       lastRaw = '';
       lastErrors = [
         {
           path: 'root',
-          message: `Single tier execution failed: ${err.message || err}`,
+          message: `Single tier execution failed: ${e?.message || err}`,
           code: 'SINGLE_TIER_CALLER_ERROR',
         },
       ];
