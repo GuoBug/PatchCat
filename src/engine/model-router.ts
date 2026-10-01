@@ -505,22 +505,36 @@ export async function executeWithModelRouting(
   currentMessages = [...currentMessages, assistantMsg, userMsg];
 
   strongAttempts++;
-  const strongRes = await caller({
-    targetModel: fallbackModel,
-    modelTier: 'tier2_strong',
-    messages: currentMessages,
-    response_format: negotiated.apiFormat,
-  });
+  try {
+    const strongRes = await caller({
+      targetModel: fallbackModel,
+      modelTier: 'tier2_strong',
+      messages: currentMessages,
+      response_format: negotiated.apiFormat,
+    });
 
-  lastRaw = strongRes.response || '';
-  lastFinishReason = strongRes.finishReason;
-  if (strongRes.usage) {
-    totalUsage.prompt += strongRes.usage.prompt;
-    totalUsage.completion += strongRes.usage.completion;
-    totalUsage.total += strongRes.usage.total;
-  }
-  if (strongRes.reasoning) {
-    lastReasoning = strongRes.reasoning;
+    lastRaw = strongRes.response || '';
+    lastFinishReason = strongRes.finishReason;
+    if (strongRes.usage) {
+      totalUsage.prompt += strongRes.usage.prompt;
+      totalUsage.completion += strongRes.usage.completion;
+      totalUsage.total += strongRes.usage.total;
+    }
+    if (strongRes.reasoning) {
+      lastReasoning = strongRes.reasoning;
+    }
+  } catch (callerErr: any) {
+    logger.warn(
+      'ModelRouter',
+      `[Tier 2 强模型调用异常 / Rate Limit / Quota] ${callerErr.message}，启动后置容错保护`,
+    );
+    lastErrors = [
+      {
+        path: '',
+        message: `Tier 2 model call failed: ${callerErr.message}`,
+        code: 'tier2_call_failure',
+      },
+    ];
   }
 
   const strongParseResult = safeParseOutput(lastRaw, options.schema);
@@ -562,8 +576,34 @@ export async function executeWithModelRouting(
     };
   }
 
-  // Both Tier 1 and Tier 2 failed -> Graceful fallback, NEVER throw!
-  lastErrors = strongParseResult.errors || [];
+  // Both Tier 1 and Tier 2 failed (or Tier 2 rate-limited) -> Graceful fallback, NEVER throw!
+  if (tier1Data) {
+    logger.warn(
+      'ModelRouter',
+      `[降级复用 Tier 1 产物] 强模型异常不可用，保留经济模型已有结构化产物兜底交付。`,
+    );
+    return {
+      success: true,
+      data: tier1Data,
+      raw: lastRaw,
+      modelTier: 'tier1_cheap',
+      routedModel: primaryModel,
+      escalated: true,
+      escalationReason,
+      cheapAttempts,
+      strongAttempts,
+      totalAttempts: cheapAttempts + strongAttempts,
+      costSavingsRatio,
+      negotiated,
+      finishReason: lastFinishReason,
+      usage: totalUsage,
+      reasoning: lastReasoning,
+      trace,
+      routingTrace,
+    };
+  }
+
+  lastErrors = strongParseResult.errors || lastErrors;
   logger.warn(
     'ModelRouter',
     `[级联全量耗尽] 经济模型与强模型均未能通过契约校验，输出优雅降级契约。`,

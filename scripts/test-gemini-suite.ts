@@ -1,4 +1,16 @@
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+import { readFileSync, existsSync } from 'node:fs';
+
+function resolveGeminiKey(): string {
+  for (const envPath of ['.env', '.env.local']) {
+    if (!existsSync(envPath)) continue;
+    const match = readFileSync(envPath, 'utf8').match(/GEMINI_API_KEY\s*=\s*["']?([^"'\r\n]+)["']?/i);
+    if (match?.[1]) return match[1].trim();
+  }
+  if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY.trim();
+  return '';
+}
+
+const GEMINI_API_KEY = resolveGeminiKey();
 const GEMINI_MODEL = 'gemini-2.5-flash';
 
 interface GeminiCallParams {

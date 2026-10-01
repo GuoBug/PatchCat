@@ -25,6 +25,7 @@
     "demo": "node scripts/demo-run.ts",
     "test:ab": "npx tsx scripts/run-siliconflow-ab-test.ts",
     "eval:long-task": "node --experimental-strip-types scripts/run-long-task-eval.ts",
+    "eval:routing": "node --experimental-strip-types scripts/run-model-routing-eval.ts",
     "eval:baseline": "npx tsx scripts/run-siliconflow-ab-test.ts --e2-disambiguate --save-baseline",
     "eval:regression": "npx tsx scripts/run-siliconflow-ab-test.ts --e2-disambiguate --compare-baseline",
     "build:target": "node scripts/build-target.mjs",
