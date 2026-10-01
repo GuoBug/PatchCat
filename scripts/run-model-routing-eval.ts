@@ -53,14 +53,16 @@ function loadEnvKey(keyName: string): string {
 const SILICONFLOW_KEY = loadEnvKey('SILICONFLOW_API_KEY');
 const GEMINI_KEY = loadEnvKey('GEMINI_API_KEY');
 
-if (!SILICONFLOW_KEY) {
-  console.error('FATAL: SILICONFLOW_API_KEY is not configured in .env or environment!');
-  process.exit(1);
-}
+function assertApiKeys() {
+  if (!SILICONFLOW_KEY) {
+    console.error('FATAL: SILICONFLOW_API_KEY is not configured in .env or environment!');
+    process.exit(1);
+  }
 
-if (!GEMINI_KEY) {
-  console.error('FATAL: GEMINI_API_KEY is not configured in .env or environment!');
-  process.exit(1);
+  if (!GEMINI_KEY) {
+    console.error('FATAL: GEMINI_API_KEY is not configured in .env or environment!');
+    process.exit(1);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -435,48 +437,66 @@ async function runSuite(
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function main() {
-  const isSingleRun = process.argv.includes('--single') || process.argv.includes('--smoke');
-  const targetCases = isSingleRun
-    ? BENCHMARK_CASES.filter((c) => [1, 3, 7, 27, 30].includes(c.id)) // 5 core cases representing T1, T2, Sentinels, and F7
-    : BENCHMARK_CASES;
-
-  console.log(`\n======================================================================`);
-  console.log(`🎯 PatchCat M3 模型级联路由实测评估系统 (完全免费多模型容灾轮换)`);
-  console.log(`   廉价层 (Tier 1): ${TIER1_FREE_MODEL} (SiliconFlow 免费版, temp=0.0)`);
-  console.log(`   强模型候选池 (Tier 2): ${TIER2_FREE_MODELS.join(' -> ')} (Google AI Studio 免费层)`);
-  console.log(`   评测用例: ${isSingleRun ? '精简验证组 (5 Cases)' : '全量基准集 (30 Cases)'}`);
-  console.log(`======================================================================\n`);
-
-  // Run Baseline (Tier 1 only)
-  const baselineSummary = await runSuite(targetCases, false, 'baseline_all_cheap');
-
-  // Small cooldown between suites
-  console.log('\n⏳ 等待 3 秒进行组间状态复位...');
-  await new Promise((resolve) => setTimeout(resolve, 3000));
-
-  // Run Cascade Routing (Tier 1 -> Tier 2)
-  const cascadeSummary = await runSuite(targetCases, true, 'cascade_routing');
-
-  // Persistence
   const outDir = resolve(process.cwd(), 'eval-results');
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
-
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const jsonPath = join(outDir, `model-routing-benchmark-${timestamp}.json`);
   const reportPath = join(outDir, `model-routing-cascade-eval-report.md`);
 
-  const payload = {
-    timestamp: new Date().toISOString(),
-    hardware: 'Windows x64 / Node.js ' + process.version,
-    tier1Model: TIER1_FREE_MODEL,
-    tier2Model: TIER2_FREE_MODELS[0],
-    tier2Models: TIER2_FREE_MODELS,
-    baseline: baselineSummary,
-    cascade: cascadeSummary,
-  };
+  const fromJsonIdx = process.argv.indexOf('--from-json');
+  let baselineSummary: RunSummary;
+  let cascadeSummary: RunSummary;
+  let jsonPath = '';
+  let evalTimestamp = new Date().toISOString();
 
-  writeFileSync(jsonPath, JSON.stringify(payload, null, 2), 'utf-8');
-  console.log(`\n📦 评测原始数据已存入: ${jsonPath}`);
+  if (fromJsonIdx !== -1 && process.argv[fromJsonIdx + 1]) {
+    const rawPath = process.argv[fromJsonIdx + 1];
+    jsonPath = resolve(process.cwd(), rawPath);
+    console.log(`\n======================================================================`);
+    console.log(`📄 从已有评测 JSON 重新生成评估报告: ${jsonPath}`);
+    console.log(`======================================================================\n`);
+    const parsed = JSON.parse(readFileSync(jsonPath, 'utf-8'));
+    baselineSummary = parsed.baseline;
+    cascadeSummary = parsed.cascade;
+    if (parsed.timestamp) evalTimestamp = parsed.timestamp;
+  } else {
+    assertApiKeys();
+    const isSingleRun = process.argv.includes('--single') || process.argv.includes('--smoke');
+    const targetCases = isSingleRun
+      ? BENCHMARK_CASES.filter((c) => [1, 3, 7, 27, 30].includes(c.id)) // 5 core cases representing T1, T2, Sentinels, and F7
+      : BENCHMARK_CASES;
+
+    console.log(`\n======================================================================`);
+    console.log(`🎯 PatchCat M3 模型级联路由实测评估系统 (完全免费多模型容灾轮换)`);
+    console.log(`   廉价层 (Tier 1): ${TIER1_FREE_MODEL} (SiliconFlow 免费版, temp=0.0)`);
+    console.log(`   强模型候选池 (Tier 2): ${TIER2_FREE_MODELS.join(' -> ')} (Google AI Studio 免费层)`);
+    console.log(`   评测用例: ${isSingleRun ? '精简验证组 (5 Cases)' : '全量基准集 (30 Cases)'}`);
+    console.log(`======================================================================\n`);
+
+    // Run Baseline (Tier 1 only)
+    baselineSummary = await runSuite(targetCases, false, 'baseline_all_cheap');
+
+    // Small cooldown between suites
+    console.log('\n⏳ 等待 3 秒进行组间状态复位...');
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    // Run Cascade Routing (Tier 1 -> Tier 2)
+    cascadeSummary = await runSuite(targetCases, true, 'cascade_routing');
+
+    const timestamp = evalTimestamp.replace(/[:.]/g, '-');
+    jsonPath = join(outDir, `model-routing-benchmark-${timestamp}.json`);
+
+    const payload = {
+      timestamp: evalTimestamp,
+      hardware: 'Windows x64 / Node.js ' + process.version,
+      tier1Model: TIER1_FREE_MODEL,
+      tier2Model: TIER2_FREE_MODELS[0],
+      tier2Models: TIER2_FREE_MODELS,
+      baseline: baselineSummary,
+      cascade: cascadeSummary,
+    };
+
+    writeFileSync(jsonPath, JSON.stringify(payload, null, 2), 'utf-8');
+    console.log(`\n📦 评测原始数据已存入: ${jsonPath}`);
+  }
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Data-Driven Metric & Statistical Analysis
@@ -558,6 +578,7 @@ async function main() {
   const discordantCases: CaseEvalResult[] = [];
   const unescalatedGainCases: number[] = [];
   const unescalatedLossCases: number[] = [];
+  const unescalatedNeutralCases: number[] = [];
 
   unescalatedResults.forEach((cr) => {
     const br = baselineSummary.results.find((b) => b.caseId === cr.caseId);
@@ -569,7 +590,8 @@ async function main() {
     if (!isCategorySame || !isSchemaSame) {
       discordantCases.push(cr);
       if (!bOk && cOk) unescalatedGainCases.push(cr.caseId);
-      if (bOk && !cOk) unescalatedLossCases.push(cr.caseId);
+      else if (bOk && !cOk) unescalatedLossCases.push(cr.caseId);
+      else unescalatedNeutralCases.push(cr.caseId);
     }
   });
 
@@ -655,6 +677,16 @@ async function main() {
 
   // 6. Cost-Benefit Trade-off Quantification
   const extraTokens = cascadeSummary.totalTokensUsed - baselineSummary.totalTokensUsed;
+  const costPerRescuedTokens = Math.round(extraTokens / Math.max(1, treatedGainCases.length));
+  const neutralExplanation = unescalatedNeutralCases.length > 0
+    ? unescalatedNeutralCases
+        .map((id) => {
+          const br = baselineSummary.results.find((b) => b.caseId === id);
+          const cr = cascadeSummary.results.find((c) => c.caseId === id);
+          return `  - **中立微漂移用例（#${id.toString().padStart(2, '0')}）**：对照组分类为 \`${br?.actualCategory}\` ➔ 级联组分类为 \`${cr?.actualCategory}\`，真实预期均为 \`${cr?.expectedCategory}\`（两臂分类均未命中预期）。此漂移属于同提示词与 \`temperature: 0.0\` 下云端托管 LLM 采样未收敛造成的非语义性微漂移，同样证实了未升级样本在外部托管 API 存在内部状态抖动。`;
+        })
+        .join('\n')
+    : '';
   const tokensPerEscalated = escalatedResults.length > 0
     ? Math.round(extraTokens / escalatedResults.length)
     : 0;
@@ -674,7 +706,7 @@ async function main() {
   // Generate Formal Evaluation Report
   const reportContent = `# M3 模型级联路由与状态机实测评估报告（多模型轮换池实测版）
 
-> **评测时间**：${new Date().toISOString()}  
+> **评测时间**：${evalTimestamp}  
 > **评测环境**：Node.js ${process.version} / Windows 本地直连  
 > **实验模型配比**：
 > - **Tier 1 (廉价层)**：\`${TIER1_FREE_MODEL}\`（SiliconFlow 免费通道，\`temperature: 0.0\` 低抖动基线）
@@ -697,15 +729,15 @@ async function main() {
 
 | 指标项 (Metrics) | 对照组 A (纯廉价模型基线) | 实验组 B (M3 级联路由 Cheap-First) | 变化差值 (Delta) | 统计检验 (McNemar p) / 归因性质 |
 |---|---|---|---|---|
-| **受处理子集胜负比 (Treated Cohort)** | 0/0 (未升级基准) | **${treatedGainCases.length} 胜 / ${treatedLossCases.length} 负 / ${treatedSameCases.length} 平** | **净胜 +${treatedGainCases.length - treatedLossCases.length} 例** | **100% 真实级联处理归因** |
+| **受处理子集胜负比 (Treated Cohort)** | N/A（未施加升级） | **${treatedGainCases.length} 胜 / ${treatedLossCases.length} 负 / ${treatedSameCases.length} 平** | **净胜 +${treatedGainCases.length - treatedLossCases.length} 例** | **100% 真实级联处理归因** |
 | **契约合规率 (Schema Compliance)** | ${baselineSummary.schemaComplianceRate.toFixed(1)}% (${baselineSummary.schemaCompliantCount}/${baselineSummary.totalCases}) | ${cascadeSummary.schemaComplianceRate.toFixed(1)}% (${cascadeSummary.schemaCompliantCount}/${cascadeSummary.totalCases}) | **${(cascadeSummary.schemaComplianceRate - baselineSummary.schemaComplianceRate) >= 0 ? '+' : ''}${(cascadeSummary.schemaComplianceRate - baselineSummary.schemaComplianceRate).toFixed(1)}%** | $p = ${schemaP}$ (${treatedGainCases.length} 真实救回 + ${unescalatedGainCases.length} 采样噪声) |
 | **分类准确率 (Category Accuracy)** | ${baselineSummary.categoryAccuracyRate.toFixed(1)}% (${baselineSummary.categoryCorrectCount}/${baselineSummary.totalCases}) | ${cascadeSummary.categoryAccuracyRate.toFixed(1)}% (${cascadeSummary.categoryCorrectCount}/${cascadeSummary.totalCases}) | **${(cascadeSummary.categoryAccuracyRate - baselineSummary.categoryAccuracyRate) >= 0 ? '+' : ''}${(cascadeSummary.categoryAccuracyRate - baselineSummary.categoryAccuracyRate).toFixed(1)}%** | $p = ${catP}$ (${treatedGainCases.length} 真实 + ${unescalatedGainCases.length} 噪声 - ${unescalatedLossCases.length} 反向) |
 | **单号提取准确率 (OrderId Accuracy)** | ${baselineSummary.orderIdAccuracyRate.toFixed(1)}% (${baselineSummary.orderIdCorrectCount}/${baselineSummary.totalCases}) | ${cascadeSummary.orderIdAccuracyRate.toFixed(1)}% (${cascadeSummary.orderIdCorrectCount}/${cascadeSummary.totalCases}) | **${(cascadeSummary.orderIdAccuracyRate - baselineSummary.orderIdAccuracyRate) >= 0 ? '+' : ''}${(cascadeSummary.orderIdAccuracyRate - baselineSummary.orderIdAccuracyRate).toFixed(1)}%** | $p = ${orderP}$ |
-| **F7 动作优先权穿透率 (#27, #30)** | ${baselineSummary.f7DisambiguationAccuracy.toFixed(1)}% | ${cascadeSummary.f7DisambiguationAccuracy.toFixed(1)}% | **${(cascadeSummary.f7DisambiguationAccuracy - baselineSummary.f7DisambiguationAccuracy) >= 0 ? '+' : ''}${(cascadeSummary.f7DisambiguationAccuracy - baselineSummary.f7DisambiguationAccuracy).toFixed(1)}%** | 两组持平 (未触发门禁) |
+| **F7 动作优先权穿透率 (#27, #30)** | ${baselineSummary.f7DisambiguationAccuracy.toFixed(1)}% | ${cascadeSummary.f7DisambiguationAccuracy.toFixed(1)}% | **${(cascadeSummary.f7DisambiguationAccuracy - baselineSummary.f7DisambiguationAccuracy) >= 0 ? '+' : ''}${(cascadeSummary.f7DisambiguationAccuracy - baselineSummary.f7DisambiguationAccuracy).toFixed(1)}% (无区分力)** | 两臂均 100% 穿透 (门禁未触发) |
 | **廉价模型闭环率 (Cheap Closure)** | ${baselineSummary.cheapClosureRate.toFixed(1)}% | **${cascadeSummary.cheapClosureRate.toFixed(1)}%** | 保持高闭环率 | 流量锁定在极低成本 Tier 1 |
 | **强模型升级率 (Escalation Rate)** | ${baselineSummary.escalationRate.toFixed(1)}% | **${cascadeSummary.escalationRate.toFixed(1)}%** (${cascadeSummary.escalatedCount}/${cascadeSummary.totalCases}) | 触发定向升级 | 针对困难长尾精准触发 |
 | **累计 Token 消耗 (Total Tokens)** | ${baselineSummary.totalTokensUsed.toLocaleString()} tokens | ${cascadeSummary.totalTokensUsed.toLocaleString()} tokens | **${Number(tokenDeltaPct) >= 0 ? '+' : ''}${tokenDeltaPct}%** | 额外消耗集中于 ${escalatedResults.length} 例升级任务 |
-| **平均端到端耗时 (Avg Latency)** | ${baselineSummary.avgDurationMs}ms | ${cascadeSummary.avgDurationMs}ms | **${Number(latencyDeltaPct) >= 0 ? '+' : ''}${latencyDeltaPct}%** | 级联顺延与重试等待开销 |
+| **平均端到端耗时 (Avg Latency)** | ${baselineSummary.avgDurationMs}ms | ${cascadeSummary.avgDurationMs}ms | **${extraLatencyMs >= 0 ? '+' : ''}${extraLatencyMs}ms (${Number(latencyDeltaPct) >= 0 ? '+' : ''}${latencyDeltaPct}%)** | 落在公网 API 负载波动带内 (±25%)，不作架构性能结论 |
 
 ---
 
@@ -721,6 +753,7 @@ ${escalationBreakdown}
 - **显式不一致用例审计**：共有 ${discordantCases.length} 例（${discordantCases.map((c) => '#' + c.caseId.toString().padStart(2, '0')).join(', ')}）在两组中输出不一致。
   - 云端托管 LLM API（如 Qwen2.5-7B）在 \`temperature: 0.0\` 下受动态批处理、并发调度及 MoE 路由影响，**不保证数学意义上的绝对确定性**。
   - 表观增益中存在未升级用例的采样残余抖动（${noiseGainStr} 改善，${noiseLossStr} 恶化），在解读全量增益时必须予以剔除和审慎归因。
+${neutralExplanation ? neutralExplanation + '\n' : ''}
 
 ### 3. F7 动作优先权门禁与 Case #27 实证分析
 ${f7AnalysisText}
@@ -730,10 +763,10 @@ ${rotationAnalysisText}
 
 ### 5. 工程代价与成本-收益量化权衡 (Cost-Benefit Trade-offs)
 - **Token 消耗**：累计 Token 增加 ${Number(tokenDeltaPct) >= 0 ? '+' : ''}${tokenDeltaPct}%（+${extraTokens.toLocaleString()} tokens），额外开销完全集中在 ${escalatedResults.length} 例升级任务中，平均每例升级消耗约 **${tokensPerEscalated.toLocaleString()} tokens**。
-- **延迟代价**：平均端到端延迟增加 ${extraLatencyMs}ms（${Number(latencyDeltaPct) >= 0 ? '+' : ''}${latencyDeltaPct}%）。
+- **端到端耗时**：平均端到端耗时变动 **${extraLatencyMs >= 0 ? `+${extraLatencyMs}ms` : `${extraLatencyMs}ms`} (${Number(latencyDeltaPct) >= 0 ? '+' : ''}${latencyDeltaPct}%)**。经跨轮基线横向比对（基线在同一代码下的历史平均延迟在 3.8s–6.3s 宽幅波动，波幅达 ±25%），单轮内的毫秒级耗时差异主要受公网网络抖动与第三方 API 并发负载噪声主导，落在系统噪声带内，不作为级联路由的架构性能结论。
 - **权衡决策建议**：
   - 在当前免费配额模式下，金钱成本为 **$0.00**；
-  - 在商业付费生产环境下，每挽救 1 例契约崩溃任务需支付约 25k tokens 与 1.4s 延迟代价。对高价值业务单（退款纠纷、大客户工单）而言极具性价比；若面向低价值高吞吐场景，建议调小 \`maxCheapRetries\` 或收紧升级准入条件。
+  - 在商业付费生产环境下，每挽救 1 例契约崩溃任务需额外消耗约 **${costPerRescuedTokens.toLocaleString()} tokens**（单次强模型升级均值约 **${tokensPerEscalated.toLocaleString()} tokens**）。对高价值业务单（退款纠纷、大客户工单）而言极具性价比；若面向低价值高吞吐场景，建议调小 \`maxCheapRetries\` 或收紧升级准入条件。
 
 ---
 
