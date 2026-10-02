@@ -1,9 +1,9 @@
 # 🎯 Next Steps / 接续开发清单
 
-> **Current Version**: `v0.4.11` (Completed & Verified ✅)  
-> **Last Updated**: 2026-09-23  
-> **Previous Milestone**: Phase 4.11 Storage Hardening & Ephemeral Stream (`v0.4.11` Shipped ✅)  
-> **Current Target Milestone**: **`v0.4.12` 纯本地轻量混合检索 (BM25 + 稠密向量)** (详见 [PRD-006](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md) & [RAG 架构白皮书](docs/02-architecture/phase-2-knowledge-base-and-rag-architecture.md))  
+> **Current Version**: `v0.4.13` (Completed & Verified ✅)  
+> **Last Updated**: 2026-10-02  
+> **Previous Milestone**: Phase 4.13 Deterministic Model Routing & Cascade State Machine (`v0.4.13` Shipped ✅)  
+> **Current Target Milestone**: **`v0.4.14` 纯本地轻量混合检索 (BM25 + 稠密向量)** (详见 [PRD-006](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md) & [RAG 架构白皮书](docs/02-architecture/phase-2-knowledge-base-and-rag-architecture.md))  
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -200,7 +200,42 @@
 
 ---
 
-### 🚀 Active Milestone: v0.4.12 Local Lightweight Hybrid Search (BM25 + Vectors)
+### ⚡ Completed Milestone: Phase 4.12 Deterministic Structured Output & Self-Healing State Machine (v0.4.12)
+
+- [x] **1. L1 Constrained Decoding & Multi-Provider Fallback**:
+  - Explicit capability negotiation across `json_schema` $\to$ `json_object` $\to$ `none`.
+  - Client-side syntax self-healing (`repairJsonL1`) stripping Markdown blocks and closing unsealed brackets with 100% syntax compliance.
+- [x] **2. L2 Zod Runtime Semantic Contracts**:
+  - Zero-throw `.safeParse()` validation enforcing enums, boundaries, regexes, and cross-field `.refine()` rules.
+- [x] **3. L3 Closed-Loop Self-Healing State Machine**:
+  - Round 1 Triad Surgical Feedback (violating value, expected rule, actionable suggestion).
+  - Round 2+ Escalation with Global Schema re-injection and non-hallucinatory Golden Exemplar anchoring.
+- [x] **4. L4 Graceful Degradation Contract & Architectural Purity**:
+  - Bounded retry budget returning standardized `{ _validationFailed: true, errors, raw }` payload.
+  - Presets separation (`src/presets/self-healing-scenarios.ts`) keeping the engine 100% domain agnostic.
+- [x] **5. Verification & McNemar Evaluation**:
+  - 329 passing unit & contract tests across 85 test suites.
+  - McNemar exact paired test $p = 0.00195 < 0.01$ driving +23.9pt compliance gain.
+
+---
+
+### ⚡ Completed Milestone: Phase 4.13 Deterministic Model Routing & Cascade State Machine (v0.4.13)
+
+- [x] **1. Cheap-First Speculative Routing (`src/engine/model-routing.ts`, ADR-005)**:
+  - Route all routine workflow prompts to Tier-1 economical model (`Qwen/Qwen2.5-7B-Instruct` @ SiliconFlow free tier) with zero token spend, closing 90.0% (27/30) of baseline requests.
+- [x] **2. Dual-Track Escalation & Semantic Conflict Gate**:
+  - Path A (`cheap_budget_exhausted`): Triggered when Tier-1 self-healing retry budget is exhausted.
+  - Path B (`semantic_conflict_gate`): Action-priority semantic gate detecting refund versus damage description conflicts.
+- [x] **3. Diagnostic Triplet Field Inheritance**:
+  - Carries forward raw abnormal output, error path, and violated rule from Tier-1 into Tier-2 context, preventing cold-start restarts on the stronger models.
+- [x] **4. Multi-Candidate Failover Pool**:
+  - Chain of fallback candidates (`gemini-3.5-flash-lite` ➔ `gemini-3.1-flash-lite` ➔ `gemini-3.8-flash`) with watchdog-driven failover on 429 rate limits or contract failures.
+- [x] **5. Empirical A/B Benchmark & 4-Round Audit Alignment**:
+  - 100% rescue rate on treated long-tail cohort with 100% symmetric baseline prompt parity. Rigorous McNemar $p=0.25$ and latency noise disclaimers.
+
+---
+
+### 🚀 Active Milestone: v0.4.14 Local Lightweight Hybrid Search (BM25 + Vectors)
 
 - [ ] **1. Pure-Frontend In-Memory BM25 Lexical Inverted Index Engine**:
   - Zero-dependency in-memory inverted index for browser Local BYOK mode with CJK n-gram & whitespace tokenization.
@@ -211,12 +246,23 @@
 
 ---
 
-### 🔮 Upcoming Milestone: v0.4.14 Reranker Cross-Encoder API Integration
+### 🔮 Upcoming Milestone: v0.4.15 Reranker Cross-Encoder API Integration
 
 - [ ] **1. Multi-Provider Reranker Client (`reranker-client.ts`)**:
   - Direct integration with SiliconFlow (`BAAI/bge-reranker-v2-m3`), Cohere, and Jina Rerank endpoints.
 - [ ] **2. Knowledge Node Re-ranking Pipeline & Token Compression**:
   - Top-N reranking cutoff and relevance filtering before prompt synthesis.
+
+---
+
+### 🔮 Upcoming Milestone: v0.4.16 Local Data Sovereignty & Crypto Vault (Phase 4.16)
+
+- [ ] **1. Web Crypto API (AES-GCM) Master Passphrase Vault**:
+  - Local browser `SubtleCrypto` PBKDF2 encryption for provider API keys.
+- [ ] **2. Sanitized Workflow Export Modal**:
+  - Strip sensitive credentials and absolute local filesystem paths on export.
+- [ ] **3. Storage Adapter Contract Freeze (`IStorageAdapter`)**:
+  - Harden storage degradation under private mode and quota exhaustion.
 
 ---
 
@@ -446,7 +492,40 @@ npm run build
 
 ---
 
-### 🚀 当前推进里程碑：v0.4.12 纯本地轻量混合检索 (BM25 + 稠密向量)
+### ⚡ 已交付里程碑：Phase 4.12 确定性结构化输出、自愈状态机与架构纯粹性解耦治理 (v0.4.12)
+> 依据 [PRD-018: 确定性结构化输出与自愈状态机引擎](docs/01-prd/PRD-018-Deterministic-Structured-Output-and-Self-Healing.md) 与 [ADR-004](docs/04-dev-notes/adr-004-context-engineering-thresholds-and-pruning.md) 推进。
+
+- [x] **1. L1 受限解码与语法清洗防线 (`repairJsonL1`)**：
+  - `json_schema` $\to$ `json_object` $\to$ `none` 三级协商降级，端侧毫秒级剥离 Markdown 围栏并修补未闭合大括号。
+- [x] **2. L2 Zod 运行时语义与跨字段业务契约**：
+  - Single Source of Truth 零 Throw `.safeParse()`，防御数值范围、枚举约束与 `.refine()` 跨字段契约。
+- [x] **3. L3 错误记忆自愈状态机**：
+  - Round 1 三要素手术刀处方（违规当前值 + 违反规则 + 纠偏建议）；Round 2+ 全量 Schema 注入与黄金示例（Golden Exemplar）锚定。
+- [x] **4. L4 零抛错降级契约与 Presets 架构纯粹性解耦**：
+  - 重试预算耗尽产出标准 `{ _validationFailed: true, errors, raw }` 降级对象；剥离业务 Schema 至 Presets，核心引擎 100% 领域盲视。
+- [x] **5. 真实模型评测与 McNemar 统计检验**：
+  - 42 样本真实模型实测，McNemar 精确检验 $p = 0.00195 < 0.01$（极显著），端到端合规率跃升 +23.9pt。
+
+---
+
+### ⚡ 已交付里程碑：Phase 4.13 确定性模型级联路由与故障转移状态机 (v0.4.13)
+> 依据 [ADR-005: 确定性模型级联路由与自愈升级状态机架构](docs/04-dev-notes/adr-005-deterministic-model-routing-and-cascade-state-machine.md) 与 [PRD-018](docs/01-prd/PRD-018-Deterministic-Structured-Output-and-Self-Healing.md) 推进。
+
+- [x] **1. Cheap-First 投机执行机制 (`src/engine/model-routing.ts`)**：
+  - 所有常规提示流首选硅基流动免费通道 `Qwen/Qwen2.5-7B-Instruct`，在零额外费用下通过两轮微型局部自愈闭环 90.0% (27/30) 流量。
+- [x] **2. 双道准入升级与 F7 动作优先权门禁**：
+  - 路径 A (`cheap_budget_exhausted`)：经济模型自愈耗尽触发兜底升级；
+  - 路径 B (`semantic_conflict_gate`)：退款对抗冲突门禁（已覆盖单测）。
+- [x] **3. 现场诊断三元组上下文继承**：
+  - 升级时完整携带异常原始输出、报错路径与被违反规则，避免强模型冷启动重新推导。
+- [x] **4. 多候选强模型轮换容灾池**：
+  - 编排 `gemini-3.5-flash-lite` ➔ `gemini-3.1-flash-lite` ➔ `gemini-3.8-flash` 候选队列，秒级接管契约失败或 429 报错。
+- [x] **5. 4 轮 A/B 基准实验对齐与求真口径收敛**：
+  - 3 例受处理子集全部救回，提示词 100% 对称对齐，公网延迟波动免责与 McNemar $p=0.25$ 统计解释边界白盒公开。
+
+---
+
+### 🚀 当前推进里程碑：v0.4.14 纯本地轻量混合检索 (BM25 + 稠密向量)
 > 依据 [PRD-006: 知识库（RAG）向量检索与画布节点](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md) 与 [RAG 架构白皮书](docs/02-architecture/phase-2-knowledge-base-and-rag-architecture.md) 推进。
 
 - [ ] **1. 纯前端内存倒排索引分词引擎 (In-Memory BM25)**：
@@ -458,7 +537,17 @@ npm run build
 
 ---
 
-### 🔮 接续推进里程碑：v0.4.13 本地数据主权暗室与资产一键安全脱敏 (Phase 4.13)
+### 🔮 接续推进里程碑：v0.4.15 交叉重排 Reranker API 深度集成
+> 依据 [PRD-006: 知识库（RAG）向量检索与画布节点](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md) 扩展规范推进。
+
+- [ ] **1. 多厂商轻量重排客户端适配 (`reranker-client.ts`)**：
+  - 接入 SiliconFlow（`BAAI/bge-reranker-v2-m3`）、Cohere 与 Jina Rerank 接口规范。
+- [ ] **2. 知识库检索节点重排过滤与上下文压缩**：
+  - 设定 Top-N 截断阈值，在 Prompt 注入前对冗余切片进行深度压缩去噪。
+
+---
+
+### 🔮 后续接续里程碑：v0.4.16 本地数据主权暗室与资产一键安全脱敏 (Phase 4.16)
 > 依据 [PRD-017: 端侧数据主权与 Web Crypto 本地暗室](docs/01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md) 与 [ADR-003](docs/04-dev-notes/adr-003-event-sourcing-vs-checkpointing-and-local-first-lessons.md) 推进。
 
 - [ ] **1. Web Crypto API (AES-GCM) 本地主口令加密暗室**：
@@ -469,16 +558,6 @@ npm run build
   - 支持免密脱敏导出与口令完整备份双模切换。
 - [ ] **3. 存储适配器契约冻结（`IStorageAdapter` Freeze）**：
   - 补齐存储层极端环境（Private 模式、配额超出）降级测试，确立业务层与存储层 100% 隔离红线。
-
----
-
-### 🔮 后续接续里程碑：v0.4.14 交叉重排 Reranker API 深度集成
-> 依据 [PRD-006: 知识库（RAG）向量检索与画布节点](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md) 扩展规范推进。
-
-- [ ] **1. 多厂商轻量重排客户端适配 (`reranker-client.ts`)**：
-  - 接入 SiliconFlow（`BAAI/bge-reranker-v2-m3`）、Cohere 与 Jina Rerank 接口规范。
-- [ ] **2. 知识库检索节点重排过滤与上下文压缩**：
-  - 设定 Top-N 截断阈值，在 Prompt 注入前对冗余切片进行深度压缩去噪。
 
 ---
 

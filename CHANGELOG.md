@@ -5,6 +5,22 @@ All notable changes to the **PatchCat** project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.13] - 2026-10-02
+
+### Added
+- **Deterministic Model Routing & Cascade State Machine (`src/engine/model-routing.ts`, ADR-005)**:
+  - **Cheap-First Speculative Execution**: Routes routine DAG node calls to Tier-1 economical model (`Qwen/Qwen2.5-7B-Instruct` on SiliconFlow free tier) with zero token spend and 2-round localized self-healing, closing 90.0% (27/30) of baseline requests.
+  - **Dual-Track Escalation Gateways**:
+    - Path A (`cheap_budget_exhausted`): Triggered when Tier-1 self-healing retry budget is exhausted without satisfying Zod schemas or business assertions.
+    - Path B (`semantic_conflict_gate`): Action-priority semantic gate detecting refund versus damage description conflicts to prevent polarity inversion.
+  - **Diagnostic Triplet Field Inheritance**: Carries forward raw abnormal output, error path, and violated rule from Tier-1 into Tier-2 context, preventing cold-start restarts on the stronger models.
+  - **Multi-Candidate Failover Pool**: Chain of stronger fallback candidates (`gemini-3.5-flash-lite` ➔ `gemini-3.1-flash-lite` ➔ `gemini-3.8-flash`) with automatic watchdog-driven failover on 429 rate limits or contract assertion failures.
+- **Empirical A/B Benchmark & 4-Round Audit Alignment (`scripts/run-m3-model-routing-eval.ts`, `eval-results/`)**:
+  - Achieved 100% (3/3) rescue rate on treated long-tail cohort with 100% symmetric baseline prompt parity.
+  - Documented rigorous statistical limits: McNemar test $p=0.25$ on treated cohort ($n=3$), public network latency noise disclaimers ($\pm 42\%$), and structural attribution boundaries.
+
+---
+
 ## [0.4.12] - 2026-09-24
 
 ### Added
