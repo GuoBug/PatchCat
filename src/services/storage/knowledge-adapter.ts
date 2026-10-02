@@ -9,6 +9,7 @@
 import { nanoid } from 'nanoid';
 import { parseDocumentFile } from '../document-parser.ts';
 import { safeSetLocalStorageItem } from './storage-adapter.ts';
+import { BM25Index, reciprocalRankFusion, type BM25SearchResult } from '../search/bm25-engine.ts';
 
 export interface KnowledgeBaseSummary {
   id: string;
@@ -84,6 +85,18 @@ export interface KnowledgeRetrievalChunk {
   content: string;
   similarity: number;
   token_count: number;
+  search_mode?: 'hybrid' | 'bm25' | 'vector';
+  bm25_score?: number;
+  dense_score?: number;
+  rrf_score?: number;
+  matched_terms?: string[];
+}
+
+export interface KnowledgeRetrieveOptions {
+  searchMode?: 'hybrid' | 'bm25' | 'vector';
+  bm25Weight?: number;
+  vectorWeight?: number;
+  rrfK?: number;
 }
 
 export interface KnowledgeRetrievalResult {
@@ -110,6 +123,7 @@ export interface IKnowledgeAdapter {
     query: string,
     topK?: number,
     scoreThreshold?: number,
+    options?: KnowledgeRetrieveOptions,
   ): Promise<KnowledgeRetrievalResult>;
 }
 
@@ -247,6 +261,26 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
   private memKBs: KnowledgeBaseSummary[] | null = null;
   private memDocs: DocumentItem[] | null = null;
   private memChunks: DocumentChunkItem[] | null = null;
+  private bm25Cache: Map<string, { signature: string; index: BM25Index<DocumentChunkItem> }> =
+    new Map();
+
+  private getOrBuildBM25Index(
+    kbId: string,
+    chunks: DocumentChunkItem[],
+  ): BM25Index<DocumentChunkItem> {
+    const signature = `${chunks.length}:${chunks[0]?.id || ''}:${chunks[chunks.length - 1]?.id || ''}`;
+    const cached = this.bm25Cache.get(kbId);
+    if (cached && cached.signature === signature) {
+      return cached.index;
+    }
+
+    const index = new BM25Index<DocumentChunkItem>();
+    for (const chunk of chunks) {
+      index.addDocument(chunk.id, chunk.content, chunk);
+    }
+    this.bm25Cache.set(kbId, { signature, index });
+    return index;
+  }
 
   private getStoredKBs(): KnowledgeBaseSummary[] {
     const { seedKb } = getSeedData();
@@ -635,6 +669,7 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
     query: string,
     topK = 3,
     scoreThreshold = 0.0,
+    options?: KnowledgeRetrieveOptions,
   ): Promise<KnowledgeRetrievalResult> {
     const docs = this.getStoredDocs().filter((d) => d.kb_id === kbId);
     const docMap = new Map<string, string>();
@@ -646,7 +681,14 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       return { context: '', chunks: [] };
     }
 
+    const searchMode = options?.searchMode || 'hybrid';
+    const bm25Weight = typeof options?.bm25Weight === 'number' ? options.bm25Weight : 0.5;
+    const vectorWeight = typeof options?.vectorWeight === 'number' ? options.vectorWeight : 0.5;
+    const rrfK = typeof options?.rrfK === 'number' ? options.rrfK : 60;
+
     const q = (query || '').toLowerCase().trim();
+
+    // 1. Compute Dense / Semantic Vector Scores
     const terms = new Set<string>();
     const engMatches = q.match(/[a-z0-9_-]+/g) || [];
     engMatches.forEach((w) => {
@@ -688,7 +730,7 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       if (q.includes(kv)) terms.add(kv);
     });
 
-    const scored = chunks.map((chunk) => {
+    const denseScored = chunks.map((chunk) => {
       const contentLower = chunk.content.toLowerCase();
       let termMatches = 0;
 
@@ -711,14 +753,130 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
 
       return {
         chunk,
-        similarity: parseFloat(similarity.toFixed(2)),
+        denseScore: parseFloat(similarity.toFixed(2)),
       };
     });
 
-    const filtered = scored.filter((item) => item.similarity >= scoreThreshold);
-    filtered.sort((a, b) => b.similarity - a.similarity);
+    // 2. BM25 Inverted Index Search
+    const bm25Index = this.getOrBuildBM25Index(kbId, chunks);
+    const bm25Results = q ? bm25Index.search(query) : [];
+    const bm25Map = new Map<string, BM25SearchResult<DocumentChunkItem>>();
+    for (const r of bm25Results) {
+      bm25Map.set(r.id, r);
+    }
+    const maxBm25Score = bm25Results[0]?.score ?? 0;
+
+    let candidateList: Array<{
+      chunk: DocumentChunkItem;
+      similarity: number;
+      search_mode: 'hybrid' | 'bm25' | 'vector';
+      bm25_score?: number;
+      dense_score?: number;
+      rrf_score?: number;
+      matched_terms?: string[];
+    }>;
+
+    if (searchMode === 'bm25') {
+      if (bm25Results.length === 0) {
+        candidateList = [];
+      } else {
+        candidateList = bm25Results.map((r) => {
+          const chunk = chunks.find((c) => c.id === r.id)!;
+          const sim = Math.min(0.96, Math.max(0.2, 0.45 + 0.50 * r.normalizedScore));
+          return {
+            chunk,
+            similarity: parseFloat(sim.toFixed(2)),
+            search_mode: 'bm25' as const,
+            bm25_score: r.score,
+            matched_terms: r.matchedTerms,
+          };
+        });
+      }
+    } else if (searchMode === 'vector') {
+      candidateList = denseScored.map((d) => {
+        const matched: string[] = [];
+        const contentLower = d.chunk.content.toLowerCase();
+        terms.forEach((t) => {
+          if (contentLower.includes(t)) matched.push(t);
+        });
+        return {
+          chunk: d.chunk,
+          similarity: d.denseScore,
+          search_mode: 'vector' as const,
+          dense_score: d.denseScore,
+          matched_terms: matched,
+        };
+      });
+      candidateList.sort((a, b) => b.similarity - a.similarity);
+    } else {
+      // Hybrid mode (BM25 + Dense Vector via RRF)
+      const denseSorted = [...denseScored].sort((a, b) => b.denseScore - a.denseScore);
+
+      const bm25Ranked = {
+        name: 'bm25',
+        weight: bm25Weight,
+        items: bm25Results.map((r) => ({
+          id: r.id,
+          score: r.score,
+          item: r.id,
+        })),
+      };
+
+      const vectorRanked = {
+        name: 'vector',
+        weight: vectorWeight,
+        items: denseSorted.map((d) => ({
+          id: d.chunk.id,
+          score: d.denseScore,
+          item: d.chunk.id,
+        })),
+      };
+
+      const rrfItems = reciprocalRankFusion<string>([bm25Ranked, vectorRanked], { k: rrfK });
+      const chunkMap = new Map(chunks.map((c) => [c.id, c]));
+      const denseMap = new Map(denseScored.map((d) => [d.chunk.id, d.denseScore]));
+
+      const totalWeight = bm25Weight + vectorWeight > 0 ? bm25Weight + vectorWeight : 1.0;
+      const alpha = bm25Weight / totalWeight;
+      const beta = vectorWeight / totalWeight;
+
+      candidateList = rrfItems.map((rrf) => {
+        const chunk = chunkMap.get(rrf.id)!;
+        const bm25Hit = bm25Map.get(rrf.id);
+        const bm25Score = bm25Hit?.score;
+        const denseScore = denseMap.get(rrf.id) ?? 0.75;
+        const matchedTerms = bm25Hit?.matchedTerms || [];
+
+        let bm25NormSim: number;
+        if (bm25Hit && maxBm25Score > 0) {
+          bm25NormSim = 0.45 + 0.50 * bm25Hit.normalizedScore;
+        } else if (bm25Results.length === 0) {
+          bm25NormSim = denseScore;
+        } else {
+          bm25NormSim = denseScore * 0.6;
+        }
+
+        const hybridSim = Math.min(0.98, Math.max(0.1, alpha * bm25NormSim + beta * denseScore));
+
+        return {
+          chunk,
+          similarity: parseFloat(hybridSim.toFixed(2)),
+          search_mode: 'hybrid' as const,
+          bm25_score: bm25Score,
+          dense_score: denseScore,
+          rrf_score: rrf.score,
+          matched_terms: matchedTerms,
+        };
+      });
+    }
+
+    const filtered = candidateList.filter((item) => item.similarity >= scoreThreshold);
+    if (searchMode !== 'hybrid') {
+      filtered.sort((a, b) => b.similarity - a.similarity);
+    }
     const selected = filtered.slice(0, topK);
-    const finalSelection = selected.length > 0 ? selected : scored.slice(0, Math.min(2, topK));
+    const finalSelection =
+      selected.length > 0 ? selected : candidateList.slice(0, Math.min(2, topK));
 
     // Increment hit_count for recalled chunks
     const allStoredChunks = this.getStoredChunks();
@@ -730,7 +888,7 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
     });
     this.setStoredChunks(allStoredChunks);
 
-    const formattedChunks = finalSelection.map((s) => ({
+    const formattedChunks: KnowledgeRetrievalChunk[] = finalSelection.map((s) => ({
       id: s.chunk.id,
       doc_id: s.chunk.doc_id,
       doc_name: docMap.get(s.chunk.doc_id) || 'document.md',
@@ -738,12 +896,20 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       content: s.chunk.content,
       similarity: s.similarity,
       token_count: s.chunk.token_count,
+      search_mode: s.search_mode,
+      bm25_score: s.bm25_score,
+      dense_score: s.dense_score,
+      rrf_score: s.rrf_score,
+      matched_terms: s.matched_terms,
     }));
 
-    const contextParts = formattedChunks.map(
-      (c) =>
-        `### [Document: ${c.doc_name} (Position #${c.position} - Similarity: ${c.similarity.toFixed(2)})]\n${c.content}`,
-    );
+    const contextParts = formattedChunks.map((c) => {
+      const termsSuffix =
+        c.matched_terms && c.matched_terms.length > 0
+          ? ` - Terms: ${c.matched_terms.slice(0, 4).join(', ')}`
+          : '';
+      return `### [Document: ${c.doc_name} (Position #${c.position} - Similarity: ${c.similarity.toFixed(2)}${termsSuffix})]\n${c.content}`;
+    });
 
     return {
       context: contextParts.join('\n\n'),
@@ -918,6 +1084,7 @@ export class ServerKnowledgeAdapter implements IKnowledgeAdapter {
     query: string,
     topK = 3,
     scoreThreshold = 0.0,
+    options?: KnowledgeRetrieveOptions,
   ): Promise<KnowledgeRetrievalResult> {
     const res = await fetch(`${this.baseUrl}/api/v1/knowledge-bases/${kbId}/retrieve`, {
       method: 'POST',
@@ -926,6 +1093,10 @@ export class ServerKnowledgeAdapter implements IKnowledgeAdapter {
         query: query || 'knowledge query',
         top_k: topK,
         score_threshold: scoreThreshold,
+        search_mode: options?.searchMode,
+        bm25_weight: options?.bm25Weight,
+        vector_weight: options?.vectorWeight,
+        rrf_k: options?.rrfK,
       }),
     });
     if (!res.ok) {

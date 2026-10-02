@@ -97,6 +97,81 @@ export const KnowledgeNodeProperties: React.FC<KnowledgeNodePropertiesProps> = (
           </span>
         </div>
 
+        {/* Search Mode Select */}
+        <div className="space-y-1.5 pt-1">
+          <label className="text-xs text-slate-700 dark:text-slate-300 font-medium">
+            {t.propertyPanel.searchMode}
+          </label>
+          <select
+            value={(config['searchMode'] as string) || 'hybrid'}
+            onChange={(e) => updateNodeConfig(nodeId, { searchMode: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 cursor-pointer"
+          >
+            <option value="hybrid">{t.propertyPanel.searchModeHybrid}</option>
+            <option value="bm25">{t.propertyPanel.searchModeBM25}</option>
+            <option value="vector">{t.propertyPanel.searchModeVector}</option>
+          </select>
+        </div>
+
+        {/* Hybrid Weights Tuning (Shown when searchMode is 'hybrid' or default) */}
+        {((config['searchMode'] as string) || 'hybrid') === 'hybrid' && (
+          <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 space-y-2.5">
+            <div className="text-[11px] font-medium text-slate-600 dark:text-slate-400 flex items-center justify-between">
+              <span>{t.propertyPanel.hybridWeightHelp}</span>
+              <span className="font-mono text-cyan-600 dark:text-cyan-400 text-[10px]">
+                {typeof config['bm25Weight'] === 'number' ? config['bm25Weight'] : 0.5} :{' '}
+                {typeof config['vectorWeight'] === 'number' ? config['vectorWeight'] : 0.5}
+              </span>
+            </div>
+
+            {/* BM25 Weight */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-[11px] text-slate-600 dark:text-slate-400">
+                  {t.propertyPanel.bm25Weight}
+                </span>
+                <span className="font-mono text-cyan-600 dark:text-cyan-400 text-[11px] font-medium">
+                  {typeof config['bm25Weight'] === 'number' ? config['bm25Weight'] : 0.5}
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0.1"
+                max="1.0"
+                step="0.05"
+                value={typeof config['bm25Weight'] === 'number' ? config['bm25Weight'] : 0.5}
+                onChange={(e) =>
+                  updateNodeConfig(nodeId, { bm25Weight: parseFloat(e.target.value) })
+                }
+                className="w-full accent-cyan-600 dark:accent-cyan-400 bg-slate-200 dark:bg-slate-950 cursor-pointer h-1.5"
+              />
+            </div>
+
+            {/* Vector Weight */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-[11px] text-slate-600 dark:text-slate-400">
+                  {t.propertyPanel.vectorWeight}
+                </span>
+                <span className="font-mono text-cyan-600 dark:text-cyan-400 text-[11px] font-medium">
+                  {typeof config['vectorWeight'] === 'number' ? config['vectorWeight'] : 0.5}
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0.1"
+                max="1.0"
+                step="0.05"
+                value={typeof config['vectorWeight'] === 'number' ? config['vectorWeight'] : 0.5}
+                onChange={(e) =>
+                  updateNodeConfig(nodeId, { vectorWeight: parseFloat(e.target.value) })
+                }
+                className="w-full accent-cyan-600 dark:accent-cyan-400 bg-slate-200 dark:bg-slate-950 cursor-pointer h-1.5"
+              />
+            </div>
+          </div>
+        )}
+
         {/* Top-K Slider */}
         <div className="space-y-1 pt-1">
           <div className="flex items-center justify-between text-xs">

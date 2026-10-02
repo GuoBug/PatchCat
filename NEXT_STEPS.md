@@ -1,9 +1,9 @@
 # 🎯 Next Steps / 接续开发清单
 
-> **Current Version**: `v0.4.13` (Completed & Verified ✅)  
+> **Current Version**: `v0.4.14` (Completed & Verified ✅)  
 > **Last Updated**: 2026-10-02  
-> **Previous Milestone**: Phase 4.13 Deterministic Model Routing & Cascade State Machine (`v0.4.13` Shipped ✅)  
-> **Current Target Milestone**: **`v0.4.14` 纯本地轻量混合检索 (BM25 + 稠密向量)** (详见 [PRD-006](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md) & [RAG 架构白皮书](docs/02-architecture/phase-2-knowledge-base-and-rag-architecture.md))  
+> **Previous Milestone**: Phase 4.14 Local Lightweight Hybrid Search (BM25 + Vectors) (`v0.4.14` Shipped ✅)  
+> **Current Target Milestone**: **`v0.4.15` 交叉重排 Reranker API 深度集成** (详见 [PRD-006](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md) 扩展规范)  
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -235,18 +235,20 @@
 
 ---
 
-### 🚀 Active Milestone: v0.4.14 Local Lightweight Hybrid Search (BM25 + Vectors)
+### ⚡ Completed Milestone: Phase 4.14 Local Lightweight Hybrid Search (BM25 + Vectors) (v0.4.14)
 
-- [ ] **1. Pure-Frontend In-Memory BM25 Lexical Inverted Index Engine**:
-  - Zero-dependency in-memory inverted index for browser Local BYOK mode with CJK n-gram & whitespace tokenization.
-- [ ] **2. Reciprocal Rank Fusion (RRF) Hybrid Scoring**:
-  - Weighted fusion algorithm combining lexical keyword scores and dense vector cosine similarity.
-- [ ] **3. Retrieval Scoring Visualization & Keyword Highlights**:
-  - Visualization of BM25 vs Dense vector contributions and highlight chips in Knowledge node preview.
+- [x] **1. Pure-Frontend In-Memory BM25 Lexical Inverted Index Engine (`src/services/search/bm25-engine.ts`)**:
+  - Zero-dependency in-memory inverted index for browser Local BYOK mode with CJK bi-gram & whitespace tokenization, and Robertson-Spärck Jones non-negative IDF.
+- [x] **2. Reciprocal Rank Fusion (RRF) Hybrid Scoring (`src/services/storage/knowledge-adapter.ts`)**:
+  - Multi-channel weighted fusion algorithm combining lexical keyword scores and dense vector cosine similarity with full channel observability.
+- [x] **3. Retrieval Scoring Visualization & Keyword Highlights (`KnowledgeNodeProperties.tsx`)**:
+  - Search mode selection (`hybrid` / `bm25` / `vector`) and channel weight sliders in Knowledge node property drawer, with keyword telemetry on recalled chunks.
+- [x] **4. Verification & Testing**:
+  - 39 dedicated BM25 and hybrid search tests passing; 411/411 total project unit and contract tests passing with 100% green rate.
 
 ---
 
-### 🔮 Upcoming Milestone: v0.4.15 Reranker Cross-Encoder API Integration
+### 🚀 Active Milestone: v0.4.15 Reranker Cross-Encoder API Integration
 
 - [ ] **1. Multi-Provider Reranker Client (`reranker-client.ts`)**:
   - Direct integration with SiliconFlow (`BAAI/bge-reranker-v2-m3`), Cohere, and Jina Rerank endpoints.
@@ -525,19 +527,21 @@ npm run build
 
 ---
 
-### 🚀 当前推进里程碑：v0.4.14 纯本地轻量混合检索 (BM25 + 稠密向量)
+### ⚡ 已交付里程碑：Phase 4.14 纯本地轻量混合检索 (BM25 + 稠密向量) (v0.4.14)
 > 依据 [PRD-006: 知识库（RAG）向量检索与画布节点](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md) 与 [RAG 架构白皮书](docs/02-architecture/phase-2-knowledge-base-and-rag-architecture.md) 推进。
 
-- [ ] **1. 纯前端内存倒排索引分词引擎 (In-Memory BM25)**：
-  - 零后端依赖的纯前端轻量倒排索引，支持 CJK 字符双元分词（Bi-gram）与空格分词，实现精准关键词与字面匹配。
-- [ ] **2. 倒排与向量倒数排序融合 (Reciprocal Rank Fusion - RRF)**：
-  - 实现工业级 RRF 加权融合算法，自适应平衡 BM25 词法分值与高维语义向量余弦相似度。
-- [ ] **3. 检索分值可视化与命中关键词高亮**：
-  - 在知识库切片预览与画布节点中直观展现 BM25 vs Vector 贡献比，命中文本片段高亮渲染。
+- [x] **1. 纯前端内存倒排索引分词引擎 (`src/services/search/bm25-engine.ts`)**：
+  - 零后端依赖的纯前端轻量倒排索引，支持 CJK 字符双元分词（Bi-gram）与空格分词，RSJ 平滑非负 IDF 杜绝负分除零。
+- [x] **2. 倒排与向量倒数排序融合 (Reciprocal Rank Fusion - RRF)**：
+  - 工业级 RRF 加权融合算法（$k=60$），在 `LocalKnowledgeAdapter` 中支持 `hybrid`、`bm25` 与 `vector` 三模检索，保障 RFC-101 等精准名词 100% Top-1 命中。
+- [x] **3. 检索分值可视化与关键词命中高亮 (`KnowledgeNodeProperties.tsx`)**：
+  - 知识库属性抽屉提供模式切换选单与 BM25/向量通道权重滑块，切片透传 `bm25_score`、`dense_score`、`rrf_score` 与 `matched_terms`。
+- [x] **4. 全量契约测试与工程回归**：
+  - 39 项 BM25 与混合检索专项测试全绿，全工程 411 项测试 100% 绿灯。
 
 ---
 
-### 🔮 接续推进里程碑：v0.4.15 交叉重排 Reranker API 深度集成
+### 🚀 当前推进里程碑：v0.4.15 交叉重排 Reranker API 深度集成
 > 依据 [PRD-006: 知识库（RAG）向量检索与画布节点](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md) 扩展规范推进。
 
 - [ ] **1. 多厂商轻量重排客户端适配 (`reranker-client.ts`)**：

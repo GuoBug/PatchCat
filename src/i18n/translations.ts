@@ -111,6 +111,13 @@ export interface Translations {
     knowledgeQueryPlaceholder: string;
     topK: string;
     scoreThreshold: string;
+    searchMode: string;
+    searchModeHybrid: string;
+    searchModeBM25: string;
+    searchModeVector: string;
+    bm25Weight: string;
+    vectorWeight: string;
+    hybridWeightHelp: string;
     knowledgeAttributionHint: string;
     modelConfig: string;
     provider: string;
@@ -725,6 +732,13 @@ export const translations: Record<Language, Translations> = {
       knowledgeQueryPlaceholder: 'Query to search (supports {{input_1.query}})...',
       topK: 'Top-K Recall Count',
       scoreThreshold: 'Similarity Threshold',
+      searchMode: 'Retrieval Mode',
+      searchModeHybrid: 'Hybrid Search (BM25 + Vector, Recommended)',
+      searchModeBM25: 'BM25 Lexical Exact',
+      searchModeVector: 'Dense Vector Semantic',
+      bm25Weight: 'BM25 Lexical Weight',
+      vectorWeight: 'Vector Semantic Weight',
+      hybridWeightHelp: 'Reciprocal Rank Fusion (RRF) balance',
       knowledgeAttributionHint: 'Outputs {{result}} (markdown text) and {{chunks}} (array).',
       modelConfig: 'Model Configuration',
       provider: 'Provider',
@@ -1364,6 +1378,13 @@ export const translations: Record<Language, Translations> = {
       knowledgeQueryPlaceholder: '输入搜索内容，支持 {{input_1.query}} 动态变量...',
       topK: 'Top-K 召回数量',
       scoreThreshold: '相似度过滤阈值',
+      searchMode: '检索模式',
+      searchModeHybrid: '混合检索 (BM25 + 向量，推荐)',
+      searchModeBM25: 'BM25 词法精确',
+      searchModeVector: '稠密向量语义',
+      bm25Weight: 'BM25 词法权重',
+      vectorWeight: '向量语义权重',
+      hybridWeightHelp: 'RRF 倒数排名融合权重配比',
       knowledgeAttributionHint:
         '输出 {{result}} (标准 Markdown 上下文) 与 {{chunks}} (结构化切片数组)。',
       modelConfig: '模型与推理配置',

@@ -5,6 +5,28 @@ All notable changes to the **PatchCat** project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.14] - 2026-10-02
+
+### Added
+- **Pure-Frontend In-Memory BM25 Lexical Inverted Index Engine (`src/services/search/bm25-engine.ts`, PRD-006)**:
+  - **Zero-Dependency In-Memory Tokenizer**: Lightweight hybrid CJK bi-gram tokenizer with unigram fallback, combined with whitespace/alphanumeric word normalization and bilingual stopword filtering.
+  - **Robertson-Spärck Jones Smoothed IDF**: Non-negative IDF formulation $\ln(1 + \frac{N - n(q_i) + 0.5}{n(q_i) + 0.5})$ with document length normalization ($k_1 = 1.5, b = 0.75$), preventing zero-division and negative score anomalies.
+  - **Reciprocal Rank Fusion (RRF)**: Multi-channel rank fusion algorithm ($\sum \frac{w_m}{k + rank_m(d)}$ with $k=60$) providing full channel observability (`channelDetails`).
+- **Hybrid Retrieval Integration & Dual-Mode Adapter (`src/services/storage/knowledge-adapter.ts`)**:
+  - Upgraded `LocalKnowledgeAdapter.retrieve()` with multi-modal search modes: `'hybrid'` (default), `'bm25'`, and `'vector'`.
+  - Added fingerprint-based lazy BM25 index caching to avoid duplicate re-indexing overhead on unchanged chunk corpora.
+  - Telemetry enhancement: enriched `KnowledgeRetrievalChunk` with `search_mode`, `bm25_score`, `dense_score`, `rrf_score`, and `matched_terms`.
+- **Knowledge Node Ergonomics & Property Configuration (`KnowledgeNodeProperties.tsx`)**:
+  - Added interactive Search Mode dropdown in property drawer (`hybrid` / `bm25` / `vector`).
+  - Added configurable BM25 and Vector weight sliders when in Hybrid mode.
+  - Integrated full bilingual i18n support in `src/i18n/translations.ts`.
+- **Automated Verification Suite (`tests/bm25-engine.node.test.ts`, `tests/bm25-hybrid-search.node.test.ts`)**:
+  - Added 21 mathematical unit tests for tokenization, IDF smoothing, and RRF properties.
+  - Added 18 end-to-end integration tests verifying keyword exact match superiority (e.g., `DAG_CYCLE_DETECTED`, `RFC-101`), weight biasing, and DAG pipeline execution.
+  - Expanded automated test suite to **411 passing tests across 116 test suites** with 100% green rate.
+
+---
+
 ## [0.4.13] - 2026-10-02
 
 ### Added

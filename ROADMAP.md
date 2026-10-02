@@ -64,6 +64,9 @@ v0.6.0 (MCP & Docker) ◄── v0.4.20 (Snapshots) ◄── v0.4.18 (Rolling S
 - [x] **Phase 4.8 (v0.4.8)**: Run Observability, Step Snapshot Inspection & OpenTelemetry Tracing (2026-09-22)
 - [x] **Phase 4.10 (v0.4.10)**: Immutable Checkpointing & Resumable DAG Execution (2026-09-23)
 - [x] **Phase 4.11 (v0.4.11)**: Storage Hardening & Ephemeral Stream (2026-09-23)
+- [x] **Phase 4.12 (v0.4.12)**: Deterministic Structured Output & Self-Healing State Machine (2026-09-24)
+- [x] **Phase 4.13 (v0.4.13)**: Deterministic Model Routing & Cascade State Machine (2026-10-02)
+- [x] **Phase 4.14 (v0.4.14)**: Pure-Frontend Lightweight Hybrid Search (BM25 + Vectors) (2026-10-02)
 
 ---
 
@@ -72,7 +75,7 @@ v0.6.0 (MCP & Docker) ◄── v0.4.20 (Snapshots) ◄── v0.4.18 (Rolling S
 <a name="简体中文"></a>
 ## 简体中文
 
-> **当前阶段**：`v0.4.13` (已发布 ✅)  
+> **当前阶段**：`v0.4.14` (已发布 ✅)  
 > **最近更新**：2026-10-02  
 > **定位**：生产级、本地优先的确定性 AI 工作流引擎 · 交互式实验工坊  
 
@@ -130,3 +133,4 @@ v0.6.0 (MCP与Docker大考) ◄── v0.4.20 (快照与归档) ◄── v0.4.1
 - [x] **Phase 4.11 (v0.4.11)**：底座存储防膨胀治理与时态数据物理隔离 (2026-09-23)
 - [x] **Phase 4.12 (v0.4.12)**：确定性结构化输出、自愈状态机与架构纯粹性解耦治理 (2026-09-24)
 - [x] **Phase 4.13 (v0.4.13)**：确定性模型级联路由与故障转移状态机 (2026-10-02)
+- [x] **Phase 4.14 (v0.4.14)**：纯本地轻量混合检索 (BM25+向量) 与 RRF 融合 (2026-10-02)

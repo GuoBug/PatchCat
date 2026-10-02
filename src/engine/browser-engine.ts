@@ -1780,6 +1780,20 @@ export class BrowserWorkflowEngine {
             typeof node.data.config?.['scoreThreshold'] === 'number'
               ? (node.data.config['scoreThreshold'] as number)
               : 0.0;
+          const searchMode =
+            (node.data.config?.['searchMode'] as 'hybrid' | 'bm25' | 'vector') || 'hybrid';
+          const bm25Weight =
+            typeof node.data.config?.['bm25Weight'] === 'number'
+              ? (node.data.config['bm25Weight'] as number)
+              : 0.5;
+          const vectorWeight =
+            typeof node.data.config?.['vectorWeight'] === 'number'
+              ? (node.data.config['vectorWeight'] as number)
+              : 0.5;
+          const rrfK =
+            typeof node.data.config?.['rrfK'] === 'number'
+              ? (node.data.config['rrfK'] as number)
+              : 60;
 
           const settings = this.resolveSettings(options);
           const storageMode = settings.storageMode;
@@ -1800,6 +1814,10 @@ export class BrowserWorkflowEngine {
                       query: query || 'knowledge query',
                       top_k: topK,
                       score_threshold: scoreThreshold,
+                      search_mode: searchMode,
+                      bm25_weight: bm25Weight,
+                      vector_weight: vectorWeight,
+                      rrf_k: rrfK,
                     }),
                     signal,
                   },
@@ -1828,10 +1846,21 @@ export class BrowserWorkflowEngine {
                     q: string,
                     k?: number,
                     th?: number,
+                    opts?: {
+                      searchMode?: 'hybrid' | 'bm25' | 'vector';
+                      bm25Weight?: number;
+                      vectorWeight?: number;
+                      rrfK?: number;
+                    },
                   ) => Promise<{ context: string; chunks: unknown[] }>;
                 } | undefined;
                 if (adapter) {
-                  const retrieved = await adapter.retrieve(kbId, query, topK, scoreThreshold);
+                  const retrieved = await adapter.retrieve(kbId, query, topK, scoreThreshold, {
+                    searchMode,
+                    bm25Weight,
+                    vectorWeight,
+                    rrfK,
+                  });
                   if (retrieved && retrieved.context) {
                     contextStr = retrieved.context;
                     recalledChunks = retrieved.chunks;
@@ -1856,7 +1885,12 @@ export class BrowserWorkflowEngine {
                 id: 'chunk-mock-1',
                 doc_name: 'manual.md',
                 content: `Query "${query || 'default'}" matched knowledge base context for RAG orchestration.`,
+                similarity: 0.88,
                 score: 0.88,
+                search_mode: searchMode,
+                dense_score: 0.88,
+                bm25_score: 0,
+                matched_terms: [],
               },
             ];
           }
@@ -1866,6 +1900,7 @@ export class BrowserWorkflowEngine {
             context: contextStr,
             chunks: recalledChunks,
             query,
+            searchMode,
           };
           break;
         }
