@@ -17,6 +17,7 @@
 | **07** | [告别“有进无出的上下文黑洞” —— 双锚点滑动窗口与原子事务裁剪实战](./article-07-context-engineering-dual-anchor-pruning.md) | 上下文工程三层防御、双锚点前缀缓存优化、协议原子事务完整性、$O(K)$ 滑动窗口 |
 | **08** | [失败了别全盘重来！逆向 BFS 拓扑回溯与 DAG 检查点断点续跑](./article-08-resumable-dag-checkpoint-and-reverse-bfs.md) | 逆向依赖图遍历、自适应向上扩充、菱形依赖空洞化解、5-Record FIFO 存储防线 |
 | **09** | [别让 Agent 原地鬼打墙！连续 3 次相同工具调用的柔性引导与硬熔断](./article-09-agent-deadlock-and-circuit-breaker.md) | 参数签名比对算法、连续第 2 次柔性引导提示、第 3 次看门狗硬熔断、Token 预算双重锁 |
+| **10** | [90% 流量零成本闭环！经济模型试探、语义门禁拦截与强模型轮换池自愈升级](./article-10-cheap-first-model-routing-and-cascade-fallback.md) | Cheap-First 试探、F7 动作优先权门禁（待补样）、诊断三元组继承、多候选模型轮换池候选顺延容灾 |
 
 ---
 
