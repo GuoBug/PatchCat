@@ -603,6 +603,7 @@ export interface Translations {
     saved: string;
     saving: string;
     justNow: string;
+    error: string;
   };
   draftRecovery: {
     bannerTitle: string;
@@ -1253,6 +1254,7 @@ export const translations: Record<Language, Translations> = {
       saved: 'Saved to local storage',
       saving: 'Syncing changes...',
       justNow: 'just now',
+      error: 'Save failed — click to retry',
     },
     draftRecovery: {
       bannerTitle: 'Unsaved Edit Draft Detected',
@@ -1888,6 +1890,7 @@ export const translations: Record<Language, Translations> = {
       saved: '所有修改已保存至本地',
       saving: '正在同步保存...',
       justNow: '刚刚',
+      error: '保存失败 — 点击重试',
     },
     draftRecovery: {
       bannerTitle: '检测到上次未正常同步的编辑草稿',

@@ -60,10 +60,11 @@ export interface ProjectStoreState {
   isSidebarOpen: boolean;
   searchQuery: string;
   isLoading: boolean;
-  saveStatus: 'saved' | 'saving';
+  saveStatus: 'saved' | 'saving' | 'error';
+  lastSaveError: string | null;
 
   // Actions
-  setSaveStatus: (status: 'saved' | 'saving') => void;
+  setSaveStatus: (status: 'saved' | 'saving' | 'error') => void;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
   setSearchQuery: (query: string) => void;
@@ -402,6 +403,7 @@ export const useProjectStore = create<ProjectStoreState>()(
       searchQuery: '',
       isLoading: false,
       saveStatus: 'saved',
+      lastSaveError: null,
 
       setSaveStatus: (status) => {
         set((state) => {
@@ -560,7 +562,14 @@ export const useProjectStore = create<ProjectStoreState>()(
                 edges: currentEdges,
                 globalInputs: currentInputs,
               })
-              .catch(() => {});
+              .catch((e) => {
+                const errMsg = e instanceof Error ? e.message : String(e);
+                console.warn('[ProjectStore] Failed to auto-save previous workflow:', errMsg);
+                set((state) => {
+                  state.saveStatus = 'error';
+                  state.lastSaveError = errMsg;
+                });
+              });
           }
         }
 
@@ -611,7 +620,8 @@ export const useProjectStore = create<ProjectStoreState>()(
         const currentInputs = useWorkflowStore.getState().globalInputs;
 
         set((state) => {
-          state.saveStatus = 'saved';
+          state.saveStatus = 'saving';
+          state.lastSaveError = null;
           const wf = state.workflows.find((w) => w.id === targetId);
           if (wf && !wf.isLocked) {
             wf.nodes = currentNodes;
@@ -631,8 +641,19 @@ export const useProjectStore = create<ProjectStoreState>()(
             edges: currentEdges,
             globalInputs: currentInputs,
           })
+          .then(() => {
+            set((state) => {
+              state.saveStatus = 'saved';
+              state.lastSaveError = null;
+            });
+          })
           .catch((e) => {
-            console.warn('[ProjectStore] Failed to sync saved workflow to backend:', e);
+            const errMsg = e instanceof Error ? e.message : String(e);
+            console.warn('[ProjectStore] Failed to sync saved workflow to backend:', errMsg);
+            set((state) => {
+              state.saveStatus = 'error';
+              state.lastSaveError = errMsg;
+            });
           });
       },
 
