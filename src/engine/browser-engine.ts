@@ -50,6 +50,7 @@ import {
 import { resolveObjectVariables } from './variable-resolver.ts';
 import { streamChatCompletion, type ChatMessage } from './llm-client.ts';
 import { runSandboxedScript, evaluateSandboxedCondition } from './sandbox-executor.ts';
+import { isUnsafeRegexPattern } from './regex-safety.ts';
 import { useSettingsStore } from '../stores/settings-store.ts';
 import { useKnowledgeStore } from '../stores/knowledge-store.ts';
 import { logger } from './logger.ts';
@@ -113,6 +114,9 @@ export function evaluateCondition(rule: ConditionRule, actualValue: unknown): bo
       try {
         const targetStr = String(targetVal);
         if (targetStr.length > 250 || strVal.length > 50000) {
+          return false;
+        }
+        if (isUnsafeRegexPattern(targetStr)) {
           return false;
         }
         const regex = new RegExp(targetStr, 'i');
@@ -2075,6 +2079,26 @@ export class BrowserWorkflowEngine {
 
           const urlObj = new URL(rawUrl);
 
+          if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+            throw new Error(
+              `Security Exception: Only http/https protocols are allowed, got "${urlObj.protocol}"`,
+            );
+          }
+          // Block cloud metadata / link-local / unspecified targets. localhost and RFC1918
+          // stay allowed on purpose: local-first users legitimately call Ollama or LAN services.
+          const hostname = urlObj.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+          if (
+            /^169\.254\./.test(hostname) ||
+            /^0\.0\.0\.0$/.test(hostname) ||
+            /^fe80:/.test(hostname) ||
+            /^::$/.test(hostname) ||
+            hostname === 'metadata.google.internal'
+          ) {
+            throw new Error(
+              `Security Exception: Requests to link-local or cloud metadata address "${hostname}" are blocked`,
+            );
+          }
+
           // Normalize and resolve query parameters (supports both Array<{key, value}> and Record<string, unknown>)
           const rawQueryParams: Record<string, unknown> = {};
           if (Array.isArray(config.queryParams)) {
@@ -2192,15 +2216,19 @@ export class BrowserWorkflowEngine {
                 throw new Error('Workflow execution aborted by user.');
               }
 
+              const timeoutCtrl = new AbortController();
+              const timeoutId = setTimeout(() => timeoutCtrl.abort(), timeoutMs);
               try {
-                const timeoutCtrl = new AbortController();
-                const timeoutId = setTimeout(() => timeoutCtrl.abort(), timeoutMs);
+                const mergedSignal =
+                  typeof AbortSignal.any === 'function'
+                    ? AbortSignal.any([signal, timeoutCtrl.signal])
+                    : timeoutCtrl.signal;
 
-                const res = await fetch(targetUrl, {
+                const res = await fetch(urlObj.toString(), {
                   method,
                   headers: reqHeaders,
                   body: ['GET', 'HEAD'].includes(method) ? undefined : body,
-                  signal: signal,
+                  signal: mergedSignal,
                 });
                 clearTimeout(timeoutId);
 
@@ -2234,6 +2262,8 @@ export class BrowserWorkflowEngine {
                 } else {
                   break;
                 }
+              } finally {
+                clearTimeout(timeoutId);
               }
             }
 
