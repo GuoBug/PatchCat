@@ -6,10 +6,10 @@ import { Cpu, Thermometer, CheckCircle2 } from 'lucide-react';
 import { useSettingsStore } from '../../stores/settings-store.ts';
 
 export const LLMNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, selected }) => {
-  const activeProvider = useSettingsStore((s) => s.activeProvider);
-  const providers = useSettingsStore((s) => s.providers);
-  const currentProvider = providers[activeProvider];
-  const defaultModel = currentProvider?.defaultModel || 'gpt-4o-mini';
+  // Primitive selector: re-renders only when the resolved default model string changes.
+  const defaultModel = useSettingsStore(
+    (s) => s.providers[s.activeProvider]?.defaultModel || 'gpt-4o-mini',
+  );
   const model = (data.config?.['model'] as string) || defaultModel;
   const temperature =
     typeof data.config?.['temperature'] === 'number' ? data.config['temperature'] : 0.7;

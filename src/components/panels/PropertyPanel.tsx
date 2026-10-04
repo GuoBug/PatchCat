@@ -35,14 +35,16 @@ export const PropertyPanel: React.FC = () => {
   const isPropertyPanelOpen = useWorkflowStore((s) => s.isPropertyPanelOpen);
   const togglePropertyPanel = useWorkflowStore((s) => s.togglePropertyPanel);
   const setPropertyPanelOpen = useWorkflowStore((s) => s.setPropertyPanelOpen);
-  const nodes = useWorkflowStore((s) => s.nodes);
   const updateNodeData = useWorkflowStore((s) => s.updateNodeData);
   const updateNodeConfig = useWorkflowStore((s) => s.updateNodeConfig);
   const retryNode = useWorkflowStore((s) => s.retryNode);
   const resumeFromNode = useWorkflowStore((s) => s.resumeFromNode);
   const isExecuting = useWorkflowStore((s) => s.isExecuting);
 
-  const selectedNode = nodes.find((n) => n.id === selectedNodeId);
+  // Narrow selector: the reference only changes when the selected node itself changes.
+  const selectedNode = useWorkflowStore((s) =>
+    s.selectedNodeId ? s.nodes.find((n) => n.id === s.selectedNodeId) : undefined,
+  );
 
   const handleDeleteNode = useCallback(() => {
     if (!selectedNodeId) return;
@@ -134,6 +136,55 @@ export const PropertyPanel: React.FC = () => {
     updateNodeConfig(id, { template: val });
   };
 
+  // Registry: adding a node type means adding one entry here (props differ per form, so each
+  // entry is a thunk that closes over the already-resolved values above).
+  const typeRenderers: Record<string, () => React.ReactNode> = {
+    input: () => (
+      <InputNodeProperties nodeId={id} inputs={inputs} updateNodeData={updateNodeData} />
+    ),
+    prompt: () => (
+      <PromptNodeProperties
+        nodeId={id}
+        template={promptTemplate}
+        extractedSlots={extractedSlots}
+        onTemplateChange={handleTemplateChange}
+      />
+    ),
+    llm: () => (
+      <LLMNodeProperties nodeId={id} config={config} updateNodeConfig={updateNodeConfig} />
+    ),
+    code: () => (
+      <CodeNodeProperties nodeId={id} config={config} updateNodeConfig={updateNodeConfig} />
+    ),
+    knowledge: () => (
+      <KnowledgeNodeProperties
+        nodeId={id}
+        config={config}
+        inputs={inputs}
+        updateNodeConfig={updateNodeConfig}
+        updateNodeData={updateNodeData}
+      />
+    ),
+    condition: () => (
+      <ConditionNodeProperties nodeId={id} config={config} updateNodeConfig={updateNodeConfig} />
+    ),
+    aggregator: () => (
+      <AggregatorNodeProperties nodeId={id} config={config} updateNodeConfig={updateNodeConfig} />
+    ),
+    http: () => (
+      <HttpNodeProperties nodeId={id} config={config} updateNodeConfig={updateNodeConfig} />
+    ),
+    agent: () => (
+      <AgentNodeProperties nodeId={id} config={config} updateNodeConfig={updateNodeConfig} />
+    ),
+    loop: () => (
+      <LoopNodeProperties nodeId={id} config={config} updateNodeConfig={updateNodeConfig} />
+    ),
+    sub_workflow: () => (
+      <SubWorkflowProperties nodeId={id} config={config} updateNodeConfig={updateNodeConfig} />
+    ),
+  };
+
   return (
     <aside className="w-80 md:w-[380px] max-md:fixed max-md:inset-y-0 max-md:right-0 max-md:z-40 max-md:w-full max-md:max-w-xs shrink-0 border-l border-slate-200 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md flex flex-col h-full relative overflow-visible text-slate-800 dark:text-slate-200 font-sans shadow-xs dark:shadow-2xl transition-all duration-200 z-20">
       {/* Protruding drawer collapse tab (>>) */}
@@ -184,107 +235,8 @@ export const PropertyPanel: React.FC = () => {
           />
         </div>
 
-        {/* ── Type Specific: Input Node ── */}
-        {type === 'input' && (
-          <InputNodeProperties
-            nodeId={id}
-            inputs={inputs}
-            updateNodeData={updateNodeData}
-          />
-        )}
-
-        {/* ── Type Specific: Prompt Node ── */}
-        {type === 'prompt' && (
-          <PromptNodeProperties
-            nodeId={id}
-            template={promptTemplate}
-            extractedSlots={extractedSlots}
-            onTemplateChange={handleTemplateChange}
-          />
-        )}
-
-        {/* ── Type Specific: LLM Node ── */}
-        {type === 'llm' && (
-          <LLMNodeProperties
-            nodeId={id}
-            config={config}
-            updateNodeConfig={updateNodeConfig}
-          />
-        )}
-
-        {/* ── Type Specific: Code Node ── */}
-        {type === 'code' && (
-          <CodeNodeProperties
-            nodeId={id}
-            config={config}
-            updateNodeConfig={updateNodeConfig}
-          />
-        )}
-
-        {/* ── Type Specific: Knowledge Node ── */}
-        {type === 'knowledge' && (
-          <KnowledgeNodeProperties
-            nodeId={id}
-            config={config}
-            inputs={inputs}
-            updateNodeConfig={updateNodeConfig}
-            updateNodeData={updateNodeData}
-          />
-        )}
-
-        {/* ── Type Specific: Condition Node ── */}
-        {type === 'condition' && (
-          <ConditionNodeProperties
-            nodeId={id}
-            config={config}
-            updateNodeConfig={updateNodeConfig}
-          />
-        )}
-
-        {/* ── Type Specific: Aggregator Node ── */}
-        {type === 'aggregator' && (
-          <AggregatorNodeProperties
-            nodeId={id}
-            config={config}
-            updateNodeConfig={updateNodeConfig}
-          />
-        )}
-
-        {/* ── Type Specific: HTTP Request Node ── */}
-        {type === 'http' && (
-          <HttpNodeProperties
-            nodeId={id}
-            config={config}
-            updateNodeConfig={updateNodeConfig}
-          />
-        )}
-
-        {/* ── Type Specific: Agent Node ── */}
-        {type === 'agent' && (
-          <AgentNodeProperties
-            nodeId={id}
-            config={config}
-            updateNodeConfig={updateNodeConfig}
-          />
-        )}
-
-        {/* ── Type Specific: Loop Node ── */}
-        {type === 'loop' && (
-          <LoopNodeProperties
-            nodeId={id}
-            config={config}
-            updateNodeConfig={updateNodeConfig}
-          />
-        )}
-
-        {/* ── Type Specific: Sub-Workflow Node ── */}
-        {type === 'sub_workflow' && (
-          <SubWorkflowProperties
-            nodeId={id}
-            config={config}
-            updateNodeConfig={updateNodeConfig}
-          />
-        )}
+        {/* ── Type Specific Properties (registry lookup) ── */}
+        {typeRenderers[type]?.()}
 
         {/* ── Universal Execution Output Viewer in Drawer ── */}
         <ExecutionResultViewer

@@ -14,6 +14,7 @@ import {
   StepDataInspector,
 } from './components/panels';
 import { WorkflowCanvas } from './components/canvas';
+import { AppErrorBoundary } from './components/AppErrorBoundary';
 import { useWorkflowStore } from './stores/workflow-store.ts';
 import { useSettingsStore } from './stores/settings-store.ts';
 import { useProjectStore } from './stores/project-store.ts';
@@ -144,15 +145,21 @@ export const App: React.FC = () => {
             {/* Main Layout: Left Workflow Drawer | Canvas | Property Panel */}
             <main className="flex-1 flex w-full min-h-0 overflow-hidden relative">
               {/* Left Antigravity-style Workflow & Folder Drawer */}
-              <WorkflowSidebar />
+              <AppErrorBoundary region="Sidebar">
+                <WorkflowSidebar />
+              </AppErrorBoundary>
 
               {/* Visual Canvas Area */}
               <section className="flex-1 h-full relative">
-                <WorkflowCanvas />
+                <AppErrorBoundary region="Canvas">
+                  <WorkflowCanvas />
+                </AppErrorBoundary>
               </section>
 
               {/* Right Property Inspector Drawer */}
-              <PropertyPanel />
+              <AppErrorBoundary region="Properties">
+                <PropertyPanel />
+              </AppErrorBoundary>
 
               {/* Interactive Chat Debug Slide-over Drawer */}
               <ChatDebugPanel isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
