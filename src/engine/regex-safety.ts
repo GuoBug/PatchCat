@@ -10,16 +10,35 @@
  */
 
 // A group whose body already contains a quantifier, itself followed by a quantifier.
-const NESTED_QUANTIFIER = /\((?:[^()\\]|\\.)*[+*](?:[^()\\]|\\.)*\)\s*(?:[+*]|\{\d+,?\d*\})/;
-// Quantified group with alternation of identical or prefix-overlapping branches.
-const QUANTIFIED_ALTERNATION = /\(([^()|\\]+)\|([^()|\\]+)\)\s*[+*]/;
+// Supports both standard capturing groups and non-capturing/flagged groups: (?:a+)+, (?i:a+)+
+const NESTED_QUANTIFIER = /\((?:\?[a-zA-Z-]*:)?(?:[^()\\]|\\.)*[+*](?:[^()\\]|\\.)*\)\s*(?:[+*]|\{\d+,?\d*\})/;
+
+// Matches any quantified group containing alternation (capturing or non-capturing)
+const QUANTIFIED_GROUP_PATTERN = /\((?:\?[a-zA-Z-]*:)?([^()]*)\)\s*(?:[+*]|\{\d+,?\d*\})/g;
 
 export function isUnsafeRegexPattern(pattern: string): boolean {
   if (NESTED_QUANTIFIER.test(pattern)) return true;
-  const alt = QUANTIFIED_ALTERNATION.exec(pattern);
-  if (alt) {
-    const [, a, b] = alt;
-    if (a === b || a!.startsWith(b!) || b!.startsWith(a!)) return true;
+
+  // Check quantified alternation with branch overlaps or nullable branches
+  const regex = new RegExp(QUANTIFIED_GROUP_PATTERN.source, 'g');
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(pattern)) !== null) {
+    const innerContent = match[1];
+    if (innerContent && innerContent.includes('|')) {
+      const branches = innerContent.split('|').map((s) => s.trim().replace(/^\?[a-zA-Z-]*:/, ''));
+      for (let i = 0; i < branches.length; i++) {
+        const b1 = branches[i];
+        if (b1 === undefined || b1 === '' || b1.endsWith('?') || b1.endsWith('*')) return true;
+        for (let j = i + 1; j < branches.length; j++) {
+          const b2 = branches[j];
+          if (b2 === undefined || b2 === '' || b2.endsWith('?') || b2.endsWith('*')) return true;
+          const c1 = b1.replace(/[?*+]/g, '');
+          const c2 = b2.replace(/[?*+]/g, '');
+          if (c1 && c2 && (c1 === c2 || c1.startsWith(c2) || c2.startsWith(c1))) return true;
+        }
+      }
+    }
   }
+
   return false;
 }

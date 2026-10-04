@@ -200,7 +200,7 @@ Open your browser and navigate to `http://localhost:5173`.
 
 ## 🛠️ CLI Commands & Quality Assurance
 
-PatchCat maintains rigorous code quality with 100% test coverage across core scheduling, variable resolution, and logging engines:
+PatchCat maintains rigorous code quality with 440+ automated unit tests covering core scheduling, variable resolution, sandbox isolation, and logging engines:
 
 ```bash
 # Run all unit tests (Topological Sort, Engine, LLM Client, Logger, Routing)
@@ -263,7 +263,7 @@ PatchCat comes with ready-to-use industrial presets:
 - [x] Local Storage Hardening & Ephemeral Stream Channel (v0.4.11)
 - [x] Deterministic Structured Output & Self-Healing Triad (v0.4.12)
 - [x] Deterministic Model Cascade Routing & State Machine (v0.4.13)
-- [x] Local Lightweight Hybrid Search (BM25 + Vectors) & RRF Fusion (v0.4.14)
+- [x] Client-Side Zero-Dependency Hybrid Search (BM25 + N-gram Semantic Density Channel) & RRF Fusion (v0.4.14)
 - [ ] Reranker Cross-Encoder API Integration (v0.4.15)
 - [ ] Local Master Passphrase Crypto Vault & Sanitized Export (v0.4.16)
 

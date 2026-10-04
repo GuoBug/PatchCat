@@ -224,3 +224,18 @@ async def test_workflow_run_streaming_sse(client: AsyncClient):
     text = res.text
     assert "WORKFLOW_START" in text
     assert "WORKFLOW_COMPLETE" in text
+
+
+def test_topological_sort_rejects_cycles():
+    from app.services.workflow_runner import topological_sort
+
+    nodes = [{"id": "n1"}, {"id": "n2"}, {"id": "n3"}]
+    # n1 -> n2 -> n3 -> n1 (cycle)
+    edges = [
+        {"source": "n1", "target": "n2"},
+        {"source": "n2", "target": "n3"},
+        {"source": "n3", "target": "n1"},
+    ]
+    with pytest.raises(ValueError, match="Cycle detected"):
+        topological_sort(nodes, edges)
+

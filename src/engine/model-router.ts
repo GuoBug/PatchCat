@@ -504,6 +504,9 @@ export async function executeWithModelRouting(
   let lastStrongSyntaxValid = true;
 
   for (let candidateIdx = 0; candidateIdx < fallbackCandidates.length; candidateIdx++) {
+    if (options.signal?.aborted) {
+      throw new Error('Workflow execution aborted by user.');
+    }
     const candidateModel = fallbackCandidates[candidateIdx]!;
     routedStrongModel = candidateModel;
     strongAttempts++;
@@ -765,6 +768,9 @@ async function runSingleTierLoop(
   const trace: SelfHealingTraceStep[] = [];
 
   while (attempt <= maxRetries) {
+    if (options.signal?.aborted) {
+      throw new Error('Workflow execution aborted by user.');
+    }
     attempt++;
     try {
       const res = await caller({

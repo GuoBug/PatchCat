@@ -26,18 +26,20 @@ def is_loopback_host(host: str) -> bool:
 
 
 def verify_startup_security() -> None:
-    """Refuse to expose an unauthenticated API beyond loopback in production."""
+    """Refuse to expose an unauthenticated API beyond loopback unless explicitly allowed."""
     exposed = not is_loopback_host(settings.HOST)
     if exposed and not settings.API_AUTH_TOKEN:
         msg = (
             f"HOST={settings.HOST} exposes the API beyond loopback but API_AUTH_TOKEN is not set. "
-            "Set API_AUTH_TOKEN or bind HOST=127.0.0.1."
+            "Set API_AUTH_TOKEN or bind HOST=127.0.0.1 (or set ALLOW_INSECURE_NO_AUTH=true to bypass)."
         )
-        if settings.APP_ENV == "production":
+        if not settings.ALLOW_INSECURE_NO_AUTH:
             raise RuntimeError(msg)
         import logging
 
-        logging.getLogger("patchcat.security").warning(msg)
+        logging.getLogger("patchcat.security").warning(
+            "SECURITY WARNING: %s (Running insecure due to ALLOW_INSECURE_NO_AUTH=true)", msg
+        )
 
 
 def safe_equals(a: Optional[str], b: Optional[str]) -> bool:

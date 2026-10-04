@@ -9,6 +9,8 @@ import math
 from typing import List, Optional
 import httpx
 
+from app.core.config import settings
+
 logger = logging.getLogger("patchcat.rag.embedder")
 
 
@@ -107,11 +109,16 @@ class EmbeddingClient:
         if not texts:
             return []
 
-        # If no key provided for external provider (excluding local ollama), use offline generator
+        # If no explicit key provided for external provider (excluding local ollama),
+        # fallback to environment configuration settings.EMBEDDING_API_KEY or OPENAI_API_KEY
         clean_key = api_key.strip()
         if not clean_key and provider != "ollama":
-            logger.debug(
-                "No API Key configured for provider='%s'; using deterministic offline embedding",
+            clean_key = (settings.EMBEDDING_API_KEY or settings.OPENAI_API_KEY or "").strip()
+
+        if not clean_key and provider != "ollama":
+            logger.warning(
+                "No API Key configured for embedding provider='%s' (checked parameters, EMBEDDING_API_KEY, and OPENAI_API_KEY); "
+                "falling back to deterministic offline hash embedding. Semantic retrieval quality will be degraded.",
                 provider,
             )
             return [generate_deterministic_embedding(t, dimension) for t in texts]

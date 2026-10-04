@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"syscall"
 	"time"
@@ -21,7 +22,7 @@ import (
 
 // Version constants
 const (
-	AppVersion = "0.4.11-merlin"
+	AppVersion = "0.4.14-merlin"
 	AppName    = "PatchCat-Merlin-Gateway"
 )
 
@@ -335,6 +336,36 @@ func isAllowedTargetURL(rawURL string, extraAllowedDomains []string) (*url.URL, 
 	return parsed, nil
 }
 
+// isPrivateOrLoopbackIP checks if the given IP address is a private LAN or loopback address.
+func isPrivateOrLoopbackIP(ip net.IP) bool {
+	if ip == nil {
+		return false
+	}
+	if ip.IsLoopback() {
+		return true
+	}
+	if ip4 := ip.To4(); ip4 != nil {
+		// 10.0.0.0/8
+		if ip4[0] == 10 {
+			return true
+		}
+		// 172.16.0.0/12 (172.16.0.0 - 172.31.255.255)
+		if ip4[0] == 172 && ip4[1] >= 16 && ip4[1] <= 31 {
+			return true
+		}
+		// 192.168.0.0/16
+		if ip4[0] == 192 && ip4[1] == 168 {
+			return true
+		}
+		return false
+	}
+	// IPv6 Unique Local Address fc00::/7
+	if len(ip) == net.IPv6len && (ip[0]&0xfe) == 0xfc {
+		return true
+	}
+	return false
+}
+
 // isAllowedOrigin checks if the origin is safe to allow CORS.
 func isAllowedOrigin(origin string, extraAllowedOrigins []string) bool {
 	if origin == "" {
@@ -346,26 +377,17 @@ func isAllowedOrigin(origin string, extraAllowedOrigins []string) bool {
 	}
 	host := strings.ToLower(parsed.Hostname())
 
-	// Loopback / localhost
-	if host == "localhost" || host == "127.0.0.1" || host == "::1" {
+	// 1. IP literal check (loopback & private RFC 1918 LAN subnets)
+	if ip := net.ParseIP(host); ip != nil {
+		return isPrivateOrLoopbackIP(ip)
+	}
+
+	// 2. Strict exact match for loopback / router local hostnames
+	if host == "localhost" || host == "router.asus.com" {
 		return true
 	}
 
-	// Standard router LAN subnets & ASUS router names
-	if strings.HasPrefix(host, "192.168.") || strings.HasPrefix(host, "10.") || host == "router.asus.com" || strings.HasSuffix(host, ".asuscomm.com") {
-		return true
-	}
-	if strings.HasPrefix(host, "172.") {
-		parts := strings.Split(host, ".")
-		if len(parts) >= 2 {
-			var secondOctet int
-			if _, err := fmt.Sscanf(parts[1], "%d", &secondOctet); err == nil && secondOctet >= 16 && secondOctet <= 31 {
-				return true
-			}
-		}
-	}
-
-	// User-configured extra origins
+	// 3. User-configured extra origins
 	for _, allowed := range extraAllowedOrigins {
 		allowed = strings.TrimSpace(allowed)
 		if allowed == "" {
@@ -424,6 +446,28 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 		"timestamp":       time.Now().Unix(),
 	}
 	_ = json.NewEncoder(w).Encode(status)
+}
+
+var (
+	apiKeyParamRegex = regexp.MustCompile(`([?&]key=)[^& \t\n\r]+`)
+
+	hopByHopHeaders = map[string]bool{
+		"connection":          true,
+		"keep-alive":          true,
+		"proxy-authenticate":  true,
+		"proxy-authorization": true,
+		"te":                  true,
+		"trailers":            true,
+		"transfer-encoding":   true,
+		"upgrade":             true,
+	}
+)
+
+func sanitizeErrorString(err error) string {
+	if err == nil {
+		return ""
+	}
+	return apiKeyParamRegex.ReplaceAllString(err.Error(), "${1}[REDACTED]")
 }
 
 // handleProxy forwards LLM chat completion requests to upstream LLM APIs with strict SSRF & header filtering.
@@ -515,13 +559,17 @@ func handleProxy(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		http.Error(w, fmt.Sprintf(`{"error": "Upstream connection error: %v"}`, err), http.StatusBadGateway)
+		safeErr := sanitizeErrorString(err)
+		http.Error(w, fmt.Sprintf(`{"error": "Upstream connection error: %s"}`, safeErr), http.StatusBadGateway)
 		return
 	}
 	defer resp.Body.Close()
 
-	// 5. Copy upstream headers to client
+	// 5. Copy upstream headers to client (excluding hop-by-hop headers)
 	for k, v := range resp.Header {
+		if hopByHopHeaders[strings.ToLower(k)] {
+			continue
+		}
 		for _, val := range v {
 			w.Header().Add(k, val)
 		}

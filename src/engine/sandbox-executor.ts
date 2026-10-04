@@ -34,6 +34,8 @@ export async function runSandboxedScript(
     return { result: inputs, stdout: '' };
   }
 
+  assertScriptSyntaxSafety(rawScript);
+
   const isBrowser =
     typeof window !== 'undefined' &&
     typeof Worker !== 'undefined' &&
@@ -203,35 +205,35 @@ function runInBrowserWorker(
 }
 
 /**
+ * Static security pre-flight check to block dangerous syntax patterns (dynamic import, process, require).
+ */
+function assertScriptSyntaxSafety(rawScript: string): void {
+  if (/\bimport\s*\(/.test(rawScript)) {
+    throw new Error('[沙箱安全拦截] 禁止在沙箱代码中使用动态 import() 语法。');
+  }
+  if (/\bprocess\b/.test(rawScript)) {
+    throw new Error('[沙箱安全拦截] 禁止在沙箱代码中访问 process 对象。');
+  }
+  if (/\brequire\s*\(/.test(rawScript)) {
+    throw new Error('[沙箱安全拦截] 禁止在沙箱代码中调用 require()。');
+  }
+}
+
+/**
  * VM execution for Node.js (test suites and offline environments).
  *
- * ⚠️ 安全声明：Node.js 原生 `node:vm` 模块在官方设计上明确“非安全隔离沙箱”（Not a security boundary），
- * 无法抵御深层原型链逃逸或恶意攻击。此路径仅供自动化测试与 Node.js 离线环境降级使用。
- * 生产浏览器环境下，引擎强制运行于专属独立的 Web Worker 线程沙箱（剥离 DOM、网络、Cookie 及 Storage）。
+ * ⚠️ 安全加固：彻底阻断通过宿主 realm 函数（如 setTimeout.constructor）逃逸至宿主 process 的路径。
+ * 1. 禁用代码字符串生成 (codeGeneration: { strings: false, wasm: false })
+ * 2. 严禁注入任何宿主 realm 函数（如 setTimeout、clearTimeout），console 在 context 内部原生初始化
+ * 3. 静态拦截 import()、process、require 语法特征
  */
 async function runInNodeVm(
   rawScript: string,
   inputs: Record<string, unknown>,
   timeoutMs: number,
 ): Promise<SandboxExecutionResult> {
-  const logs: string[] = [];
-  const customConsole = {
-    log: (...args: unknown[]) => {
-      logs.push(
-        args
-          .map((a) => (typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)))
-          .join(' '),
-      );
-    },
-    error: (...args: unknown[]) => {
-      logs.push(
-        '[Error] ' +
-          args
-            .map((a) => (typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)))
-            .join(' '),
-      );
-    },
-  };
+  assertScriptSyntaxSafety(rawScript);
+  const rawLogs: string[] = [];
 
   try {
     const vmModuleName = 'node:vm';
@@ -239,25 +241,70 @@ async function runInNodeVm(
 
     let scriptBody = rawScript;
     if (!/\breturn\b/.test(rawScript)) {
-      try {
-        new Function('inputs', 'console', `"use strict"; return (${rawScript});`);
+      const isStatement = /^\s*(while|for|if|switch|try|throw|class|function|let|const|var|do|await)\b|[;{}]/.test(rawScript);
+      if (!isStatement) {
         scriptBody = `return (${rawScript});`;
-      } catch {
-        scriptBody = rawScript;
       }
     }
 
-    const wrappedCode = `"use strict";\n__result = (async function(inputs, console) {\n${scriptBody}\n})(inputs, console);`;
+    const wrappedCode = `"use strict";\n__result = (async function(inputs, console) {\n${scriptBody}\n})(inputs, globalThis.console);`;
+
+    const hostTimer = (cb: () => void, ms: number) => {
+      return setTimeout(() => {
+        try {
+          cb();
+        } catch {
+          // suppress uncaught callback errors
+        }
+      }, typeof ms === 'number' ? ms : 0);
+    };
+    const hostClearTimer = (id: ReturnType<typeof setTimeout>) => {
+      clearTimeout(id);
+    };
+
+    // Strip prototypes to eliminate prototype-chain constructor escape vectors
+    Object.setPrototypeOf(hostTimer, null);
+    Object.setPrototypeOf(hostClearTimer, null);
 
     const sandbox = {
       inputs: JSON.parse(JSON.stringify(inputs)),
-      console: customConsole,
-      setTimeout,
-      clearTimeout,
+      __rawLogs: rawLogs,
       __result: undefined,
+      __safeTimer: hostTimer,
+      __safeClearTimer: hostClearTimer,
     };
 
-    const context = vm.createContext(sandbox);
+    const context = vm.createContext(sandbox, {
+      codeGeneration: { strings: false, wasm: false },
+    });
+
+    // Initialize in-context console and timer bridge entirely inside guest realm,
+    // then immediately delete host references from the guest global object
+    vm.runInContext(
+      `"use strict";
+      (function(logs, timerFn, clearFn) {
+        globalThis.console = {
+          log: function(...args) {
+            logs.push(args.map(function(a) { return typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a); }).join(' '));
+          },
+          error: function(...args) {
+            logs.push('[Error] ' + args.map(function(a) { return typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a); }).join(' '));
+          }
+        };
+        globalThis.setTimeout = function(fn, delay) {
+          return timerFn(function() {
+            try { fn(); } catch(e) {}
+          }, delay);
+        };
+        globalThis.clearTimeout = function(id) {
+          clearFn(id);
+        };
+      })(__rawLogs, __safeTimer, __safeClearTimer);
+      delete globalThis.__safeTimer;
+      delete globalThis.__safeClearTimer;`,
+      context,
+    );
+
     vm.runInContext(wrappedCode, context, {
       timeout: timeoutMs,
       displayErrors: true,
@@ -285,7 +332,7 @@ async function runInNodeVm(
           : resolvedResult;
       return {
         result: cleanResult,
-        stdout: logs.join('\n'),
+        stdout: rawLogs.join('\n'),
       };
     } finally {
       if (timer) clearTimeout(timer);

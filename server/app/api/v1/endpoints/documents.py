@@ -10,6 +10,14 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from pypdf import PdfReader
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.concurrency import run_in_threadpool
+
+
+def _parse_pdf_bytes_sync(data: bytes) -> str:
+    """Synchronous CPU worker to parse PDF page texts without blocking async event loop."""
+    reader = PdfReader(BytesIO(data))
+    pages_text = [page.extract_text() or "" for page in reader.pages]
+    return "\n\n".join(pages_text)
 
 from app.core.config import settings
 from app.core.database import get_db
@@ -331,9 +339,7 @@ async def upload_document_file(
 
     if ext_lower == "pdf":
         try:
-            reader = PdfReader(BytesIO(file_bytes))
-            pages_text = [page.extract_text() or "" for page in reader.pages]
-            raw_text = "\n\n".join(pages_text)
+            raw_text = await run_in_threadpool(_parse_pdf_bytes_sync, file_bytes)
         except Exception as e:
             logger.error("Failed to parse PDF file '%s': %s", filename, e)
             raise HTTPException(

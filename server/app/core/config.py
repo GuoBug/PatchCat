@@ -43,8 +43,14 @@ class Settings(BaseSettings):
 
     # Access control. Empty token = open API (only safe while bound to loopback).
     API_AUTH_TOKEN: str = ""
+    # Explicit bypass flag if an administrator intentionally exposes non-loopback without auth
+    ALLOW_INSECURE_NO_AUTH: bool = False
     # Per-IP requests per minute, in-process. 0 disables.
     RATE_LIMIT_PER_MINUTE: int = 600
+
+    # Upstream AI & Embedding API Keys (for server-side RAG & model routing)
+    EMBEDDING_API_KEY: str = ""
+    OPENAI_API_KEY: str = ""
 
     # CORS Configuration
     CORS_ORIGINS: List[str] = [

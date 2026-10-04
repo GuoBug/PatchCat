@@ -207,3 +207,30 @@ async def test_search_workflow_escapes_wildcards(client: AsyncClient):
     under_results = [w["name"] for w in search_under.json()]
     assert "Special 100% Guaranteed_Flow" in under_results
     assert "Special Other Flow" not in under_results
+
+
+@pytest.mark.asyncio
+async def test_workflow_api_key_is_masked_and_excluded_from_response(client: AsyncClient):
+    """P0-4 Security Verification: Plaintext api_key must never be leaked via GET /api/v1/workflows/{id}."""
+    create_res = await client.post(
+        "/api/v1/workflows",
+        json={
+            "name": "Secured Key Flow",
+            "api_enabled": True,
+            "api_key": "pk_live_secretkey12345",
+            "nodes": [],
+            "edges": [],
+        },
+    )
+    assert create_res.status_code == 201
+    created_data = create_res.json()
+    assert "api_key" not in created_data
+    assert created_data.get("api_key_masked") == "pk_liv...2345"
+
+    wf_id = created_data["id"]
+    get_res = await client.get(f"/api/v1/workflows/{wf_id}")
+    assert get_res.status_code == 200
+    get_data = get_res.json()
+    assert "api_key" not in get_data
+    assert get_data.get("api_key_masked") == "pk_liv...2345"
+

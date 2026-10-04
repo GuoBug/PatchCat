@@ -695,39 +695,27 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       if (w.length >= 2) terms.add(w);
     });
 
+    // Generic Chinese sliding n-gram extraction (2-gram, 3-gram, 4-gram)
+    // Completely domain-agnostic without biased hardcoded vocabulary
     const chineseChars = q.match(/[\u4e00-\u9fa5]/g) || [];
-    const chineseWords = q.match(/[\u4e00-\u9fa5]{2,4}/g) || [];
-    chineseWords.forEach((w) => terms.add(w));
-
-    const keyVocabulary = [
-      '拓扑',
-      '算法',
-      '死锁',
-      '死循环',
-      'kahn',
-      'dag',
-      '调度',
-      '并发',
-      'promise',
-      '性能',
-      '卡顿',
-      'react flow',
-      '拖拽',
-      '优化',
-      '沙箱',
-      'worker',
-      '看门狗',
-      '存储',
-      '双模',
-      '白皮书',
-      '重绘',
-      '切片',
-      '架构',
-      '入度',
-      '环路',
-    ];
-    keyVocabulary.forEach((kv) => {
-      if (q.includes(kv)) terms.add(kv);
+    const chineseSegments = q.match(/[\u4e00-\u9fa5]+/g) || [];
+    chineseSegments.forEach((segment) => {
+      const len = segment.length;
+      if (len >= 2) {
+        for (let i = 0; i <= len - 2; i++) {
+          terms.add(segment.slice(i, i + 2));
+        }
+      }
+      if (len >= 3) {
+        for (let i = 0; i <= len - 3; i++) {
+          terms.add(segment.slice(i, i + 3));
+        }
+      }
+      if (len >= 4) {
+        for (let i = 0; i <= len - 4; i++) {
+          terms.add(segment.slice(i, i + 4));
+        }
+      }
     });
 
     const denseScored = chunks.map((chunk) => {

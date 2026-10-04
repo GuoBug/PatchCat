@@ -91,6 +91,7 @@ To seamlessly transition workflows from design to production by generating one-c
 {
   "workflow_id": "uuid",
   "status": "completed",
+  "execution_mode": "simulated",
   "outputs": { "final_answer": "response text" },
   "token_usage": { "prompt": 100, "completion": 200, "total": 300 },
   "duration_ms": 1234,
@@ -113,6 +114,10 @@ Server-Sent Events (SSE) streaming `ExecutionEvent` types.
 - New router in `server/app/api/v1/endpoints/workflow_run.py`.
 - Loads workflow definition directly from the SQL database.
 - Executes logic using the server-side DAG engine counterpart.
+
+> [!NOTE]
+> **Server Execution Mode Scope**:  
+> The current backend `/run` endpoint executes in **dry-run / simulated mode** (`execution_mode: 'simulated'`) to strictly validate DAG topological sorting (Kahn's algorithm), variable propagation, and condition branching without incurring external LLM API costs. Live production LLM streaming execution is handled on the client-side engine.
 
 ## 4. Mermaid Diagrams
 

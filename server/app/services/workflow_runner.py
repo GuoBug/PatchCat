@@ -2,6 +2,7 @@
 Server-Side Workflow DAG Runner for REST API and SSE Execution
 """
 
+import asyncio
 import time
 import json
 import re
@@ -114,6 +115,12 @@ def topological_sort(nodes: List[Dict[str, Any]], edges: List[Dict[str, Any]]) -
                     next_layer.append(v)
         current = next_layer
 
+    processed_count = sum(len(layer) for layer in layers)
+    if processed_count != len(node_ids):
+        raise ValueError(
+            f"Cycle detected in workflow graph: topological sorting resolved {processed_count} of {len(node_ids)} nodes."
+        )
+
     return layers
 
 
@@ -148,6 +155,7 @@ async def run_workflow(
     total_tokens = {"prompt": 0, "completion": 0, "total": 0}
 
     for layer in layers:
+        await asyncio.sleep(0)  # Cooperative concurrency: yield control to async event loop
         for node_id in layer:
             node = node_map.get(node_id)
             if not node:

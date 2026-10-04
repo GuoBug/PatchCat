@@ -48,19 +48,34 @@ async def test_health_stays_open_with_token(client, monkeypatch):
     assert res.status_code != 401
 
 
-def test_startup_guard_blocks_exposed_production(monkeypatch):
+def test_startup_guard_blocks_exposed_host(monkeypatch):
     monkeypatch.setattr(settings, "HOST", "0.0.0.0")
     monkeypatch.setattr(settings, "API_AUTH_TOKEN", "")
+    monkeypatch.setattr(settings, "ALLOW_INSECURE_NO_AUTH", False)
+
+    # Blocks in production
     monkeypatch.setattr(settings, "APP_ENV", "production")
     with pytest.raises(RuntimeError):
         security.verify_startup_security()
 
-    monkeypatch.setattr(settings, "API_AUTH_TOKEN", "tok")
-    security.verify_startup_security()  # allowed once a token is configured
+    # Also blocks in development
+    monkeypatch.setattr(settings, "APP_ENV", "development")
+    with pytest.raises(RuntimeError):
+        security.verify_startup_security()
 
+    # Allowed if explicitly bypassed
+    monkeypatch.setattr(settings, "ALLOW_INSECURE_NO_AUTH", True)
+    security.verify_startup_security()
+
+    # Allowed once a token is configured
+    monkeypatch.setattr(settings, "ALLOW_INSECURE_NO_AUTH", False)
+    monkeypatch.setattr(settings, "API_AUTH_TOKEN", "tok")
+    security.verify_startup_security()
+
+    # Loopback is fine without a token
     monkeypatch.setattr(settings, "API_AUTH_TOKEN", "")
     monkeypatch.setattr(settings, "HOST", "127.0.0.1")
-    security.verify_startup_security()  # loopback is fine without a token
+    security.verify_startup_security()
 
 
 @pytest.mark.asyncio

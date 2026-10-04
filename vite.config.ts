@@ -46,6 +46,12 @@ export default defineConfig({
           ) {
             return 'vendor-schema';
           }
+          if (
+            id.includes('node_modules/unpdf') ||
+            id.includes('node_modules/pdfjs-dist')
+          ) {
+            return 'vendor-pdfjs';
+          }
           if (id.includes('/src/presets/') || id.includes('\\src\\presets\\')) {
             return 'presets-data';
           }

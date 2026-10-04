@@ -4,7 +4,7 @@ Pydantic v2 Schemas for Workflow DAG (Nodes, Edges, Configurations)
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class WorkflowBase(BaseModel):
@@ -53,8 +53,27 @@ class WorkflowResponse(WorkflowBase):
     is_preset: bool
     created_at: datetime
     updated_at: datetime
+    api_key: Optional[str] = Field(
+        default=None,
+        exclude=True,
+        description="Plaintext API key excluded from serialization for access security",
+    )
+    api_key_masked: Optional[str] = Field(
+        default=None,
+        description="Masked API key representation for UI display (e.g. pk_live_***abcd)",
+    )
 
     model_config = ConfigDict(from_attributes=True)
+
+    @model_validator(mode="after")
+    def compute_masked_key(self) -> "WorkflowResponse":
+        if self.api_key:
+            raw = str(self.api_key).strip()
+            if len(raw) > 10:
+                self.api_key_masked = f"{raw[:6]}...{raw[-4:]}"
+            elif len(raw) > 0:
+                self.api_key_masked = "***"
+        return self
 
 
 class MoveWorkflowRequest(BaseModel):
@@ -70,7 +89,12 @@ class WorkflowRunRequest(BaseModel):
 class WorkflowRunResponse(BaseModel):
     workflow_id: str
     status: str
+    execution_mode: str = Field(
+        default="simulated",
+        description="Execution mode: 'simulated' (dry-run topology & variable validation) or 'live'",
+    )
     outputs: Dict[str, Any] = Field(default_factory=dict)
     token_usage: Dict[str, int] = Field(default_factory=lambda: {"prompt": 0, "completion": 0, "total": 0})
     duration_ms: int = 0
     created_at: datetime = Field(default_factory=datetime.utcnow)
+

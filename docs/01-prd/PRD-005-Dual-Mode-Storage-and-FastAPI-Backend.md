@@ -26,7 +26,11 @@ PatchCat 初始形态为纯前端离线单页应用（BYOK 模式），用户的
 | 模式 | 存储介质 | 适用场景 | 核心特点 |
 | :--- | :--- | :--- | :--- |
 | **浏览器本地存储 (Local BYOK)** | 浏览器 `LocalStorage` | 个人即时调试、敏捷验证、零配置运行 | • 零网络依赖<br>• 100% 客户端私密<br>• 开箱即用 |
-| **FastAPI 后端服务模式 (Server Mode)** | PostgreSQL + pgvector 或 SQLite (`patchcat.db`) | 团队协作、历史归档、未来向量知识库 | • 结构化持久化存储<br>• JSONB 高性能图结构<br>• 毫秒级 RESTful CRUD API |
+| **FastAPI 后端服务模式 (Server Mode)** | PostgreSQL + pgvector 或 SQLite (`patchcat.db`) | 单租户本地服务、跨设备同步、未来向量知识库 | • 单租户持久化存储 (Single-Tenant Local Backend)<br>• JSONB 高性能图结构<br>• 毫秒级 RESTful CRUD API |
+
+> [!NOTE]
+> **单租户架构边界说明 (Single-Tenant Architecture Boundary)**：  
+> 当前 FastAPI 后端服务设计定位于**单租户本地开发者服务（Single-Tenant Local Developer Backend）**。API 默认安全绑定至本地回环（`127.0.0.1`）。若需在局域网或公网部署，系统强制要求配置 `API_AUTH_TOKEN`，或在前端外挂企业级反向代理 / API 网关进行多租户隔离与访问鉴权。
 
 ---
 
