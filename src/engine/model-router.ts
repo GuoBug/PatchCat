@@ -43,47 +43,31 @@ import {
   buildErrorFeedbackMessages,
   generateGoldenExemplar,
   type NegotiatedResponseFormat,
+  type SelfHealingExecutionResult,
 } from './structured-output.ts';
 import type { ChatMessage, LLMChatRequest, LLMExecutionOutput } from './llm-client.ts';
 import { RUNTIME_DEFAULTS } from '../config/runtime-defaults.ts';
 import { logger } from './logger.ts';
+import { resolveModelPricing, hasModelPricing } from '../config/model-pricing.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. Relative Model Pricing Tier Map
+// 1. Model Pricing & Cost Savings Calculator
 // ─────────────────────────────────────────────────────────────────────────────
-
-/** Relative price per 1M tokens (USD) for cost savings estimation */
-export const MODEL_RELATIVE_PRICING: Record<string, number> = {
-  // Tier 1 (Free / Economy)
-  'Qwen/Qwen2.5-7B-Instruct': 0.05,
-  'qwen2.5-7b-instruct': 0.05,
-  'gemini-3.5-flash-lite': 0.05,
-  'gemini-3.1-flash-lite': 0.05,
-  'gemini-2.5-flash': 0.075,
-  'gemini-2.5-flash-lite': 0.04,
-  'gemini-2.0-flash': 0.075,
-  'gemini-1.5-flash': 0.075,
-  'gemini-flash-latest': 0.075,
-
-  // Tier 2 (Strong / Heavy Reasoning)
-  'gemini-3.8-flash': 0.15,
-  'gemini-3.5-flash': 0.15,
-  'gemini-2.5-pro': 1.25,
-  'gemini-1.5-pro': 1.25,
-  'gemini-pro-latest': 1.25,
-  'Qwen/Qwen2.5-72B-Instruct': 0.40,
-  'qwen2.5-72b-instruct': 0.40,
-  'deepseek-ai/DeepSeek-V3': 0.40,
-  'deepseek-ai/DeepSeek-R1': 0.80,
-};
 
 /**
  * Calculates estimated cost savings percentage when resolving on Tier 1 vs Tier 2.
+ * Single Source of Truth: backed by `src/config/model-pricing.ts`.
+ * If either model is unrecognized, returns 0 rather than inventing an arbitrary baseline.
  */
 export function calculateCostSavingsRatio(primaryModel: string, fallbackModel: string): number {
-  const p1 = MODEL_RELATIVE_PRICING[primaryModel] ?? 0.05;
-  const p2 = MODEL_RELATIVE_PRICING[fallbackModel] ?? 0.40;
-  if (p2 <= 0) return 0;
+  if (!hasModelPricing(primaryModel) || !hasModelPricing(fallbackModel)) {
+    return 0;
+  }
+  const p1Rule = resolveModelPricing(primaryModel);
+  const p2Rule = resolveModelPricing(fallbackModel);
+  const p1 = p1Rule.promptPer1M;
+  const p2 = p2Rule.promptPer1M;
+  if (p2 <= 0 || p2 <= p1) return 0;
   return Math.max(0, Math.min(1, (p2 - p1) / p2));
 }
 
@@ -101,6 +85,8 @@ export interface SemanticConflictResult {
   detectedSymptomTerms?: string[];
   detectedActionTerms?: string[];
   directive?: string;
+  errorPath?: string;
+  violatedRule?: string;
 }
 
 /**
@@ -110,12 +96,6 @@ export interface SemanticConflictResult {
 export interface ISemanticConflictGate {
   evaluate(userPrompt?: string, outputData?: unknown): SemanticConflictResult;
 }
-
-/**
- * @deprecated Use `detectTicketSemanticConflict` from `src/presets/ticket-semantic-gate.ts`.
- * Kept for backward compatibility with existing tests.
- */
-export { detectTicketSemanticConflict as detectSemanticConflict } from '../presets/ticket-semantic-gate.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. Multi-Tier Model Router State Machine
@@ -383,10 +363,10 @@ export async function executeWithModelRouting(
           lastSemanticDirective = semanticCheck.directive;
           lastErrors = [
             {
-              path: 'category',
+              path: semanticCheck.errorPath || 'root',
               message: semanticCheck.reason || 'Semantic precedence conflict detected',
               code: semanticCheck.conflictType || 'semantic_conflict_gate',
-              expectedRule: '核心诉求优先权',
+              expectedRule: semanticCheck.violatedRule || 'Semantic precedence policy',
               suggestion: semanticCheck.suggestedAction,
             },
           ];
@@ -755,7 +735,7 @@ async function runSingleTierLoop(
   modelTier: ModelTier,
   maxRetries: number,
   options: ModelRoutingExecutionOptions,
-) {
+): Promise<SelfHealingExecutionResult> {
   const negotiated = negotiateResponseFormat(
     options.responseFormat,
     options.provider,

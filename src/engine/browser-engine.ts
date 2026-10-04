@@ -38,7 +38,6 @@ import {
 import {
   executeWithModelRouting,
 } from './model-router.ts';
-import { getTestScenario } from '../presets/self-healing-scenarios.ts';
 import {
   topologicalSort,
   validateGraphTopology,
@@ -241,6 +240,30 @@ class AsyncEventQueue<T> {
 export class BrowserWorkflowEngine {
   public readonly mode: EngineMode = 'mock';
   private abortController: AbortController | null = null;
+  /**
+   * Application-level default scenario resolver hook for mock simulation execution.
+   * Can be configured at bootstrap (e.g. `main.tsx`) so that any engine execution without
+   * an explicit `options.context.scenarioResolver` falls back cleanly to registered presets.
+   */
+  public static defaultScenarioResolver?: (scenarioId: string) => {
+    id?: string;
+    defaultResponses?: string[];
+    defaultFinishReasons?: string[];
+  } | undefined;
+
+  /**
+   * Registers a default scenario resolver at the application layer.
+   * Enables dependency inversion: engine defines interface, application boots presets.
+   */
+  public static setDefaultScenarioResolver(
+    resolver: (scenarioId: string) => {
+      id?: string;
+      defaultResponses?: string[];
+      defaultFinishReasons?: string[];
+    } | undefined,
+  ): void {
+    BrowserWorkflowEngine.defaultScenarioResolver = resolver;
+  }
 
   /** Run the topology validator without executing anything. */
   public validateGraph(graph: GraphInput): GraphValidationResult {
@@ -1561,7 +1584,9 @@ export class BrowserWorkflowEngine {
             );
 
             const testScenario = nodeConfig.testScenario;
-            const scenarioDef = testScenario ? getTestScenario(testScenario) : undefined;
+            const scenarioResolver =
+              options?.context?.scenarioResolver ?? BrowserWorkflowEngine.defaultScenarioResolver;
+            const scenarioDef = testScenario && scenarioResolver ? scenarioResolver(testScenario) : undefined;
 
             const promptLower = userPrompt.toLowerCase();
             const labelLower = node.data.label.toLowerCase();

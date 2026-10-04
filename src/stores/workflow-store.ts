@@ -43,6 +43,7 @@ import type {
 import { getDefaultNodeConfig, getDefaultNodeLabel } from '../engine/types.ts';
 import { HistoryManager } from '../engine/history-manager.ts';
 import { BrowserWorkflowEngine } from '../engine/browser-engine.ts';
+import { getTestScenario } from '../presets/self-healing-scenarios.ts';
 import { useSettingsStore } from './settings-store.ts';
 import { saveShadowDraft } from '../services/storage/shadow-draft-manager.ts';
 import { indexedDb } from '../services/storage/indexeddb-adapter.ts';
@@ -807,6 +808,9 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
             inputs: get().globalInputs,
             resumeDownstream: options?.resumeDownstream,
             isNodeTest: options?.isNodeTest,
+            context: {
+              scenarioResolver: getTestScenario,
+            },
           },
         )) {
           if (event.type === 'NODE_START') {
@@ -863,6 +867,9 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
             inputs: get().globalInputs,
             resumeFromExisting: true,
             targetNodeIds: failedNodes.map((n) => n.id),
+            context: {
+              scenarioResolver: getTestScenario,
+            },
           },
         )) {
           if (event.type === 'NODE_START') {
@@ -931,6 +938,9 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
             resumeFromNodeId: nodeId,
             workflowId: activeWorkflowId,
             triggerMode: 'manual',
+            context: {
+              scenarioResolver: getTestScenario,
+            },
           },
         )) {
           if (event.type === 'NODE_START') {

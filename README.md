@@ -14,13 +14,13 @@
   </p>
 
   <p>
-    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/version-v0.4.12-blue.svg" alt="Release: v0.4.12" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/version-v0.4.14-blue.svg" alt="Release: v0.4.14" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-emerald.svg" alt="License: MIT" /></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" alt="React 18" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-329%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-432%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
@@ -260,8 +260,12 @@ PatchCat comes with ready-to-use industrial presets:
 - [x] Asuswrt-Merlin Router Plugin & Lightweight Go Gateway (v0.4.7)
 - [x] Run Observability, Step Snapshot Inspection & OpenTelemetry Tracing (v0.4.8)
 - [x] Immutable Checkpointing & Resumable Execution Subgraph (v0.4.10)
-- [ ] Local Lightweight Hybrid Search (BM25 + Vectors) (v0.4.12)
-- [ ] Reranker Cross-Encoder API Integration (v0.4.14)
+- [x] Local Storage Hardening & Ephemeral Stream Channel (v0.4.11)
+- [x] Deterministic Structured Output & Self-Healing Triad (v0.4.12)
+- [x] Deterministic Model Cascade Routing & State Machine (v0.4.13)
+- [x] Local Lightweight Hybrid Search (BM25 + Vectors) & RRF Fusion (v0.4.14)
+- [ ] Reranker Cross-Encoder API Integration (v0.4.15)
+- [ ] Local Master Passphrase Crypto Vault & Sanitized Export (v0.4.16)
 
 ---
 

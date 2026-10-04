@@ -114,6 +114,18 @@ describe('Topological Sort (Kahn\'s Algorithm)', () => {
     assert.deepEqual(result.cycleNodeIds.sort(), ['A', 'B']);
   });
 
+  it('should precisely distinguish cycle participants from innocent downstream blocked nodes via Tarjan SCC', () => {
+    // A -> B -> A (cycle) and B -> C (downstream leaf)
+    const nodes = [makeNode('A'), makeNode('B'), makeNode('C')];
+    const edges = [makeEdge('A', 'B'), makeEdge('B', 'A'), makeEdge('B', 'C')];
+
+    const result = topologicalSort({ nodes, edges });
+    assert.equal(result.hasCycle, true);
+    assert.deepEqual(result.cycleNodeIds.sort(), ['A', 'B']);
+    assert.deepEqual(result.unconvergedNodeIds?.sort(), ['A', 'B', 'C']);
+    assert.deepEqual(result.blockedDownstreamNodeIds?.sort(), ['C']);
+  });
+
   it('should validate DAG topology without errors', () => {
     const nodes = [makeNode('A'), makeNode('B')];
     const edges = [makeEdge('A', 'B')];

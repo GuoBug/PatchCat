@@ -32,6 +32,7 @@ import type { NodeType, TokenUsage } from '../../engine/types.ts';
 import { CatLogo } from '../icons/CatLogo.tsx';
 import { PROJECT_VERSION } from '../../config/project.ts';
 import { SaveStatusBadge } from './SaveStatusBadge.tsx';
+import { getTestScenario } from '../../presets/self-healing-scenarios.ts';
 
 export interface AlertNotification {
   type: 'error' | 'warning';
@@ -236,6 +237,9 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
             workflowId: activeWorkflowId,
             workflowTitle,
             triggerMode: 'manual',
+            context: {
+              scenarioResolver: getTestScenario,
+            },
           },
         )) {
           switch (event.type) {

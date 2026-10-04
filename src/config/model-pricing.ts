@@ -22,6 +22,10 @@ export interface ModelPricingRule {
  */
 export const MODEL_PRICING_TABLE: Record<string, ModelPricingRule> = {
   // ── Google Gemini ────────────────────────────────────────────────────────
+  'gemini-3.8-flash': { promptPer1M: 0.15, completionPer1M: 0.60 },
+  'gemini-3.5-flash': { promptPer1M: 0.15, completionPer1M: 0.60 },
+  'gemini-3.5-flash-lite': { promptPer1M: 0.05, completionPer1M: 0.20 },
+  'gemini-3.1-flash-lite': { promptPer1M: 0.05, completionPer1M: 0.20 },
   'gemini-2.5-flash': { promptPer1M: 0.075, completionPer1M: 0.30 },
   'gemini-2.5-pro': { promptPer1M: 1.25, completionPer1M: 5.00 },
   'gemini-2.0-flash': { promptPer1M: 0.10, completionPer1M: 0.40 },
@@ -47,8 +51,11 @@ export const MODEL_PRICING_TABLE: Record<string, ModelPricingRule> = {
   'deepseek-ai/deepseek-v3': { promptPer1M: 0.28, completionPer1M: 0.56 },
   'deepseek-ai/deepseek-r1': { promptPer1M: 0.55, completionPer1M: 2.19 },
   'qwen/qwen2.5-72b-instruct': { promptPer1M: 0.40, completionPer1M: 0.80 },
+  'qwen2.5-72b-instruct': { promptPer1M: 0.40, completionPer1M: 0.80 },
   'qwen/qwen2.5-32b-instruct': { promptPer1M: 0.18, completionPer1M: 0.36 },
+  'qwen2.5-32b-instruct': { promptPer1M: 0.18, completionPer1M: 0.36 },
   'qwen/qwen2.5-7b-instruct': { promptPer1M: 0.05, completionPer1M: 0.10 },
+  'qwen2.5-7b-instruct': { promptPer1M: 0.05, completionPer1M: 0.10 },
   'meta-llama/meta-llama-3.1-70b-instruct': { promptPer1M: 0.40, completionPer1M: 0.80 },
   'meta-llama/meta-llama-3.1-8b-instruct': { promptPer1M: 0.05, completionPer1M: 0.10 },
 
@@ -95,6 +102,20 @@ export function resolveModelPricing(modelName: string): ModelPricingRule {
 }
 
 export const getModelPricing = resolveModelPricing;
+
+/**
+ * Checks whether a model identifier is explicitly registered or recognizable in the pricing registry.
+ */
+export function hasModelPricing(modelName?: string): boolean {
+  if (!modelName || typeof modelName !== 'string') return false;
+  const normalized = modelName.trim().toLowerCase();
+  if (normalized.includes('ollama') || normalized.startsWith('local/')) return true;
+  if (MODEL_PRICING_TABLE[normalized]) return true;
+  for (const key of Object.keys(MODEL_PRICING_TABLE)) {
+    if (normalized.includes(key) || key.includes(normalized)) return true;
+  }
+  return false;
+}
 
 /**
  * Estimates the token cost in USD based on model pricing rules.

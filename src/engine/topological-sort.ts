@@ -17,6 +17,8 @@ export interface TopologicalSortResult {
   sortedNodeIds: string[];
   executionLayers: string[][];
   cycleNodeIds: string[];
+  unconvergedNodeIds?: string[];
+  blockedDownstreamNodeIds?: string[];
 }
 
 /**
@@ -79,13 +81,29 @@ export function topologicalSort(graph: GraphInput): TopologicalSortResult {
   }
 
   const hasCycle = visitedCount !== activeNodes.length;
+  const unconvergedNodeIds: string[] = [];
   const cycleNodeIds: string[] = [];
+  const blockedDownstreamNodeIds: string[] = [];
 
   if (hasCycle) {
     for (const [nodeId, degree] of inDegree.entries()) {
       if (degree > 0) {
-        cycleNodeIds.push(nodeId);
+        unconvergedNodeIds.push(nodeId);
       }
+    }
+
+    // Tarjan SCC on unconverged subgraph to extract the exact cycle nodes
+    const exactCycleNodes = findExactCycleNodes(unconvergedNodeIds, adjacencyList);
+    if (exactCycleNodes.length > 0) {
+      const exactSet = new Set(exactCycleNodes);
+      cycleNodeIds.push(...exactCycleNodes);
+      for (const id of unconvergedNodeIds) {
+        if (!exactSet.has(id)) {
+          blockedDownstreamNodeIds.push(id);
+        }
+      }
+    } else {
+      cycleNodeIds.push(...unconvergedNodeIds);
     }
   }
 
@@ -94,7 +112,109 @@ export function topologicalSort(graph: GraphInput): TopologicalSortResult {
     sortedNodeIds,
     executionLayers,
     cycleNodeIds,
+    unconvergedNodeIds: hasCycle ? unconvergedNodeIds : undefined,
+    blockedDownstreamNodeIds: hasCycle ? blockedDownstreamNodeIds : undefined,
   };
+}
+
+/**
+ * Tarjan's Strongly Connected Components (SCC) algorithm (iterative implementation).
+ * Uses an explicit DFS call stack to avoid JavaScript call-stack overflow on deep graphs.
+ * Isolates exact circular dependency cycles (SCCs with > 1 node or self-loops),
+ * mathematically distinguishing real cycle participants from innocent downstream cascaded nodes.
+ */
+function findExactCycleNodes(candidateNodeIds: string[], adj: Map<string, string[]>): string[] {
+  const nodeSet = new Set(candidateNodeIds);
+  let index = 0;
+  const indices = new Map<string, number>();
+  const lowlink = new Map<string, number>();
+  const onStack = new Set<string>();
+  const tarjanStack: string[] = [];
+  const cycleNodes = new Set<string>();
+
+  interface DfsFrame {
+    node: string;
+    neighborIdx: number;
+    neighbors: string[];
+  }
+
+  for (const rootNode of candidateNodeIds) {
+    if (indices.has(rootNode)) continue;
+
+    indices.set(rootNode, index);
+    lowlink.set(rootNode, index);
+    index++;
+    tarjanStack.push(rootNode);
+    onStack.add(rootNode);
+
+    const callStack: DfsFrame[] = [
+      {
+        node: rootNode,
+        neighborIdx: 0,
+        neighbors: (adj.get(rootNode) || []).filter((w) => nodeSet.has(w)),
+      },
+    ];
+
+    while (callStack.length > 0) {
+      const top = callStack[callStack.length - 1];
+      if (!top) break;
+      const u = top.node;
+
+      if (top.neighborIdx < top.neighbors.length) {
+        const w = top.neighbors[top.neighborIdx];
+        top.neighborIdx++;
+        if (!w) continue;
+
+        if (!indices.has(w)) {
+          indices.set(w, index);
+          lowlink.set(w, index);
+          index++;
+          tarjanStack.push(w);
+          onStack.add(w);
+
+          callStack.push({
+            node: w,
+            neighborIdx: 0,
+            neighbors: (adj.get(w) || []).filter((nextW) => nodeSet.has(nextW)),
+          });
+        } else if (onStack.has(w)) {
+          lowlink.set(u, Math.min(lowlink.get(u)!, indices.get(w)!));
+        }
+      } else {
+        callStack.pop();
+
+        if (callStack.length > 0) {
+          const parentNode = callStack[callStack.length - 1]?.node;
+          if (parentNode) {
+            lowlink.set(parentNode, Math.min(lowlink.get(parentNode)!, lowlink.get(u)!));
+          }
+        }
+
+        if (lowlink.get(u) === indices.get(u)) {
+          const scc: string[] = [];
+          let popped: string | undefined;
+          do {
+            popped = tarjanStack.pop();
+            if (popped) {
+              onStack.delete(popped);
+              scc.push(popped);
+            }
+          } while (popped && popped !== u);
+
+          if (scc.length > 1) {
+            for (const n of scc) cycleNodes.add(n);
+          } else if (scc.length === 1) {
+            const selfNeighbors = adj.get(u) || [];
+            if (selfNeighbors.includes(u)) {
+              cycleNodes.add(u);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return Array.from(cycleNodes);
 }
 
 /**
@@ -156,29 +276,7 @@ export function validateGraphTopology(graph: GraphInput): GraphValidationResult 
   }
 
   // 3. Build upstream ancestor reachability map to detect Ghost Edges
-  const ancestorsMap = new Map<string, Set<string>>();
-  for (const node of graph.nodes) {
-    ancestorsMap.set(node.id, new Set<string>());
-  }
-  const incomingMap = new Map<string, string[]>();
-  for (const edge of graph.edges) {
-    if (!incomingMap.has(edge.target)) incomingMap.set(edge.target, []);
-    incomingMap.get(edge.target)!.push(edge.source);
-  }
-  for (const node of graph.nodes) {
-    const visited = ancestorsMap.get(node.id)!;
-    const queue = [...(incomingMap.get(node.id) || [])];
-    while (queue.length > 0) {
-      const parent = queue.shift()!;
-      if (!visited.has(parent)) {
-        visited.add(parent);
-        const grandParents = incomingMap.get(parent) || [];
-        for (const gp of grandParents) {
-          if (!visited.has(gp)) queue.push(gp);
-        }
-      }
-    }
-  }
+  const ancestorsMap = computeAncestorsMap(graph);
 
   const collectStrings = (target: unknown, out: string[]) => {
     if (typeof target === 'string') {
@@ -231,28 +329,41 @@ export function validateGraphTopology(graph: GraphInput): GraphValidationResult 
 }
 
 /**
- * Computes all ancestor nodes (immediate and transitive parents) for a given target node.
+ * Builds the complete upstream reachability ancestor map for all nodes in single-pass BFS.
  */
-export function computeAncestors(targetNodeId: string, graph: GraphInput): Set<string> {
+export function computeAncestorsMap(graph: GraphInput): Map<string, Set<string>> {
+  const ancestorsMap = new Map<string, Set<string>>();
+  for (const node of graph.nodes) {
+    ancestorsMap.set(node.id, new Set<string>());
+  }
   const incomingMap = new Map<string, string[]>();
   for (const edge of graph.edges) {
     if (!incomingMap.has(edge.target)) incomingMap.set(edge.target, []);
     incomingMap.get(edge.target)!.push(edge.source);
   }
-
-  const ancestors = new Set<string>();
-  const queue = [...(incomingMap.get(targetNodeId) || [])];
-  while (queue.length > 0) {
-    const parent = queue.shift()!;
-    if (!ancestors.has(parent)) {
-      ancestors.add(parent);
-      const grandParents = incomingMap.get(parent) || [];
-      for (const gp of grandParents) {
-        if (!ancestors.has(gp)) queue.push(gp);
+  for (const node of graph.nodes) {
+    const visited = ancestorsMap.get(node.id)!;
+    const queue = [...(incomingMap.get(node.id) || [])];
+    while (queue.length > 0) {
+      const parent = queue.shift()!;
+      if (!visited.has(parent)) {
+        visited.add(parent);
+        const grandParents = incomingMap.get(parent) || [];
+        for (const gp of grandParents) {
+          if (!visited.has(gp)) queue.push(gp);
+        }
       }
     }
   }
-  return ancestors;
+  return ancestorsMap;
+}
+
+/**
+ * Computes all ancestor nodes (immediate and transitive parents) for a given target node.
+ */
+export function computeAncestors(targetNodeId: string, graph: GraphInput): Set<string> {
+  const map = computeAncestorsMap(graph);
+  return map.get(targetNodeId) || new Set<string>();
 }
 
 /**

@@ -398,6 +398,11 @@ export interface WorkflowRunOptions {
     knowledgeAdapter?: unknown;
     subWorkflows?: Record<string, GraphInput>;
     strictSubWorkflow?: boolean;
+    scenarioResolver?: (scenarioId: string) => {
+      id?: string;
+      defaultResponses?: string[];
+      defaultFinishReasons?: string[];
+    } | undefined;
     [key: string]: unknown;
   };
   /** ID of the workflow being executed, used for audit telemetry. */

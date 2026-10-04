@@ -19,11 +19,13 @@ import assert from 'node:assert/strict';
 import { z } from 'zod';
 import {
   calculateCostSavingsRatio,
-  detectSemanticConflict,
   executeWithModelRouting,
   type ModelRoutingCallerRequest,
 } from '../src/engine/model-router.ts';
-import { defaultTicketSemanticGate } from '../src/presets/ticket-semantic-gate.ts';
+import {
+  defaultTicketSemanticGate,
+  detectTicketSemanticConflict as detectSemanticConflict,
+} from '../src/presets/ticket-semantic-gate.ts';
 import type { LLMExecutionOutput } from '../src/engine/llm-client.ts';
 
 describe('Module 3: Deterministic Model Routing & Cascade State Machine', () => {
@@ -34,7 +36,7 @@ describe('Module 3: Deterministic Model Routing & Cascade State Machine', () => 
     it('calculates 87.5% cost savings between 7B ($0.05) and 72B ($0.40)', () => {
       const ratio = calculateCostSavingsRatio(
         'Qwen/Qwen2.5-7B-Instruct',
-        'deepseek-ai/DeepSeek-V3',
+        'Qwen/Qwen2.5-72B-Instruct',
       );
       assert.equal(ratio, (0.40 - 0.05) / 0.40); // 0.875
     });
@@ -43,6 +45,14 @@ describe('Module 3: Deterministic Model Routing & Cascade State Machine', () => 
       const ratio = calculateCostSavingsRatio(
         'deepseek-ai/DeepSeek-V3',
         'deepseek-ai/DeepSeek-V3',
+      );
+      assert.equal(ratio, 0);
+    });
+
+    it('returns 0% for unrecognized or unregistered models without inventing ratios', () => {
+      const ratio = calculateCostSavingsRatio(
+        'custom-unregistered-model',
+        'gemini-2.5-pro',
       );
       assert.equal(ratio, 0);
     });
@@ -160,7 +170,7 @@ describe('Module 3: Deterministic Model Routing & Cascade State Machine', () => 
       assert.equal(res.cheapAttempts, 1);
       assert.equal(res.strongAttempts, 0);
       assert.equal(res.totalAttempts, 1);
-      assert.equal(res.costSavingsRatio, 0.875);
+      assert.equal(res.costSavingsRatio, (0.28 - 0.05) / 0.28);
       assert.equal(calls.length, 1);
       assert.equal(calls[0]!.targetModel, 'Qwen/Qwen2.5-7B-Instruct');
       assert.equal(calls[0]!.modelTier, 'tier1_cheap');

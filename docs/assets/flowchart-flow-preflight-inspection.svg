@@ -1,0 +1,202 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" width="960" height="720" style="background: transparent; display: block; max-width: 100%; height: auto;">
+  <defs>
+    <!-- Dot Grid Pattern -->
+    <pattern id="dot-grid-pf" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2.5" cy="2.5" r="1.2" fill="#D4D4D8" />
+    </pattern>
+
+    <!-- Arrow Markers -->
+    <marker id="arrow-blk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000" stroke="#000000" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#10B981" stroke="#000000" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#F59E0B" stroke="#000000" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#EF4444" stroke="#000000" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563EB" stroke="#000000" stroke-width="1"/>
+    </marker>
+
+    <style>
+      .font-mono { font-family: 'Space Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'PingFang SC', monospace; }
+      .font-heading { font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif; }
+      .bold { font-weight: 700; }
+      .bolder { font-weight: 800; }
+      .black { font-weight: 900; }
+      .border-main { stroke: #000000; stroke-width: 2.5; stroke-linecap: square; stroke-linejoin: miter; }
+      .border-card { stroke: #000000; stroke-width: 2; }
+      .border-thin { stroke: #000000; stroke-width: 1.5; }
+      .border-dashed { stroke: #000000; stroke-width: 1.5; stroke-dasharray: 4 3; }
+      .border-dashed-red { stroke: #EF4444; stroke-width: 2; stroke-dasharray: 4 3; }
+    </style>
+  </defs>
+
+  <!-- Outer Shadow & Background Frame -->
+  <rect x="14" y="14" width="932" height="692" rx="8" fill="#000000" />
+  <rect x="10" y="10" width="932" height="692" rx="8" fill="#FAF9F5" class="border-main" />
+  <rect x="14" y="14" width="924" height="684" rx="6" fill="url(#dot-grid-pf)" />
+
+  <!-- ================= Top Header Bar ================= -->
+  <rect x="28" y="26" width="896" height="54" rx="6" fill="#000000" />
+  <rect x="25" y="23" width="896" height="54" rx="6" fill="#FFFFFF" class="border-card" />
+
+  <rect x="36" y="32" width="210" height="34" rx="4" fill="#7FFF00" class="border-thin" />
+  <text x="141" y="54" class="font-mono bolder" font-size="12" fill="#000000" text-anchor="middle" letter-spacing="1">PATCHCAT // FLOW PREFLIGHT</text>
+
+  <text x="262" y="55" class="font-heading black" font-size="14.5" fill="#000000" letter-spacing="0.5">STATIC AST LINTING, GHOST DEPENDENCIES &amp; DRY-RUN SIMULATION</text>
+  <text x="895" y="54" class="font-mono bold" font-size="11" fill="#71717A" text-anchor="end">GRAPH INTEGRITY &amp; ZERO-TOKEN ENGINE</text>
+
+  <!-- ================= Column 1: Static DAG & AST Linting (Width: 280) ================= -->
+  <g transform="translate(25, 92)">
+    <rect x="3" y="3" width="280" height="465" rx="6" fill="#000000" />
+    <rect x="0" y="0" width="280" height="465" rx="6" fill="#FFFFFF" class="border-card" />
+
+    <rect x="12" y="12" width="256" height="30" rx="4" fill="#EDE9FE" class="border-thin" />
+    <text x="140" y="32" class="font-mono bolder" font-size="11" fill="#6D28D9" text-anchor="middle">1. TOPOLOGY &amp; STATIC AST LINT</text>
+
+    <!-- Step 1: Kahn Cycle Check -->
+    <rect x="14" y="54" width="252" height="84" rx="4" fill="#F8FAFC" class="border-thin" />
+    <text x="24" y="74" class="font-mono bold" font-size="11" fill="#000000">Kahn Topological In-Degree</text>
+    <text x="24" y="93" class="font-mono" font-size="9.5" fill="#64748B">inDegree(v) = count(incoming)</text>
+    <text x="24" y="109" class="font-mono bold" font-size="9.5" fill="#EF4444">hasCycle: visited &lt; nodes.length</text>
+    <text x="24" y="125" class="font-mono" font-size="9" fill="#0284C7">→ Highlights cycle nodes &amp; edges</text>
+
+    <!-- Step 2: Orphan Edge Audit -->
+    <rect x="14" y="150" width="252" height="74" rx="4" fill="#F8FAFC" class="border-thin" />
+    <text x="24" y="170" class="font-mono bold" font-size="11" fill="#000000">Orphan Edge Detection</text>
+    <text x="24" y="189" class="font-mono" font-size="9.5" fill="#64748B">!nodeIds.has(e.source || e.target)</text>
+    <text x="24" y="207" class="font-mono bold" font-size="9.5" fill="#D97706">Prune dangling wire connections</text>
+
+    <!-- Step 3: Condition Branch Coverage -->
+    <rect x="14" y="236" width="252" height="84" rx="4" fill="#FEF3C7" class="border-thin" />
+    <text x="24" y="256" class="font-mono bold" font-size="11" fill="#B45309">Condition Handle Coverage</text>
+    <text x="24" y="275" class="font-mono" font-size="9.5" fill="#78350F">Branches: if_true, else, rule_N</text>
+    <text x="24" y="291" class="font-mono" font-size="9" fill="#92400E">connectedHandles ∩ expectedHandles</text>
+    <text x="24" y="307" class="font-mono bold" font-size="9" fill="#B45309">Warning: Unconnected branch dead-ends</text>
+
+    <!-- Step 4: Visual Pinpoint Feedback -->
+    <rect x="14" y="332" width="252" height="118" rx="4" fill="#FEE2E2" class="border-thin" />
+    <text x="24" y="352" class="font-mono bold" font-size="11" fill="#B91C1C">Canvas Error Telemetry</text>
+    <text x="24" y="371" class="font-mono" font-size="9.5" fill="#7F1D1D">• Animated red stroke on cyclic paths</text>
+    <text x="24" y="388" class="font-mono" font-size="9.5" fill="#7F1D1D">• Node status badge: 'error' (Deadlock)</text>
+    <text x="24" y="405" class="font-mono" font-size="9.5" fill="#7F1D1D">• Alert notification with clickable chips</text>
+    <text x="24" y="425" class="font-mono bold" font-size="9" fill="#991B1B">Blocks execution before network dispatch</text>
+  </g>
+
+  <!-- Flow Arrow 1 -> 2 -->
+  <path d="M 308 320 L 332 320" stroke="#000000" stroke-width="2.5" marker-end="url(#arrow-blk)"/>
+
+  <!-- ================= Column 2: Ghost Variable Dependency Analysis (Width: 300) ================= -->
+  <g transform="translate(337, 92)">
+    <rect x="3" y="3" width="300" height="465" rx="6" fill="#000000" />
+    <rect x="0" y="0" width="300" height="465" rx="6" fill="#FFFFFF" class="border-card" />
+
+    <rect x="12" y="12" width="276" height="30" rx="4" fill="#E0F2FE" class="border-thin" />
+    <text x="150" y="32" class="font-mono bolder" font-size="11" fill="#0369A1" text-anchor="middle">2. GHOST DEPENDENCY ANALYSIS</text>
+
+    <!-- Step 1: Mustache Extraction -->
+    <rect x="14" y="54" width="272" height="84" rx="4" fill="#F0F9FF" class="border-thin" />
+    <text x="24" y="74" class="font-mono bold" font-size="11" fill="#000000">Mustache Reference Parser</text>
+    <text x="24" y="93" class="font-mono" font-size="9.5" fill="#0284C7">extractVariableReferences(str)</text>
+    <text x="24" y="109" class="font-mono" font-size="9.5" fill="#475569">Scans: {{nodeId.output.property}}</text>
+    <text x="24" y="125" class="font-mono bold" font-size="9" fill="#0369A1">Target: inputs &amp; prompt config strings</text>
+
+    <!-- Step 2: Transitive Ancestor Reachability -->
+    <rect x="14" y="150" width="272" height="114" rx="4" fill="#F8FAFC" class="border-thin" />
+    <text x="24" y="170" class="font-mono bold" font-size="11" fill="#000000">Transitive Ancestor BFS Graph</text>
+    <text x="24" y="189" class="font-mono" font-size="9.5" fill="#475569">ancestorsMap = computeAncestors(v)</text>
+    <text x="24" y="207" class="font-mono" font-size="9" fill="#64748B">Queue reverse incoming edges: parent → gp</text>
+    <text x="24" y="225" class="font-mono bold" font-size="9.5" fill="#2563EB">Ensures topological execution order</text>
+    <text x="24" y="245" class="font-mono" font-size="9" fill="#475569">refId ∈ ancestorsMap[nodeId] ? Valid : GHOST</text>
+
+    <!-- Step 3: Ghost Dependency Interception -->
+    <rect x="14" y="276" width="272" height="174" rx="4" fill="#FFFBEB" class="border-thin" />
+    <text x="24" y="296" class="font-mono bold" font-size="11" fill="#B45309">Ghost Dependency Interception</text>
+    
+    <rect x="22" y="308" width="256" height="52" rx="4" fill="#FEF3C7" class="border-dashed" />
+    <text x="30" y="325" class="font-mono bold" font-size="9.5" fill="#B45309">Case: Node B references {{A.output}}</text>
+    <text x="30" y="342" class="font-mono" font-size="9" fill="#92400E">BUT NO physical edge A → B exists on canvas</text>
+
+    <text x="24" y="378" class="font-mono bold" font-size="9.5" fill="#DC2626">The Fatal Race Condition:</text>
+    <text x="24" y="394" class="font-mono" font-size="9" fill="#78350F">• Node B may execute BEFORE Node A finishes</text>
+    <text x="24" y="410" class="font-mono" font-size="9" fill="#78350F">• Value evaluates to 'undefined' silently</text>
+    <text x="24" y="432" class="font-mono bold" font-size="9.5" fill="#047857">✓ Static Lint forces explicit wiring</text>
+  </g>
+
+  <!-- Flow Arrow 2 -> 3 -->
+  <path d="M 640 320 L 664 320" stroke="#000000" stroke-width="2.5" marker-end="url(#arrow-blk)"/>
+
+  <!-- ================= Column 3: Preflight Gate & Dry-Run Engine (Width: 265) ================= -->
+  <g transform="translate(670, 92)">
+    <rect x="3" y="3" width="250" height="465" rx="6" fill="#000000" />
+    <rect x="0" y="0" width="250" height="465" rx="6" fill="#FFFFFF" class="border-card" />
+
+    <rect x="12" y="12" width="226" height="30" rx="4" fill="#DCFCE7" class="border-thin" />
+    <text x="125" y="32" class="font-mono bolder" font-size="11" fill="#15803D" text-anchor="middle">3. PREFLIGHT &amp; DRY-RUN</text>
+
+    <!-- Key & Provider Check -->
+    <rect x="14" y="54" width="222" height="74" rx="4" fill="#F8FAFC" class="border-thin" />
+    <text x="24" y="74" class="font-mono bold" font-size="11" fill="#000000">Provider Credential Gate</text>
+    <text x="24" y="93" class="font-mono" font-size="9.5" fill="#475569">hasLlmNodes &amp;&amp; !hasActiveKey</text>
+    <text x="24" y="111" class="font-mono bold" font-size="9.5" fill="#D97706">Intercepts 401 Unauthorized early</text>
+
+    <!-- Dual Option Modal -->
+    <rect x="14" y="138" width="222" height="114" rx="4" fill="#F0FDF4" class="border-thin" />
+    <text x="24" y="158" class="font-mono bold" font-size="10.5" fill="#166534">Preflight Intercept Modal</text>
+    
+    <rect x="22" y="168" width="206" height="32" rx="3" fill="#3B82F6" />
+    <text x="125" y="188" class="font-mono bold" font-size="9" fill="#FFFFFF" text-anchor="middle">[🔑 Bind API Key]</text>
+
+    <rect x="22" y="208" width="206" height="32" rx="3" fill="#F1F5F9" class="border-thin" />
+    <text x="125" y="228" class="font-mono bold" font-size="9" fill="#0F172A" text-anchor="middle">[🛡️ Validate Flow (Skip LLM)]</text>
+
+    <!-- Intelligent Mock Engine -->
+    <rect x="14" y="262" width="222" height="188" rx="4" fill="#F5F3FF" class="border-thin" />
+    <text x="24" y="282" class="font-mono bold" font-size="10.5" fill="#581C87">Intelligent Dry-Run Mock</text>
+    <text x="24" y="300" class="font-mono" font-size="9" fill="#6B21A8">options.skipLLM === true</text>
+    
+    <text x="24" y="318" class="font-mono bold" font-size="9" fill="#3B82F6">1. Intent/JSON Schema Nodes:</text>
+    <text x="24" y="332" class="font-mono" font-size="8.5" fill="#475569">{"intent": "logistics_expedite",</text>
+    <text x="24" y="344" class="font-mono" font-size="8.5" fill="#475569"> "urgency": 4, "requires_human": true}</text>
+    
+    <text x="24" y="364" class="font-mono bold" font-size="9" fill="#059669">2. Downstream JavaScript Code:</text>
+    <text x="24" y="378" class="font-mono" font-size="8.5" fill="#475569">Parses JSON &amp; routes branches</text>
+
+    <text x="24" y="398" class="font-mono bold" font-size="9" fill="#D97706">3. HTTP Mock Endpoints:</text>
+    <text x="24" y="412" class="font-mono" font-size="8.5" fill="#475569">Simulates 200 OK without egress</text>
+
+    <text x="24" y="435" class="font-mono bold" font-size="9" fill="#15803D">✓ 0 Token / 0 ms Cloud Cost</text>
+  </g>
+
+  <!-- ================= Bottom Bar: Architectural Trade-Offs (Height: 120) ================= -->
+  <g transform="translate(25, 570)">
+    <rect x="3" y="3" width="895" height="114" rx="6" fill="#000000" />
+    <rect x="0" y="0" width="895" height="114" rx="6" fill="#FFFFFF" class="border-card" />
+
+    <!-- Left Box: Static Inspection Guarantee -->
+    <rect x="14" y="12" width="270" height="90" rx="4" fill="#F8FAFC" class="border-thin" />
+    <text x="24" y="32" class="font-mono bold" font-size="11" fill="#0F172A">Static Inspection Guarantee</text>
+    <text x="24" y="50" class="font-mono" font-size="9.5" fill="#475569">• Time Complexity: O(V + E) Kahn AST</text>
+    <text x="24" y="66" class="font-mono" font-size="9.5" fill="#475569">• Zero network roundtrips required</text>
+    <text x="24" y="82" class="font-mono bold" font-size="9.5" fill="#059669">• 100% Deadlock &amp; Ghost Edge Interception</text>
+
+    <!-- Center Box: Dry-Run Behavioral Boundary -->
+    <rect x="296" y="12" width="300" height="90" rx="4" fill="#FFFBEB" class="border-thin" />
+    <text x="308" y="32" class="font-mono bold" font-size="11" fill="#B45309">Dry-Run Behavioral Boundary</text>
+    <text x="308" y="50" class="font-mono" font-size="9.5" fill="#78350F">• Verifies data pipeline &amp; branch control</text>
+    <text x="308" y="66" class="font-mono bold" font-size="9.5" fill="#DC2626">• Cannot evaluate semantic output quality</text>
+    <text x="308" y="82" class="font-mono" font-size="9.5" fill="#78350F">• Schema contract mocks replace live inference</text>
+
+    <!-- Right Box: Production Trade-Off -->
+    <rect x="608" y="12" width="274" height="90" rx="4" fill="#F1F5F9" class="border-thin" />
+    <text x="620" y="32" class="font-mono bold" font-size="11" fill="#334155">Onboarding &amp; Ergonomics</text>
+    <text x="620" y="50" class="font-mono" font-size="9.5" fill="#475569">• Zero-friction template inspection</text>
+    <text x="620" y="66" class="font-mono" font-size="9.5" fill="#475569">• Eliminates late-stage 401 token waste</text>
+    <text x="620" y="82" class="font-mono bold" font-size="9.5" fill="#2563EB">• Deterministic feedback before run</text>
+  </g>
+</svg>

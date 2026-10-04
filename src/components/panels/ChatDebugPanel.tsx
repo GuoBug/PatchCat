@@ -33,6 +33,7 @@ import {
   type MemoryMessage,
 } from '../../services/storage/session-storage.ts';
 import { BrowserWorkflowEngine } from '../../engine/browser-engine.ts';
+import { getTestScenario } from '../../presets/self-healing-scenarios.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
 import { nanoid } from 'nanoid';
 
@@ -455,6 +456,9 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
       const graphInput = { nodes, edges };
       const eventGen = engineRef.current.executeWorkflow(graphInput, {
         inputs: inputsBag,
+        context: {
+          scenarioResolver: getTestScenario,
+        },
       });
 
       for await (const event of eventGen) {

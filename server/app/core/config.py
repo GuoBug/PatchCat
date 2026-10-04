@@ -3,9 +3,25 @@ PatchCat Server Settings & Configuration Management
 Using Pydantic v2 BaseSettings
 """
 
+import json
+from pathlib import Path
 from typing import List, Union
 from pydantic import AnyHttpUrl, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _resolve_app_version() -> str:
+    try:
+        # server/app/core/config.py -> parents[3] is repository root containing package.json
+        pkg_file = Path(__file__).resolve().parents[3] / "package.json"
+        if pkg_file.is_file():
+            with open(pkg_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict) and "version" in data:
+                    return str(data["version"])
+    except Exception:
+        pass
+    return "0.4.14"
 
 
 class Settings(BaseSettings):
@@ -17,7 +33,7 @@ class Settings(BaseSettings):
     )
 
     APP_NAME: str = "PatchCat Backend"
-    APP_VERSION: str = "0.4.11"
+    APP_VERSION: str = _resolve_app_version()
     APP_ENV: str = "development"
     DEBUG: bool = False
     API_V1_STR: str = "/api/v1"

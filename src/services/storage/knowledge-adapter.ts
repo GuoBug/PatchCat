@@ -198,7 +198,7 @@ function getSeedData() {
       doc_id: SEED_DOC_ID,
       position: 3,
       content:
-        '【RFC-101 规范标准 | 第3章 拓扑环路死循环死锁检测与防御机制 (Cycle Deadlock Pre-flight Interception)】\n在工作流配置过程中，若由于人工误连线或多分支交叉回环形成有向环（Cycle，如 A→B→C→A），环内所有节点的入度将永不归零（I(v) ≥ 1），从而导致就绪队列过早耗尽且未达终止态，引发调度引擎永久挂死（Deadlock）。PatchCat 对标 Apache Airflow DAG.validate() 构建了预检（Pre-flight）与运行时双重阻断体系：\n1. Kahn 数学收敛性不变式判定：在正式派发任何大模型调用或网络请求前，调度器在只读内存中执行拓扑遍历预检。根据图论充要条件，当且仅当拓扑遍历的节点总数 |V_visited| 等于画布节点总数 |V| 时，该图为严格有向无环图（DAG）。若 |V_visited| < |V|，在数学图论上严格证明图谱中存在闭合死循环回路；\n2. 最小闭环节点集合提取（Cycle Nodes Isolation）：引擎逆向计算未收敛节点差集 V_cycle = V \\ V_visited，精准圈定构成死锁闭环的所有节点清单；\n3. 前端画布联动熔断告警：预检失败时，引擎硬性拦截执行并抛出包含涉环节点明细的 DAG_CYCLE_DETECTED 异常，同时驱动画布将涉环节点与连接边渲染为琥珀红高亮警示，从根源杜绝死循环对主线程与服务器计算资源的无效耗尽。',
+        '【RFC-101 规范标准 | 第3章 拓扑环路死循环死锁检测与防御机制 (Cycle Deadlock Pre-flight Interception)】\n在工作流配置过程中，若由于人工误连线或多分支交叉回环形成有向环（Cycle，如 A→B→C→A），环内所有节点的入度将永不归零（I(v) ≥ 1），从而导致就绪队列过早耗尽且未达终止态，引发调度引擎永久挂死（Deadlock）。PatchCat 对标 Apache Airflow DAG.validate() 构建了预检（Pre-flight）与运行时双重阻断体系：\n1. Kahn 数学收敛性不变式判定：在正式派发任何大模型调用或网络请求前，调度器在只读内存中执行拓扑遍历预检。根据图论充要条件，当且仅当拓扑遍历的节点总数 |V_visited| 等于画布节点总数 |V| 时，该图为严格有向无环图（DAG）。若 |V_visited| < |V|，在数学图论上严格证明图谱中存在闭合死循环回路；\n2. 最小闭环节点集合提取（Cycle Nodes Isolation）：引擎在 Kahn 算法未收敛差集（V_unconverged = V \\ V_visited）基础上，结合强连通分量（Tarjan SCC）精准圈定构成死锁闭环的核心节点清单（V_cycle），并将受阻的下游依赖节点清晰分离；\n3. 前端画布联动熔断告警：预检失败时，引擎硬性拦截执行并抛出包含涉环节点明细的 DAG_CYCLE_DETECTED 异常，同时驱动画布将涉环节点与连接边渲染为琥珀红高亮警示，从根源杜绝死循环对主线程与服务器计算资源的无效耗尽。',
       token_count: 280,
       hit_count: 42,
       is_active: true,

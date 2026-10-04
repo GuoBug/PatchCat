@@ -66,6 +66,8 @@ export class TicketSemanticConflictGate implements ISemanticConflictGate {
           detectedActionTerms,
           directive:
             '[业务动作优先权消歧指令 / Action Precedence Disambiguation Directive]\n系统检测到工单包含强烈的退款退货诉求，而上一轮经济模型受商品瑕疵细节误导。请务必以用户最终诉求动作作为第一判据，优先归类为 refund！',
+          errorPath: 'category',
+          violatedRule: '核心诉求优先权 (Action Precedence)',
         };
       }
     }

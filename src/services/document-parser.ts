@@ -9,8 +9,6 @@
  *     binary streams (%PDF), or unreadable scans.
  */
 
-import { extractText } from 'unpdf';
-
 export interface ParseDocumentResult {
   text: string;
   charCount: number;
@@ -107,6 +105,7 @@ export async function parseDocumentFile(
       }
 
       const pdfData = new Uint8Array(arrayBuffer);
+      const { extractText } = await import('unpdf');
       const res = await extractText(pdfData, { mergePages: true });
 
       totalPages = res.totalPages;

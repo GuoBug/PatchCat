@@ -17,7 +17,6 @@ import { TicketSemanticSchema } from '../src/presets/self-healing-scenarios.ts';
 import { defaultTicketSemanticGate } from '../src/presets/ticket-semantic-gate.ts';
 import {
   executeWithModelRouting,
-  MODEL_RELATIVE_PRICING,
   type ModelRoutingCallerRequest,
   type ModelRoutingExecutionResult,
 } from '../src/engine/model-router.ts';
@@ -646,9 +645,12 @@ async function main() {
   let f7AnalysisText = '';
   if (gateTrippedCases.length === 0) {
     const isBothRefund = b27?.actualCategory === 'refund' && c27?.actualCategory === 'refund';
+    const c27HitText = c27?.categoryCorrect
+      ? `最终分类命中 \`${c27?.actualCategory}\``
+      : `输出为 \`${c27?.actualCategory}\`（分类仍未命中预期）`;
     const c27Explanation = isBothRefund
       ? `两组均准确判定为 \`refund\`，未受假货瑕疵细节掩盖核心诉求。由于基线已有提示词动作优先权规则强化，两组结果持平，数据表现为稳固承接，未发生掩盖亦未触发门禁。`
-      : `对照组因廉价自愈耗尽未产出有效分类（\`${b27?.actualCategory || 'null'}\`），级联组经强模型升级（由 \`${c27?.routedModel}\` 接管）准确命中核心诉求 \`${c27?.actualCategory}\`，突破了问题描述词干扰。`;
+      : `必须严谨指出：对照组在 #27 上的真实病理是**廉价自愈耗尽导致的契约硬崩溃**（未能输出合法 JSON），而非狭义上输出合法 Schema 但被描述词遮蔽的“纯语义 F7”。级联组经强模型升级（由 \`${c27?.routedModel}\` 接管，原因: \`${c27?.escalationReason}\`）后${c27HitText}。因门禁未触发且升级原因为廉价预算耗尽，**不能据此断言语义消歧突破**；该表观指标由 #27 单例驱动，不具统计普适性。`;
 
     f7AnalysisText = `- **门禁触发状态**：本轮评测中 \`semantic_conflict_gate\` 动作优先权门禁**未被触发**（本轮升级原因全部分布于 \`cheap_budget_exhausted\`）。\n- **Case #27 与 #30 实测归因**：\n  - **Case #27**：对照组分类为 \`${b27?.actualCategory || 'null'}\`，级联组分类为 \`${c27?.actualCategory}\`（由 \`${c27?.routedModel}\` 接管，原因: \`${c27?.escalationReason}\`）。${c27Explanation}\n  - **Case #30**：对照组与级联组分类均为 \`refund\`，在 Tier 1 廉价模型上直接闭环，两组均准确判定。`;
   } else {
@@ -719,7 +721,7 @@ async function main() {
     : `${f7Delta >= 0 ? '+' : ''}${f7Delta.toFixed(1)}%`;
   const f7AuditText = f7Delta === 0
     ? `两臂均 100% 穿透 (门禁未触发)`
-    : `级联强模型辅助破除瑕疵词干扰，穿透诉求词 (门禁未触发)`;
+    : `单例(#27)契约自愈救回，门禁未触发 (不具统计普适性)`;
 
   const discordantAuditLine = discordantCases.length > 0
     ? `共有 ${discordantCases.length} 例（${discordantCases.map((c) => '#' + c.caseId.toString().padStart(2, '0')).join(', ')}）在两组中输出不一致。`
@@ -729,6 +731,13 @@ async function main() {
     ? `表观增益中存在未升级用例的采样残余抖动（${noiseGainStr} 改善，${noiseLossStr} 恶化），在解读全量增益时必须予以剔除和审慎归因。`
     : `表观增益与真实级联增益完全吻合（0 例采样噪声，0 例反向抖动），有力印证了初始 Schema 契约注入对齐后消除系统性假性偏差的效果。`;
 
+  const totalCostUSD = baselineSummary.results
+    .concat(cascadeSummary.results)
+    .reduce((sum, r) => sum + (r.costUSD || 0), 0);
+  const billingSummaryText = totalCostUSD > 0
+    ? `$${totalCostUSD.toFixed(4)} USD`
+    : '$0.00 / ¥0.00 (完全免费零支出)';
+
   // Generate Formal Evaluation Report
   const reportContent = `# M3 模型级联路由与状态机实测评估报告（多模型轮换池实测版）
 
@@ -737,18 +746,18 @@ async function main() {
 > **实验模型配比**：
 > - **Tier 1 (廉价层)**：\`${TIER1_FREE_MODEL}\`（SiliconFlow 免费通道，\`temperature: 0.0\` 低抖动基线）
 > - **Tier 2 (强模型多候选轮换池)**：\`${TIER2_FREE_MODELS.join(' -> ')}\`（Google AI Studio 免费额度）
-> - **账单费用总计**：**$0.00 / ¥0.00 (完全免费零支出)**
+> - **账单费用总计**：**${billingSummaryText}**
 
 ---
 
 ## 核心结论先行与真实归因 (Executive Summary)
 
-> 🎯 **受处理子集（强模型升级队列，n=${escalatedResults.length}）真实效果：${treatedGainCases.length} 改善 / ${treatedLossCases.length} 恶化 / ${treatedSameCases.length} 持平**  
+> 🎯 **受处理子集（强模型升级队列，n=${escalatedResults.length}）真实效果：Tier-2 强模型救回率 ${treatedGainCases.length}/${Math.max(1, escalatedResults.length)} (${(treatedGainCases.length / Math.max(1, escalatedResults.length) * 100).toFixed(1)}%)**  
 > 
-> 1. **核心可归因收益（100% 真实级联）**：升级机制成功救回了 **${realGainStr}** 契约硬崩溃${treatedSameCases.length > 0 ? `，并在其余 ${treatedSameCases.length} 例（${treatedSameCases.map((id) => '#' + id.toString().padStart(2, '0')).join(', ')}）上平稳闭环` : '，受处理子集全部实现正向救回'}。
+> 1. **核心可归因收益（100% 真实级联）**：升级机制成功救回了 **${realGainStr}** 契约硬崩溃。由于升级触发条件为廉价预算耗尽且两臂廉价层同构，该子集按构造选自基线失败集，不含结构性“恶化”可能。
 > 2. **全量表观指标去噪声剖析**：全量契约合规率呈现的 ${(cascadeSummary.schemaComplianceRate - baselineSummary.schemaComplianceRate) >= 0 ? '+' : ''}${(cascadeSummary.schemaComplianceRate - baselineSummary.schemaComplianceRate).toFixed(1)}%（${cascadeSummary.schemaCompliantCount - baselineSummary.schemaCompliantCount} 例）表观改善中，${
   unescalatedGainCases.length === 0 && unescalatedLossCases.length === 0
-    ? `**100% 对应受处理子集的真实级联增益（${realGainStr}），未升级用例呈现 0 采样噪声**`
+    ? `**100% 对应受处理子集的真实级联增益（${realGainStr}），未升级用例呈现 0 采样噪声（${deterministicMatches}/${unescalatedResults.length} 逐例完全一致）**`
     : `**真实级联增益占 ${realGainStr}，其余 ${noiseGainStr} 来自未升级用例在托管 API 上的采样残留抖动**。分类准确率中亦包含 ${noiseLossStr} 反向抖动`
 }。
 > 3. **统计显著性检视**：配对 McNemar 检验显示契约合规 $p = ${schemaP}$，分类准确 $p = ${catP}$，均未达 $\\alpha=0.05$ 显著性水平。结论定性为**小样本下方向性积极的架构实证**，不可过度外推为大样本显著效应。
@@ -759,7 +768,7 @@ async function main() {
 
 | 指标项 (Metrics) | 对照组 A (纯廉价模型基线) | 实验组 B (M3 级联路由 Cheap-First) | 变化差值 (Delta) | 统计检验 (McNemar p) / 归因性质 |
 |---|---|---|---|---|
-| **受处理子集胜负比 (Treated Cohort)** | N/A（未施加升级） | **${treatedGainCases.length} 胜 / ${treatedLossCases.length} 负 / ${treatedSameCases.length} 平** | **净胜 +${treatedGainCases.length - treatedLossCases.length} 例** | **100% 真实级联处理归因** |
+| **受处理子集救回率 (Treated Cohort)** | N/A（未施加升级） | **${treatedGainCases.length}/${Math.max(1, escalatedResults.length)} (${(treatedGainCases.length / Math.max(1, escalatedResults.length) * 100).toFixed(1)}%)** | **净救回 ${treatedGainCases.length - treatedLossCases.length} 例** | **100% 真实级联处理归因 (按构造无恶化可能)** |
 | **契约合规率 (Schema Compliance)** | ${baselineSummary.schemaComplianceRate.toFixed(1)}% (${baselineSummary.schemaCompliantCount}/${baselineSummary.totalCases}) | ${cascadeSummary.schemaComplianceRate.toFixed(1)}% (${cascadeSummary.schemaCompliantCount}/${cascadeSummary.totalCases}) | **${(cascadeSummary.schemaComplianceRate - baselineSummary.schemaComplianceRate) >= 0 ? '+' : ''}${(cascadeSummary.schemaComplianceRate - baselineSummary.schemaComplianceRate).toFixed(1)}%** | $p = ${schemaP}$ (${treatedGainCases.length} 真实救回 + ${unescalatedGainCases.length} 采样噪声) |
 | **分类准确率 (Category Accuracy)** | ${baselineSummary.categoryAccuracyRate.toFixed(1)}% (${baselineSummary.categoryCorrectCount}/${baselineSummary.totalCases}) | ${cascadeSummary.categoryAccuracyRate.toFixed(1)}% (${cascadeSummary.categoryCorrectCount}/${cascadeSummary.totalCases}) | **${(cascadeSummary.categoryAccuracyRate - baselineSummary.categoryAccuracyRate) >= 0 ? '+' : ''}${(cascadeSummary.categoryAccuracyRate - baselineSummary.categoryAccuracyRate).toFixed(1)}%** | $p = ${catP}$ (${treatedGainCases.length} 真实 + ${unescalatedGainCases.length} 噪声 - ${unescalatedLossCases.length} 反向) |
 | **单号提取准确率 (OrderId Accuracy)** | ${baselineSummary.orderIdAccuracyRate.toFixed(1)}% (${baselineSummary.orderIdCorrectCount}/${baselineSummary.totalCases}) | ${cascadeSummary.orderIdAccuracyRate.toFixed(1)}% (${cascadeSummary.orderIdCorrectCount}/${cascadeSummary.totalCases}) | **${(cascadeSummary.orderIdAccuracyRate - baselineSummary.orderIdAccuracyRate) >= 0 ? '+' : ''}${(cascadeSummary.orderIdAccuracyRate - baselineSummary.orderIdAccuracyRate).toFixed(1)}%** | $p = ${orderP}$ |
@@ -767,7 +776,7 @@ async function main() {
 | **廉价模型闭环率 (Cheap Closure)** | ${baselineSummary.cheapClosureRate.toFixed(1)}% | **${cascadeSummary.cheapClosureRate.toFixed(1)}%** | 保持高闭环率 | 流量锁定在极低成本 Tier 1 |
 | **强模型升级率 (Escalation Rate)** | ${baselineSummary.escalationRate.toFixed(1)}% | **${cascadeSummary.escalationRate.toFixed(1)}%** (${cascadeSummary.escalatedCount}/${cascadeSummary.totalCases}) | 触发定向升级 | 针对困难长尾精准触发 |
 | **累计 Token 消耗 (Total Tokens)** | ${baselineSummary.totalTokensUsed.toLocaleString()} tokens | ${cascadeSummary.totalTokensUsed.toLocaleString()} tokens | **${Number(tokenDeltaPct) >= 0 ? '+' : ''}${tokenDeltaPct}%** | 额外消耗集中于 ${escalatedResults.length} 例升级任务 |
-| **平均端到端耗时 (Avg Latency)** | ${baselineSummary.avgDurationMs}ms | ${cascadeSummary.avgDurationMs}ms | **${extraLatencyMs >= 0 ? '+' : ''}${extraLatencyMs}ms (${Number(latencyDeltaPct) >= 0 ? '+' : ''}${latencyDeltaPct}%)** | 落在公网 API 负载波动带内 (±25%)，不作架构性能结论 |
+| **平均端到端耗时 (Avg Latency)** | ${baselineSummary.avgDurationMs}ms | ${cascadeSummary.avgDurationMs}ms | **${extraLatencyMs >= 0 ? '+' : ''}${extraLatencyMs}ms (${Number(latencyDeltaPct) >= 0 ? '+' : ''}${latencyDeltaPct}%)** | 落在公网 API 负载波动带内 (±42%)，不作架构性能结论 |
 
 ---
 
@@ -776,7 +785,8 @@ async function main() {
 ### 1. 受处理子集真实归因与逐例剖析 (Treated Cohort Breakdown)
 实验组共触发 ${escalatedResults.length} 例强模型定向升级，这是检验级联有效性的核心样本：
 ${escalationBreakdown}
-- **净改善归因**：相比于第 1 轮（0 改善 / 2 恶化 / 1 持平），本轮在候选轮换与诊断上下文注入支持下，受处理子集实现了 **${treatedGainCases.length} 改善 / ${treatedLossCases.length} 恶化 / ${treatedSameCases.length} 持平**。${treatedGainCases.length > 0 ? `真实救回用例（${treatedGainCases.map((id) => '#' + id.toString().padStart(2, '0')).join(', ')}）经历了完整的廉价自愈失败现场诊断三元组继承与候选模型修复闭环。` : '本轮升级用例均与基线表现持平。'}
+- **净改善归因**：在候选轮换与现场诊断三元组继承支持下，受处理子集（共 ${escalatedResults.length} 例强模型升级）实现了 **${treatedGainCases.length} 改善 / ${treatedLossCases.length} 恶化 / ${treatedSameCases.length} 持平**。${treatedGainCases.length > 0 ? `真实救回用例（${treatedGainCases.map((id) => '#' + id.toString().padStart(2, '0')).join(', ')}）经历了完整的廉价自愈失败现场诊断三元组继承与候选模型修复闭环。` : '本轮升级用例均与基线表现持平。'}
+- **跨轮稳定性局限说明**：必须诚实指出，受处理子集用例构成在不同轮次间存在边界漂移（仅 #16 跨轮绝对稳定，其他边缘用例因云端托管模型采样微抖动在廉价预算耗尽边界存在轻微浮动），解读该子集指标时需结合单例病理（如 #27 实为契约硬崩溃）综合审视。
 
 ### 2. 采样低抖动验证与未升级用例一致性 (Sampling Low-Jitter & Un-escalated Consistency)
 - 在全量 ${cascadeSummary.totalCases} 个基准工单中，未触发级联升级的 ${unescalatedResults.length} 个用例一致性达到 **${determinismRate}%** (${deterministicMatches}/${unescalatedResults.length})。
@@ -793,7 +803,7 @@ ${rotationAnalysisText}
 
 ### 5. 工程代价与成本-收益量化权衡 (Cost-Benefit Trade-offs)
 - **Token 消耗**：累计 Token 增加 ${Number(tokenDeltaPct) >= 0 ? '+' : ''}${tokenDeltaPct}%（+${extraTokens.toLocaleString()} tokens），额外开销完全集中在 ${escalatedResults.length} 例升级任务中，平均每例升级消耗约 **${tokensPerEscalated.toLocaleString()} tokens**。
-- **端到端耗时**：平均端到端耗时变动 **${extraLatencyMs >= 0 ? `+${extraLatencyMs}ms` : `${extraLatencyMs}ms`} (${Number(latencyDeltaPct) >= 0 ? '+' : ''}${latencyDeltaPct}%)**。经跨轮基线横向比对（基线在同一代码下的历史平均延迟在 3.8s–6.3s 宽幅波动，波幅达 ±25%），单轮内的毫秒级耗时差异主要受公网网络抖动与第三方 API 并发负载噪声主导，落在系统噪声带内，不作为级联路由的架构性能结论。
+- **端到端耗时**：平均端到端耗时变动 **${extraLatencyMs >= 0 ? `+${extraLatencyMs}ms` : `${extraLatencyMs}ms`} (${Number(latencyDeltaPct) >= 0 ? '+' : ''}${latencyDeltaPct}%)**。经跨轮基线横向比对（基线在同一代码下的历史平均延迟在 3.8s–9.1s 宽幅波动，波幅达 ±42%），单轮内的毫秒级耗时差异主要受公网网络抖动与第三方 API 并发负载噪声主导，落在系统噪声带内，不作为级联路由的架构性能结论。
 - **权衡决策建议**：
   - 在当前免费配额模式下，金钱成本为 **$0.00**；
   - 在商业付费生产环境下，每挽救 1 例契约崩溃任务需额外消耗约 **${costPerRescuedTokens.toLocaleString()} tokens**（单次强模型升级均值约 **${tokensPerEscalated.toLocaleString()} tokens**）。对高价值业务单（退款纠纷、大客户工单）而言极具性价比；若面向低价值高吞吐场景，建议调小 \`maxCheapRetries\` 或收紧升级准入条件。

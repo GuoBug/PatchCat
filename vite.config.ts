@@ -16,7 +16,10 @@ export default defineConfig({
     host: true,
   },
   build: {
-    chunkSizeWarningLimit: 600,
+    // 700 kB limit monitors the core application index chunk (currently ~650 kB after vendor separation).
+    // Note: The PDF.js runtime chunk (~1.6 MB) is dynamically loaded on-demand via import('unpdf')
+    // and does not block the initial page load.
+    chunkSizeWarningLimit: 700,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -36,6 +39,15 @@ export default defineConfig({
             id.includes('node_modules/immer')
           ) {
             return 'vendor-ui';
+          }
+          if (
+            id.includes('node_modules/zod') ||
+            id.includes('node_modules/zod-to-json-schema')
+          ) {
+            return 'vendor-schema';
+          }
+          if (id.includes('/src/presets/') || id.includes('\\src\\presets\\')) {
+            return 'presets-data';
           }
         },
       },
