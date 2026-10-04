@@ -10,6 +10,7 @@ from fastapi.responses import RedirectResponse
 
 from .core.config import settings
 from .core.database import init_db
+from .core.security import RateLimitMiddleware, verify_startup_security
 from .api.v1.api import api_router
 
 # Logging Configuration
@@ -28,6 +29,7 @@ async def lifespan(app: FastAPI):
     - Handles graceful cleanup on shutdown
     """
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION} [{settings.APP_ENV}]...")
+    verify_startup_security()
     await init_db()
     yield
     logger.info(f"Shutting down {settings.APP_NAME}...")
@@ -51,6 +53,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# In-process per-IP rate limiting (added last so it runs outermost, before CORS handling)
+app.add_middleware(RateLimitMiddleware, limit_per_minute=settings.RATE_LIMIT_PER_MINUTE)
 
 # Mount API v1 Routers
 app.include_router(api_router, prefix=settings.API_V1_STR)

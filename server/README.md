@@ -11,6 +11,7 @@
 Make sure Docker Desktop or Docker engine is running on your machine:
 ```bash
 cd server
+cp .env.example .env   # then set POSTGRES_PASSWORD (compose refuses to start without it)
 docker compose up -d
 ```
 *This starts a PostgreSQL 16 instance on port `5432` with the `pgvector` extension pre-loaded.*
@@ -32,8 +33,16 @@ pip install -r requirements.txt
 
 ### 3. Run Development Server
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
+
+> **Security note.** The API is unauthenticated by default and is meant for local use only.
+> If you must expose it beyond loopback, set `API_AUTH_TOKEN` in `server/.env` (clients send
+> `Authorization: Bearer <token>` or `X-API-Token`). With `APP_ENV=production`, the server
+> refuses to start on a non-loopback `HOST` without a token. Rate limiting
+> (`RATE_LIMIT_PER_MINUTE`) is in-process per IP; use a reverse proxy for multi-worker setups.
+> The bundled web frontend does not send this token yet, so token mode currently suits
+> API/CLI clients and a trusted reverse proxy that injects the header.
 - **Interactive Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **Alternative ReDoc UI**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 - **Health Check**: [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)

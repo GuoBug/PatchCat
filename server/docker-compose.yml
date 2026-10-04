@@ -8,10 +8,12 @@ services:
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-patchcat}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-patchcat_secret}
+      # No default on purpose: compose fails fast instead of shipping a known password.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in server/.env before running docker compose}
       POSTGRES_DB: ${POSTGRES_DB:-patchcat_db}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      # Loopback only; remove the 127.0.0.1 prefix deliberately if you need remote access.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

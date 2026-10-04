@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     HOST: str = "127.0.0.1"
     PORT: int = 8000
 
+    # Access control. Empty token = open API (only safe while bound to loopback).
+    API_AUTH_TOKEN: str = ""
+    # Per-IP requests per minute, in-process. 0 disables.
+    RATE_LIMIT_PER_MINUTE: int = 600
+
     # CORS Configuration
     CORS_ORIGINS: List[str] = [
         "http://localhost:5173",

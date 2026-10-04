@@ -1,4 +1,4 @@
-﻿"""
+"""
 Workflow Execution REST API Endpoints (Synchronous JSON & Streaming SSE)
 """
 
@@ -11,6 +11,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ....core.database import get_db
+from ....core.security import safe_equals
 from ....models.workflow import WorkflowORM
 from ....schemas.workflow import WorkflowRunRequest, WorkflowRunResponse
 from ....services.workflow_runner import run_workflow
@@ -50,7 +51,7 @@ async def execute_published_workflow(
         if not provided_key and authorization and authorization.startswith("Bearer "):
             provided_key = authorization[7:]
 
-        if provided_key != wf.api_key:
+        if not safe_equals(provided_key, wf.api_key):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid or missing API key for this workflow endpoint.",

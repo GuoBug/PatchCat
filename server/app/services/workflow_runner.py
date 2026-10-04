@@ -7,6 +7,22 @@ import json
 import re
 from typing import Any, Dict, List, Optional, AsyncGenerator, Tuple
 
+# Mirrors src/engine/regex-safety.ts. Heuristic only: rejects nested quantifiers such as (a+)+
+# and quantified alternation with overlapping branches such as (a|aa)+.
+_NESTED_QUANTIFIER = re.compile(r"\((?:[^()\\]|\\.)*[+*](?:[^()\\]|\\.)*\)\s*(?:[+*]|\{\d+,?\d*\})")
+_QUANTIFIED_ALTERNATION = re.compile(r"\(([^()|\\]+)\|([^()|\\]+)\)\s*[+*]")
+
+
+def is_unsafe_regex_pattern(pattern: str) -> bool:
+    if _NESTED_QUANTIFIER.search(pattern):
+        return True
+    m = _QUANTIFIED_ALTERNATION.search(pattern)
+    if m:
+        a, b = m.group(1), m.group(2)
+        if a == b or a.startswith(b) or b.startswith(a):
+            return True
+    return False
+
 
 def evaluate_condition_rule(operator: str, actual_val: Any, target_val: Any) -> bool:
     str_actual = "" if actual_val is None else str(actual_val).strip()
@@ -37,6 +53,8 @@ def evaluate_condition_rule(operator: str, actual_val: Any, target_val: Any) -> 
         return actual_val is not None and str_actual != ""
     elif operator == "regex_match":
         if len(str_target) > 250 or len(str_actual) > 50000:
+            return False
+        if is_unsafe_regex_pattern(str_target):
             return False
         try:
             return bool(re.search(str_target, str_actual, re.IGNORECASE))

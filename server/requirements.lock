@@ -1,0 +1,20 @@
+# Constraints for reproducible installs: pip install -r requirements.txt -c requirements.lock
+# Pins direct dependencies to the versions the test suite last passed against (Python 3.10).
+# Transitive dependencies are NOT pinned; regenerate with pip-compile for a full lock.
+fastapi==0.136.1
+uvicorn==0.44.0
+SQLAlchemy==2.0.49
+greenlet==3.1.1
+asyncpg==0.31.0
+pgvector==0.5.0
+alembic==1.18.4
+pydantic==2.13.0
+pydantic-settings==2.13.1
+python-dotenv==1.0.1
+nanoid==2.0.0
+pypdf==6.17.0
+python-multipart==0.0.26
+pytest==9.1.1
+pytest-asyncio==1.4.0
+httpx==0.28.1
+aiosqlite==0.22.1
