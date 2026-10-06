@@ -149,9 +149,9 @@ func TestIsAllowedOrigin(t *testing.T) {
 		{"http://192.168.50.1:8899", true},
 		{"http://192.168.1.100:8899", true},
 		{"http://router.asus.com:8899", true},
-		{"https://myrouter.asuscomm.com:8899", true},
 
-		// Disallowed remote origins
+		// Disallowed remote origins & unconfigured DDNS
+		{"https://myrouter.asuscomm.com:8899", false}, // Public DDNS must not be wild-allowed by default (P0-5 audit fix)
 		{"https://malicious-site.com", false},
 		{"https://evil-attacker.io", false},
 		{"http://phishing.example.com", false},
@@ -168,6 +168,11 @@ func TestIsAllowedOrigin(t *testing.T) {
 	// Custom origin check
 	if !isAllowedOrigin("https://my-custom-domain.org", []string{"https://my-custom-domain.org"}) {
 		t.Errorf("isAllowedOrigin custom domain should be allowed")
+	}
+
+	// Explicitly whitelisted DDNS origin check
+	if !isAllowedOrigin("https://myrouter.asuscomm.com:8899", []string{"https://myrouter.asuscomm.com:8899"}) {
+		t.Errorf("isAllowedOrigin explicitly configured DDNS origin should be allowed")
 	}
 }
 
