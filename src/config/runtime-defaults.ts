@@ -61,6 +61,11 @@ export const RUNTIME_DEFAULTS = {
   ROUTING_FALLBACK_MODEL: 'deepseek-ai/DeepSeek-V3',
   ROUTING_MAX_CHEAP_RETRIES: 2, // Allow cheap model to self-heal up to 2 times before escalating
   ROUTING_ENABLE_SEMANTIC_GATE: true, // Enable heuristic F7 description-action conflict detection
+
+  // ── 9. Cross-Encoder Rerank Client ─────────────────────────────────────────
+  RERANK_TIMEOUT_MS: 8000,
+  RERANK_TIMEOUT_MIN_MS: 1000,
+  RERANK_TIMEOUT_MAX_MS: 60000,
 } as const;
 
 export interface RuntimeProtectionSettings {
