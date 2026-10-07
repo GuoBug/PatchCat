@@ -133,6 +133,13 @@ export function sigmoid(x: number): number {
 /**
  * Resolves the exact rerank endpoint for a protocol, tolerating a baseUrl that
  * already includes part or all of the path.
+ *
+ * Provider base URLs habitually carry the API version prefix — the settings store
+ * persists `https://api.siliconflow.cn/v1` — so the `/v1` case must be handled or
+ * the resolved URL doubles up into `/v1/v1/rerank`.
+ *
+ * Throws a `RerankError` for an unrecognised protocol: node config arrives as
+ * untyped JSON, so an exhaustive switch over the union is not enough at runtime.
  */
 export function getRerankUrl(protocol: RerankProtocol, baseUrl: string): string {
   const clean = baseUrl.trim().replace(/\/+$/, '');
@@ -148,7 +155,14 @@ export function getRerankUrl(protocol: RerankProtocol, baseUrl: string): string 
     case 'tei':
       return clean.endsWith('/rerank') ? clean : `${clean}/rerank`;
     case 'openai':
-      return clean.endsWith('/rerank') ? clean : `${clean}/v1/rerank`;
+      if (clean.endsWith('/rerank')) return clean;
+      if (clean.endsWith('/v1') || clean.endsWith('/v2')) return `${clean}/rerank`;
+      return `${clean}/v1/rerank`;
+    default:
+      throw new RerankError(
+        `Unsupported rerank protocol "${String(protocol)}". Expected one of: cohere | jina | tei | openai`,
+        { protocol: protocol as RerankProtocol, url: clean, retriable: false },
+      );
   }
 }
 

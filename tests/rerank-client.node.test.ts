@@ -73,6 +73,40 @@ describe('Rerank Client — protocol normalisation', () => {
     assert.equal(getRerankUrl('cohere', 'https://api.cohere.com/v2/'), 'https://api.cohere.com/v2/rerank');
   });
 
+  it('should tolerate a baseUrl that already carries the /v1 version prefix', () => {
+    // The settings store persists `https://api.siliconflow.cn/v1`, so the
+    // OpenAI-compatible branch must not resolve to `/v1/v1/rerank`.
+    assert.equal(
+      getRerankUrl('openai', 'https://api.siliconflow.cn/v1'),
+      'https://api.siliconflow.cn/v1/rerank',
+    );
+    assert.equal(
+      getRerankUrl('openai', 'https://api.siliconflow.cn/v1/'),
+      'https://api.siliconflow.cn/v1/rerank',
+    );
+    assert.equal(
+      getRerankUrl('openai', 'https://api.siliconflow.cn/v1/rerank'),
+      'https://api.siliconflow.cn/v1/rerank',
+    );
+    assert.equal(
+      getRerankUrl('openai', 'https://api.siliconflow.cn'),
+      'https://api.siliconflow.cn/v1/rerank',
+    );
+  });
+
+  it('should reject an unrecognised protocol instead of resolving to fetch("undefined")', () => {
+    assert.throws(
+      () => getRerankUrl('gemini-rerank' as never, 'https://example.com'),
+      (err: unknown) => {
+        assert.ok(err instanceof RerankError, 'must be a RerankError');
+        assert.equal(err.retriable, false);
+        assert.match(err.message, /Unsupported rerank protocol/);
+        assert.match(err.message, /gemini-rerank/);
+        return true;
+      },
+    );
+  });
+
   it('should build a texts/raw_scores body for TEI and a documents/top_n body for the rest', () => {
     const tei = buildRerankBody('tei', 'q', ['x', 'y'], 'bge-reranker', 2);
     assert.deepEqual(tei, { query: 'q', texts: ['x', 'y'], truncate: true, raw_scores: true });
