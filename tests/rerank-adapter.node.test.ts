@@ -388,4 +388,71 @@ describe('BrowserWorkflowEngine — Knowledge Node with Reranker in Local Mode',
     assert.equal(output.chunks[0].rerank_score, 0.9789);
     assert.ok(output.context.includes('Rerank: 0.9789'));
   });
+
+  it('should emit a secret-free rerank status so the UI airbag indicator can fire', async () => {
+    // Force the degradation path: the provider always errors, so the adapter
+    // falls back to coarse retrieval and no chunk carries a rerank_score.
+    stubFetch(() => jsonResponse({ error: 'provider exploded' }, 500));
+
+    const SECRET = 'sk-secret-must-not-leak-into-outputs';
+    const node: WorkflowNode = {
+      id: 'knowledge_node_airbag',
+      type: 'knowledge',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'Airbag KB',
+        type: 'knowledge',
+        status: 'idle',
+        inputs: {},
+        outputs: {},
+        config: {
+          knowledgeBaseId: SEED_KB_ID,
+          query: 'Kahn 调度',
+          topK: 2,
+          scoreThreshold: 0.0,
+          rerank: {
+            enabled: true,
+            protocol: 'cohere',
+            baseUrl: 'https://api.cohere.com',
+            model: 'rerank-v3.5',
+            apiKey: SECRET,
+          },
+        },
+      },
+    };
+
+    const events: any[] = [];
+    for await (const event of engine.executeWorkflow(
+      { nodes: [node], edges: [] } as WorkflowGraph,
+      { context: { knowledgeAdapter: new LocalKnowledgeAdapter() } },
+    )) {
+      events.push(event);
+    }
+
+    const completed = events.find(
+      (e) => e.type === 'NODE_COMPLETE' && e.payload?.nodeId === 'knowledge_node_airbag',
+    );
+    assert.ok(completed, 'Node should complete');
+    const output = completed.payload.output;
+
+    // The airbag contract the UI relies on: rerank was requested but every chunk
+    // fell back to the coarse stage (no rerank_score anywhere).
+    assert.equal(
+      output.rerank?.enabled,
+      true,
+      'node output must expose rerank.enabled so KnowledgeResultView can detect degradation',
+    );
+    assert.ok(
+      output.chunks.every((c: { rerank_score?: number }) => c.rerank_score === undefined),
+      'degraded run must not fabricate rerank scores',
+    );
+
+    // Secret containment: the raw rerank config (which holds apiKey) must never
+    // be echoed into node outputs — they are persisted and copyable.
+    assert.equal(output.rerank?.apiKey, undefined, 'rerank.apiKey must not be projected into outputs');
+    assert.ok(
+      !JSON.stringify(output).includes(SECRET),
+      'serialized node output must not contain the rerank API key',
+    );
+  });
 });

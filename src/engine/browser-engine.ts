@@ -1911,12 +1911,22 @@ export class BrowserWorkflowEngine {
             ];
           }
 
+          // Projected, secret-free rerank status for the rank-transition inspector.
+          // The raw `rerank` config must NEVER be echoed here: it carries `apiKey`,
+          // and node outputs are persisted to IndexedDB and exported via "Copy as JSON".
+          // Downstream UI derives "degraded / airbag active" from
+          // `rerank.enabled === true && no chunk carries rerank_score`.
+          const rerankRequested = Boolean(
+            (node.data.config?.['rerank'] as KnowledgeRerankOptions | undefined)?.enabled,
+          );
+
           output = {
             result: contextStr,
             context: contextStr,
             chunks: recalledChunks,
             query,
             searchMode,
+            ...(rerankRequested ? { rerank: { enabled: true } } : {}),
           };
           break;
         }
