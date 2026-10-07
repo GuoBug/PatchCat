@@ -44,10 +44,11 @@ export const KnowledgeResultView: React.FC<KnowledgeResultViewProps> = ({ output
       ? (outputs['result'] as string)
       : '';
 
+  const hasChunks = rawChunks.length > 0;
   const hasRerankScore = rawChunks.some((c) => typeof c.rerank_score === 'number');
   const isAirbagFallback =
+    hasChunks &&
     !hasRerankScore &&
-    typeof outputs['searchMode'] === 'string' &&
     Boolean((outputs['rerank'] as { enabled?: boolean } | undefined)?.enabled);
 
   const toggleChunkExpand = (id: string) => {

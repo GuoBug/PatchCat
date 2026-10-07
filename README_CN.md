@@ -14,7 +14,7 @@
   </p>
 
   <p>
-    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/版本-v0.4.14-blue.svg" alt="Release: v0.4.14" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/版本-v0.4.15-blue.svg" alt="Release: v0.4.15" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/开源协议-MIT-emerald.svg" alt="License: MIT" /></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" alt="React 18" /></a>
@@ -272,7 +272,7 @@ PatchCat 内置了开箱即用的工业级场景模板：
 - [x] 确定性结构化输出、自愈状态机与解耦治理 (v0.4.12)
 - [x] 确定性模型级联路由与故障转移状态机 (v0.4.13)
 - [x] 纯本地零依赖混合检索 (BM25 词频 + N-gram 语义密度通道) 与 RRF 倒数秩融合 (v0.4.14)
-- [ ] 交叉重排 Reranker API 深度集成 (v0.4.15)
+- [x] 交叉重排 Reranker API 集成与位次跃迁遥测 (v0.4.15)
 - [ ] 本地数据主权主口令暗室与资产安全脱敏 (v0.4.16)
 
 ---

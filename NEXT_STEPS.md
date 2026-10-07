@@ -1,9 +1,9 @@
 # 🎯 Next Steps / 接续开发清单
 
-> **Current Version**: `v0.4.14` (Completed & Verified ✅)  
-> **Last Updated**: 2026-10-02  
-> **Previous Milestone**: Phase 4.14 Local Lightweight Hybrid Search (BM25 + Vectors) (`v0.4.14` Shipped ✅)  
-> **Current Target Milestone**: **`v0.4.15` 交叉重排 Reranker API 深度集成** (详见 [PRD-006](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md) 扩展规范)  
+> **Current Version**: `v0.4.15` (Completed & Verified ✅)  
+> **Last Updated**: 2026-10-07  
+> **Previous Milestone**: Phase 4.14 Local Lightweight Hybrid Search (BM25 + N-gram Density) (`v0.4.14` Shipped ✅)  
+> **Current Target Milestone**: **`v0.4.16` 本地数据主权暗室与资产一键安全脱敏** (详见 [PRD-017](docs/01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md))  
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -235,25 +235,39 @@
 
 ---
 
-### ⚡ Completed Milestone: Phase 4.14 Local Lightweight Hybrid Search (BM25 + Vectors) (v0.4.14)
+### ⚡ Completed Milestone: Phase 4.14 Local Lightweight Hybrid Search (BM25 + N-gram Density) (v0.4.14)
 
 - [x] **1. Pure-Frontend In-Memory BM25 Lexical Inverted Index Engine (`src/services/search/bm25-engine.ts`)**:
   - Zero-dependency in-memory inverted index for browser Local BYOK mode with CJK bi-gram & whitespace tokenization, and Robertson-Spärck Jones non-negative IDF.
 - [x] **2. Reciprocal Rank Fusion (RRF) Hybrid Scoring (`src/services/storage/knowledge-adapter.ts`)**:
-  - Multi-channel weighted fusion algorithm combining lexical keyword scores and dense vector cosine similarity with full channel observability.
+  - Multi-channel weighted fusion algorithm combining a BM25 lexical rank channel with an n-gram term-density rank channel, with full channel observability.
 - [x] **3. Retrieval Scoring Visualization & Keyword Highlights (`KnowledgeNodeProperties.tsx`)**:
   - Search mode selection (`hybrid` / `bm25` / `vector`) and channel weight sliders in Knowledge node property drawer, with keyword telemetry on recalled chunks.
 - [x] **4. Verification & Testing**:
-  - 39 dedicated BM25 and hybrid search tests passing; 411/411 total project unit and contract tests passing with 100% green rate.
+  - 39 dedicated BM25 and hybrid search tests passing; 432/432 total project unit and contract tests passing with 100% green rate.
 
 ---
 
-### 🚀 Active Milestone: v0.4.15 Reranker Cross-Encoder API Integration
+### ⚡ Completed Milestone: Phase 4.15 Cross-Encoder Reranker API Integration (v0.4.15)
 
-- [ ] **1. Multi-Provider Reranker Client (`reranker-client.ts`)**:
-  - Direct integration with SiliconFlow (`BAAI/bge-reranker-v2-m3`), Cohere, and Jina Rerank endpoints.
-- [ ] **2. Knowledge Node Re-ranking Pipeline & Token Compression**:
-  - Top-N reranking cutoff and relevance filtering before prompt synthesis.
+- [x] **1. Multi-Protocol Reranker Client (`src/engine/rerank-client.ts`)**:
+  - Unified wire-protocol adapter for Cohere (`/v2/rerank`), Jina (`/v1/rerank`), OpenAI-compatible SiliconFlow (`/v1/rerank`), and HuggingFace TEI (`/rerank`).
+  - TEI bare-array responses with raw (possibly negative, unbounded) logits are numerically stabilized via sigmoid into `[0, 1]`, so a single `scoreThreshold` stays portable across vendors.
+  - All transport/parse failures collapse into a typed `RerankError { protocol, url, status, retriable }`; the client never leaks a raw fetch/parse error.
+  - 8s `AbortController` watchdog (`RUNTIME_DEFAULTS.RERANK_TIMEOUT_MS`).
+- [x] **2. Two-Stage Coarse→Rerank Retrieval Pipeline (`src/services/storage/knowledge-adapter.ts`)**:
+  - Coarse recall (BM25 + n-gram density + RRF) feeds a bounded candidate pool (`candidatePoolSize`, default `max(topK * 3, 15)`) into the cross-encoder, then Top-N cutoff and an **independent** relevance threshold.
+  - **Stage-decoupled thresholds**: coarse similarity is floored around 0.45 by the scoring formula while sigmoid rerank scores are not, so the coarse `scoreThreshold` is deliberately *not* inherited by the rerank stage (own default `RUNTIME_DEFAULTS.RERANK_SCORE_THRESHOLD`).
+  - **Provenance preserved**: `similarity` keeps the coarse-stage value; the cross-encoder score lives in a separate `rerank_score` field.
+  - **Graceful-degradation airbag**: on any rerank failure the pipeline falls back to coarse RRF retrieval *without* applying the rerank threshold, and surfaces a secret-free `rerank: { enabled: true }` marker so the UI can show "degraded" distinctly from "not enabled".
+- [x] **3. Rank-Transition Telemetry & Inspector UI**:
+  - `original_rank` / `rerank_rank` / `rank_delta` computed across the **entire candidate pool before filtering and truncation**, so deltas stay meaningful after Top-N slicing.
+  - Canvas `Rerank` badge on `KnowledgeNode`, full config panel in `KnowledgeNodeProperties` (protocol presets, BYOK key with provider inheritance for OpenAI-compatible endpoints, Top-N / threshold / pool-depth controls), and a `KnowledgeResultView` rank-transition inspector routed from `ExecutionResultViewer`.
+- [x] **4. Verification & Testing**:
+  - 29 dedicated rerank tests (19 client protocol/contract + 10 adapter/engine integration), including a baseline-verified regression test proving the degradation marker is actually emitted.
+  - 476/476 total project unit and contract tests passing across 129 suites, 0 failures.
+- [ ] **5. Deferred (not shipped in v0.4.15)**: *Context noise-reduction & token-compression benchmark*.
+  - The rank-transition telemetry above is the measurement substrate, but the head-to-head benchmark report has **not** been produced and is not claimed by this release.
 
 ---
 
@@ -527,27 +541,41 @@ npm run build
 
 ---
 
-### ⚡ 已交付里程碑：Phase 4.14 纯本地轻量混合检索 (BM25 + 稠密向量) (v0.4.14)
+### ⚡ 已交付里程碑：Phase 4.14 纯本地轻量混合检索 (BM25 + 字面密度) (v0.4.14)
 > 依据 [PRD-006: 知识库（RAG）向量检索与画布节点](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md) 与 [RAG 架构白皮书](docs/02-architecture/phase-2-knowledge-base-and-rag-architecture.md) 推进。
 
 - [x] **1. 纯前端内存倒排索引分词引擎 (`src/services/search/bm25-engine.ts`)**：
   - 零后端依赖的纯前端轻量倒排索引，支持 CJK 字符双元分词（Bi-gram）与空格分词，RSJ 平滑非负 IDF 杜绝负分除零。
-- [x] **2. 倒排与向量倒数排序融合 (Reciprocal Rank Fusion - RRF)**：
+- [x] **2. 双路词法/字面排序通道的倒数秩融合 (Reciprocal Rank Fusion - RRF)**：
   - 工业级 RRF 加权融合算法（$k=60$），在 `LocalKnowledgeAdapter` 中支持 `hybrid`、`bm25` 与 `vector` 三模检索，保障 RFC-101 等精准名词 100% Top-1 命中。
+  - **注意**：`dense_score` 通道实为 **n-gram 词项包含计数 + 中文字符覆盖率** 的字面密度启发式（零命中保底 0.45），**非 embedding 向量检索**；`bm25` 与 `dense` 两路同源分词，本质是同一路词法信号的两组排序。
 - [x] **3. 检索分值可视化与关键词命中高亮 (`KnowledgeNodeProperties.tsx`)**：
-  - 知识库属性抽屉提供模式切换选单与 BM25/向量通道权重滑块，切片透传 `bm25_score`、`dense_score`、`rrf_score` 与 `matched_terms`。
+  - 知识库属性抽屉提供模式切换选单与 BM25/字面密度通道权重滑块，切片透传 `bm25_score`、`dense_score`、`rrf_score` 与 `matched_terms`。
 - [x] **4. 全量契约测试与工程回归**：
-  - 39 项 BM25 与混合检索专项测试全绿，全工程 411 项测试 100% 绿灯。
+  - 39 项 BM25 与混合检索专项测试全绿，全工程 432 项测试 100% 绿灯。
 
 ---
 
-### 🚀 当前推进里程碑：v0.4.15 交叉重排 Reranker API 深度集成
+### ⚡ 已交付里程碑：Phase 4.15 交叉重排 Reranker API 集成 (v0.4.15)
 > 依据 [PRD-006: 知识库（RAG）向量检索与画布节点](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md) 扩展规范推进。
 
-- [ ] **1. 多厂商轻量重排客户端适配 (`reranker-client.ts`)**：
-  - 接入 SiliconFlow（`BAAI/bge-reranker-v2-m3`）、Cohere 与 Jina Rerank 接口规范。
-- [ ] **2. 知识库检索节点重排过滤与上下文压缩**：
-  - 设定 Top-N 截断阈值，在 Prompt 注入前对冗余切片进行深度压缩去噪。
+- [x] **1. 多协议轻量重排客户端 (`src/engine/rerank-client.ts`)**：
+  - 统一四套 wire protocol：Cohere (`/v2/rerank`)、Jina (`/v1/rerank`)、OpenAI 兼容 / SiliconFlow (`/v1/rerank`)、HuggingFace TEI (`/rerank`)。
+  - TEI 返回**裸数组**且 score 为**未归一化 logits**（可负、无界），统一经数值稳定 sigmoid 映射到 `[0,1]`，使单一 `scoreThreshold` 跨厂商可移植。
+  - 全部传输/解析失败收敛为带类型的 `RerankError { protocol, url, status, retriable }`，绝不泄漏裸 fetch/parse 错误；8s `AbortController` 看门狗。
+- [x] **2. 粗排→精排两阶段检索流水线 (`src/services/storage/knowledge-adapter.ts`)**：
+  - 粗排（BM25 + 字面密度 + RRF）产出有界候选池（`candidatePoolSize`，默认 `max(topK*3, 15)`）送交叉编码器，再做 Top-N 截断与**独立**相关性阈值过滤。
+  - **量纲解耦**：粗排相似度被评分公式压在 0.45 地板之上，而 sigmoid 精排分无地板，故粗排 `scoreThreshold` **刻意不继承**给精排阶段（精排有自有的 `RUNTIME_DEFAULTS.RERANK_SCORE_THRESHOLD`）。
+  - **溯源保真**：`similarity` 保留粗排原值，交叉编码器分数独立存于 `rerank_score`，不再一数两标。
+  - **降级安全气囊**：精排任意失败即回退粗排 RRF 检索，且**绝不**把精排阈值套用到粗排分；同时透出无密钥的 `rerank: { enabled: true }` 标记，使 UI 能区分「已降级」与「未启用」。
+- [x] **3. 位次跃迁遥测与检视 UI**：
+  - `original_rank` / `rerank_rank` / `rank_delta` 在**过滤与截断之前**于全候选池计算，保证 Top-N 截断后位次变化量仍有意义。
+  - `KnowledgeNode` 画布 `Rerank` 徽章、`KnowledgeNodeProperties` 完整配置面板（协议预设、BYOK 密钥与 OpenAI 兼容端点的 provider 继承、Top-N / 阈值 / 候选池深度滑块）、以及由 `ExecutionResultViewer` 路由的 `KnowledgeResultView` 位次跃迁检视器。
+- [x] **4. 全量契约测试与工程回归**：
+  - 29 项重排专项测试（19 项客户端协议/契约 + 10 项适配器与引擎集成），含一条经基线验证的回归测试证明降级标记确实被产出。
+  - 全工程 **476 项测试 / 129 套件 / 0 失败**，`tsc` 0 error，ESLint 0 error。
+- [ ] **5. 已延期项（本版本未交付）**：*上下文去噪与 Token 压缩基准验证*。
+  - 上述位次跃迁遥测已为其铺好测量底座，但基准报告尚未产出，本次发布不作此承诺。
 
 ---
 

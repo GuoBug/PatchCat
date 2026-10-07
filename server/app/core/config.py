@@ -21,7 +21,7 @@ def _resolve_app_version() -> str:
                     return str(data["version"])
     except Exception:
         pass
-    return "0.4.14"
+    return "0.4.15"
 
 
 class Settings(BaseSettings):

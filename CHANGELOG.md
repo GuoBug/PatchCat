@@ -5,6 +5,42 @@ All notable changes to the **PatchCat** project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.15] - 2026-10-07
+
+### Added
+- **Multi-Protocol Cross-Encoder Reranker Client (`src/engine/rerank-client.ts`)**:
+  - **Unified wire-protocol adapter** covering four vendor shapes: Cohere (`POST /v2/rerank`), Jina (`POST /v1/rerank`), OpenAI-compatible endpoints such as SiliconFlow (`POST /v1/rerank`), and HuggingFace Text Embeddings Inference (`POST /rerank`).
+  - **TEI normalization**: TEI returns a *bare array* rather than an envelope, and its `score` values are *raw logits* (negative and unbounded). These are mapped through a numerically stable sigmoid into `[0, 1]` so that a single `scoreThreshold` remains portable across vendors.
+  - **Typed failure containment**: every transport, HTTP-status and parse failure collapses into `RerankError { protocol, url, status?, retriable }`. The client never leaks a raw `fetch`/JSON error, so a single `catch` in the retrieval layer is sufficient to degrade.
+  - **Watchdog**: `AbortController` timeout defaulting to 8s (`RUNTIME_DEFAULTS.RERANK_TIMEOUT_MS`, clamped to `[1000, 60000]`).
+  - Base-URL normalization resolves `/v1`-prefixed provider base URLs (e.g. `https://api.siliconflow.cn/v1`) without doubling the version segment.
+- **Two-Stage Coarse→Rerank Retrieval Pipeline (`src/services/storage/knowledge-adapter.ts`)**:
+  - Coarse recall (BM25 + n-gram density + RRF) produces a **bounded candidate pool** (`candidatePoolSize`, default `max(topK * 3, 15)`) which is sent to the cross-encoder, then sliced by Top-N cutoff and an **independent** relevance threshold.
+  - **Stage-decoupled thresholds**: coarse similarity is floored around `0.45` by the scoring formula while sigmoid rerank scores are not, so the coarse `scoreThreshold` is deliberately **not** inherited by the rerank stage — it has its own default (`RUNTIME_DEFAULTS.RERANK_SCORE_THRESHOLD`). Reusing the coarse cutoff on rerank scores would silently over-filter.
+  - **Provenance preserved**: `similarity` retains the coarse-stage value and the cross-encoder score is stored in a separate `rerank_score` field, so the assembled context header reads `Similarity: 0.52 - Rerank: 0.9654` and the rank leap stays legible.
+  - **Graceful-degradation airbag**: on any rerank failure (bad key, endpoint down, timeout) the pipeline falls back to coarse RRF retrieval *without* applying the rerank threshold, and emits a **secret-free** `rerank: { enabled: true }` marker so the UI can distinguish "degraded" from "never enabled".
+  - **Server mode**: unsupported tuning parameters (including `rerank`) are now surfaced through an explicit `logger.warn` + `console.warn` instead of being silently dropped.
+- **Rank-Transition Telemetry & Inspector UI**:
+  - `original_rank` / `rerank_rank` / `rank_delta` are computed across the **entire candidate pool before filtering and truncation**, so deltas remain meaningful after Top-N slicing.
+  - `KnowledgeNode` renders a violet `Rerank` badge on the canvas when reranking is enabled.
+  - `KnowledgeNodeProperties` gains a full reranker configuration panel: protocol presets, BYOK API key with provider-key inheritance for OpenAI-compatible endpoints, and Top-N / relevance-threshold / candidate-pool-depth controls.
+  - New `KnowledgeResultView` rank-transition inspector, routed from `ExecutionResultViewer` for `knowledge` nodes, showing per-chunk coarse rank → rerank rank, delta leap badges (promoted / demoted), coarse-vs-rerank score pairs and full telemetry tags.
+- **Automated Verification Suite (`tests/rerank-client.node.test.ts`, `tests/rerank-adapter.node.test.ts`)**:
+  - 19 protocol/contract tests for the rerank client (four wire protocols, sigmoid normalization, URL normalization, timeout and failure containment).
+  - 10 adapter/engine integration tests covering rank reordering, threshold decoupling, candidate-pool bounding, all three degradation paths, Server-mode warning, and the emitted degradation marker.
+  - Expanded automated test suite to **476 passing tests across 129 test suites** with 100% green rate.
+
+### Fixed
+- **Silent tuning-parameter drop (v0.4.14 regression)**: `knowledge-store`'s `retrieve` accepted only four arguments and discarded the fifth, so `searchMode` / `bm25Weight` / `vectorWeight` / `rrfK` never reached `LocalKnowledgeAdapter` on the default execution path.
+- **Production mock-context hallucination vector**: the engine fabricated a fake `manual.md (Similarity: 0.88)` chunk whenever retrieval returned an empty context. It is now gated behind `options.skipLLM`; in production an empty recall stays an empty recall.
+- **Unreachable degradation indicator**: the knowledge-node output never carried a `rerank` field, so the "Airbag Active" pill in the result inspector could never light up. The engine now emits a projected, secret-free status marker (the raw config is deliberately *not* echoed — it holds the BYOK `apiKey`, and node outputs are persisted to IndexedDB and exportable as JSON).
+
+### Notes
+- **Deferred**: the *context noise-reduction & token-compression benchmark* listed in the v0.4.15 roadmap is **not** part of this release. The shipped rank-transition telemetry is its measurement substrate, but no benchmark report has been published.
+- **Scope**: reranking is implemented for **Local (browser BYOK)** mode only. Server mode accepts the signature and degrades with an explicit warning rather than silently ignoring the configuration.
+
+---
+
 ## [0.4.14] - 2026-10-02
 
 ### Added

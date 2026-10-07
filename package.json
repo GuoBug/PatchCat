@@ -1,7 +1,7 @@
 {
   "name": "patchcat",
   "private": true,
-  "version": "0.4.14",
+  "version": "0.4.15",
   "type": "module",
   "description": "PatchCat: Open-source deterministic AI workflow orchestration engine and interactive playground. Precision prompts. White-box experiments.",
   "homepage": "https://GuoBug.github.io/PatchCat/",
