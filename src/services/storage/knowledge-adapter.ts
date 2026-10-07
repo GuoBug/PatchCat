@@ -10,6 +10,7 @@ import { nanoid } from 'nanoid';
 import { parseDocumentFile } from '../document-parser.ts';
 import { safeSetLocalStorageItem } from './storage-adapter.ts';
 import { BM25Index, reciprocalRankFusion, type BM25SearchResult } from '../search/bm25-engine.ts';
+import { logger } from '../../engine/logger.ts';
 
 export interface KnowledgeBaseSummary {
   id: string;
@@ -912,6 +913,8 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
 
 export class ServerKnowledgeAdapter implements IKnowledgeAdapter {
   private baseUrl: string;
+  /** Guards against spamming the UI log console on every retrieve call. */
+  private warnedUnsupportedOptions = false;
 
   constructor(baseUrl = 'http://127.0.0.1:8000') {
     this.baseUrl = baseUrl.replace(/\/+$/, '');
@@ -919,6 +922,31 @@ export class ServerKnowledgeAdapter implements IKnowledgeAdapter {
 
   setBaseUrl(url: string) {
     this.baseUrl = url.replace(/\/+$/, '');
+  }
+
+  /**
+   * Server mode performs pure vector similarity search only — hybrid weights, RRF
+   * tuning and (future) reranking are not honoured by the FastAPI endpoint.
+   * Warn loudly rather than silently dropping the caller's configuration.
+   */
+  private warnUnsupportedOptions(options?: KnowledgeRetrieveOptions): void {
+    if (!options || this.warnedUnsupportedOptions) return;
+
+    const ignored: string[] = [];
+    if (options.searchMode && options.searchMode !== 'vector') {
+      ignored.push(`searchMode="${options.searchMode}"`);
+    }
+    if (options.bm25Weight !== undefined) ignored.push('bm25Weight');
+    if (options.vectorWeight !== undefined) ignored.push('vectorWeight');
+    if (options.rrfK !== undefined) ignored.push('rrfK');
+    if (ignored.length === 0) return;
+
+    this.warnedUnsupportedOptions = true;
+    const message =
+      `Server mode only supports pure vector similarity search; ignoring ${ignored.join(', ')}. ` +
+      'Switch to Local (BYOK) mode to use hybrid search and reranking.';
+    logger.warn('ServerKnowledgeAdapter', message);
+    console.warn(`[ServerKnowledgeAdapter] ${message}`);
   }
 
   async getKnowledgeBases(search?: string): Promise<KnowledgeBaseSummary[]> {
@@ -1074,6 +1102,7 @@ export class ServerKnowledgeAdapter implements IKnowledgeAdapter {
     scoreThreshold = 0.0,
     options?: KnowledgeRetrieveOptions,
   ): Promise<KnowledgeRetrievalResult> {
+    this.warnUnsupportedOptions(options);
     const res = await fetch(`${this.baseUrl}/api/v1/knowledge-bases/${kbId}/retrieve`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

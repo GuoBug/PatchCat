@@ -4,8 +4,12 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { LocalKnowledgeAdapter } from '../src/services/storage/knowledge-adapter.ts';
+import {
+  LocalKnowledgeAdapter,
+  ServerKnowledgeAdapter,
+} from '../src/services/storage/knowledge-adapter.ts';
 import { useKnowledgeStore } from '../src/stores/knowledge-store.ts';
+import { logger } from '../src/engine/logger.ts';
 
 describe('LocalKnowledgeAdapter & Knowledge Management', () => {
   it('should initialize with default seeded architecture knowledge base', async () => {
@@ -251,6 +255,40 @@ describe('LocalKnowledgeAdapter & Knowledge Management', () => {
       vectorWeight: 0.1,
       rrfK: 42,
     });
+  });
+
+  it('should warn loudly when server mode receives retrieval tuning it cannot honour', async () => {
+    const adapter = new ServerKnowledgeAdapter('http://127.0.0.1:9');
+
+    const entries: Array<{ source?: string; message: string }> = [];
+    const unsubscribe = logger.subscribe((entry) => entries.push(entry));
+
+    const originalFetch = globalThis.fetch;
+    const originalWarn = console.warn;
+    globalThis.fetch = (async () => {
+      throw new Error('network disabled in test');
+    }) as typeof globalThis.fetch;
+    console.warn = () => {};
+
+    try {
+      await adapter
+        .retrieve('kb_x', 'query', 3, 0.4, { searchMode: 'hybrid', bm25Weight: 0.7 })
+        .catch(() => undefined);
+    } finally {
+      globalThis.fetch = originalFetch;
+      console.warn = originalWarn;
+      unsubscribe();
+    }
+
+    const warning = entries.find(
+      (e) => e.source === 'ServerKnowledgeAdapter' && e.message.includes('[WARN]'),
+    );
+    assert.ok(
+      warning,
+      'ServerKnowledgeAdapter must push a warning into the UI log console instead of silently dropping options',
+    );
+    assert.ok(warning.message.includes('hybrid'), 'Warning should name the ignored searchMode');
+    assert.ok(warning.message.includes('bm25Weight'), 'Warning should name the ignored weight');
   });
 });
 

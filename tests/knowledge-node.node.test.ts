@@ -260,4 +260,44 @@ describe('Knowledge Node & RAG Pipeline Execution', () => {
       rrfK: 42,
     });
   });
+
+  it('should not fabricate mock context in production mode when recall is empty', async () => {
+    const emptyAdapter = {
+      retrieve: async () => ({ context: '', chunks: [] }),
+    };
+
+    const node: WorkflowNode = {
+      id: 'knowledge_empty',
+      type: 'knowledge',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'Knowledge Empty Recall',
+        type: 'knowledge',
+        status: 'idle',
+        inputs: {},
+        outputs: {},
+        config: { knowledgeBaseId: 'kb_demo', query: 'nothing matches this', topK: 3 },
+      },
+    };
+
+    const graph: WorkflowGraph = { nodes: [node], edges: [] };
+
+    const events: any[] = [];
+    for await (const event of engine.executeWorkflow(graph, {
+      context: { knowledgeAdapter: emptyAdapter },
+    })) {
+      events.push(event);
+    }
+
+    const completed = events.find(
+      (e) => e.type === 'NODE_COMPLETE' && e.payload?.nodeId === 'knowledge_empty',
+    );
+    assert.ok(completed, 'Knowledge node should complete');
+    assert.equal(
+      completed.payload.output.result,
+      '',
+      'Empty recall must stay empty — fabricating a manual.md context poisons the prompt',
+    );
+    assert.equal(completed.payload.output.chunks.length, 0);
+  });
 });

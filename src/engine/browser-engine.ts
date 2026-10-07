@@ -1887,8 +1887,10 @@ export class BrowserWorkflowEngine {
             }
           }
 
-          // Fallback context for offline test / mock validation when KB has no matching chunks
-          if (!contextStr) {
+          // Fallback context for offline test / mock validation when KB has no matching chunks.
+          // Gated behind skipLLM: in production an empty recall must remain an empty recall.
+          // Injecting fabricated context into the prompt is a hallucination vector.
+          if (!contextStr && options?.skipLLM) {
             contextStr = `### [Document: manual.md (Similarity: 0.88)]\nQuery "${query || 'default'}" matched knowledge base context for RAG orchestration.`;
             recalledChunks = [
               {
