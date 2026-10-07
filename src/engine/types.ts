@@ -363,6 +363,37 @@ export interface GraphInput {
   edges: WorkflowEdge[];
 }
 
+/**
+ * Retrieval tuning options for the knowledge retrieval port.
+ * Domain-agnostic: describes ranking strategy only, never business semantics.
+ */
+export interface KnowledgeRetrievePortOptions {
+  searchMode?: 'hybrid' | 'bm25' | 'vector';
+  bm25Weight?: number;
+  vectorWeight?: number;
+  rrfK?: number;
+}
+
+/**
+ * Port the engine expects for knowledge retrieval.
+ *
+ * The engine owns this contract; the storage layer implements it. Injected via
+ * `WorkflowRunOptions.context.knowledgeAdapter` (typed `unknown` to avoid a
+ * circular import) and structurally narrowed to this port at the call site.
+ *
+ * Any implementation MUST accept and honour the trailing `options` argument —
+ * silently dropping it is a contract violation.
+ */
+export interface KnowledgeRetrievePort {
+  retrieve(
+    kbId: string,
+    query: string,
+    topK?: number,
+    scoreThreshold?: number,
+    options?: KnowledgeRetrievePortOptions,
+  ): Promise<{ context: string; chunks: unknown[] }>;
+}
+
 /** Options bag passed to `IWorkflowEngineAdapter.executeWorkflow()`. */
 export interface WorkflowRunOptions {
   /** Global inputs fed into every `input`-type node. */

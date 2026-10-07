@@ -200,4 +200,64 @@ describe('Knowledge Node & RAG Pipeline Execution', () => {
     assert.ok(finalResult.audit_report);
     assert.ok(finalResult.knowledge_sources.includes('Similarity'));
   });
+
+  it('should forward node retrieval tuning to the injected knowledge adapter port', async () => {
+    const captured: unknown[][] = [];
+    const injectedAdapter = {
+      retrieve: async (...args: unknown[]) => {
+        captured.push(args);
+        return { context: 'injected-context', chunks: [{ id: 'chunk_1' }] };
+      },
+    };
+
+    const node: WorkflowNode = {
+      id: 'knowledge_port',
+      type: 'knowledge',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'Knowledge Retrieval Port',
+        type: 'knowledge',
+        status: 'idle',
+        inputs: {},
+        outputs: {},
+        config: {
+          knowledgeBaseId: 'kb_demo',
+          query: 'Topological sorting Kahn algorithm',
+          topK: 5,
+          scoreThreshold: 0.3,
+          searchMode: 'bm25',
+          bm25Weight: 0.9,
+          vectorWeight: 0.1,
+          rrfK: 42,
+        },
+      },
+    };
+
+    const graph: WorkflowGraph = { nodes: [node], edges: [] };
+
+    for await (const _event of engine.executeWorkflow(graph, {
+      skipLLM: true,
+      context: { knowledgeAdapter: injectedAdapter },
+    })) {
+      void _event;
+    }
+
+    assert.equal(captured.length, 1, 'Injected adapter must be invoked exactly once');
+    const args = captured[0];
+    assert.equal(
+      args.length,
+      5,
+      'Engine must pass the trailing options argument to the knowledge retrieval port',
+    );
+    assert.equal(args[0], 'kb_demo');
+    assert.equal(args[1], 'Topological sorting Kahn algorithm');
+    assert.equal(args[2], 5);
+    assert.equal(args[3], 0.3);
+    assert.deepEqual(args[4], {
+      searchMode: 'bm25',
+      bm25Weight: 0.9,
+      vectorWeight: 0.1,
+      rrfK: 42,
+    });
+  });
 });

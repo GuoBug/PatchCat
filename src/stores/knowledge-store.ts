@@ -15,6 +15,7 @@ import {
   type ChunkOptions,
   type ChunkPreviewResponse,
   type KnowledgeRetrievalResult,
+  type KnowledgeRetrieveOptions,
   LocalKnowledgeAdapter,
   ServerKnowledgeAdapter,
 } from '../services/storage/knowledge-adapter.ts';
@@ -55,6 +56,7 @@ interface KnowledgeState {
     query: string,
     topK?: number,
     scoreThreshold?: number,
+    options?: KnowledgeRetrieveOptions,
   ) => Promise<KnowledgeRetrievalResult>;
   setSearchQuery: (query: string) => void;
   openDetail: (kbId?: string) => void;
@@ -235,8 +237,14 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
     return getActiveAdapter().previewChunks(content, options);
   },
 
-  retrieve: async (kbId: string, query: string, topK?: number, scoreThreshold?: number) => {
-    return getActiveAdapter().retrieve(kbId, query, topK, scoreThreshold);
+  retrieve: async (
+    kbId: string,
+    query: string,
+    topK?: number,
+    scoreThreshold?: number,
+    options?: KnowledgeRetrieveOptions,
+  ) => {
+    return getActiveAdapter().retrieve(kbId, query, topK, scoreThreshold, options);
   },
 
   setSearchQuery: (query: string) => {

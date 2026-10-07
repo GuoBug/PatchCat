@@ -29,6 +29,7 @@ import type {
   TokenUsage,
   DAGCheckpoint,
   NodeCheckpointState,
+  KnowledgeRetrievePort,
   LLMNodeConfig,
 } from './types';
 import {
@@ -326,16 +327,9 @@ export class BrowserWorkflowEngine {
   }
 
   /** Resolves knowledge retriever with IoC dependency injection fallback */
-  private resolveKnowledgeAdapter(options?: WorkflowRunOptions) {
+  private resolveKnowledgeAdapter(options?: WorkflowRunOptions): KnowledgeRetrievePort | undefined {
     if (options?.context?.knowledgeAdapter) {
-      return options.context.knowledgeAdapter as {
-        retrieve: (
-          kbId: string,
-          query: string,
-          topK?: number,
-          scoreThreshold?: number,
-        ) => Promise<{ context: string; chunks: unknown[] }>;
-      };
+      return options.context.knowledgeAdapter as KnowledgeRetrievePort;
     }
     if (typeof window !== 'undefined') {
       try {
@@ -1869,20 +1863,7 @@ export class BrowserWorkflowEngine {
             // 2. Client-side local retrieval (default LocalStorage mode or offline fallback)
             if (!contextStr) {
               try {
-                const adapter = this.resolveKnowledgeAdapter(options) as {
-                  retrieve: (
-                    id: string,
-                    q: string,
-                    k?: number,
-                    th?: number,
-                    opts?: {
-                      searchMode?: 'hybrid' | 'bm25' | 'vector';
-                      bm25Weight?: number;
-                      vectorWeight?: number;
-                      rrfK?: number;
-                    },
-                  ) => Promise<{ context: string; chunks: unknown[] }>;
-                } | undefined;
+                const adapter = this.resolveKnowledgeAdapter(options);
                 if (adapter) {
                   const retrieved = await adapter.retrieve(kbId, query, topK, scoreThreshold, {
                     searchMode,

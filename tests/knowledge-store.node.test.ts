@@ -5,6 +5,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { LocalKnowledgeAdapter } from '../src/services/storage/knowledge-adapter.ts';
+import { useKnowledgeStore } from '../src/stores/knowledge-store.ts';
 
 describe('LocalKnowledgeAdapter & Knowledge Management', () => {
   it('should initialize with default seeded architecture knowledge base', async () => {
@@ -209,6 +210,47 @@ describe('LocalKnowledgeAdapter & Knowledge Management', () => {
         (c.content.includes("收敛") || c.content.includes("入度") || c.content.includes("DAG_CYCLE_DETECTED"))
     );
     assert.ok(hasCycleOrKahn, 'Result chunks should contain formal Kahn convergence and cycle detection');
+  });
+
+  it('should forward retrieval tuning options through the store to the active adapter', async () => {
+    const original = LocalKnowledgeAdapter.prototype.retrieve;
+    const captured: unknown[][] = [];
+    LocalKnowledgeAdapter.prototype.retrieve = async function (...args: unknown[]) {
+      captured.push(args);
+      return { context: 'stub-context', chunks: [] };
+    } as typeof original;
+
+    try {
+      const result = await useKnowledgeStore
+        .getState()
+        .retrieve('kb_patchcat_arch', 'kahn', 5, 0.3, {
+          searchMode: 'bm25',
+          bm25Weight: 0.9,
+          vectorWeight: 0.1,
+          rrfK: 42,
+        });
+      assert.equal(result.context, 'stub-context');
+    } finally {
+      LocalKnowledgeAdapter.prototype.retrieve = original;
+    }
+
+    assert.equal(captured.length, 1, 'store.retrieve must invoke the adapter exactly once');
+    const args = captured[0];
+    assert.equal(
+      args.length,
+      5,
+      'store.retrieve must forward the 5th options argument (regression: it used to be silently dropped)',
+    );
+    assert.equal(args[0], 'kb_patchcat_arch');
+    assert.equal(args[1], 'kahn');
+    assert.equal(args[2], 5);
+    assert.equal(args[3], 0.3);
+    assert.deepEqual(args[4], {
+      searchMode: 'bm25',
+      bm25Weight: 0.9,
+      vectorWeight: 0.1,
+      rrfK: 42,
+    });
   });
 });
 
