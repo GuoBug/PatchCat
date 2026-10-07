@@ -119,6 +119,27 @@ export interface Translations {
     vectorWeight: string;
     hybridWeightHelp: string;
     knowledgeAttributionHint: string;
+    rerankConfig: string;
+    rerankToggle: string;
+    rerankToggleDesc: string;
+    rerankProtocol: string;
+    rerankBaseUrl: string;
+    rerankApiKey: string;
+    rerankApiKeyPlaceholder: string;
+    rerankApiKeyInheritHint: string;
+    rerankModel: string;
+    rerankTopN: string;
+    rerankScoreThreshold: string;
+    rerankCandidatePoolSize: string;
+    rerankCandidatePoolHelp: string;
+    rankTransitionTitle: string;
+    rankDeltaPromoted: string;
+    rankDeltaDemoted: string;
+    rankDeltaUnchanged: string;
+    rerankBadgeOn: string;
+    rerankAirbagActive: string;
+    showChunksView: string;
+    showContextView: string;
     modelConfig: string;
     provider: string;
     model: string;
@@ -741,6 +762,29 @@ export const translations: Record<Language, Translations> = {
       vectorWeight: 'Vector Semantic Weight',
       hybridWeightHelp: 'Reciprocal Rank Fusion (RRF) balance',
       knowledgeAttributionHint: 'Outputs {{result}} (markdown text) and {{chunks}} (array).',
+      rerankConfig: 'Cross-Encoder Reranker',
+      rerankToggle: 'Enable Two-Stage Reranking',
+      rerankToggleDesc:
+        'Performs semantic Cross-Attention reranking over coarse candidates for precision boost.',
+      rerankProtocol: 'Wire Protocol',
+      rerankBaseUrl: 'Endpoint Base URL',
+      rerankApiKey: 'API Key (BYOK)',
+      rerankApiKeyPlaceholder: 'Leave blank to inherit global provider key...',
+      rerankApiKeyInheritHint: 'Inheriting key from Global Settings for',
+      rerankModel: 'Reranker Model',
+      rerankTopN: 'Rerank Top-N Selection',
+      rerankScoreThreshold: 'Rerank Relevance Threshold',
+      rerankCandidatePoolSize: 'Coarse Candidate Pool Size',
+      rerankCandidatePoolHelp:
+        'Number of candidates sent from coarse stage to reranker (10-30 recommended)',
+      rankTransitionTitle: 'Rank Transition Inspector',
+      rankDeltaPromoted: 'Promoted',
+      rankDeltaDemoted: 'Demoted',
+      rankDeltaUnchanged: 'Unchanged',
+      rerankBadgeOn: 'Rerank ON',
+      rerankAirbagActive: 'Airbag Active (Coarse Fallback)',
+      showChunksView: 'Chunks & Rank Inspector',
+      showContextView: 'Raw Context Text',
       modelConfig: 'Model Configuration',
       provider: 'Provider',
       model: 'Model',
@@ -1389,6 +1433,27 @@ export const translations: Record<Language, Translations> = {
       hybridWeightHelp: 'RRF 倒数排名融合权重配比',
       knowledgeAttributionHint:
         '输出 {{result}} (标准 Markdown 上下文) 与 {{chunks}} (结构化切片数组)。',
+      rerankConfig: 'Cross-Encoder 语义精排 (Reranker)',
+      rerankToggle: '启用 Reranker 二阶段精排',
+      rerankToggleDesc: '使用 Cross-Attention 交叉注意力模型对粗排候选切片进行重排与去噪。',
+      rerankProtocol: '协议标准 (Wire Protocol)',
+      rerankBaseUrl: '端点 Base URL',
+      rerankApiKey: 'API 密钥 (BYOK)',
+      rerankApiKeyPlaceholder: '留空则自动继承全局设置中的服务商密钥...',
+      rerankApiKeyInheritHint: '正在自动继承全局设置中的服务商密钥：',
+      rerankModel: '精排模型 (Model)',
+      rerankTopN: '精排保留 Top-N 数量',
+      rerankScoreThreshold: '精排相关性过滤阈值',
+      rerankCandidatePoolSize: '粗排候选池深度 (Candidate Pool)',
+      rerankCandidatePoolHelp: '从粗排中提取并送往 Reranker 的候选切片数量 (推荐 10-30)',
+      rankTransitionTitle: '位次跃迁明细 (Rank Transition Inspector)',
+      rankDeltaPromoted: '位次跃升',
+      rankDeltaDemoted: '位次下降',
+      rankDeltaUnchanged: '位次持平',
+      rerankBadgeOn: '精排已开启',
+      rerankAirbagActive: '安全气囊生效 (已平稳降级至粗排)',
+      showChunksView: '切片位次分析',
+      showContextView: '组装上下文正文',
       modelConfig: '模型与推理配置',
       provider: '模型服务商',
       model: '推理模型',

@@ -12,6 +12,9 @@ export const KnowledgeNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data
   const query =
     (data.inputs?.['query'] as string) || (data.config?.['query'] as string) || '{{input_1.query}}';
   const topK = typeof data.config?.['topK'] === 'number' ? (data.config['topK'] as number) : 3;
+  const rerankConfig = data.config?.['rerank'] as { enabled?: boolean; topN?: number } | undefined;
+  const hasRerank = Boolean(rerankConfig?.enabled);
+  const rerankTopN = typeof rerankConfig?.topN === 'number' ? rerankConfig.topN : topK;
 
   return (
     <BaseNode
@@ -35,13 +38,23 @@ export const KnowledgeNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data
 
         {/* Query & Top-K badge */}
         <div className="flex items-center justify-between gap-1 text-[10px] font-mono text-slate-500 dark:text-slate-400">
-          <div className="flex items-center gap-1 truncate max-w-[150px]" title={query}>
+          <div className="flex items-center gap-1 truncate max-w-[130px]" title={query}>
             <Search className="w-3 h-3 shrink-0 text-slate-400" />
             <span className="truncate text-slate-700 dark:text-slate-300">{query}</span>
           </div>
-          <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0">
-            Top-{topK}
-          </span>
+          <div className="flex items-center gap-1 shrink-0">
+            {hasRerank && (
+              <span
+                className="px-1.5 py-0.5 rounded bg-violet-50 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 font-semibold border border-violet-200 dark:border-violet-700/50"
+                title={`Rerank Top-${rerankTopN}`}
+              >
+                Rerank
+              </span>
+            )}
+            <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+              Top-{topK}
+            </span>
+          </div>
         </div>
       </div>
     </BaseNode>

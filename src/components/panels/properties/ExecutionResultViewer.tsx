@@ -24,6 +24,7 @@ import type {
   StructuredOutputError,
 } from '../../../engine/types.ts';
 import { useTranslation } from '../../../i18n/useTranslation.ts';
+import { KnowledgeResultView } from './KnowledgeResultView.tsx';
 
 function stripMarkdown(md: string): string {
   return md
@@ -184,7 +185,7 @@ export const ExecutionResultViewer: React.FC<ExecutionResultViewerProps> = ({
   };
 
   const handleCopyFormat = (format: 'md' | 'text' | 'json', formattedStr: string) => {
-    let content = '';
+    let content: string;
     if (format === 'json') {
       content = JSON.stringify(outputs, null, 2);
     } else if (format === 'md') {
@@ -683,34 +684,39 @@ export const ExecutionResultViewer: React.FC<ExecutionResultViewerProps> = ({
           </div>
         )}
 
-        {/* Standard Response Content Box (Shown if outputs exist, or currently running, or idle without errors) */}
-        {(hasOutputs || status === 'running' || !effectiveError) && (
-          <div className="space-y-1.5">
-            {effectiveError && hasOutputs && (
-              <div className="text-[10px] font-mono font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                {language === 'zh' ? '异常前局部返回输出' : 'Partial Return Outputs'}
-              </div>
-            )}
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-200 max-h-72 overflow-y-auto whitespace-pre-wrap leading-relaxed shadow-xs">
-              {hasOutputs ? (
-                <>
-                  {outputString}
-                  {status === 'running' && (
-                    <span className="animate-pulse font-bold text-blue-500"> ▌</span>
-                  )}
-                </>
-              ) : status === 'running' ? (
-                <div className="flex items-center justify-center gap-2 py-4 text-blue-600 dark:text-sky-400">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>{t.propertyPanel.liveStreaming}...</span>
+        {/* Knowledge Node Specialised Chunks & Rank Inspector */}
+        {type === 'knowledge' && hasOutputs && status !== 'running' ? (
+          <KnowledgeResultView outputs={outputs} />
+        ) : (
+          /* Standard Response Content Box (Shown if outputs exist, or currently running, or idle without errors) */
+          (hasOutputs || status === 'running' || !effectiveError) && (
+            <div className="space-y-1.5">
+              {effectiveError && hasOutputs && (
+                <div className="text-[10px] font-mono font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  {language === 'zh' ? '异常前局部返回输出' : 'Partial Return Outputs'}
                 </div>
-              ) : (
-                <span className="text-slate-400 dark:text-slate-500 italic text-center block py-2">
-                  {t.propertyPanel.noNodeSelectedDesc}
-                </span>
               )}
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-200 max-h-72 overflow-y-auto whitespace-pre-wrap leading-relaxed shadow-xs">
+                {hasOutputs ? (
+                  <>
+                    {outputString}
+                    {status === 'running' && (
+                      <span className="animate-pulse font-bold text-blue-500"> ▌</span>
+                    )}
+                  </>
+                ) : status === 'running' ? (
+                  <div className="flex items-center justify-center gap-2 py-4 text-blue-600 dark:text-sky-400">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>{t.propertyPanel.liveStreaming}...</span>
+                  </div>
+                ) : (
+                  <span className="text-slate-400 dark:text-slate-500 italic text-center block py-2">
+                    {t.propertyPanel.noNodeSelectedDesc}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
+          )
         )}
       </div>
     </div>

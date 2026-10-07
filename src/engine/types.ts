@@ -18,9 +18,9 @@
 
 import type { Node, Edge } from '@xyflow/react';
 import { RUNTIME_DEFAULTS } from '../config/runtime-defaults.ts';
-import type { KnowledgeRerankOptions } from './rerank-client.ts';
+import type { KnowledgeRerankOptions, RerankProtocol } from './rerank-client.ts';
 
-export type { KnowledgeRerankOptions };
+export type { KnowledgeRerankOptions, RerankProtocol };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Enumerations & Literal Unions

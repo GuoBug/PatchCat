@@ -99,6 +99,9 @@ export interface KnowledgeRetrievalChunk {
   dense_score?: number;
   rrf_score?: number;
   rerank_score?: number;
+  original_rank?: number;
+  rerank_rank?: number;
+  rank_delta?: number;
   matched_terms?: string[];
 }
 
@@ -774,6 +777,9 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       rrf_score?: number;
       matched_terms?: string[];
       rerank_score?: number;
+      original_rank?: number;
+      rerank_rank?: number;
+      rank_delta?: number;
     };
 
     let candidateList: RetrievedCandidate[];
@@ -906,11 +912,21 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
             // carry a sigmoid score labelled "Similarity" alongside coarse
             // bm25_score / dense_score / rrf_score from a different domain.
             rerank_score: parseFloat(item.score.toFixed(4)),
+            original_rank: item.index + 1,
           });
         }
 
         // Sort strictly by rerank relevance score descending
         rerankedCandidates.sort((a, b) => (b.rerank_score ?? 0) - (a.rerank_score ?? 0));
+
+        // Compute rerank_rank and rank_delta across the entire candidate pool BEFORE filtering and truncation
+        rerankedCandidates.forEach((cand, idx) => {
+          const rerankRank = idx + 1;
+          cand.rerank_rank = rerankRank;
+          if (cand.original_rank !== undefined) {
+            cand.rank_delta = cand.original_rank - rerankRank;
+          }
+        });
 
         // Stage-decoupled threshold. Coarse similarity is floored around 0.45 while
         // sigmoid rerank scores are not, so the coarse `scoreThreshold` is NOT a
@@ -982,6 +998,9 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       dense_score: s.dense_score,
       rrf_score: s.rrf_score,
       rerank_score: s.rerank_score,
+      original_rank: s.original_rank,
+      rerank_rank: s.rerank_rank,
+      rank_delta: s.rank_delta,
       matched_terms: s.matched_terms,
     }));
 

@@ -101,6 +101,19 @@ describe('LocalKnowledgeAdapter — Two-Stage Cross-Encoder Reranking', () => {
       `coarse similarity is floored around 0.45, got ${res.chunks[0].similarity}`,
     );
 
+    // Verify rank telemetry invariants
+    assert.equal(res.chunks[0].original_rank, 3, 'candidate index 2 should have original_rank 3');
+    assert.equal(res.chunks[0].rerank_rank, 1, 'promoted candidate should have rerank_rank 1');
+    assert.equal(res.chunks[0].rank_delta, 2, 'rank_delta should be +2 (promoted by 2 positions)');
+
+    assert.equal(res.chunks[1].original_rank, 1);
+    assert.equal(res.chunks[1].rerank_rank, 2);
+    assert.equal(res.chunks[1].rank_delta, -1, 'rank_delta should be -1 (demoted by 1 position)');
+
+    assert.equal(res.chunks[2].original_rank, 2);
+    assert.equal(res.chunks[2].rerank_rank, 3);
+    assert.equal(res.chunks[2].rank_delta, -1);
+
     // Verify context formatting contains granular rerank score
     assert.ok(res.context.includes('- Rerank: 0.9654'));
   });
