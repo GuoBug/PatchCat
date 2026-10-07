@@ -61,6 +61,34 @@ export interface RerankClientConfig {
   normalizeScores?: boolean;
 }
 
+/**
+ * High-level reranking policy options passed into retrieval layers and workflow nodes.
+ */
+export interface KnowledgeRerankOptions extends RerankClientConfig {
+  /** Master switch to turn cross-encoder reranking on/off. */
+  enabled: boolean;
+  /** Final number of top documents to keep after reranking. Defaults to `topK`. */
+  topN?: number;
+  /**
+   * Post-rerank relevance score cutoff in [0, 1].
+   *
+   * Defaults to `RUNTIME_DEFAULTS.RERANK_SCORE_THRESHOLD` (0.0 = keep everything
+   * the reranker returned, truncated by `topN`).
+   *
+   * Deliberately NOT inherited from the retrieval-stage `scoreThreshold`: the two
+   * live on different scales. Coarse similarity is floored around 0.45 (a perfect
+   * BM25 hit lands near 0.95), whereas sigmoid rerank scores have no floor — the
+   * same numeric value is far more selective on the rerank side, so reusing one
+   * threshold across both stages silently drops relevant chunks.
+   */
+  scoreThreshold?: number;
+  /**
+   * Max coarse-stage candidates fed into the reranker.
+   * Defaults to `Math.min(candidateList.length, Math.max(topK * 3, 15))`.
+   */
+  candidatePoolSize?: number;
+}
+
 export interface RerankErrorOptions {
   protocol: RerankProtocol;
   url: string;

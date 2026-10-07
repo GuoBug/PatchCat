@@ -66,6 +66,10 @@ export const RUNTIME_DEFAULTS = {
   RERANK_TIMEOUT_MS: 8000,
   RERANK_TIMEOUT_MIN_MS: 1000,
   RERANK_TIMEOUT_MAX_MS: 60000,
+  // Rerank scores live on a sigmoid scale with no floor, while coarse similarity
+  // is floored around 0.45. A single numeric threshold is therefore NOT portable
+  // between the two stages — the rerank stage keeps its own, permissive default.
+  RERANK_SCORE_THRESHOLD: 0.0,
 } as const;
 
 export interface RuntimeProtectionSettings {

@@ -30,6 +30,7 @@ import type {
   DAGCheckpoint,
   NodeCheckpointState,
   KnowledgeRetrievePort,
+  KnowledgeRerankOptions,
   LLMNodeConfig,
 } from './types';
 import {
@@ -1870,6 +1871,9 @@ export class BrowserWorkflowEngine {
                     bm25Weight,
                     vectorWeight,
                     rrfK,
+                    ...(node.data.config?.['rerank']
+                      ? { rerank: node.data.config['rerank'] as KnowledgeRerankOptions }
+                      : {}),
                   });
                   if (retrieved && retrieved.context) {
                     contextStr = retrieved.context;

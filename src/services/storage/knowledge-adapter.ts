@@ -11,6 +11,14 @@ import { parseDocumentFile } from '../document-parser.ts';
 import { safeSetLocalStorageItem } from './storage-adapter.ts';
 import { BM25Index, reciprocalRankFusion, type BM25SearchResult } from '../search/bm25-engine.ts';
 import { logger } from '../../engine/logger.ts';
+import {
+  rerankDocuments,
+  type KnowledgeRerankOptions,
+  type RerankDocument,
+} from '../../engine/rerank-client.ts';
+import { RUNTIME_DEFAULTS } from '../../config/runtime-defaults.ts';
+
+export type { KnowledgeRerankOptions };
 
 export interface KnowledgeBaseSummary {
   id: string;
@@ -90,6 +98,7 @@ export interface KnowledgeRetrievalChunk {
   bm25_score?: number;
   dense_score?: number;
   rrf_score?: number;
+  rerank_score?: number;
   matched_terms?: string[];
 }
 
@@ -98,6 +107,7 @@ export interface KnowledgeRetrieveOptions {
   bm25Weight?: number;
   vectorWeight?: number;
   rrfK?: number;
+  rerank?: KnowledgeRerankOptions;
 }
 
 export interface KnowledgeRetrievalResult {
@@ -755,7 +765,7 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
     }
     const maxBm25Score = bm25Results[0]?.score ?? 0;
 
-    let candidateList: Array<{
+    type RetrievedCandidate = {
       chunk: DocumentChunkItem;
       similarity: number;
       search_mode: 'hybrid' | 'bm25' | 'vector';
@@ -763,7 +773,10 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       dense_score?: number;
       rrf_score?: number;
       matched_terms?: string[];
-    }>;
+      rerank_score?: number;
+    };
+
+    let candidateList: RetrievedCandidate[];
 
     if (searchMode === 'bm25') {
       if (bm25Results.length === 0) {
@@ -859,13 +872,92 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       });
     }
 
-    const filtered = candidateList.filter((item) => item.similarity >= scoreThreshold);
-    if (searchMode !== 'hybrid') {
-      filtered.sort((a, b) => b.similarity - a.similarity);
+    let finalSelection: RetrievedCandidate[];
+    const rerankConfig = options?.rerank;
+    const isRerankActive = !!(rerankConfig?.enabled && rerankConfig.baseUrl && rerankConfig.model);
+
+    if (isRerankActive && candidateList.length > 0) {
+      const poolSize =
+        rerankConfig.candidatePoolSize ?? Math.min(candidateList.length, Math.max(topK * 3, 15));
+      const coarsePool = candidateList.slice(0, poolSize);
+      const rerankDocs: RerankDocument[] = coarsePool.map((c) => ({
+        id: c.chunk.id,
+        text: c.chunk.content,
+      }));
+
+      try {
+        const rerankResp = await rerankDocuments(
+          {
+            query,
+            documents: rerankDocs,
+            topN: rerankConfig.topN ?? topK,
+          },
+          rerankConfig,
+        );
+
+        const rerankedCandidates: RetrievedCandidate[] = [];
+        for (const item of rerankResp.results) {
+          const original = coarsePool[item.index];
+          if (!original) continue;
+          rerankedCandidates.push({
+            ...original,
+            // Keep `similarity` as the coarse-stage value. Overwriting it with the
+            // cross-encoder score would destroy provenance: the emitted chunk would
+            // carry a sigmoid score labelled "Similarity" alongside coarse
+            // bm25_score / dense_score / rrf_score from a different domain.
+            rerank_score: parseFloat(item.score.toFixed(4)),
+          });
+        }
+
+        // Sort strictly by rerank relevance score descending
+        rerankedCandidates.sort((a, b) => (b.rerank_score ?? 0) - (a.rerank_score ?? 0));
+
+        // Stage-decoupled threshold. Coarse similarity is floored around 0.45 while
+        // sigmoid rerank scores are not, so the coarse `scoreThreshold` is NOT a
+        // meaningful cutoff for this stage — it would silently over-filter. The
+        // rerank stage therefore has its own default instead of inheriting.
+        const effectiveThreshold =
+          rerankConfig.scoreThreshold ?? RUNTIME_DEFAULTS.RERANK_SCORE_THRESHOLD;
+        const rerankFiltered = rerankedCandidates.filter(
+          (item) => (item.rerank_score ?? 0) >= effectiveThreshold,
+        );
+        const rerankTopN = rerankConfig.topN ?? topK;
+        const selected = rerankFiltered.slice(0, rerankTopN);
+
+        finalSelection =
+          selected.length > 0 ? selected : rerankedCandidates.slice(0, Math.min(2, rerankTopN));
+      } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        logger.warn(
+          'LocalKnowledgeAdapter',
+          `Rerank failed (${errMsg}), gracefully falling back to coarse retrieval`,
+          { error: String(err) },
+        );
+        console.warn(
+          `[LocalKnowledgeAdapter] Rerank failed (${errMsg}), gracefully falling back to coarse retrieval`,
+        );
+
+        // GRACEFUL DEGRADATION AIRBAG:
+        // CRITICAL: NEVER apply rerank.scoreThreshold to coarse candidates!
+        // RRF and lexical scores have completely different scales than sigmoid rerank scores.
+        const filtered = candidateList.filter((item) => item.similarity >= scoreThreshold);
+        if (searchMode !== 'hybrid') {
+          filtered.sort((a, b) => b.similarity - a.similarity);
+        }
+        const selected = filtered.slice(0, topK);
+        finalSelection =
+          selected.length > 0 ? selected : candidateList.slice(0, Math.min(2, topK));
+      }
+    } else {
+      // Standard coarse retrieval path (Rerank disabled or candidate list empty)
+      const filtered = candidateList.filter((item) => item.similarity >= scoreThreshold);
+      if (searchMode !== 'hybrid') {
+        filtered.sort((a, b) => b.similarity - a.similarity);
+      }
+      const selected = filtered.slice(0, topK);
+      finalSelection =
+        selected.length > 0 ? selected : candidateList.slice(0, Math.min(2, topK));
     }
-    const selected = filtered.slice(0, topK);
-    const finalSelection =
-      selected.length > 0 ? selected : candidateList.slice(0, Math.min(2, topK));
 
     // Increment hit_count for recalled chunks
     const allStoredChunks = this.getStoredChunks();
@@ -889,6 +981,7 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       bm25_score: s.bm25_score,
       dense_score: s.dense_score,
       rrf_score: s.rrf_score,
+      rerank_score: s.rerank_score,
       matched_terms: s.matched_terms,
     }));
 
@@ -897,7 +990,9 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
         c.matched_terms && c.matched_terms.length > 0
           ? ` - Terms: ${c.matched_terms.slice(0, 4).join(', ')}`
           : '';
-      return `### [Document: ${c.doc_name} (Position #${c.position} - Similarity: ${c.similarity.toFixed(2)}${termsSuffix})]\n${c.content}`;
+      const rerankSuffix =
+        c.rerank_score !== undefined ? ` - Rerank: ${c.rerank_score.toFixed(4)}` : '';
+      return `### [Document: ${c.doc_name} (Position #${c.position} - Similarity: ${c.similarity.toFixed(2)}${rerankSuffix}${termsSuffix})]\n${c.content}`;
     });
 
     return {
@@ -939,6 +1034,7 @@ export class ServerKnowledgeAdapter implements IKnowledgeAdapter {
     if (options.bm25Weight !== undefined) ignored.push('bm25Weight');
     if (options.vectorWeight !== undefined) ignored.push('vectorWeight');
     if (options.rrfK !== undefined) ignored.push('rrfK');
+    if (options.rerank?.enabled) ignored.push('rerank');
     if (ignored.length === 0) return;
 
     this.warnedUnsupportedOptions = true;
