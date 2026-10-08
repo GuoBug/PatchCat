@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 700" width="960" height="700" style="background: transparent; display: block; max-width: 100%; height: auto;">
+  <defs>
+    <!-- Dot Grid Pattern -->
+    <pattern id="dot-grid-native" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2.5" cy="2.5" r="1.2" fill="#D4D4D8" />
+    </pattern>
+
+    <!-- Arrow Markers -->
+    <marker id="arrow-blk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000" stroke="#000000" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#10B981" stroke="#000000" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#EF4444" stroke="#000000" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563EB" stroke="#000000" stroke-width="1"/>
+    </marker>
+
+    <style>
+      .font-mono { font-family: 'Space Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'PingFang SC', monospace; }
+      .font-heading { font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif; }
+      .bold { font-weight: 700; }
+      .bolder { font-weight: 800; }
+      .black { font-weight: 900; }
+      .border-main { stroke: #000000; stroke-width: 2.5; stroke-linecap: square; stroke-linejoin: miter; }
+      .border-card { stroke: #000000; stroke-width: 2; }
+      .border-thin { stroke: #000000; stroke-width: 1.5; }
+      .border-dashed { stroke: #000000; stroke-width: 1.5; stroke-dasharray: 4 3; }
+      .border-dashed-red { stroke: #EF4444; stroke-width: 1.5; stroke-dasharray: 4 3; }
+    </style>
+  </defs>
+
+  <!-- Outer Shadow & Background Frame -->
+  <rect x="14" y="14" width="932" height="672" rx="8" fill="#000000" />
+  <rect x="10" y="10" width="932" height="672" rx="8" fill="#FAF9F5" class="border-main" />
+  <rect x="14" y="14" width="924" height="664" rx="6" fill="url(#dot-grid-native)" />
+
+  <!-- ================= Top Header Bar ================= -->
+  <rect x="28" y="26" width="896" height="54" rx="6" fill="#000000" />
+  <rect x="25" y="23" width="896" height="54" rx="6" fill="#FFFFFF" class="border-card" />
+
+  <rect x="36" y="32" width="220" height="34" rx="4" fill="#7FFF00" class="border-thin" />
+  <text x="146" y="54" class="font-mono bolder" font-size="12" fill="#000000" text-anchor="middle" letter-spacing="1">AI-NATIVE PARADIGM // 01</text>
+
+  <text x="272" y="55" class="font-heading black" font-size="14.5" fill="#000000" letter-spacing="0.5">TRADITIONAL + AI (WRAPPER) VS TRUE AI-NATIVE (DETERMINISTIC DAG)</text>
+  <text x="895" y="54" class="font-mono bold" font-size="11" fill="#71717A" text-anchor="end">PATCHCAT ARCHITECTURE DECONSTRUCTION</text>
+
+  <!-- ================= Left Column: Traditional "+ AI" Wrapper (Width: 420) ================= -->
+  <g transform="translate(25, 92)">
+    <rect x="3" y="3" width="430" height="475" rx="6" fill="#000000" />
+    <rect x="0" y="0" width="430" height="475" rx="6" fill="#FFFFFF" class="border-card" />
+
+    <!-- Column Header -->
+    <rect x="12" y="12" width="406" height="32" rx="4" fill="#FEE2E2" class="border-thin" />
+    <text x="215" y="33" class="font-mono bolder" font-size="12" fill="#DC2626" text-anchor="middle">TRADITIONAL + AI (旧式外挂套壳模式)</text>
+
+    <!-- Metaphor Tag -->
+    <rect x="20" y="56" width="390" height="26" rx="3" fill="#F4F4F5" class="border-thin" />
+    <text x="215" y="73" class="font-heading bold" font-size="11" fill="#52525B" text-anchor="middle">心智隐喻：在传统蒸汽马车上挂个便携电风扇</text>
+
+    <!-- Box 1: UI Paradigm -->
+    <g transform="translate(20, 95)">
+      <rect x="0" y="0" width="390" height="70" rx="4" fill="#FAFAFA" class="border-thin" />
+      <rect x="8" y="8" width="130" height="20" rx="3" fill="#EF4444" />
+      <text x="73" y="22" class="font-mono bold" font-size="10" fill="#FFFFFF" text-anchor="middle">界面形态：孤立侧边栏</text>
+      <text x="16" y="44" class="font-mono" font-size="11" fill="#27272A">• 页面右侧强塞一个独立 Chatbot 对话框</text>
+      <text x="16" y="60" class="font-mono" font-size="11" fill="#71717A">• 核心业务仍在老旧表单中，AI 无法联动业务状态</text>
+    </g>
+
+    <!-- Box 2: Context Management -->
+    <g transform="translate(20, 180)">
+      <rect x="0" y="0" width="390" height="75" rx="4" fill="#FAFAFA" class="border-thin" />
+      <rect x="8" y="8" width="145" height="20" rx="3" fill="#EF4444" />
+      <text x="80" y="22" class="font-mono bold" font-size="10" fill="#FFFFFF" text-anchor="middle">上下文：无序累加黑洞</text>
+      <text x="16" y="44" class="font-mono" font-size="11" fill="#27272A">• 历史文本全量无脑拼接，迅速击穿 Token 上限</text>
+      <text x="16" y="62" class="font-mono" font-size="11" fill="#71717A">• 关键系统设定被中间噪音稀释（Lost in the Middle）</text>
+    </g>
+
+    <!-- Box 3: Execution Runtime -->
+    <g transform="translate(20, 270)">
+      <rect x="0" y="0" width="390" height="85" rx="4" fill="#FAFAFA" class="border-thin" />
+      <rect x="8" y="8" width="145" height="20" rx="3" fill="#EF4444" />
+      <text x="80" y="22" class="font-mono bold" font-size="10" fill="#FFFFFF" text-anchor="middle">执行链路：黑盒单次调用</text>
+      <text x="16" y="44" class="font-mono" font-size="11" fill="#27272A">• 单点 Prompt 赌概率，页面转圈 30 秒全凭运气</text>
+      <text x="16" y="60" class="font-mono" font-size="11" fill="#27272A">• 中途遇到网络波动或格式错误，全盘崩溃只能从头重跑</text>
+      <text x="16" y="76" class="font-mono" font-size="11" fill="#71717A">• 零可观测性：无法定位哪一步导致了最终幻觉</text>
+    </g>
+
+    <!-- Box 4: Bottom Vulnerability -->
+    <g transform="translate(20, 370)">
+      <rect x="0" y="0" width="390" height="85" rx="4" fill="#FFF1F2" class="border-dashed-red" />
+      <text x="195" y="25" class="font-heading black" font-size="12" fill="#BE123C" text-anchor="middle">⚠️ 架构软肋：脆弱的“概率性赌局”</text>
+      <text x="16" y="48" class="font-mono" font-size="11" fill="#9F1239">大模型的随机性直接击穿业务规则；没有防御轨道，</text>
+      <text x="16" y="68" class="font-mono" font-size="11" fill="#9F1239">抽掉模型后软件依然是老系统，加上模型后故障频发。</text>
+    </g>
+  </g>
+
+  <!-- ================= Right Column: True AI-Native (Width: 460) ================= -->
+  <g transform="translate(475, 92)">
+    <rect x="3" y="3" width="455" height="475" rx="6" fill="#000000" />
+    <rect x="0" y="0" width="455" height="475" rx="6" fill="#FFFFFF" class="border-card" />
+
+    <!-- Column Header -->
+    <rect x="12" y="12" width="431" height="32" rx="4" fill="#ECFDF5" class="border-thin" />
+    <text x="227" y="33" class="font-mono bolder" font-size="12" fill="#059669" text-anchor="middle">TRUE AI-NATIVE (原生确定性工作流架构)</text>
+
+    <!-- Metaphor Tag -->
+    <rect x="20" y="56" width="415" height="26" rx="3" fill="#F4F4F5" class="border-thin" />
+    <text x="227" y="73" class="font-heading bold" font-size="11" fill="#52525B" text-anchor="middle">心智隐喻：专为电驱设计的线控底盘与确定性制导轨道</text>
+
+    <!-- Box 1: Topology & Engine -->
+    <g transform="translate(20, 95)">
+      <rect x="0" y="0" width="415" height="70" rx="4" fill="#F0FDF4" class="border-thin" />
+      <rect x="8" y="8" width="170" height="20" rx="3" fill="#10B981" />
+      <text x="93" y="22" class="font-mono bold" font-size="10" fill="#FFFFFF" text-anchor="middle">拓扑底座：DAG 状态机调度</text>
+      <text x="16" y="44" class="font-mono" font-size="11" fill="#065F46">• Kahn 算法拓扑排序，严格保障前置依赖确定性</text>
+      <text x="16" y="60" class="font-mono" font-size="11" fill="#047857">• 环路死锁排查与 AST 静态预检（Flow Preflight）</text>
+    </g>
+
+    <!-- Box 2: Context Pipeline -->
+    <g transform="translate(20, 180)">
+      <rect x="0" y="0" width="415" height="75" rx="4" fill="#F0FDF4" class="border-thin" />
+      <rect x="8" y="8" width="180" height="20" rx="3" fill="#10B981" />
+      <text x="98" y="22" class="font-mono bold" font-size="10" fill="#FFFFFF" text-anchor="middle">上下文：原子事务裁剪工程</text>
+      <text x="16" y="44" class="font-mono" font-size="11" fill="#065F46">• 系统提示词与近期窗口双锚点刚性固化</text>
+      <text x="16" y="62" class="font-mono" font-size="11" fill="#047857">• 中间过程按需压缩，注意力预算精细分配至每节点</text>
+    </g>
+
+    <!-- Box 3: Resilience & Fault Tolerance -->
+    <g transform="translate(20, 270)">
+      <rect x="0" y="0" width="415" height="85" rx="4" fill="#F0FDF4" class="border-thin" />
+      <rect x="8" y="8" width="195" height="20" rx="3" fill="#10B981" />
+      <text x="105" y="22" class="font-mono bold" font-size="10" fill="#FFFFFF" text-anchor="middle">弹性治理：断点续跑与死锁熔断</text>
+      <text x="16" y="44" class="font-mono" font-size="11" fill="#065F46">• 不可变 Checkpoint 快照与逆向 BFS 回溯局部重跑</text>
+      <text x="16" y="60" class="font-mono" font-size="11" fill="#065F46">• Agent Watchdog 看门狗：连续循环软引导与硬熔断</text>
+      <text x="16" y="76" class="font-mono" font-size="11" fill="#047857">• 全链路 Token、延迟、输入输出状态白盒完全可观测</text>
+    </g>
+
+    <!-- Box 4: Architecture Formula -->
+    <g transform="translate(20, 370)">
+      <rect x="0" y="0" width="415" height="85" rx="4" fill="#EDE9FE" class="border-thin" />
+      <text x="207" y="25" class="font-heading black" font-size="12" fill="#5B21B6" text-anchor="middle">⚡ 架构内核：双驱协同模型</text>
+      <text x="16" y="48" class="font-mono bold" font-size="11" fill="#4C1D95">以概率性大模型为动力核心（发散、意图、创造力），</text>
+      <text x="16" y="68" class="font-mono bold" font-size="11" fill="#4C1D95">以确定性 DAG 状态机为制导轨道（秩序、边界、可复现）。</text>
+    </g>
+  </g>
+
+  <!-- ================= Bottom Formula Banner (Height: 90) ================= -->
+  <g transform="translate(25, 580)">
+    <rect x="3" y="3" width="905" height="85" rx="6" fill="#000000" />
+    <rect x="0" y="0" width="905" height="85" rx="6" fill="#FFFFFF" class="border-card" />
+
+    <!-- Left Badge -->
+    <rect x="16" y="14" width="140" height="57" rx="4" fill="#7FFF00" class="border-thin" />
+    <text x="86" y="38" class="font-mono bolder" font-size="12" fill="#000000" text-anchor="middle">CORE FORMULA</text>
+    <text x="86" y="55" class="font-mono bold" font-size="10" fill="#3F3F46" text-anchor="middle">秒懂真伪原生</text>
+
+    <!-- Middle Formula Text -->
+    <text x="175" y="38" class="font-heading black" font-size="14.5" fill="#000000">AI-Native 判定准则：抽掉大模型，整个应用是否直接丧失存在意义？</text>
+    <text x="175" y="58" class="font-mono" font-size="11.5" fill="#4B5563">传统应用把 AI 当外挂插件；原生应用把 AI 视作核心发电机，用状态机约束其发散，交付工业级确定性。</text>
+
+    <!-- Right Specs Tag -->
+    <rect x="745" y="16" width="144" height="53" rx="4" fill="#F4F4F5" class="border-thin" />
+    <text x="817" y="36" class="font-mono bold" font-size="10" fill="#000000" text-anchor="middle">PATCHCAT PROTOCOL</text>
+    <text x="817" y="53" class="font-mono bolder" font-size="11" fill="#10B981" text-anchor="middle">LOCAL-FIRST FIRST</text>
+  </g>
+</svg>
