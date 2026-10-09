@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 700" width="960" height="700" style="background: transparent; display: block; max-width: 100%; height: auto;">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 710" width="960" height="710" style="background: transparent; display: block; max-width: 100%; height: auto;">
   <defs>
     <!-- Dot Grid Pattern -->
     <pattern id="dot-grid-native" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -20,151 +20,155 @@
     </marker>
 
     <style>
-      .font-mono { font-family: 'Space Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'PingFang SC', monospace; }
-      .font-heading { font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif; }
+      .font-mono { font-family: 'Space Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+      .font-heading { font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
       .bold { font-weight: 700; }
       .bolder { font-weight: 800; }
       .black { font-weight: 900; }
       .border-main { stroke: #000000; stroke-width: 2.5; stroke-linecap: square; stroke-linejoin: miter; }
       .border-card { stroke: #000000; stroke-width: 2; }
       .border-thin { stroke: #000000; stroke-width: 1.5; }
-      .border-dashed { stroke: #000000; stroke-width: 1.5; stroke-dasharray: 4 3; }
       .border-dashed-red { stroke: #EF4444; stroke-width: 1.5; stroke-dasharray: 4 3; }
     </style>
   </defs>
 
   <!-- Outer Shadow & Background Frame -->
-  <rect x="14" y="14" width="932" height="672" rx="8" fill="#000000" />
-  <rect x="10" y="10" width="932" height="672" rx="8" fill="#FAF9F5" class="border-main" />
-  <rect x="14" y="14" width="924" height="664" rx="6" fill="url(#dot-grid-native)" />
+  <rect x="14" y="14" width="932" height="682" rx="8" fill="#000000" />
+  <rect x="10" y="10" width="932" height="682" rx="8" fill="#FAF9F5" class="border-main" />
+  <rect x="14" y="14" width="924" height="674" rx="6" fill="url(#dot-grid-native)" />
 
   <!-- ================= Top Header Bar ================= -->
   <rect x="28" y="26" width="896" height="54" rx="6" fill="#000000" />
   <rect x="25" y="23" width="896" height="54" rx="6" fill="#FFFFFF" class="border-card" />
 
-  <rect x="36" y="32" width="220" height="34" rx="4" fill="#7FFF00" class="border-thin" />
-  <text x="146" y="54" class="font-mono bolder" font-size="12" fill="#000000" text-anchor="middle" letter-spacing="1">AI-NATIVE PARADIGM // 01</text>
+  <rect x="36" y="32" width="180" height="34" rx="4" fill="#7FFF00" class="border-thin" />
+  <text x="126" y="54" class="font-mono bolder" font-size="11" fill="#000000" text-anchor="middle" letter-spacing="1">AI-NATIVE PARADIGM</text>
 
-  <text x="272" y="55" class="font-heading black" font-size="14.5" fill="#000000" letter-spacing="0.5">TRADITIONAL + AI (WRAPPER) VS TRUE AI-NATIVE (DETERMINISTIC DAG)</text>
-  <text x="895" y="54" class="font-mono bold" font-size="11" fill="#71717A" text-anchor="end">PATCHCAT ARCHITECTURE DECONSTRUCTION</text>
+  <text x="230" y="55" class="font-heading black" font-size="13" fill="#000000" letter-spacing="0.2">TRADITIONAL + AI (WRAPPER) VS TRUE AI-NATIVE (DAG)</text>
+  <text x="902" y="54" class="font-mono bold" font-size="10.5" fill="#71717A" text-anchor="end">PATCHCAT ARCHITECTURE MATRIX</text>
 
-  <!-- ================= Left Column: Traditional "+ AI" Wrapper (Width: 430) ================= -->
-  <g transform="translate(25, 92)">
-    <rect x="3" y="3" width="430" height="475" rx="6" fill="#000000" />
-    <rect x="0" y="0" width="430" height="475" rx="6" fill="#FFFFFF" class="border-card" />
+  <!-- ================= Left Column: Traditional "+ AI" Wrapper (Width: 434) ================= -->
+  <g transform="translate(25, 90)">
+    <rect x="3" y="3" width="434" height="478" rx="6" fill="#000000" />
+    <rect x="0" y="0" width="434" height="478" rx="6" fill="#FFFFFF" class="border-card" />
 
     <!-- Column Header -->
-    <rect x="12" y="12" width="406" height="32" rx="4" fill="#FEE2E2" class="border-thin" />
-    <text x="215" y="33" class="font-mono bolder" font-size="12" fill="#DC2626" text-anchor="middle">TRADITIONAL + AI (LEGACY WRAPPER PATTERN)</text>
+    <rect x="12" y="12" width="410" height="32" rx="4" fill="#FEE2E2" class="border-thin" />
+    <text x="217" y="33" class="font-mono bolder" font-size="11" fill="#DC2626" text-anchor="middle">TRADITIONAL + AI (LEGACY WRAPPER PATTERN)</text>
 
     <!-- Metaphor Tag -->
-    <rect x="20" y="56" width="390" height="26" rx="3" fill="#F4F4F5" class="border-thin" />
-    <text x="215" y="73" class="font-heading bold" font-size="11" fill="#52525B" text-anchor="middle">Mental Model: Mounting a small fan on an 18th-century carriage</text>
+    <rect x="18" y="54" width="398" height="26" rx="3" fill="#F4F4F5" class="border-thin" />
+    <text x="217" y="71" class="font-heading bold" font-size="10.5" fill="#52525B" text-anchor="middle">Mental Model: Mounting a fan on an 18th-century carriage</text>
 
     <!-- Box 1: UI Paradigm -->
-    <g transform="translate(20, 95)">
-      <rect x="0" y="0" width="390" height="70" rx="4" fill="#FAFAFA" class="border-thin" />
-      <rect x="8" y="8" width="160" height="20" rx="3" fill="#EF4444" />
-      <text x="88" y="22" class="font-mono bold" font-size="10" fill="#FFFFFF" text-anchor="middle">UI: ISOLATED CHAT SIDEBAR</text>
-      <text x="16" y="44" class="font-mono" font-size="11" fill="#27272A">• Chatbot modal arbitrarily tacked onto the right sidebar</text>
-      <text x="16" y="60" class="font-mono" font-size="11" fill="#71717A">• Core business stays in legacy forms; AI cannot mutate state</text>
+    <g transform="translate(18, 90)">
+      <rect x="0" y="0" width="398" height="70" rx="4" fill="#FAFAFA" class="border-thin" />
+      <rect x="8" y="8" width="165" height="20" rx="3" fill="#EF4444" />
+      <text x="90" y="22" class="font-mono bold" font-size="9.5" fill="#FFFFFF" text-anchor="middle">UI: ISOLATED CHAT SIDEBAR</text>
+      <text x="12" y="44" class="font-heading" font-size="10.5" fill="#27272A">• Chatbot modal arbitrarily tacked onto a legacy page sidebar</text>
+      <text x="12" y="60" class="font-heading" font-size="10.5" fill="#71717A">• Core logic stays in forms; model cannot mutate business state</text>
     </g>
 
     <!-- Box 2: Context Management -->
-    <g transform="translate(20, 180)">
-      <rect x="0" y="0" width="390" height="75" rx="4" fill="#FAFAFA" class="border-thin" />
-      <rect x="8" y="8" width="170" height="20" rx="3" fill="#EF4444" />
-      <text x="93" y="22" class="font-mono bold" font-size="10" fill="#FFFFFF" text-anchor="middle">CONTEXT: MONOLITHIC BLACK HOLE</text>
-      <text x="16" y="44" class="font-mono" font-size="11" fill="#27272A">• Uncapped array append operations rapidly breach token caps</text>
-      <text x="16" y="62" class="font-mono" font-size="11" fill="#71717A">• System personas diluted by intermediate logs (Lost in Middle)</text>
+    <g transform="translate(18, 172)">
+      <rect x="0" y="0" width="398" height="75" rx="4" fill="#FAFAFA" class="border-thin" />
+      <rect x="8" y="8" width="185" height="20" rx="3" fill="#EF4444" />
+      <text x="100" y="22" class="font-mono bold" font-size="9.5" fill="#FFFFFF" text-anchor="middle">CONTEXT: MONOLITHIC BLACK HOLE</text>
+      <text x="12" y="44" class="font-heading" font-size="10.5" fill="#27272A">• Naive array appends rapidly breach token budget ceilings</text>
+      <text x="12" y="62" class="font-heading" font-size="10.5" fill="#71717A">• Core instructions diluted by noisy history logs (Lost in Middle)</text>
     </g>
 
     <!-- Box 3: Execution Runtime -->
-    <g transform="translate(20, 270)">
-      <rect x="0" y="0" width="390" height="85" rx="4" fill="#FAFAFA" class="border-thin" />
+    <g transform="translate(18, 259)">
+      <rect x="0" y="0" width="398" height="85" rx="4" fill="#FAFAFA" class="border-thin" />
       <rect x="8" y="8" width="165" height="20" rx="3" fill="#EF4444" />
-      <text x="90" y="22" class="font-mono bold" font-size="10" fill="#FFFFFF" text-anchor="middle">RUNTIME: OPAQUE SINGLE CALL</text>
-      <text x="16" y="44" class="font-mono" font-size="11" fill="#27272A">• Single-prompt gamble; UI freezes for 30s in blind suspense</text>
-      <text x="16" y="60" class="font-mono" font-size="11" fill="#27272A">• Formatting errors crash pipeline; forces full restart from step 1</text>
-      <text x="16" y="76" class="font-mono" font-size="11" fill="#71717A">• Zero observability: impossible to isolate hallucination causes</text>
+      <text x="90" y="22" class="font-mono bold" font-size="9.5" fill="#FFFFFF" text-anchor="middle">RUNTIME: OPAQUE SINGLE CALL</text>
+      <text x="12" y="44" class="font-heading" font-size="10.5" fill="#27272A">• Single-prompt gamble; UI freezes for 30s in blind suspense</text>
+      <text x="12" y="60" class="font-heading" font-size="10.5" fill="#27272A">• Any format error crashes flow; forces re-running from step 1</text>
+      <text x="12" y="76" class="font-heading" font-size="10.5" fill="#71717A">• Zero observability: impossible to isolate hallucination sources</text>
     </g>
 
     <!-- Box 4: Bottom Vulnerability -->
-    <g transform="translate(20, 370)">
-      <rect x="0" y="0" width="390" height="85" rx="4" fill="#FFF1F2" class="border-dashed-red" />
-      <text x="195" y="25" class="font-heading black" font-size="12" fill="#BE123C" text-anchor="middle">⚠️ SYSTEM VULNERABILITY: FRAGILE CASINO</text>
-      <text x="16" y="48" class="font-mono" font-size="11" fill="#9F1239">Model variance breaches business invariants without rails.</text>
-      <text x="16" y="68" class="font-mono" font-size="11" fill="#9F1239">Severing AI leaves legacy app intact; adding it creates chaos.</text>
+    <g transform="translate(18, 356)">
+      <rect x="0" y="0" width="398" height="106" rx="4" fill="#FFF1F2" class="border-dashed-red" />
+      <text x="199" y="24" class="font-heading black" font-size="11" fill="#BE123C" text-anchor="middle">⚠️ VULNERABILITY: UNGUARDED PROBABILISTIC GAMBLE</text>
+      <text x="12" y="48" class="font-heading" font-size="10.5" fill="#9F1239">• Model variance breaks business rules without guiding rails.</text>
+      <text x="12" y="68" class="font-heading" font-size="10.5" fill="#9F1239">• Severing AI leaves legacy app intact; adding it creates chaos.</text>
+      <text x="12" y="88" class="font-heading" font-size="10" fill="#BE123C" font-style="italic">Result: A fragile toy interface incapable of production rigor.</text>
     </g>
   </g>
 
-  <!-- ================= Right Column: True AI-Native (Width: 455) ================= -->
-  <g transform="translate(475, 92)">
-    <rect x="3" y="3" width="455" height="475" rx="6" fill="#000000" />
-    <rect x="0" y="0" width="455" height="475" rx="6" fill="#FFFFFF" class="border-card" />
+  <!-- ================= Right Column: True AI-Native (Width: 450) ================= -->
+  <g transform="translate(473, 90)">
+    <rect x="3" y="3" width="450" height="478" rx="6" fill="#000000" />
+    <rect x="0" y="0" width="450" height="478" rx="6" fill="#FFFFFF" class="border-card" />
 
     <!-- Column Header -->
-    <rect x="12" y="12" width="431" height="32" rx="4" fill="#ECFDF5" class="border-thin" />
-    <text x="227" y="33" class="font-mono bolder" font-size="12" fill="#059669" text-anchor="middle">TRUE AI-NATIVE (DETERMINISTIC GRAPH ARCHITECTURE)</text>
+    <rect x="12" y="12" width="426" height="32" rx="4" fill="#ECFDF5" class="border-thin" />
+    <text x="225" y="33" class="font-mono bolder" font-size="11" fill="#059669" text-anchor="middle">TRUE AI-NATIVE (DETERMINISTIC GRAPH ARCHITECTURE)</text>
 
     <!-- Metaphor Tag -->
-    <rect x="20" y="56" width="415" height="26" rx="3" fill="#F4F4F5" class="border-thin" />
-    <text x="227" y="73" class="font-heading bold" font-size="11" fill="#52525B" text-anchor="middle">Mental Model: Purpose-built electric chassis with deterministic rails</text>
+    <rect x="18" y="54" width="414" height="26" rx="3" fill="#F4F4F5" class="border-thin" />
+    <text x="225" y="71" class="font-heading bold" font-size="10.5" fill="#52525B" text-anchor="middle">Mental Model: Purpose-built electric chassis with deterministic rails</text>
 
     <!-- Box 1: Topology & Engine -->
-    <g transform="translate(20, 95)">
-      <rect x="0" y="0" width="415" height="70" rx="4" fill="#F0FDF4" class="border-thin" />
-      <rect x="8" y="8" width="190" height="20" rx="3" fill="#10B981" />
-      <text x="103" y="22" class="font-mono bold" font-size="10" fill="#FFFFFF" text-anchor="middle">TOPOLOGY: DAG STATE MACHINE</text>
-      <text x="16" y="44" class="font-mono" font-size="11" fill="#065F46">• Kahn's topological sort ensures strict upstream data readiness</text>
-      <text x="16" y="60" class="font-mono" font-size="11" fill="#047857">• Pre-flight cycle deadlock interception &amp; static AST verification</text>
+    <g transform="translate(18, 90)">
+      <rect x="0" y="0" width="414" height="70" rx="4" fill="#F0FDF4" class="border-thin" />
+      <rect x="8" y="8" width="180" height="20" rx="3" fill="#10B981" />
+      <text x="98" y="22" class="font-mono bold" font-size="9.5" fill="#FFFFFF" text-anchor="middle">TOPOLOGY: DAG STATE MACHINE</text>
+      <text x="12" y="44" class="font-heading" font-size="10.5" fill="#065F46">• Kahn's topological sort guarantees upstream data readiness</text>
+      <text x="12" y="60" class="font-heading" font-size="10.5" fill="#047857">• Pre-flight cycle deadlock interception &amp; static AST validation</text>
     </g>
 
     <!-- Box 2: Context Pipeline -->
-    <g transform="translate(20, 180)">
-      <rect x="0" y="0" width="415" height="75" rx="4" fill="#F0FDF4" class="border-thin" />
-      <rect x="8" y="8" width="195" height="20" rx="3" fill="#10B981" />
-      <text x="105" y="22" class="font-mono bold" font-size="10" fill="#FFFFFF" text-anchor="middle">CONTEXT: TRANSACTION PRUNING</text>
-      <text x="16" y="44" class="font-mono" font-size="11" fill="#065F46">• System prompt &amp; user goals locked as immutable dual anchors</text>
-      <text x="16" y="62" class="font-mono" font-size="11" fill="#047857">• Intermediate steps compacted into concise high-entropy tuples</text>
+    <g transform="translate(18, 172)">
+      <rect x="0" y="0" width="414" height="75" rx="4" fill="#F0FDF4" class="border-thin" />
+      <rect x="8" y="8" width="190" height="20" rx="3" fill="#10B981" />
+      <text x="103" y="22" class="font-mono bold" font-size="9.5" fill="#FFFFFF" text-anchor="middle">CONTEXT: TRANSACTION PRUNING</text>
+      <text x="12" y="44" class="font-heading" font-size="10.5" fill="#065F46">• System prompt &amp; user goals locked as immutable dual anchors</text>
+      <text x="12" y="62" class="font-heading" font-size="10.5" fill="#047857">• Intermediate steps compacted into dense key-value tuples</text>
     </g>
 
     <!-- Box 3: Resilience & Fault Tolerance -->
-    <g transform="translate(20, 270)">
-      <rect x="0" y="0" width="415" height="85" rx="4" fill="#F0FDF4" class="border-thin" />
-      <rect x="8" y="8" width="195" height="20" rx="3" fill="#10B981" />
-      <text x="105" y="22" class="font-mono bold" font-size="10" fill="#FFFFFF" text-anchor="middle">RESILIENCE: RESUMPTION &amp; GUARDS</text>
-      <text x="16" y="44" class="font-mono" font-size="11" fill="#065F46">• Immutable JSON snapshots with reverse-BFS subgraph resumption</text>
-      <text x="16" y="60" class="font-mono" font-size="11" fill="#065F46">• ReAct watchdogs: soft reflection hints &amp; hard circuit breakers</text>
-      <text x="16" y="76" class="font-mono" font-size="11" fill="#047857">• Full white-box observability: tokens, latency, and node payloads</text>
+    <g transform="translate(18, 259)">
+      <rect x="0" y="0" width="414" height="85" rx="4" fill="#F0FDF4" class="border-thin" />
+      <rect x="8" y="8" width="190" height="20" rx="3" fill="#10B981" />
+      <text x="103" y="22" class="font-mono bold" font-size="9.5" fill="#FFFFFF" text-anchor="middle">RESILIENCE: RESUMPTION &amp; GUARDS</text>
+      <text x="12" y="44" class="font-heading" font-size="10.5" fill="#065F46">• Immutable JSON snapshots with reverse-BFS subgraph resumption</text>
+      <text x="12" y="60" class="font-heading" font-size="10.5" fill="#065F46">• ReAct watchdogs: soft reflection hints &amp; hard circuit breakers</text>
+      <text x="12" y="76" class="font-heading" font-size="10.5" fill="#047857">• Full white-box telemetry: tokens, latency, and step payloads</text>
     </g>
 
     <!-- Box 4: Architecture Formula -->
-    <g transform="translate(20, 370)">
-      <rect x="0" y="0" width="415" height="85" rx="4" fill="#EDE9FE" class="border-thin" />
-      <text x="207" y="25" class="font-heading black" font-size="12" fill="#5B21B6" text-anchor="middle">⚡ CORE ENGINE: DUAL-DRIVE PARADIGM</text>
-      <text x="16" y="48" class="font-mono bold" font-size="11" fill="#4C1D95">Probabilistic LLM engine provides raw propulsion (creativity &amp; intent);</text>
-      <text x="16" y="68" class="font-mono bold" font-size="11" fill="#4C1D95">Deterministic DAG state machine provides guiding rails (order &amp; certainty).</text>
+    <g transform="translate(18, 356)">
+      <rect x="0" y="0" width="414" height="106" rx="4" fill="#EDE9FE" class="border-thin" />
+      <text x="207" y="24" class="font-heading black" font-size="11" fill="#5B21B6" text-anchor="middle">⚡ CORE ENGINE: DUAL-DRIVE PARADIGM</text>
+      <text x="12" y="48" class="font-heading bold" font-size="10" fill="#4C1D95">• Probabilistic LLM engine supplies raw propulsion (creativity &amp; intent);</text>
+      <text x="12" y="68" class="font-heading bold" font-size="10" fill="#4C1D95">• Deterministic DAG state machine enforces guiding rails (order &amp; certainty).</text>
+      <text x="12" y="88" class="font-heading" font-size="10" fill="#5B21B6" font-style="italic">Result: Industrial-grade reliability with resilient self-healing loops.</text>
     </g>
   </g>
 
-  <!-- ================= Bottom Formula Banner (Height: 90) ================= -->
-  <g transform="translate(25, 580)">
-    <rect x="3" y="3" width="905" height="85" rx="6" fill="#000000" />
-    <rect x="0" y="0" width="905" height="85" rx="6" fill="#FFFFFF" class="border-card" />
+  <!-- ================= Bottom Formula Banner (Height: 96) ================= -->
+  <g transform="translate(25, 582)">
+    <rect x="3" y="3" width="900" height="96" rx="6" fill="#000000" />
+    <rect x="0" y="0" width="900" height="96" rx="6" fill="#FFFFFF" class="border-card" />
 
     <!-- Left Badge -->
-    <rect x="16" y="14" width="140" height="57" rx="4" fill="#7FFF00" class="border-thin" />
-    <text x="86" y="38" class="font-mono bolder" font-size="12" fill="#000000" text-anchor="middle">CORE LITMUS TEST</text>
-    <text x="86" y="55" class="font-mono bold" font-size="10" fill="#3F3F46" text-anchor="middle">NATIVE VS WRAPPER</text>
+    <rect x="14" y="14" width="125" height="68" rx="4" fill="#7FFF00" class="border-thin" />
+    <text x="76" y="43" class="font-mono bolder" font-size="11" fill="#000000" text-anchor="middle">CORE TEST</text>
+    <text x="76" y="62" class="font-mono bold" font-size="9" fill="#3F3F46" text-anchor="middle">NATIVE VS +AI</text>
 
     <!-- Middle Formula Text -->
-    <text x="175" y="38" class="font-heading black" font-size="14.5" fill="#000000">The Litmus Test: If you sever the model API, does the software lose its entire purpose?</text>
-    <text x="175" y="58" class="font-mono" font-size="11.5" fill="#4B5563">Legacy apps treat AI as a decorative plug-in. Native apps treat AI as the central engine, using state machines to bind variance and deliver production certainty.</text>
+    <g transform="translate(155, 0)">
+      <text x="0" y="34" class="font-heading black" font-size="12" fill="#000000">Litmus Test: If you sever the model API, does the product lose its reason to exist?</text>
+      <text x="0" y="56" class="font-heading" font-size="10.5" fill="#374151">• Legacy wrappers treat AI as an add-on; removing it leaves CRUD workflows intact.</text>
+      <text x="0" y="74" class="font-heading" font-size="10.5" fill="#374151">• Native apps treat AI as the central engine, bound by state machines to ensure certainty.</text>
+    </g>
 
     <!-- Right Specs Tag -->
-    <rect x="745" y="16" width="144" height="53" rx="4" fill="#F4F4F5" class="border-thin" />
-    <text x="817" y="36" class="font-mono bold" font-size="10" fill="#000000" text-anchor="middle">PATCHCAT PROTOCOL</text>
-    <text x="817" y="53" class="font-mono bolder" font-size="11" fill="#10B981" text-anchor="middle">LOCAL-FIRST FIRST</text>
+    <rect x="744" y="14" width="142" height="68" rx="4" fill="#F4F4F5" class="border-thin" />
+    <text x="815" y="44" class="font-mono bold" font-size="9.5" fill="#000000" text-anchor="middle">PATCHCAT PROTOCOL</text>
+    <text x="815" y="63" class="font-mono bolder" font-size="11" fill="#10B981" text-anchor="middle">LOCAL-FIRST FIRST</text>
   </g>
 </svg>

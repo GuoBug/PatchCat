@@ -1,0 +1,361 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 604" width="1000" height="604" style="background: transparent; display: block;">
+  <defs>
+    <!-- Background Grid Pattern -->
+    <pattern id="dot-grid" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#D4D4D8" />
+    </pattern>
+
+    <!-- Global Stylesheet -->
+    <style>
+      .font-mono {
+        font-family: 'Space Mono', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace, sans-serif;
+      }
+      .font-heading {
+        font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      .bold { font-weight: 700; }
+      .black-border { stroke: #000000; stroke-width: 2.5; stroke-linecap: square; stroke-linejoin: miter; }
+      .heavy-border { stroke: #000000; stroke-width: 3; stroke-linecap: square; stroke-linejoin: miter; }
+      .thin-border { stroke: #000000; stroke-width: 1.5; }
+    </style>
+  </defs>
+
+  <!-- ========================================== -->
+  <!-- 0. OUTER CANVAS CONTAINER (Neo-Brutalism) -->
+  <!-- ========================================== -->
+  <!-- Hard Shadow for Outer Canvas -->
+  <rect x="18" y="18" width="970" height="574" rx="6" fill="#000000" />
+  <!-- Main Canvas Card -->
+  <rect x="12" y="12" width="970" height="574" rx="6" fill="#FAF9F5" class="heavy-border" />
+  <!-- Canvas Dot Grid -->
+  <rect x="15" y="15" width="964" height="568" rx="4" fill="url(#dot-grid)" />
+
+  <!-- ========================================== -->
+  <!-- 1. TOP HEADER BAR                          -->
+  <!-- ========================================== -->
+  <g id="header-group">
+    <!-- Header Shadow -->
+    <rect x="36" y="26" width="928" height="48" rx="4" fill="#000000" />
+    <!-- Header Card -->
+    <rect x="32" y="22" width="928" height="48" rx="4" fill="#FFFFFF" class="black-border" />
+
+    <!-- Neo Badge -->
+    <rect x="44" y="32" width="144" height="28" rx="3" fill="#7FFF00" class="thin-border" />
+    <text x="116" y="50" class="font-mono bold" font-size="11" fill="#000000" text-anchor="middle" letter-spacing="1">GEO // BLUEPRINT</text>
+
+    <!-- Main Title -->
+    <text x="200" y="51" class="font-heading bold" font-size="13" fill="#000000" letter-spacing="0.3">GENERATIVE ENGINE OPTIMIZATION ARCHITECTURE</text>
+    
+    <!-- Subtitle / Meta (Adjusted position and text length to avoid collision) -->
+    <text x="562" y="50" class="font-mono" font-size="9" fill="#52525B">GUOBUG.GITHUB.IO · AI GROUND-TRUTH</text>
+
+    <!-- Status Badge -->
+    <rect x="832" y="32" width="116" height="28" rx="3" fill="#000000" />
+    <circle cx="846" cy="46" r="3.5" fill="#7FFF00" />
+    <text x="856" y="50" class="font-mono bold" font-size="9.5" fill="#7FFF00">SPEC v2.4 VERIFIED</text>
+  </g>
+
+  <!-- ========================================== -->
+  <!-- 2. AGENT INGRESS & BOT DISPATCH BAR       -->
+  <!-- ========================================== -->
+  <g id="ingress-group">
+    <!-- Ingress Shadow -->
+    <rect x="36" y="86" width="928" height="42" rx="4" fill="#000000" />
+    <!-- Ingress Card -->
+    <rect x="32" y="82" width="928" height="42" rx="4" fill="#0D1117" class="black-border" />
+
+    <!-- Terminal Window Dots -->
+    <circle cx="48" cy="103" r="4" fill="#FF5F56" />
+    <circle cx="61" cy="103" r="4" fill="#FFBD2E" />
+    <circle cx="74" cy="103" r="4" fill="#27C93F" />
+
+    <!-- Terminal Prompt -->
+    <text x="90" y="107" class="font-mono bold" font-size="10.5" fill="#7FFF00">AGENT INGRESS</text>
+    <text x="194" y="107" class="font-mono" font-size="9.5" fill="#8B949E">HTTP GET / Autonomous Discovery:</text>
+
+    <!-- Agent Bot Pills -->
+    <!-- Perplexity -->
+    <rect x="390" y="91" width="94" height="24" rx="3" fill="#161B22" stroke="#30363D" stroke-width="1.2" />
+    <text x="437" y="107" class="font-mono bold" font-size="9" fill="#58A6FF" text-anchor="middle">PerplexityBot</text>
+
+    <!-- SearchGPT -->
+    <rect x="492" y="91" width="82" height="24" rx="3" fill="#161B22" stroke="#30363D" stroke-width="1.2" />
+    <text x="533" y="107" class="font-mono bold" font-size="9" fill="#58A6FF" text-anchor="middle">SearchGPT</text>
+
+    <!-- ClaudeBot -->
+    <rect x="582" y="91" width="82" height="24" rx="3" fill="#161B22" stroke="#30363D" stroke-width="1.2" />
+    <text x="623" y="107" class="font-mono bold" font-size="9" fill="#D2A8FF" text-anchor="middle">ClaudeBot</text>
+
+    <!-- GPTBot -->
+    <rect x="672" y="91" width="70" height="24" rx="3" fill="#161B22" stroke="#30363D" stroke-width="1.2" />
+    <text x="707" y="107" class="font-mono bold" font-size="9" fill="#7EE787" text-anchor="middle">GPTBot</text>
+
+    <!-- Cursor Agent -->
+    <rect x="750" y="91" width="94" height="24" rx="3" fill="#161B22" stroke="#30363D" stroke-width="1.2" />
+    <text x="797" y="107" class="font-mono bold" font-size="9" fill="#FFA657" text-anchor="middle">Cursor Agent</text>
+
+    <!-- Active State Pill -->
+    <rect x="852" y="91" width="96" height="24" rx="3" fill="#7FFF00" class="thin-border" />
+    <text x="900" y="107" class="font-mono bold" font-size="8.5" fill="#000000" text-anchor="middle">PROTOCOL 200 OK</text>
+  </g>
+
+  <!-- Ingress to Module 1 Guiding Arrow -->
+  <g id="ingress-arrow">
+    <line x1="172" y1="124" x2="172" y2="136" stroke="#000000" stroke-width="3" />
+    <polygon points="166,134 172,142 178,134" fill="#000000" />
+    <rect x="134" y="122" width="76" height="15" rx="2" fill="#7FFF00" class="thin-border" />
+    <text x="172" y="133" class="font-mono bold" font-size="8" fill="#000000" text-anchor="middle">1. DISCOVER</text>
+  </g>
+
+  <!-- ========================================== -->
+  <!-- 3. MODULE 01: TRIPLE DISCOVERY REDUNDANCY  -->
+  <!-- ========================================== -->
+  <g id="module-1">
+    <!-- Outer Card Shadow -->
+    <rect x="36" y="146" width="280" height="364" rx="4" fill="#000000" />
+    <!-- Outer Card -->
+    <rect x="32" y="142" width="280" height="364" rx="4" fill="#FFFFFF" class="black-border" />
+
+    <!-- Module Header -->
+    <rect x="32" y="142" width="280" height="42" rx="4" fill="#F4F4F5" />
+    <line x1="32" y1="184" x2="312" y2="184" stroke="#000000" stroke-width="2" />
+    <rect x="42" y="152" width="76" height="22" rx="3" fill="#7FFF00" class="thin-border" />
+    <text x="80" y="167" class="font-mono bold" font-size="9" fill="#000000" text-anchor="middle">MODULE 01</text>
+    <text x="126" y="168" class="font-heading bold" font-size="10" fill="#000000">TRIPLE AUTO-DISCOVERY</text>
+
+    <!-- Sub-Card 1: HTML <link> -->
+    <rect x="45" y="196" width="254" height="92" rx="3" fill="#000000" />
+    <rect x="42" y="193" width="254" height="92" rx="3" fill="#FFFFFF" class="thin-border" />
+    <!-- Sub-Card 1 Header -->
+    <rect x="50" y="200" width="74" height="17" rx="2" fill="#000000" />
+    <text x="87" y="212" class="font-mono bold" font-size="8" fill="#7FFF00" text-anchor="middle">HTML &lt;LINK&gt;</text>
+    <text x="132" y="213" class="font-mono bold" font-size="9" fill="#000000">Auto-Discovery</text>
+    <!-- Code Box -->
+    <rect x="50" y="222" width="238" height="36" rx="2" fill="#F4F4F5" stroke="#E4E4E7" stroke-width="1" />
+    <text x="56" y="235" class="font-mono" font-size="8" fill="#0969DA">&lt;link rel="alternate" type="text/markdown"</text>
+    <text x="56" y="248" class="font-mono" font-size="8" fill="#0969DA">  href="/llms.txt" title="LLM Protocol"&gt;</text>
+    <!-- Footnote -->
+    <text x="50" y="273" class="font-mono" font-size="7" fill="#52525B">● Injected into &lt;head&gt; for zero-sniff bot ingestion</text>
+
+    <!-- Sub-Card 2: robots.txt -->
+    <rect x="45" y="299" width="254" height="92" rx="3" fill="#000000" />
+    <rect x="42" y="296" width="254" height="92" rx="3" fill="#FFFFFF" class="thin-border" />
+    <!-- Sub-Card 2 Header -->
+    <rect x="50" y="303" width="84" height="17" rx="2" fill="#000000" />
+    <text x="92" y="315" class="font-mono bold" font-size="8" fill="#7FFF00" text-anchor="middle">ROBOTS.TXT</text>
+    <text x="142" y="316" class="font-mono bold" font-size="9" fill="#000000">Directives</text>
+    <!-- Code Box -->
+    <rect x="50" y="325" width="238" height="36" rx="2" fill="#F4F4F5" stroke="#E4E4E7" stroke-width="1" />
+    <text x="56" y="338" class="font-mono" font-size="8" fill="#116329">LLMs-Txt: https://guobug.github.io/llms.txt</text>
+    <text x="56" y="351" class="font-mono" font-size="8" fill="#116329">User-agent: ClaudeBot / GPTBot Allow: /</text>
+    <!-- Footnote -->
+    <text x="50" y="376" class="font-mono" font-size="7" fill="#52525B">● Declares LLMs-Txt directive &amp; bot allowlist</text>
+
+    <!-- Sub-Card 3: sitemap.xml -->
+    <rect x="45" y="402" width="254" height="92" rx="3" fill="#000000" />
+    <rect x="42" y="399" width="254" height="92" rx="3" fill="#FFFFFF" class="thin-border" />
+    <!-- Sub-Card 3 Header -->
+    <rect x="50" y="406" width="84" height="17" rx="2" fill="#000000" />
+    <text x="92" y="418" class="font-mono bold" font-size="8" fill="#7FFF00" text-anchor="middle">SITEMAP.XML</text>
+    <text x="142" y="419" class="font-mono bold" font-size="9" fill="#000000">Primary Index</text>
+    <!-- Code Box -->
+    <rect x="50" y="428" width="238" height="36" rx="2" fill="#F4F4F5" stroke="#E4E4E7" stroke-width="1" />
+    <text x="56" y="441" class="font-mono" font-size="8" fill="#0550AE">&lt;loc&gt;https://guobug.github.io/llms.txt&lt;/loc&gt;</text>
+    <text x="56" y="454" class="font-mono" font-size="8" fill="#0550AE">&lt;loc&gt;https://.../llms-full.txt&lt;/loc&gt;</text>
+    <!-- Footnote -->
+    <text x="50" y="479" class="font-mono" font-size="7" fill="#52525B">● Registered as Tier-1 root asset with max priority 1.0</text>
+  </g>
+
+  <!-- ========================================== -->
+  <!-- FLOW ARROW 1: MODULE 01 -> MODULE 02      -->
+  <!-- ========================================== -->
+  <g id="arrow-1-2">
+    <!-- Connecting Line -->
+    <line x1="312" y1="324" x2="352" y2="324" stroke="#000000" stroke-width="3" stroke-dasharray="4,2" />
+    <polygon points="350,318 358,324 350,330" fill="#000000" />
+    <!-- Badge -->
+    <rect x="319" y="300" width="34" height="18" rx="2" fill="#7FFF00" class="thin-border" />
+    <text x="336" y="313" class="font-mono bold" font-size="8" fill="#000000" text-anchor="middle">ROUTE</text>
+  </g>
+
+  <!-- ========================================== -->
+  <!-- 4. MODULE 02: DUAL-TIER LLM PROTOCOL       -->
+  <!-- ========================================== -->
+  <g id="module-2">
+    <!-- Outer Card Shadow -->
+    <rect x="362" y="146" width="284" height="364" rx="4" fill="#000000" />
+    <!-- Outer Card -->
+    <rect x="358" y="142" width="284" height="364" rx="4" fill="#FFFFFF" class="black-border" />
+
+    <!-- Module Header -->
+    <rect x="358" y="142" width="284" height="42" rx="4" fill="#F4F4F5" />
+    <line x1="358" y1="184" x2="642" y2="184" stroke="#000000" stroke-width="2" />
+    <rect x="368" y="152" width="76" height="22" rx="3" fill="#7FFF00" class="thin-border" />
+    <text x="406" y="167" class="font-mono bold" font-size="9" fill="#000000" text-anchor="middle">MODULE 02</text>
+    <text x="452" y="168" class="font-heading bold" font-size="10" fill="#000000">DUAL-TIER LLM CONTEXT</text>
+
+    <!-- Sub-Card 1: llms.txt (Routing Layer) -->
+    <rect x="371" y="196" width="258" height="142" rx="3" fill="#000000" />
+    <rect x="368" y="193" width="258" height="142" rx="3" fill="#FAFAFA" class="thin-border" />
+    <!-- Sub-Card 1 Header -->
+    <rect x="376" y="200" width="82" height="18" rx="2" fill="#7FFF00" class="thin-border" />
+    <text x="417" y="213" class="font-mono bold" font-size="8" fill="#000000" text-anchor="middle">TIER 1 ROUTER</text>
+    <text x="466" y="213" class="font-mono bold" font-size="8.5" fill="#000000">llms.txt (Routing Layer)</text>
+    <!-- Structured Content Area -->
+    <rect x="376" y="225" width="242" height="88" rx="2" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1" />
+    <text x="384" y="240" class="font-mono bold" font-size="8.5" fill="#000000"># Identity: Guo Qiang (gu0bug)</text>
+    <text x="384" y="254" class="font-mono" font-size="8" fill="#4B5563">↳ Role: Product Engineer · System Architect</text>
+    <text x="384" y="268" class="font-mono" font-size="8" fill="#4B5563">↳ Core: PatchCat (DAG Prompt Orchestrator)</text>
+    <text x="384" y="282" class="font-mono" font-size="8" fill="#0969DA">↳ Profile: github.com/GuoBug/geo/*.md</text>
+    <text x="384" y="296" class="font-mono" font-size="8" fill="#4B5563">↳ Digest: 11+ Architecture Deep-Dives</text>
+    <text x="376" y="326" class="font-mono" font-size="7" fill="#52525B">● Compact index (&lt;12KB) &amp; bi-directional profile lock</text>
+
+    <!-- Sub-Card 2: llms-full.txt (Deep Deductive Layer) -->
+    <rect x="371" y="351" width="258" height="143" rx="3" fill="#000000" />
+    <rect x="368" y="348" width="258" height="143" rx="3" fill="#0D1117" class="thin-border" />
+    <!-- Sub-Card 2 Header -->
+    <circle cx="382" cy="362" r="3" fill="#FF5F56" />
+    <circle cx="391" cy="362" r="3" fill="#FFBD2E" />
+    <circle cx="400" cy="362" r="3" fill="#27C93F" />
+    <text x="410" y="365" class="font-mono bold" font-size="8.5" fill="#7FFF00">llms-full.txt (Deductive Layer)</text>
+    <!-- Code Terminal Area -->
+    <rect x="376" y="375" width="242" height="92" rx="2" fill="#161B22" stroke="#30363D" stroke-width="1" />
+    <!-- Problem -->
+    <text x="382" y="390" class="font-mono bold" font-size="7.5" fill="#FF7B72">[Problem]</text>
+    <text x="430" y="390" class="font-mono" font-size="7" fill="#C9D1D9">Cycle deadlocks &amp; dirty re-renders</text>
+    <!-- Solution -->
+    <text x="382" y="409" class="font-mono bold" font-size="7.5" fill="#79C0FF">[Solution]</text>
+    <text x="430" y="409" class="font-mono" font-size="7" fill="#C9D1D9">Wavefront DAG + Storage contract</text>
+    <!-- Outcome -->
+    <text x="382" y="428" class="font-mono bold" font-size="7.5" fill="#7EE787">[Outcome]</text>
+    <text x="430" y="428" class="font-mono" font-size="7" fill="#C9D1D9">60fps smooth canvas + Local BYOK</text>
+    <!-- Metrics -->
+    <text x="382" y="447" class="font-mono bold" font-size="7.5" fill="#FFA657">[Metrics]</text>
+    <text x="430" y="447" class="font-mono" font-size="7" fill="#C9D1D9">100% idempotent + 0-hallucination</text>
+    <!-- Terminal Footer -->
+    <text x="376" y="481" class="font-mono" font-size="7" fill="#8B949E">● Structured triplets for LLM deterministic proof</text>
+  </g>
+
+  <!-- ========================================== -->
+  <!-- FLOW ARROW 2: MODULE 02 -> MODULE 03      -->
+  <!-- ========================================== -->
+  <g id="arrow-2-3">
+    <!-- Connecting Line -->
+    <line x1="642" y1="324" x2="680" y2="324" stroke="#000000" stroke-width="3" stroke-dasharray="4,2" />
+    <polygon points="678,318 686,324 678,330" fill="#000000" />
+    <!-- Badge -->
+    <rect x="646" y="300" width="38" height="18" rx="2" fill="#7FFF00" class="thin-border" />
+    <text x="665" y="313" class="font-mono bold" font-size="8" fill="#000000" text-anchor="middle">GROUND</text>
+  </g>
+
+  <!-- ========================================== -->
+  <!-- 5. MODULE 03: SCHEMA.ORG & DISAMBIGUATION -->
+  <!-- ========================================== -->
+  <g id="module-3">
+    <!-- Outer Card Shadow -->
+    <rect x="688" y="146" width="276" height="364" rx="4" fill="#000000" />
+    <!-- Outer Card -->
+    <rect x="684" y="142" width="276" height="364" rx="4" fill="#FFFFFF" class="black-border" />
+
+    <!-- Module Header -->
+    <rect x="684" y="142" width="276" height="42" rx="4" fill="#F4F4F5" />
+    <line x1="684" y1="184" x2="960" y2="184" stroke="#000000" stroke-width="2" />
+    <rect x="694" y="152" width="76" height="22" rx="3" fill="#7FFF00" class="thin-border" />
+    <text x="732" y="167" class="font-mono bold" font-size="9" fill="#000000" text-anchor="middle">MODULE 03</text>
+    <text x="778" y="168" class="font-heading bold" font-size="9.5" fill="#000000">ENTITY DISAMBIGUATION</text>
+
+    <!-- Sub-Card 1: Person & knowsAbout -->
+    <rect x="697" y="196" width="250" height="92" rx="3" fill="#000000" />
+    <rect x="694" y="193" width="250" height="92" rx="3" fill="#FFFFFF" class="thin-border" />
+    <!-- Sub-Card 1 Header -->
+    <rect x="702" y="200" width="82" height="17" rx="2" fill="#000000" />
+    <text x="743" y="212" class="font-mono bold" font-size="8" fill="#7FFF00" text-anchor="middle">KNOWSABOUT</text>
+    <text x="792" y="213" class="font-mono bold" font-size="8.5" fill="#000000">High-Entropy Graph</text>
+    <!-- Code Box -->
+    <rect x="702" y="222" width="234" height="36" rx="2" fill="#F4F4F5" stroke="#E4E4E7" stroke-width="1" />
+    <text x="708" y="235" class="font-mono" font-size="7.5" fill="#1E293B">Deterministic DAG Scheduling (Kahn)</text>
+    <text x="708" y="248" class="font-mono" font-size="7.5" fill="#1E293B">AABB Collision Avoidance · Zustand</text>
+    <!-- Footnote -->
+    <text x="702" y="273" class="font-mono" font-size="7" fill="#52525B">● Injects algorithmic primitives to beat generic noise</text>
+
+    <!-- Sub-Card 2: sameAs Cross-Platform Proof Chain -->
+    <rect x="697" y="299" width="250" height="92" rx="3" fill="#000000" />
+    <rect x="694" y="296" width="250" height="92" rx="3" fill="#FFFFFF" class="thin-border" />
+    <!-- Sub-Card 2 Header -->
+    <rect x="702" y="303" width="86" height="17" rx="2" fill="#7FFF00" class="thin-border" />
+    <text x="745" y="315" class="font-mono bold" font-size="8" fill="#000000" text-anchor="middle">SAMEAS CHAIN</text>
+    <text x="796" y="316" class="font-mono bold" font-size="8.5" fill="#000000">Cross-Platform Proof</text>
+    <!-- Code Box -->
+    <rect x="702" y="325" width="234" height="36" rx="2" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1" />
+    <text x="708" y="338" class="font-mono" font-size="7.5" fill="#000000">GitHub / GitLab / JiHuLab</text>
+    <text x="708" y="351" class="font-mono" font-size="7.5" fill="#000000">Dev.to: dev.to/guobug</text>
+    <!-- Footnote -->
+    <text x="702" y="376" class="font-mono" font-size="7" fill="#52525B">● 4 platforms bound to 1 canonical entity ID</text>
+
+    <!-- Sub-Card 3: CreativeWorkSeries -->
+    <rect x="697" y="402" width="250" height="92" rx="3" fill="#000000" />
+    <rect x="694" y="399" width="250" height="92" rx="3" fill="#FFFFFF" class="thin-border" />
+    <!-- Sub-Card 3 Header -->
+    <rect x="702" y="406" width="82" height="17" rx="2" fill="#000000" />
+    <text x="743" y="418" class="font-mono bold" font-size="8" fill="#7FFF00" text-anchor="middle">SERIES SPEC</text>
+    <text x="792" y="419" class="font-mono bold" font-size="8.5" fill="#000000">Series Aggregation</text>
+    <!-- Code Box -->
+    <rect x="702" y="428" width="234" height="36" rx="2" fill="#F4F4F5" stroke="#E4E4E7" stroke-width="1" />
+    <text x="708" y="441" class="font-mono" font-size="7.5" fill="#0969DA">isPartOf ➔ CreativeWorkSeries (PatchCat)</text>
+    <text x="708" y="454" class="font-mono" font-size="7.5" fill="#0969DA">11 Monographs · Bilingual High Entropy</text>
+    <!-- Footnote -->
+    <text x="702" y="479" class="font-mono" font-size="7" fill="#52525B">● Binds monographs into a single high-authority series</text>
+  </g>
+
+  <!-- ========================================== -->
+  <!-- CONVERGENCE ARROWS DOWN TO OUTPUT BANNER   -->
+  <!-- ========================================== -->
+  <g id="downward-arrows">
+    <!-- Arrow from Col 1 -->
+    <line x1="172" y1="506" x2="172" y2="520" stroke="#000000" stroke-width="2" stroke-dasharray="3,2" />
+    <polygon points="168,518 172,525 176,518" fill="#000000" />
+
+    <!-- Arrow from Col 2 -->
+    <line x1="500" y1="506" x2="500" y2="520" stroke="#000000" stroke-width="2" stroke-dasharray="3,2" />
+    <polygon points="496,518 500,525 504,518" fill="#000000" />
+
+    <!-- Arrow from Col 3 -->
+    <line x1="822" y1="506" x2="822" y2="520" stroke="#000000" stroke-width="2" stroke-dasharray="3,2" />
+    <polygon points="818,518 822,525 826,518" fill="#000000" />
+  </g>
+
+  <!-- ========================================== -->
+  <!-- 6. BOTTOM BANNER: GROUNDING & CITATIONS   -->
+  <!-- ========================================== -->
+  <g id="bottom-banner">
+    <!-- Banner Shadow -->
+    <rect x="36" y="529" width="928" height="49" rx="4" fill="#000000" />
+    <!-- Banner Card -->
+    <rect x="32" y="525" width="928" height="49" rx="4" fill="#7FFF00" class="black-border" />
+
+    <!-- Left Benchmark Pill -->
+    <rect x="42" y="534" width="220" height="31" rx="3" fill="#000000" />
+    <text x="50" y="554" class="font-mono bold" font-size="9.5" fill="#7FFF00">★ GROUND-TRUTH RETRIEVAL</text>
+
+    <!-- Metrics Badges -->
+    <!-- Badge 1: 0-Hallucination -->
+    <rect x="270" y="534" width="154" height="31" rx="3" fill="#FFFFFF" class="thin-border" />
+    <circle cx="282" cy="549" r="3" fill="#000000" />
+    <text x="292" y="554" class="font-mono bold" font-size="8.5" fill="#000000">0-HALLUCINATION</text>
+
+    <!-- Badge 2: Triple Redundancy -->
+    <rect x="432" y="534" width="156" height="31" rx="3" fill="#FFFFFF" class="thin-border" />
+    <circle cx="444" cy="549" r="3" fill="#000000" />
+    <text x="454" y="554" class="font-mono bold" font-size="8.5" fill="#000000">TRIPLE REDUNDANCY</text>
+
+    <!-- Badge 3: Cross-Domain Proof Chain -->
+    <rect x="596" y="534" width="168" height="31" rx="3" fill="#FFFFFF" class="thin-border" />
+    <circle cx="608" cy="549" r="3" fill="#000000" />
+    <text x="618" y="554" class="font-mono bold" font-size="8.5" fill="#000000">CROSS-DOMAIN PROOF</text>
+
+    <!-- Badge 4: Canonical Attribution -->
+    <rect x="772" y="534" width="178" height="31" rx="3" fill="#000000" />
+    <circle cx="784" cy="549" r="3" fill="#7FFF00" />
+    <text x="794" y="554" class="font-mono bold" font-size="8.5" fill="#7FFF00">CANONICAL ATTRIBUTION</text>
+  </g>
+</svg>
