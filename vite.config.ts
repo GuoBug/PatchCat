@@ -36,7 +36,10 @@ export default defineConfig({
           if (
             id.includes('node_modules/lucide-react') ||
             id.includes('node_modules/zustand') ||
-            id.includes('node_modules/immer')
+            id.includes('node_modules/immer') ||
+            id.includes('node_modules/clsx') ||
+            id.includes('node_modules/tailwind-merge') ||
+            id.includes('node_modules/nanoid')
           ) {
             return 'vendor-ui';
           }
@@ -54,6 +57,12 @@ export default defineConfig({
           }
           if (id.includes('/src/presets/') || id.includes('\\src\\presets\\')) {
             return 'presets-data';
+          }
+          if (
+            id.includes('src/components/panels/SettingsPage') ||
+            id.includes('src\\components\\panels\\SettingsPage')
+          ) {
+            return 'panel-settings';
           }
         },
       },

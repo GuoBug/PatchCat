@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
+import { ShieldAlert } from 'lucide-react';
 import {
   ControlHeader,
   PropertyPanel,
@@ -29,6 +30,9 @@ export const App: React.FC = () => {
   const theme = useWorkflowStore((s) => s.theme);
   const isExecuting = useWorkflowStore((s) => s.isExecuting);
   const currentView = useSettingsStore((s) => s.currentView);
+  const setCurrentView = useSettingsStore((s) => s.setCurrentView);
+  const setSettingsTab = useSettingsStore((s) => s.setSettingsTab);
+  const hasLegacyKeysPending = useSettingsStore((s) => s.hasLegacyKeysPending);
   const language = useSettingsStore((s) => s.language);
   const storageMode = useSettingsStore((s) => s.storageMode);
   const serverBaseUrl = useSettingsStore((s) => s.serverBaseUrl);
@@ -78,19 +82,26 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Page leave guard: Prevent unload when isExecuting is true and purge in-memory vault keys
+  // Page leave guard: Warn if workflow is executing or legacy keys pending (P1-A / P2-C)
+  // Decrypted in-memory keys are purged via pagehide ONLY when actually navigating away
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      useSettingsStore.getState().lockVault();
-      if (isExecuting) {
+      if (isExecuting || hasLegacyKeysPending) {
         e.preventDefault();
         e.returnValue = '';
         return '';
       }
     };
+    const handlePageHide = () => {
+      useSettingsStore.getState().lockVault();
+    };
     window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isExecuting]);
+    window.addEventListener('pagehide', handlePageHide);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handlePageHide);
+    };
+  }, [isExecuting, hasLegacyKeysPending]);
 
   // Check whether an unsynced shadow draft exists for active workflow
   const [recoveryDraft, setRecoveryDraft] = useState<ShadowDraft | null>(null);
@@ -132,6 +143,30 @@ export const App: React.FC = () => {
           theme === 'dark' ? 'dark bg-[#0B0F17] text-slate-100' : 'bg-slate-50 text-slate-900'
         }`}
       >
+        {/* Legacy API Keys Pending Migration Banner (PRD-017 / P1-A) */}
+        {hasLegacyKeysPending && (
+          <div className="bg-amber-600 dark:bg-amber-700 text-white px-4 py-2 flex items-center justify-between text-xs font-medium shadow-md z-50 shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <ShieldAlert className="w-4 h-4 shrink-0 animate-pulse text-amber-200" />
+              <span className="truncate sm:whitespace-normal">
+                {language === 'zh'
+                  ? '【重要安全提醒】检测到升级前保留的 API 密钥当前仅暂存于临时会话中。为防止刷新或关闭浏览器后丢失密钥，请立即设置主口令完成安全加密存储！'
+                  : '[Security Alert] Legacy API Keys detected in temporary session memory. To prevent losing them on page reload, please set your Master Passphrase now to encrypt them!'}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setCurrentView('settings');
+                setSettingsTab('providers');
+              }}
+              className="px-3 py-1 bg-white text-amber-900 rounded-md font-bold text-xs hover:bg-amber-50 active:scale-95 transition-all shrink-0 ml-3 shadow-xs cursor-pointer"
+            >
+              {language === 'zh' ? '立即设置主口令' : 'Set Master Passphrase'}
+            </button>
+          </div>
+        )}
+
         {/* Unsynced Shadow Draft Recovery Banner */}
         {recoveryDraft && (
           <ShadowDraftRecoveryBanner

@@ -365,10 +365,40 @@ function loadInitialState(): {
       console.warn('[SettingsStore] Failed to load settings from localStorage:', e);
     }
 
-    // IF legacy keys were detected in localStorage:
+    // Check sessionStorage fallback for unpersisted legacy keys if tab was reloaded before configuring vault
+    if (!hasLegacyKeys && typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        const sessionLegacy = sessionStorage.getItem('patchcat-legacy-keys-session-v1');
+        if (sessionLegacy) {
+          const parsedSession = JSON.parse(sessionLegacy);
+          if (parsedSession && typeof parsedSession === 'object') {
+            for (const [pid, key] of Object.entries(parsedSession)) {
+              if (key && typeof key === 'string') {
+                hasLegacyKeys = true;
+                legacyKeys[pid as ProviderId] = key;
+                if (providers[pid as ProviderId]) {
+                  providers[pid as ProviderId].apiKey = key;
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[SettingsStore] Failed to read legacy keys from sessionStorage:', e);
+      }
+    }
+
+    // IF legacy keys were detected:
     // IMMEDIATELY SCRUB localStorage to remove all plaintext keys (PRD-017 DoD)!
     if (hasLegacyKeys) {
       saveState({ activeProvider, providers });
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        try {
+          sessionStorage.setItem('patchcat-legacy-keys-session-v1', JSON.stringify(legacyKeys));
+        } catch {
+          // Ignore sessionStorage write errors in restricted sandboxes
+        }
+      }
     }
   }
 
@@ -1129,9 +1159,8 @@ export const useSettingsStore = create<SettingsStoreState>()(
           };
         }
         try {
-          // 1. Create and save canary
+          // 1. Create canary
           const canary = await encryptSecret(VAULT_CANARY_PLAINTEXT, clean);
-          await indexedDb.saveEncryptedSecret(VAULT_CANARY_KEY, canary);
 
           // 2. Collect current in-memory API keys
           const currentProviders = get().providers;
@@ -1142,11 +1171,25 @@ export const useSettingsStore = create<SettingsStoreState>()(
             }
           }
 
-          // 3. Encrypt and save secrets map
+          // 3. Encrypt secrets map
           const encryptedSecrets = await encryptSecret(JSON.stringify(secretsMap), clean);
-          await indexedDb.saveEncryptedSecret(VAULT_SECRETS_KEY, encryptedSecrets);
+
+          // 4. Atomically persist both canary and secrets in a single transaction (P2-D)
+          await indexedDb.saveEncryptedSecretsBatch([
+            { key: VAULT_CANARY_KEY, payload: canary },
+            { key: VAULT_SECRETS_KEY, payload: encryptedSecrets },
+          ]);
 
           sessionMasterPassphrase = clean;
+
+          // Clear temporary migration session storage if any
+          if (typeof window !== 'undefined' && window.sessionStorage) {
+            try {
+              sessionStorage.removeItem('patchcat-legacy-keys-session-v1');
+            } catch {
+              // Ignore sessionStorage deletion errors in restricted sandboxes
+            }
+          }
 
           set((state) => {
             state.vaultStatus = 'unlocked';

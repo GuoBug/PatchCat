@@ -586,6 +586,45 @@ export class IndexedDbAdapter {
   }
 
   /**
+   * Atomically saves multiple encrypted secrets in a single transaction.
+   * Ensures either all entries are written or all are rolled back.
+   */
+  public async saveEncryptedSecretsBatch(
+    items: Array<{ key: string; payload: EncryptedVaultPayload }>
+  ): Promise<void> {
+    if (items.length === 0) return;
+    const now = Date.now();
+    const vaultRecords: SecureVaultRecord[] = items.map((r) => ({
+      key: r.key,
+      payload: r.payload,
+      updatedAt: now,
+    }));
+
+    if (!this.isSupported()) {
+      const store = this.getMemoryStore(STORES.SECURE_VAULT);
+      for (const rec of vaultRecords) {
+        store.set(rec.key, rec);
+      }
+      return;
+    }
+
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORES.SECURE_VAULT, 'readwrite');
+      const store = tx.objectStore(STORES.SECURE_VAULT);
+      for (const rec of vaultRecords) {
+        store.put(rec);
+      }
+      tx.oncomplete = () => {
+        this.writeCounts.put += items.length;
+        resolve();
+      };
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(new Error('Transaction aborted'));
+    });
+  }
+
+  /**
    * Retrieves an encrypted secret payload by key.
    */
   public async getEncryptedSecret(key: string): Promise<EncryptedVaultPayload | null> {

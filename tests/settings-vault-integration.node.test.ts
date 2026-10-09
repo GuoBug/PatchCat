@@ -33,9 +33,32 @@ const storageMock = (() => {
   };
 })();
 
-(globalThis as unknown as { localStorage: typeof storageMock; window: { localStorage: typeof storageMock } }).localStorage = storageMock;
-(globalThis as unknown as { window: { localStorage: typeof storageMock } }).window = {
+const sessionStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => {
+      store[key] = String(value);
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
+    getRawStore: () => store,
+  };
+})();
+
+(globalThis as unknown as {
+  localStorage: typeof storageMock;
+  sessionStorage: typeof sessionStorageMock;
+  window: { localStorage: typeof storageMock; sessionStorage: typeof sessionStorageMock };
+}).localStorage = storageMock;
+(globalThis as unknown as { sessionStorage: typeof sessionStorageMock }).sessionStorage = sessionStorageMock;
+(globalThis as unknown as { window: { localStorage: typeof storageMock; sessionStorage: typeof sessionStorageMock } }).window = {
   localStorage: storageMock,
+  sessionStorage: sessionStorageMock,
 };
 
 import {
@@ -258,6 +281,64 @@ describe('Phase 4.16: Settings Store & Web Crypto Vault Integration (PRD-017 DoD
         useSettingsStore.getState().providers.siliconflow.apiKey,
         'sk-siliconflow-rotation-key',
       );
+    });
+  });
+
+  // ── 7. SessionStorage Unpersisted Legacy Fallback (P1-A) ───────────────────
+  describe('7. SessionStorage Migration Fallback & Purge (P1-A)', () => {
+    it('stores unpersisted legacy keys in sessionStorage and purges them once master passphrase is set', async () => {
+      // Simulate unpersisted legacy keys staged in sessionStorage
+      sessionStorageMock.setItem(
+        'patchcat-legacy-keys-session-v1',
+        JSON.stringify({ deepseek: 'sk-staged-session-key-42' }),
+      );
+
+      assert.ok(sessionStorageMock.getItem('patchcat-legacy-keys-session-v1'));
+
+      const store = useSettingsStore.getState();
+      store.updateProviderConfig('deepseek', { apiKey: 'sk-staged-session-key-42' });
+
+      // Setup master passphrase to finalize encryption
+      const res = await store.setupMasterPassphrase('FinalSecurePasscode123!');
+      assert.equal(res.success, true);
+
+      // Verify sessionStorage key was completely purged upon successful encryption
+      assert.equal(
+        sessionStorageMock.getItem('patchcat-legacy-keys-session-v1'),
+        null,
+        'Temporary session storage should be wiped once encrypted into vault',
+      );
+    });
+  });
+
+  // ── 8. Atomic Multi-Secret Persistence (P2-D) ─────────────────────────────
+  describe('8. Atomic Multi-Secret Persistence (P2-D)', () => {
+    it('atomically saves multiple encrypted secrets in a single batch', async () => {
+      const payload1 = {
+        version: 1 as const,
+        saltHex: '0123456789abcdef0123456789abcdef',
+        ivHex: '0123456789abcdef01234567',
+        ciphertextHex: 'deadbeefcafebabe',
+        authTagLength: 128 as const,
+      };
+      const payload2 = {
+        version: 1 as const,
+        saltHex: 'fedcba9876543210fedcba9876543210',
+        ivHex: 'fedcba9876543210fedcba98',
+        ciphertextHex: 'cafebabedeadbeef',
+        authTagLength: 128 as const,
+      };
+
+      await indexedDb.saveEncryptedSecretsBatch([
+        { key: 'test_canary_key', payload: payload1 },
+        { key: 'test_secrets_key', payload: payload2 },
+      ]);
+
+      const retrieved1 = await indexedDb.getEncryptedSecret('test_canary_key');
+      const retrieved2 = await indexedDb.getEncryptedSecret('test_secrets_key');
+
+      assert.deepEqual(retrieved1, payload1);
+      assert.deepEqual(retrieved2, payload2);
     });
   });
 });

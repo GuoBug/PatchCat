@@ -23,9 +23,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dedicated Vault Control Panel (`src/components/panels/VaultControlPanel.tsx`)**:
   - Embedded at the top of the Settings Providers tab: visual status indicator (Unconfigured / Locked / Unlocked), setup form, unlock prompt, and passphrase rotation.
   - Top header (`ControlHeader.tsx`) reflects real-time locked status badge and prevents execution without unlocked credentials.
+- **Vault UX Guardrails & Atomic Multi-Secret Persistence (PRD-017 Hardening)**:
+  - **Sticky Global Migration Alert (`src/App.tsx`)**: Prominent top banner with one-click navigation when legacy plaintext keys are staged in session memory, preventing silent loss before passphrase configuration.
+  - **SessionStorage Ephemeral Fallback**: Unpersisted legacy keys are staged in tab-scoped `sessionStorage` across accidental reloads and purged immediately upon vault encryption.
+  - **Inline Key Input Vault Prompts (`src/components/panels/SettingsPage.tsx`)**: Informative inline status badges and anchor jumps directly underneath the Provider API key inputs clarifying ephemeral vs encrypted persistence.
+  - **Non-Destructive Page Leave Guards (`src/App.tsx`)**: Replaced premature `beforeunload` locking with `pagehide` teardown, ensuring that canceling browser exit prompts does not lock or wipe active in-memory session keys.
+  - **Atomic Multi-Secret Transactions (`src/services/storage/indexeddb-adapter.ts`)**: Introduced `saveEncryptedSecretsBatch` executing canary and secrets updates in a single IndexedDB transaction, eliminating corrupt states during passphrase rotation.
+  - **Bundle Splitting Optimization (`vite.config.ts`)**: Split `SettingsPage` into an independent chunk, slashing core `index.js` chunk size by >50% (from 715 kB down to 355 kB).
 - **Automated Verification Suite (`tests/crypto-vault.node.test.ts`, `tests/workflow-sanitizer.node.test.ts`, `tests/settings-vault-integration.node.test.ts`)**:
-  - 35 new unit and integration tests covering PBKDF2 key derivation, AES-GCM roundtrip, tamper detection, export redaction, LocalStorage zero plaintext contract, and legacy migration.
-  - Expanded automated test suite to **512 passing tests across 149 test suites** (100% green rate).
+  - 37 new unit and integration tests covering PBKDF2 key derivation, AES-GCM roundtrip, tamper detection, export redaction, LocalStorage zero plaintext contract, sessionStorage fallback, and atomic batching.
+  - Expanded automated test suite to **514 passing tests across 151 test suites** (100% green rate).
 
 ## [0.4.15] - 2026-10-07
 

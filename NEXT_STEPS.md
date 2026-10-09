@@ -300,9 +300,9 @@
 - [x] **5. Full Automated Test Suite & Engineering Verification**:
   - Added dedicated `tests/crypto-vault.node.test.ts` (20 tests covering 600,000 PBKDF2 iterations, roundtrip encryption, tamper rejection, cache eviction, and hex conversions).
   - Added dedicated `tests/workflow-sanitizer.node.test.ts` (8 tests verifying multi-node credential stripping, prompt masking, path neutralization, and immutability).
-  - Added dedicated `tests/settings-vault-integration.node.test.ts` (7 integration tests verifying zero-plaintext LocalStorage, legacy scrubbing, IndexedDB ciphertext-only, wrong passphrase rejection, and rotation).
+  - Added dedicated `tests/settings-vault-integration.node.test.ts` (9 integration tests verifying zero-plaintext LocalStorage, legacy scrubbing, IndexedDB ciphertext-only, wrong passphrase rejection, rotation, sessionStorage fallback, and atomic batching).
   - Expanded `tests/storage-hardening.node.test.ts` with `secure_vault` persistence tests.
-  - **512/512 automated tests passing across 149 suites with 100% green rate**.
+  - **514/514 automated tests passing across 151 suites with 100% green rate**.
   - TypeScript strict check (`npm run typecheck`) and production build (`npm run build`) passing with zero errors.
 
 ---
@@ -644,9 +644,9 @@ npm run build
 - [x] **5. 全量自动化测试与工程验证**：
   - 新增 `tests/crypto-vault.node.test.ts`（20 项测试覆盖 60 万次 PBKDF2 派生、对称加解密、防篡改校验、内存缓存淘汰与 Hex 转换）；
   - 新增 `tests/workflow-sanitizer.node.test.ts`（8 项测试验证跨节点凭据剥离、Prompt 占位符脱敏、本地路径重置与原图不可变性）；
-  - 新增 `tests/settings-vault-integration.node.test.ts`（7 项集成测试验证 LocalStorage 零明文、存量清洗、IndexedDB 密文存储、错密拒绝与口令轮转）；
+  - 新增 `tests/settings-vault-integration.node.test.ts`（9 项集成测试验证 LocalStorage 零明文、存量清洗、IndexedDB 密文存储、错密拒绝、口令轮转、sessionStorage 跨刷新兜底与原子事务批量持久化）；
   - 扩充 `tests/storage-hardening.node.test.ts`（覆盖 `secure_vault` 仓储 CRUD）；
-  - **全工程 512 项测试 / 149 套件 / 0 失败**，`tsc --noEmit` 0 报错，生产打包 100% 成功。
+  - **全工程 514 项测试 / 151 套件 / 0 失败**，`tsc --noEmit` 0 报错，生产打包 100% 成功。
 
 ---
 

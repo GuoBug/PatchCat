@@ -39,6 +39,8 @@ import {
   ShieldAlert,
   Upload,
   FlaskConical,
+  Lock,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   useSettingsStore,
@@ -74,6 +76,7 @@ const TYPE_ICONS: Record<LogType, { icon: React.FC<{ className?: string }>; colo
 
 export const SettingsPage: React.FC = () => {
   const { t, language, setLanguage } = useTranslation();
+  const isZh = language === 'zh';
 
   const setCurrentView = useSettingsStore((s) => s.setCurrentView);
   const settingsTab = useSettingsStore((s) => s.settingsTab);
@@ -86,6 +89,7 @@ export const SettingsPage: React.FC = () => {
   const testResults = useSettingsStore((s) => s.testResults);
   const testConnection = useSettingsStore((s) => s.testConnection);
   const fetchAvailableModels = useSettingsStore((s) => s.fetchAvailableModels);
+  const vaultStatus = useSettingsStore((s) => s.vaultStatus);
 
   const theme = useWorkflowStore((s) => s.theme);
   const setTheme = useWorkflowStore((s) => s.setTheme);
@@ -1545,6 +1549,54 @@ export const SettingsPage: React.FC = () => {
                         </button>
                       )}
                     </div>
+
+                    {/* Inline Vault Status Prompt for API Key (PRD-017 / P1-B) */}
+                    {!isOllama && (
+                      <div className="pt-0.5">
+                        {vaultStatus === 'unconfigured' && (
+                          <div className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                            <div>
+                              <span>
+                                {isZh
+                                  ? '当前尚未配置暗室主口令。此处输入的 API Key 仅在当前会话内存中有效，刷新或关闭页面后将不予保存。'
+                                  : 'Master Passphrase Vault is not configured. API keys entered here are ephemeral to this session and will not persist upon reload.'}
+                              </span>{' '}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const el = document.getElementById('patchcat-vault-control-panel');
+                                  el?.scrollIntoView({ behavior: 'smooth' });
+                                }}
+                                className="underline font-semibold hover:text-amber-900 dark:hover:text-amber-100"
+                              >
+                                {isZh ? '前往上方设置主口令以永久加密保存' : 'Configure vault above to encrypt & persist'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        {vaultStatus === 'locked' && (
+                          <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-500/10 border border-slate-500/20 text-[11px] text-slate-600 dark:text-slate-400">
+                            <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                            <span>
+                              {isZh
+                                ? '暗室当前处于锁定状态。密钥已脱敏保护，在上方解锁暗室后方可解密与持久化同步。'
+                                : 'Vault is locked. Unlock vault above to decrypt and persist updates.'}
+                            </span>
+                          </div>
+                        )}
+                        {vaultStatus === 'unlocked' && (
+                          <div className="flex items-center gap-1.5 px-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                            <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                            <span>
+                              {isZh
+                                ? '已受端侧 Web Crypto AES-256-GCM 保护，输入后自动加密持久化。'
+                                : 'Protected by client-side Web Crypto AES-256-GCM; automatically encrypted.'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Default Model */}
