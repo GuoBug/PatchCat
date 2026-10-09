@@ -461,6 +461,7 @@ export interface Translations {
     untitledWorkflow: string;
     rename: string;
     duplicate: string;
+    exportWorkflow: string;
     moveTo: string;
     delete: string;
     deleteFolderConfirm: string;
@@ -636,6 +637,27 @@ export interface Translations {
     title: string;
     subtitle: string;
     searchPlaceholder: string;
+  };
+  sanitizedExport: {
+    modalTitle: string;
+    modalDesc: string;
+    stripApiKeysLabel: string;
+    stripApiKeysDesc: string;
+    maskPromptVarsLabel: string;
+    maskPromptVarsDesc: string;
+    stripLocalPathsLabel: string;
+    stripLocalPathsDesc: string;
+    clearOutputsLabel: string;
+    clearOutputsDesc: string;
+    scanCleanTitle: string;
+    scanDetectedTitle: string;
+    scanApiKeysFound: string;
+    scanPromptVarsFound: string;
+    scanLocalPathsFound: string;
+    exportJsonBtn: string;
+    copyJsonBtn: string;
+    copiedToast: string;
+    closeBtn: string;
   };
 }
 
@@ -1131,6 +1153,7 @@ export const translations: Record<Language, Translations> = {
       untitledWorkflow: 'Untitled Workflow',
       rename: 'Rename',
       duplicate: 'Duplicate',
+      exportWorkflow: 'Export Workflow (.json)',
       moveTo: 'Move to Folder',
       delete: 'Delete',
       deleteFolderConfirm: 'Are you sure you want to delete this folder and its workflows?',
@@ -1310,6 +1333,27 @@ export const translations: Record<Language, Translations> = {
       title: 'Connect to New Node',
       subtitle: 'Select a downstream node to create and connect automatically',
       searchPlaceholder: 'Search node types...',
+    },
+    sanitizedExport: {
+      modalTitle: 'Sanitized Workflow Export',
+      modalDesc: 'Protect data sovereignty by stripping credentials and OS local paths before exporting or sharing.',
+      stripApiKeysLabel: 'Strip API Keys & Credentials',
+      stripApiKeysDesc: 'Removes node API keys, authorization tokens, provider overrides, and sensitive headers.',
+      maskPromptVarsLabel: 'Mask Sensitive Prompt Variables',
+      maskPromptVarsDesc: 'Masks placeholders like [SECRET_*] and {{SECRET_*}} into [MASKED_SECRET].',
+      stripLocalPathsLabel: 'Neutralize Absolute Local File Paths',
+      stripLocalPathsDesc: 'Replaces absolute Windows drive paths and Unix root paths with [LOCAL_PATH_REDACTED].',
+      clearOutputsLabel: 'Clear Historical Execution Outputs',
+      clearOutputsDesc: 'Resets runtime outputs, errors, and cached status to idle for a clean logical DAG export.',
+      scanCleanTitle: 'No sensitive credentials detected. Ready for secure export.',
+      scanDetectedTitle: 'Sensitive items detected and will be automatically sanitized upon export.',
+      scanApiKeysFound: '{count} API Keys / Auth Tokens',
+      scanPromptVarsFound: '{count} Secret Prompt Variables',
+      scanLocalPathsFound: '{count} Absolute OS File Paths',
+      exportJsonBtn: 'Export Clean Workflow (.patchcat.json)',
+      copyJsonBtn: 'Copy Sanitized JSON',
+      copiedToast: 'Sanitized JSON copied to clipboard!',
+      closeBtn: 'Close',
     },
   },
   zh: {
@@ -1791,6 +1835,7 @@ export const translations: Record<Language, Translations> = {
       untitledWorkflow: '未命名流程',
       rename: '重命名',
       duplicate: '复制副本',
+      exportWorkflow: '导出工作流 (.json)',
       moveTo: '移动至目录',
       delete: '删除',
       deleteFolderConfirm: '确定要删除此目录及其包含的所有工作流吗？',
@@ -1967,6 +2012,27 @@ export const translations: Record<Language, Translations> = {
       title: '快速连线至新节点',
       subtitle: '选择目标节点，系统将就地生成并自动完成连线',
       searchPlaceholder: '搜索节点类型...',
+    },
+    sanitizedExport: {
+      modalTitle: '工作流一键安全脱敏导出',
+      modalDesc: '恪守端侧数据主权红线，在导出与分享工作流前自动剔除敏感凭证与本地操作系统私有路径。',
+      stripApiKeysLabel: '剥离 API Key 与访问凭证',
+      stripApiKeysDesc: '自动移除节点配置、Provider overrides、授权请求头和查询参数中的明文密钥。',
+      maskPromptVarsLabel: '脱敏 Prompt 敏感占位符',
+      maskPromptVarsDesc: '扫描并将 Prompt 中的 [SECRET_*] 与 {{SECRET_*}} 占位符替换为 [MASKED_SECRET]。',
+      stripLocalPathsLabel: '擦除操作系统绝对物理路径',
+      stripLocalPathsDesc: '将 Windows 盘符绝对路径与 Unix 根目录私有路径替换为 [LOCAL_PATH_REDACTED]。',
+      clearOutputsLabel: '清空历史执行输出成果',
+      clearOutputsDesc: '清空历史运行时输出、错误信息与脉冲状态，导出纯净规范的确定性逻辑拓扑 DAG。',
+      scanCleanTitle: '已完成白盒安全巡检：未检测到敏感凭证，符合安全分享标准。',
+      scanDetectedTitle: '已扫描到敏感资产，导出时将按照上方规则执行确定性安全脱敏：',
+      scanApiKeysFound: '{count} 处明文 API Key / 凭据',
+      scanPromptVarsFound: '{count} 处 Prompt 绝密变量',
+      scanLocalPathsFound: '{count} 处本地绝对物理路径',
+      exportJsonBtn: '一键安全脱敏导出 (.patchcat.json)',
+      copyJsonBtn: '复制脱敏 JSON 内容',
+      copiedToast: '脱敏后的工作流 JSON 已成功复制到剪贴板！',
+      closeBtn: '关闭',
     },
   },
 };

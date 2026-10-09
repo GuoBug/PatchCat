@@ -23,12 +23,14 @@ import {
   Brain,
   Lock,
   Unlock,
+  Download,
 } from 'lucide-react';
 import { useProjectStore, type SavedWorkflow, type Folder } from '../../stores/project-store.ts';
 import { useSettingsStore } from '../../stores/settings-store.ts';
 import { useKnowledgeStore } from '../../stores/knowledge-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
 import { PRESETS_DATA } from '../../presets/index.ts';
+import { SanitizedExportModal } from '../modals/SanitizedExportModal.tsx';
 
 function formatRelativeTime(timestamp: number): string {
   const diffMs = Date.now() - timestamp;
@@ -424,6 +426,7 @@ interface WorkflowItemProps {
   onSelect: () => void;
   onRename: (newName: string) => void;
   onDuplicate: () => void;
+  onExportWorkflow: (workflow: SavedWorkflow) => void;
   onDelete: () => void;
   onMove: (targetFolderId: string) => void;
   onOpenSettings: (workflow: SavedWorkflow) => void;
@@ -437,6 +440,7 @@ const WorkflowItem: React.FC<WorkflowItemProps> = ({
   onSelect,
   onRename,
   onDuplicate,
+  onExportWorkflow,
   onDelete,
   onMove,
   onOpenSettings,
@@ -643,6 +647,18 @@ const WorkflowItem: React.FC<WorkflowItemProps> = ({
                 <span>{t.sidebar.duplicate}</span>
               </button>
 
+              {/* Export Sanitized Workflow */}
+              <button
+                onClick={() => {
+                  setShowMenu(false);
+                  onExportWorkflow(workflow);
+                }}
+                className="w-full px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 text-left text-slate-700 dark:text-slate-300 text-xs transition-colors"
+              >
+                <Download className="w-3.5 h-3.5 text-slate-400" />
+                <span>{t.sidebar.exportWorkflow}</span>
+              </button>
+
               {/* Move to Folder */}
               <div className="relative">
                 <button
@@ -747,6 +763,7 @@ export const WorkflowSidebar: React.FC = () => {
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editingFolderName, setEditingFolderName] = useState('');
   const [settingsWorkflow, setSettingsWorkflow] = useState<SavedWorkflow | null>(null);
+  const [exportingWorkflow, setExportingWorkflow] = useState<SavedWorkflow | null>(null);
 
   // Knowledge base tab state
   const [activeTab, setActiveTab] = useState<'workflows' | 'knowledge'>('workflows');
@@ -1018,6 +1035,7 @@ export const WorkflowSidebar: React.FC = () => {
                             onSelect={() => loadWorkflow(wf.id)}
                             onRename={(name) => renameWorkflow(wf.id, name)}
                             onDuplicate={() => duplicateWorkflow(wf.id)}
+                            onExportWorkflow={(w) => setExportingWorkflow(w)}
                             onDelete={() => deleteWorkflow(wf.id)}
                             onMove={(targetFolderId) => moveWorkflow(wf.id, targetFolderId)}
                             onOpenSettings={(w) => setSettingsWorkflow(w)}
@@ -1194,6 +1212,13 @@ export const WorkflowSidebar: React.FC = () => {
           onSave={handleSaveWorkflowSettings}
         />
       )}
+
+      {/* Sanitized Workflow Export Modal (Phase 4.16 / PRD-017) */}
+      <SanitizedExportModal
+        workflow={exportingWorkflow}
+        isOpen={Boolean(exportingWorkflow)}
+        onClose={() => setExportingWorkflow(null)}
+      />
     </aside>
   );
 };

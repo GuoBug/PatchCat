@@ -21,6 +21,7 @@ import {
   Lock,
   Search,
   FastForward,
+  Download,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import { useProjectStore } from '../../stores/project-store.ts';
@@ -33,6 +34,7 @@ import { CatLogo } from '../icons/CatLogo.tsx';
 import { PROJECT_VERSION } from '../../config/project.ts';
 import { SaveStatusBadge } from './SaveStatusBadge.tsx';
 import { getTestScenario } from '../../presets/self-healing-scenarios.ts';
+import { SanitizedExportModal } from '../modals/SanitizedExportModal.tsx';
 
 export interface AlertNotification {
   type: 'error' | 'warning';
@@ -81,6 +83,7 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
   const [executionTimeMs, setExecutionTimeMs] = useState<number | null>(null);
   const [alertNotification, setAlertNotification] = useState<AlertNotification | null>(null);
   const [showUnconfiguredModal, setShowUnconfiguredModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   const addMenuRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<BrowserWorkflowEngine>(new BrowserWorkflowEngine());
@@ -604,6 +607,16 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
             </button>
           )}
 
+          {/* Sanitized Workflow Export Button */}
+          <button
+            onClick={() => setShowExportModal(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 text-xs font-medium transition-colors shadow-xs cursor-pointer"
+            title={language === 'zh' ? '安全脱敏导出 (.patchcat.json)' : 'Sanitized Export (.patchcat.json)'}
+          >
+            <Download className="w-3.5 h-3.5 text-blue-500 dark:text-sky-400" />
+            <span className="hidden lg:inline">{language === 'zh' ? '导出' : 'Export'}</span>
+          </button>
+
           {/* Interactive Chat Debug Panel Button */}
           {onToggleChat && (
             <button
@@ -842,6 +855,13 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
           </div>
         </div>
       )}
+
+      {/* Sanitized Workflow Export Modal (Phase 4.16 / PRD-017) */}
+      <SanitizedExportModal
+        workflow={activeWorkflow || null}
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+      />
     </>
   );
 };

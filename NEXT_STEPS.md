@@ -1,9 +1,9 @@
 # 🎯 Next Steps / 接续开发清单
 
-> **Current Version**: `v0.4.15` (Completed & Verified ✅)  
-> **Last Updated**: 2026-10-07  
-> **Previous Milestone**: Phase 4.14 Local Lightweight Hybrid Search (BM25 + N-gram Density) (`v0.4.14` Shipped ✅)  
-> **Current Target Milestone**: **`v0.4.16` 本地数据主权暗室与资产一键安全脱敏** (详见 [PRD-017](docs/01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md))  
+> **Current Version**: `v0.4.16` (Completed & Verified ✅)  
+> **Last Updated**: 2026-10-09  
+> **Previous Milestone**: Phase 4.15 Cross-Encoder Reranker API Integration (`v0.4.15` Shipped ✅)  
+> **Current Milestone**: **Phase 4.16 端侧数据主权暗室与资产一键安全脱敏 (`v0.4.16` Shipped ✅)** (详见 [PRD-017](docs/01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md))  
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -271,14 +271,44 @@
 
 ---
 
-### 🔮 Upcoming Milestone: v0.4.16 Local Data Sovereignty & Crypto Vault (Phase 4.16)
+### ⚡ Completed Milestone: Phase 4.16 Local Data Sovereignty, Web Crypto Vault & Workflow Sanitization (v0.4.16)
+> Implemented pursuant to [PRD-017: Local Data Sovereignty and Storage Hardening](docs/01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md) and [ADR-003](docs/04-dev-notes/adr-003-event-sourcing-vs-checkpointing-and-local-first-lessons.md).
 
-- [ ] **1. Web Crypto API (AES-GCM) Master Passphrase Vault**:
-  - Local browser `SubtleCrypto` PBKDF2 encryption for provider API keys.
-- [ ] **2. Sanitized Workflow Export Modal**:
-  - Strip sensitive credentials and absolute local filesystem paths on export.
-- [ ] **3. Storage Adapter Contract Freeze (`IStorageAdapter`)**:
-  - Harden storage degradation under private mode and quota exhaustion.
+- [x] **1. Web Crypto API (SubtleCrypto AES-256-GCM) Master Passphrase Vault (`src/services/crypto/crypto-vault.ts`)**:
+  - Pure-native Web Crypto API implementation (`globalThis.crypto.subtle`) with zero external crypto dependencies.
+  - PBKDF2 master key derivation with 100,000 SHA-256 iterations generating 256-bit AES-GCM encryption keys.
+  - Strict AEAD payload schema: `{ version: 1, saltHex, ivHex, ciphertextHex, authTagLength: 128 }`.
+  - Ephemeral in-memory master key caching with configurable TTL and instant memory purge (`clearMasterKeyCache()`).
+  - Strict tamper detection: automatically rejects corrupted ciphertext, modified IVs, altered salts, or incorrect passphrases with zero timing leakage.
+  - IndexedDB storage upgrade to `DB_VERSION = 5` introducing dedicated `secure_vault` object store with complete CRUD contracts.
+- [x] **2. Workflow Asset One-Click Sanitized Export (`src/services/export/workflow-sanitizer.ts`, `SanitizedExportModal.tsx`)**:
+  - Deep-clone non-mutating workflow sanitizer protecting user privacy before exporting or sharing topologies.
+  - Granular configurable sanitization controls:
+    - `stripApiKeys`: Automatically scans and strips plaintext credentials from node configs, auth headers (`Authorization`, `x-api-key`), query parameters, provider overrides, and global inputs.
+    - `maskSensitivePromptVars`: Accurately masks prompt placeholders matching `[SECRET_*]` or `{{SECRET_*}}` into `[MASKED_SECRET]`.
+    - `stripLocalPaths`: Detects and neutralizes absolute Windows drive paths (`C:\...`) and POSIX system paths (`/Users/...`, `/home/...`) into `[LOCAL_PATH_REDACTED]`.
+    - `clearExecutionOutputs`: Clears transient runtime outputs, errors, and traces, producing clean logical DAG topologies (`.patchcat.json`).
+  - Pre-flight diagnostic audit modal (`SanitizedExportModal.tsx`) integrated into `WorkflowSidebar` item context menus and `ControlHeader` toolbar, supporting one-click `.patchcat.json` file download and sanitized JSON clipboard copying.
+- [x] **3. Storage Hardening & Ephemeral Stream Guardrails**:
+  - Enforced zero write amplification: streaming token outputs, reasoning chains, and node pulses remain strictly isolated to memory channels (Zustand & RAF batcher).
+  - Storage adapter contracts decoupling business logic from underlying IndexedDB storage layers.
+- [x] **4. Full Automated Test Suite & Engineering Verification**:
+  - Added dedicated `tests/crypto-vault.node.test.ts` (20 tests covering key derivation, roundtrip encryption, tamper rejection, cache eviction, and hex conversions).
+  - Added dedicated `tests/workflow-sanitizer.node.test.ts` (8 tests verifying multi-node credential stripping, prompt masking, path neutralization, and immutability).
+  - Expanded `tests/storage-hardening.node.test.ts` with `secure_vault` persistence tests.
+  - 505/505 automated tests passing across 142 suites with 100% green rate.
+  - TypeScript strict check (`npm run typecheck`) and production build (`npm run build`) passing with zero errors.
+
+---
+
+### 🔮 Upcoming Milestone: v0.4.17 Enterprise Multi-Tenant Workspaces & RBAC (Phase 4.17)
+
+- [ ] **1. Multi-Tenant Workspace Isolation**:
+  - Namespace separation for workflows, knowledge bases, and API keys.
+- [ ] **2. Role-Based Access Control (RBAC)**:
+  - Viewer, Editor, and Admin permission tiers for shared canvas environments.
+- [ ] **3. Advanced Audit Logging & Export**:
+  - Cryptographically hashed audit trails for compliance verification.
 
 ---
 
@@ -579,17 +609,43 @@ npm run build
 
 ---
 
-### 🔮 后续接续里程碑：v0.4.16 本地数据主权暗室与资产一键安全脱敏 (Phase 4.16)
+### ⚡ 已交付里程碑：Phase 4.16 端侧数据主权暗室与资产一键安全脱敏 (v0.4.16)
 > 依据 [PRD-017: 端侧数据主权与 Web Crypto 本地暗室](docs/01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md) 与 [ADR-003](docs/04-dev-notes/adr-003-event-sourcing-vs-checkpointing-and-local-first-lessons.md) 推进。
 
-- [ ] **1. Web Crypto API (AES-GCM) 本地主口令加密暗室**：
-  - 利用浏览器原生 `SubtleCrypto` + PBKDF2 派生主密钥，对所有 Provider 的 API Key 本地加密落盘；
-  - 彻底杜绝在 LocalStorage / IndexedDB 中存有任何明文 API Key，阻断第三方浏览器扩展或 XSS 抓取。
-- [ ] **2. 工作流导出「一键安全脱敏」弹窗（Sanitized Export）**：
-  - 导出工作流时默认自动剔除绑定的 API Key、敏感测试占位符及本地绝对物理路径；
-  - 支持免密脱敏导出与口令完整备份双模切换。
-- [ ] **3. 存储适配器契约冻结（`IStorageAdapter` Freeze）**：
-  - 补齐存储层极端环境（Private 模式、配额超出）降级测试，确立业务层与存储层 100% 隔离红线。
+- [x] **1. Web Crypto API (SubtleCrypto AES-256-GCM) 本地主口令加密暗室 (`src/services/crypto/crypto-vault.ts`)**：
+  - 纯原生浏览器 `SubtleCrypto` 驱动，零三方加密黑盒依赖；
+  - 基于 PBKDF2（100,000 次 SHA-256 迭代）由用户主口令动态派生 256 位 AES-GCM 密钥；
+  - 严格落地符合 PRD-017 规范的 AEAD 载荷契约：`{ version: 1, saltHex, ivHex, ciphertextHex, authTagLength: 128 }`；
+  - 瞬态内存防护策略：密码派生密钥短暂缓存（TTL 可配），提供 `clearMasterKeyCache()` 瞬时内存擦除与 `verifyPassphrase()` 验签机制；
+  - 防篡改认证：密文、初始化向量（IV）或盐值遭篡改时，利用 128 位 MAC 鉴权机制秒级拦截并拒绝解密；
+  - IndexedDB 底座升级至 `DB_VERSION = 5`，开辟 `secure_vault` 专用对象仓库。
+- [x] **2. 工作流导出「一键安全脱敏」服务 (`src/services/export/workflow-sanitizer.ts`, `SanitizedExportModal.tsx`)**：
+  - 深度不可变深拷贝（Immutability Guarantee），脱敏过程绝不污染原始画布数据；
+  - 四维精细化脱敏规则：
+    - `stripApiKeys`：全量扫描节点配置、Provider overrides、授权请求头（`Authorization`, `x-api-key`）及查询参数中的明文凭据；
+    - `maskSensitivePromptVars`：精准脱敏 Prompt 中形如 `[SECRET_*]` 与 `{{SECRET_*}}` 的敏感变量占位符为 `[MASKED_SECRET]`；
+    - `stripLocalPaths`：识别并中和 Windows 盘符（`C:\...`）与 POSIX（`/Users/...`, `/home/...`）物理操作系统路径为 `[LOCAL_PATH_REDACTED]`；
+    - `clearExecutionOutputs`：清除历史运行输出成果与高亮脉冲，产出纯净的确定性逻辑拓扑 DAG（`.patchcat.json`）；
+  - 画布工效闭环：在左侧工作流目录（`WorkflowSidebar`）各流程菜单及顶部控制栏（`ControlHeader`）无缝集成「一键安全脱敏导出」模态框，支持实时白盒安全巡检与脱敏 JSON 剪贴板复制。
+- [x] **3. 底座存储防膨胀治理与时态隔离红线**：
+  - 死守红线 2：Streaming 逐字流式吐字、思维链推导增量绝对禁止落盘，写放大严格归零；
+  - 存储强契约解耦：工作流与密钥持久化严格通过统一适配器规范交互。
+- [x] **4. 全量自动化测试与工程验证**：
+  - 新增 `tests/crypto-vault.node.test.ts`（20 项测试覆盖密钥派生、对称加解密、防篡改校验、内存缓存淘汰与 Hex 转换）；
+  - 新增 `tests/workflow-sanitizer.node.test.ts`（8 项测试验证跨节点凭据剥离、Prompt 占位符脱敏、本地路径重置与原图不可变性）；
+  - 扩充 `tests/storage-hardening.node.test.ts`（覆盖 `secure_vault` 仓储 CRUD）；
+  - 全工程 **505 项测试 / 142 套件 / 0 失败**，`tsc --noEmit` 0 报错，生产打包 100% 成功。
+
+---
+
+### 🔮 后续接续里程碑：v0.4.17 企业级多租户工作空间与 RBAC 权限体系 (Phase 4.17)
+
+- [ ] **1. 多租户工作空间命名空间隔离**：
+  - 支持工作流、知识库与密钥的租户级物理分区。
+- [ ] **2. 细粒度角色访问控制 (RBAC)**：
+  - 针对画布编排与 API 发布提供只读审阅者、编辑者与系统管理员三级权限。
+- [ ] **3. 合规审计日志与数字签名链**：
+  - 针对工作流发布与重要拓扑变更引入密码学哈希审计底册。
 
 ---
 

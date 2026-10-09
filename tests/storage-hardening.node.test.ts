@@ -339,4 +339,46 @@ describe('Phase 4.11: Storage Hardening & Ephemeral Stream (v0.4.11)', () => {
       await adapter.deleteFolder(createdFolder.id);
     });
   });
+
+  // ── 5. Web Crypto Secure Vault Storage Hardening (Phase 4.16 / PRD-017) ─────
+  describe('5. Web Crypto Secure Vault Storage Hardening (PRD-017 Section 3.2)', () => {
+    it('persists, queries, and deletes encrypted secret payloads in secure_vault store', async () => {
+      const mockPayload = {
+        version: 1 as const,
+        saltHex: '0123456789abcdef0123456789abcdef',
+        ivHex: 'abcdef0123456789abcdef01',
+        ciphertextHex: 'deadbeefcafebabe12345678',
+        authTagLength: 128 as const,
+      };
+
+      // 1. Save encrypted secret
+      await indexedDb.saveEncryptedSecret('provider_openai', mockPayload);
+
+      // 2. Query encrypted secret
+      const retrieved = await indexedDb.getEncryptedSecret('provider_openai');
+      assert.ok(retrieved);
+      assert.equal(retrieved.version, 1);
+      assert.equal(retrieved.saltHex, mockPayload.saltHex);
+      assert.equal(retrieved.ivHex, mockPayload.ivHex);
+      assert.equal(retrieved.ciphertextHex, mockPayload.ciphertextHex);
+
+      // 3. Query all encrypted secrets
+      const all = await indexedDb.getAllEncryptedSecrets();
+      assert.equal(all.length, 1);
+      assert.equal(all[0]?.key, 'provider_openai');
+
+      // 4. Delete secret
+      await indexedDb.deleteEncryptedSecret('provider_openai');
+      const shouldBeNull = await indexedDb.getEncryptedSecret('provider_openai');
+      assert.equal(shouldBeNull, null);
+
+      // 5. Clear secrets
+      await indexedDb.saveEncryptedSecret('k1', mockPayload);
+      await indexedDb.saveEncryptedSecret('k2', mockPayload);
+      assert.equal((await indexedDb.getAllEncryptedSecrets()).length, 2);
+
+      await indexedDb.clearEncryptedSecrets();
+      assert.equal((await indexedDb.getAllEncryptedSecrets()).length, 0);
+    });
+  });
 });

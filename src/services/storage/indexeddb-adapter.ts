@@ -16,9 +16,10 @@ import type {
   WorkflowEdge,
 } from '../../engine/types.ts';
 import type { SavedWorkflow, WorkflowMemoryConfig } from '../../stores/project-store.ts';
+import type { EncryptedVaultPayload } from '../crypto/crypto-vault.ts';
 
 const DB_NAME = 'PatchCatDB';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 export const STORES = {
   WORKFLOWS: 'workflows', // Legacy monolithic store preserved for backward compatibility
@@ -30,6 +31,7 @@ export const STORES = {
   KB_CHUNKS: 'kb_chunks',
   RUN_HISTORY: 'run_history',
   CHECKPOINTS: 'checkpoints',
+  SECURE_VAULT: 'secure_vault', // v0.4.16: Web Crypto encrypted secrets vault (PRD-017)
 } as const;
 
 export type StoreName = (typeof STORES)[keyof typeof STORES];
@@ -156,6 +158,9 @@ export class IndexedDbAdapter {
           chkStore.createIndex('workflowId', 'workflowId', { unique: false });
           chkStore.createIndex('timestamp', 'timestamp', { unique: false });
           chkStore.createIndex('checkpointId', 'checkpointId', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORES.SECURE_VAULT)) {
+          db.createObjectStore(STORES.SECURE_VAULT, { keyPath: 'key' });
         }
       };
 
@@ -565,6 +570,55 @@ export class IndexedDbAdapter {
       await this.delete(STORES.CHECKPOINTS, c.id);
     }
   }
+
+  // ── Web Crypto Secure Vault API (Phase 4.16 / v0.4.16) ───────────────────
+
+  /**
+   * Saves an encrypted secret payload to the secure_vault object store.
+   */
+  public async saveEncryptedSecret(key: string, payload: EncryptedVaultPayload): Promise<void> {
+    const record: SecureVaultRecord = {
+      key,
+      payload,
+      updatedAt: Date.now(),
+    };
+    await this.put<SecureVaultRecord>(STORES.SECURE_VAULT, record);
+  }
+
+  /**
+   * Retrieves an encrypted secret payload by key.
+   */
+  public async getEncryptedSecret(key: string): Promise<EncryptedVaultPayload | null> {
+    const record = await this.get<SecureVaultRecord>(STORES.SECURE_VAULT, key);
+    return record?.payload ?? null;
+  }
+
+  /**
+   * Deletes an encrypted secret from the vault.
+   */
+  public async deleteEncryptedSecret(key: string): Promise<void> {
+    await this.delete(STORES.SECURE_VAULT, key);
+  }
+
+  /**
+   * Retrieves all encrypted secrets in the vault.
+   */
+  public async getAllEncryptedSecrets(): Promise<SecureVaultRecord[]> {
+    return this.getAll<SecureVaultRecord>(STORES.SECURE_VAULT);
+  }
+
+  /**
+   * Clears all encrypted secrets from the vault.
+   */
+  public async clearEncryptedSecrets(): Promise<void> {
+    await this.clear(STORES.SECURE_VAULT);
+  }
+}
+
+export interface SecureVaultRecord {
+  key: string;
+  payload: EncryptedVaultPayload;
+  updatedAt: number;
 }
 
 export const indexedDb = new IndexedDbAdapter();
