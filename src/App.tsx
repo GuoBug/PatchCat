@@ -56,6 +56,12 @@ export const App: React.FC = () => {
     syncStorageMode(storageMode, serverBaseUrl);
   }, [storageMode, serverBaseUrl, syncStorageMode]);
 
+  // Initialize Web Crypto Secure Vault status on mount
+  const initVault = useSettingsStore((s) => s.initVault);
+  useEffect(() => {
+    void initVault();
+  }, [initVault]);
+
   // Global Ctrl+Shift+D (Chat Debug) & Ctrl+Shift+H (Run History) shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -72,9 +78,10 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Page leave guard: Prevent unload when isExecuting is true
+  // Page leave guard: Prevent unload when isExecuting is true and purge in-memory vault keys
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      useSettingsStore.getState().lockVault();
       if (isExecuting) {
         e.preventDefault();
         e.returnValue = '';

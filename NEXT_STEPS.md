@@ -276,12 +276,17 @@
 
 - [x] **1. Web Crypto API (SubtleCrypto AES-256-GCM) Master Passphrase Vault (`src/services/crypto/crypto-vault.ts`)**:
   - Pure-native Web Crypto API implementation (`globalThis.crypto.subtle`) with zero external crypto dependencies.
-  - PBKDF2 master key derivation with 100,000 SHA-256 iterations generating 256-bit AES-GCM encryption keys.
+  - PBKDF2 master key derivation with 600,000 SHA-256 iterations (OWASP standard) generating 256-bit AES-GCM encryption keys.
   - Strict AEAD payload schema: `{ version: 1, saltHex, ivHex, ciphertextHex, authTagLength: 128 }`.
   - Ephemeral in-memory master key caching with configurable TTL and instant memory purge (`clearMasterKeyCache()`).
   - Strict tamper detection: automatically rejects corrupted ciphertext, modified IVs, altered salts, or incorrect passphrases with zero timing leakage.
   - IndexedDB storage upgrade to `DB_VERSION = 5` introducing dedicated `secure_vault` object store with complete CRUD contracts.
-- [x] **2. Workflow Asset One-Click Sanitized Export (`src/services/export/workflow-sanitizer.ts`, `SanitizedExportModal.tsx`)**:
+- [x] **2. Production Store & Zero-Plaintext Enforcement (`src/stores/settings-store.ts`, `VaultControlPanel.tsx`)**:
+  - **Zero-Plaintext Red Line**: `saveState()` unconditionally strips all `apiKey` fields before persisting provider configurations to `localStorage`.
+  - **Legacy Credential Scrubbing**: Automatically detects legacy plaintext keys on startup, stages them in the unlocked memory session, and triggers an immediate scrub of `localStorage`.
+  - Master passphrase lifecycle management: setup, unlock, lock, and passphrase rotation with atomic re-encryption of all stored secrets.
+  - UI integration with `VaultControlPanel.tsx` in Settings and lock state status badge in `ControlHeader.tsx`.
+- [x] **3. Workflow Asset One-Click Sanitized Export (`src/services/export/workflow-sanitizer.ts`, `SanitizedExportModal.tsx`)**:
   - Deep-clone non-mutating workflow sanitizer protecting user privacy before exporting or sharing topologies.
   - Granular configurable sanitization controls:
     - `stripApiKeys`: Automatically scans and strips plaintext credentials from node configs, auth headers (`Authorization`, `x-api-key`), query parameters, provider overrides, and global inputs.
@@ -289,14 +294,15 @@
     - `stripLocalPaths`: Detects and neutralizes absolute Windows drive paths (`C:\...`) and POSIX system paths (`/Users/...`, `/home/...`) into `[LOCAL_PATH_REDACTED]`.
     - `clearExecutionOutputs`: Clears transient runtime outputs, errors, and traces, producing clean logical DAG topologies (`.patchcat.json`).
   - Pre-flight diagnostic audit modal (`SanitizedExportModal.tsx`) integrated into `WorkflowSidebar` item context menus and `ControlHeader` toolbar, supporting one-click `.patchcat.json` file download and sanitized JSON clipboard copying.
-- [x] **3. Storage Hardening & Ephemeral Stream Guardrails**:
+- [x] **4. Storage Hardening & Ephemeral Stream Guardrails**:
   - Enforced zero write amplification: streaming token outputs, reasoning chains, and node pulses remain strictly isolated to memory channels (Zustand & RAF batcher).
   - Storage adapter contracts decoupling business logic from underlying IndexedDB storage layers.
-- [x] **4. Full Automated Test Suite & Engineering Verification**:
-  - Added dedicated `tests/crypto-vault.node.test.ts` (20 tests covering key derivation, roundtrip encryption, tamper rejection, cache eviction, and hex conversions).
+- [x] **5. Full Automated Test Suite & Engineering Verification**:
+  - Added dedicated `tests/crypto-vault.node.test.ts` (20 tests covering 600,000 PBKDF2 iterations, roundtrip encryption, tamper rejection, cache eviction, and hex conversions).
   - Added dedicated `tests/workflow-sanitizer.node.test.ts` (8 tests verifying multi-node credential stripping, prompt masking, path neutralization, and immutability).
+  - Added dedicated `tests/settings-vault-integration.node.test.ts` (7 integration tests verifying zero-plaintext LocalStorage, legacy scrubbing, IndexedDB ciphertext-only, wrong passphrase rejection, and rotation).
   - Expanded `tests/storage-hardening.node.test.ts` with `secure_vault` persistence tests.
-  - 505/505 automated tests passing across 142 suites with 100% green rate.
+  - **512/512 automated tests passing across 149 suites with 100% green rate**.
   - TypeScript strict check (`npm run typecheck`) and production build (`npm run build`) passing with zero errors.
 
 ---
@@ -614,12 +620,17 @@ npm run build
 
 - [x] **1. Web Crypto API (SubtleCrypto AES-256-GCM) 本地主口令加密暗室 (`src/services/crypto/crypto-vault.ts`)**：
   - 纯原生浏览器 `SubtleCrypto` 驱动，零三方加密黑盒依赖；
-  - 基于 PBKDF2（100,000 次 SHA-256 迭代）由用户主口令动态派生 256 位 AES-GCM 密钥；
+  - 基于 PBKDF2（600,000 次 OWASP 标准 SHA-256 迭代）由用户主口令动态派生 256 位 AES-GCM 密钥；
   - 严格落地符合 PRD-017 规范的 AEAD 载荷契约：`{ version: 1, saltHex, ivHex, ciphertextHex, authTagLength: 128 }`；
   - 瞬态内存防护策略：密码派生密钥短暂缓存（TTL 可配），提供 `clearMasterKeyCache()` 瞬时内存擦除与 `verifyPassphrase()` 验签机制；
   - 防篡改认证：密文、初始化向量（IV）或盐值遭篡改时，利用 128 位 MAC 鉴权机制秒级拦截并拒绝解密；
   - IndexedDB 底座升级至 `DB_VERSION = 5`，开辟 `secure_vault` 专用对象仓库。
-- [x] **2. 工作流导出「一键安全脱敏」服务 (`src/services/export/workflow-sanitizer.ts`, `SanitizedExportModal.tsx`)**：
+- [x] **2. 生产状态机深度集成与 LocalStorage 零明文硬红线 (`src/stores/settings-store.ts`, `VaultControlPanel.tsx`)**：
+  - **零明文存储硬底线**：`saveState()` 在将 Provider 写入 LocalStorage 时无条件剔除所有明文 `apiKey`；
+  - **存量历史明文秒级清洗**：初始化加载时自动识别存量明文 Key，移入内存运行态并立即触发 LocalStorage 安全清洗覆盖；
+  - 主口令全生命周期管理：初始化配置、解锁、加锁、以及无损轮转（Rotation，旧口令解密并原子重加密）；
+  - 画布与设置交互贯通：在 Settings 提供 `VaultControlPanel` 暗室管理看板，在顶部工具栏 `ControlHeader` 实时指示锁定状态。
+- [x] **3. 工作流导出「一键安全脱敏」服务 (`src/services/export/workflow-sanitizer.ts`, `SanitizedExportModal.tsx`)**：
   - 深度不可变深拷贝（Immutability Guarantee），脱敏过程绝不污染原始画布数据；
   - 四维精细化脱敏规则：
     - `stripApiKeys`：全量扫描节点配置、Provider overrides、授权请求头（`Authorization`, `x-api-key`）及查询参数中的明文凭据；
@@ -627,14 +638,15 @@ npm run build
     - `stripLocalPaths`：识别并中和 Windows 盘符（`C:\...`）与 POSIX（`/Users/...`, `/home/...`）物理操作系统路径为 `[LOCAL_PATH_REDACTED]`；
     - `clearExecutionOutputs`：清除历史运行输出成果与高亮脉冲，产出纯净的确定性逻辑拓扑 DAG（`.patchcat.json`）；
   - 画布工效闭环：在左侧工作流目录（`WorkflowSidebar`）各流程菜单及顶部控制栏（`ControlHeader`）无缝集成「一键安全脱敏导出」模态框，支持实时白盒安全巡检与脱敏 JSON 剪贴板复制。
-- [x] **3. 底座存储防膨胀治理与时态隔离红线**：
+- [x] **4. 底座存储防膨胀治理与时态隔离红线**：
   - 死守红线 2：Streaming 逐字流式吐字、思维链推导增量绝对禁止落盘，写放大严格归零；
   - 存储强契约解耦：工作流与密钥持久化严格通过统一适配器规范交互。
-- [x] **4. 全量自动化测试与工程验证**：
-  - 新增 `tests/crypto-vault.node.test.ts`（20 项测试覆盖密钥派生、对称加解密、防篡改校验、内存缓存淘汰与 Hex 转换）；
+- [x] **5. 全量自动化测试与工程验证**：
+  - 新增 `tests/crypto-vault.node.test.ts`（20 项测试覆盖 60 万次 PBKDF2 派生、对称加解密、防篡改校验、内存缓存淘汰与 Hex 转换）；
   - 新增 `tests/workflow-sanitizer.node.test.ts`（8 项测试验证跨节点凭据剥离、Prompt 占位符脱敏、本地路径重置与原图不可变性）；
+  - 新增 `tests/settings-vault-integration.node.test.ts`（7 项集成测试验证 LocalStorage 零明文、存量清洗、IndexedDB 密文存储、错密拒绝与口令轮转）；
   - 扩充 `tests/storage-hardening.node.test.ts`（覆盖 `secure_vault` 仓储 CRUD）；
-  - 全工程 **505 项测试 / 142 套件 / 0 失败**，`tsc --noEmit` 0 报错，生产打包 100% 成功。
+  - **全工程 512 项测试 / 149 套件 / 0 失败**，`tsc --noEmit` 0 报错，生产打包 100% 成功。
 
 ---
 

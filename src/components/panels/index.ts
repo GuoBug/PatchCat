@@ -17,3 +17,4 @@ export { SaveStatusBadge } from './SaveStatusBadge';
 export { ShadowDraftRecoveryBanner } from './ShadowDraftRecoveryBanner';
 export { RunHistoryDrawer } from './RunHistoryDrawer';
 export { StepDataInspector } from './StepDataInspector';
+export { VaultControlPanel } from './VaultControlPanel';

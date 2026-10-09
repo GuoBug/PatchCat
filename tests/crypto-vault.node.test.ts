@@ -39,7 +39,7 @@ describe('Phase 4.16: Web Crypto API AES-256-GCM Cryptographic Vault (PRD-017)',
 
   // ── 1. Master Key Derivation (PBKDF2) ──────────────────────────────────────
   describe('1. PBKDF2 Master Key Derivation', () => {
-    it('derives a valid AES-GCM 256-bit CryptoKey with 100,000 iterations', async () => {
+    it('derives a valid AES-GCM 256-bit CryptoKey with 600,000 iterations (OWASP)', async () => {
       const salt = new Uint8Array(SALT_BYTE_LENGTH);
       for (let i = 0; i < salt.length; i++) salt[i] = i;
 

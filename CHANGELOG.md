@@ -5,6 +5,28 @@ All notable changes to the **PatchCat** project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.16] - 2026-10-09
+
+### Added
+- **Web Crypto API (SubtleCrypto AES-256-GCM) Local Cryptographic Vault (`src/services/crypto/crypto-vault.ts`, PRD-017)**:
+  - **OWASP-Hardened Key Derivation**: PBKDF2 with 600,000 SHA-256 iterations and cryptographically strong 16-byte random salts.
+  - **AEAD Authenticated Encryption**: 256-bit AES-GCM with 12-byte random initialization vectors (IV) and 128-bit authentication tags per payload; tampering with ciphertext, IV, or salt triggers immediate rejection.
+  - **Production-Integrated Master Passphrase Lifecycle**: Master Passphrase setup, unlocking, locking, and rotation in `src/stores/settings-store.ts`.
+  - **Zero Plaintext LocalStorage Guarantee**: `saveState()` completely strips `apiKey` attributes before writing to `localStorage`. `localStorage` contains zero plaintext API keys across all providers.
+  - **IndexedDB `secure_vault` Isolation**: Upgraded IndexedDB schema to `v5` with dedicated `secure_vault` object store for encrypted secret payloads.
+  - **Automatic Legacy Plaintext Scrubbing**: On initialization, existing plaintext keys in `localStorage` from older versions are loaded into memory and immediately scrubbed from disk.
+  - **Memory Protection**: Master keys and decrypted secrets are held in ephemeral memory during the active session and wiped on lock, beforeunload, or page close.
+- **Workflow Export Sanitization Engine & UI (`src/services/export/workflow-sanitizer.ts`, `SanitizedExportModal.tsx`)**:
+  - **Deep Immutability**: All export mutations execute on deep-cloned workflow graphs, ensuring zero runtime or canvas side-effects.
+  - **Comprehensive Multi-Dimensional Redaction**: Strips direct `apiKey` attributes across all nodes (LLM, HTTP, Rerank), masks sensitive prompt patterns (`[SECRET_*]`, `sk-...`, `Bearer ...`, `ghp_...`), and neutralizes absolute Windows/POSIX file paths to safe relative basenames without leaking credential prefixes.
+  - **Interactive Audit UI**: Dynamic pre-flight security scan with audit status badges, granular redaction toggles, `.patchcat.json` file download, and one-click clipboard copy.
+- **Dedicated Vault Control Panel (`src/components/panels/VaultControlPanel.tsx`)**:
+  - Embedded at the top of the Settings Providers tab: visual status indicator (Unconfigured / Locked / Unlocked), setup form, unlock prompt, and passphrase rotation.
+  - Top header (`ControlHeader.tsx`) reflects real-time locked status badge and prevents execution without unlocked credentials.
+- **Automated Verification Suite (`tests/crypto-vault.node.test.ts`, `tests/workflow-sanitizer.node.test.ts`, `tests/settings-vault-integration.node.test.ts`)**:
+  - 35 new unit and integration tests covering PBKDF2 key derivation, AES-GCM roundtrip, tamper detection, export redaction, LocalStorage zero plaintext contract, and legacy migration.
+  - Expanded automated test suite to **512 passing tests across 149 test suites** (100% green rate).
+
 ## [0.4.15] - 2026-10-07
 
 ### Added

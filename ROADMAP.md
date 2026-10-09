@@ -1,7 +1,7 @@
 # 🗺️ PatchCat Product Roadmap
 
-> **Current Stage**: `v0.4.15` (Released ✅)  
-> **Last Updated**: 2026-10-07  
+> **Current Stage**: `v0.4.16` (Released ✅)  
+> **Last Updated**: 2026-10-09  
 > **Positioning**: A production-grade, local-first deterministic AI workflow engine · interactive playground  
 
 [English](#english) | [简体中文](#简体中文)
@@ -16,9 +16,9 @@
 PatchCat adheres to a **Micro-Milestone cadence (~0.0.2 version increments)** and a **Local-First, Progressive Enhancement** architecture. Each micro-release focuses on a tightly scoped, fully verified feature slice with zero regressions, ironclad reliability watchdogs, and zero superficial testing theater.
 
 ```
-v0.4.15 (Current) ──► v0.4.16 (Crypto Vault) ──► v0.4.18 (Rolling Summary)
+v0.4.16 (Current) ──► v0.4.18 (Rolling Summary) ──► v0.4.20 (Snapshots)
                                                           │
-v0.6.0 (MCP & Docker) ◄── v0.4.20 (Snapshots) ◄───────────┘
+v0.6.0 (MCP & Docker) ◄───────────────────────────────────┘
         │
         └──► v1.0.0 (Enterprise Ready)
 ```
@@ -39,7 +39,7 @@ v0.6.0 (MCP & Docker) ◄── v0.4.20 (Snapshots) ◄────────�
 | **`v0.4.13` (Shipped ✅)** | **Deterministic Model Routing & Cascade State Machine** | • [`ADR-005`](docs/04-dev-notes/adr-005-deterministic-model-routing-and-cascade-state-machine.md)<br>• [`PRD-018`](docs/01-prd/PRD-018-Deterministic-Structured-Output-and-Self-Healing.md) | • Cheap-First speculative tier: 90% routine traffic closed on zero-cost free model<br>• F7 action-priority semantic conflict gate & diagnostic triplet field inheritance<br>• Multi-candidate failover pool (`gemini-3.5-flash-lite` ➔ `gemini-3.1-flash-lite` ➔ `gemini-3.8-flash`) |
 | **`v0.4.14` (Shipped ✅)** | **Local Hybrid Search (BM25 + N-gram Density)** | • [`PRD-006`](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md)<br>• [`RAG Architecture`](docs/02-architecture/phase-2-knowledge-base-and-rag-architecture.md) | • Zero-dependency in-memory BM25 inverted index for browser Local BYOK mode<br>• Reciprocal Rank Fusion (RRF) combining a BM25 lexical rank channel with an n-gram term-density rank channel<br>• Retrieval score visualization & keyword highlight chips |
 | **`v0.4.15` (Shipped ✅)** | **Reranker Cross-Encoder API** | • [`PRD-006`](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md) | • Unified rerank client for Cohere (`/v2/rerank`), Jina, OpenAI-compatible (SiliconFlow) and HuggingFace TEI (`/rerank`) endpoints<br>• Two-stage coarse→rerank pipeline with Top-N cutoff, independent relevance threshold and graceful-degradation airbag<br>• Rank-transition telemetry (`original_rank` → `rerank_rank` → `rank_delta`) surfaced on the canvas badge and property-drawer inspector |
-| **`v0.4.16`** | **Local Data Sovereignty & Crypto Vault** | • [`PRD-017`](docs/01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md)<br>• [`ADR-003`](docs/04-dev-notes/adr-003-event-sourcing-vs-checkpointing-and-local-first-lessons.md) | • Web Crypto API (`SubtleCrypto` AES-256-GCM) master-passphrase local encryption vault<br>• Zero plain-text API keys in LocalStorage/IndexedDB<br>• 1-Click Sanitized Workflow Export modal (stripping API keys & local paths)<br>• Storage adapter contract freezing & offline export verification |
+| **`v0.4.16` (Shipped ✅)** | **Local Data Sovereignty & Crypto Vault** | • [`PRD-017`](docs/01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md)<br>• [`ADR-003`](docs/04-dev-notes/adr-003-event-sourcing-vs-checkpointing-and-local-first-lessons.md) | • Web Crypto API (`SubtleCrypto` AES-256-GCM) master-passphrase local encryption vault<br>• Zero plain-text API keys in LocalStorage/IndexedDB<br>• 1-Click Sanitized Workflow Export modal (stripping API keys & local paths)<br>• Storage adapter contract freezing & offline export verification |
 | **`v0.4.18`** | **Long-Term Memory & Rolling Summary** | • [`PRD-010`](docs/01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md) | • Background LLM rolling summarization for conversational memory pruning<br>• Conversation memory token cost breakdown & inspection<br>• Per-entry memory editing and manual pruning |
 | **`v0.4.20`** | **Memory Node & Workflow Version Diff** | • [`PRD-010`](docs/01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md)<br>• [`Local-First Strategy`](docs/02-architecture/local-first-architecture-and-evolution-strategy.md) | • Dedicated `MemoryNode` component wireable to multiple Agent/LLM nodes<br>• Local workflow version snapshots with visual JSON diff & rollback<br>• Portable `.patchcat` single-file archive bundle |
 | **`v0.6.0`** | **MCP Tool Export & Docker Deployment** | • [`Whitepaper`](docs/02-architecture/patchcat-architecture-whitepaper.md) | • 1-Click export visual workflow as standard MCP (Model Context Protocol) Tool<br>• Standalone zero-dependency TypeScript headless runner script export<br>• Production `docker-compose.yml` packaging Vite, FastAPI, and PostgreSQL `pgvector` |
@@ -70,6 +70,7 @@ v0.6.0 (MCP & Docker) ◄── v0.4.20 (Snapshots) ◄────────�
 - [x] **Phase 4.13 (v0.4.13)**: Deterministic Model Routing & Cascade State Machine (2026-10-02)
 - [x] **Phase 4.14 (v0.4.14)**: Pure-Frontend Lightweight Hybrid Search (BM25 + N-gram Density) (2026-10-02)
 - [x] **Phase 4.15 (v0.4.15)**: Cross-Encoder Reranker API Integration & Rank-Transition Telemetry (2026-10-07)
+- [x] **Phase 4.16 (v0.4.16)**: Local Data Sovereignty, Web Crypto Master Vault & Sanitized Export (2026-10-09)
 
 ---
 
@@ -78,8 +79,8 @@ v0.6.0 (MCP & Docker) ◄── v0.4.20 (Snapshots) ◄────────�
 <a name="简体中文"></a>
 ## 简体中文
 
-> **当前阶段**：`v0.4.15` (已发布 ✅)  
-> **最近更新**：2026-10-07  
+> **当前阶段**：`v0.4.16` (已发布 ✅)  
+> **最近更新**：2026-10-09  
 > **定位**：生产级、本地优先的确定性 AI 工作流引擎 · 交互式实验工坊  
 
 ### 🧭 演进节奏与设计哲学
@@ -87,9 +88,9 @@ v0.6.0 (MCP & Docker) ◄── v0.4.20 (Snapshots) ◄────────�
 PatchCat 坚守 **`0.0.2` 微步演进路线（Micro-Milestone Cadence）** 与 **Local-First 纯本地免配置渐进增强** 原则。每个微版本聚焦于一个定义明确、边界清晰且彻底验证的特性切片，坚决杜绝“大版本跳跃与功能堆叠”，淘汰形式主义测试，死守零崩溃、零死锁、零假死底线。
 
 ```
-v0.4.15 (当前版本) ──► v0.4.16 (主口令暗室) ──► v0.4.18 (长效会话记忆)
+v0.4.16 (当前版本) ──► v0.4.18 (长效会话记忆) ──► v0.4.20 (快照与归档)
                                                             │
-v0.6.0 (MCP与Docker大考) ◄── v0.4.20 (快照与归档) ◄──────────┘
+v0.6.0 (MCP与Docker大考) ◄──────────────────────────────────┘
         │
         └──► v1.0.0 (企业生产交付)
 ```
@@ -109,7 +110,7 @@ v0.6.0 (MCP与Docker大考) ◄── v0.4.20 (快照与归档) ◄────�
 | **`v0.4.13` (已交付 ✅)** | **确定性模型级联路由与状态机** | • [`ADR-005`](docs/04-dev-notes/adr-005-deterministic-model-routing-and-cascade-state-machine.md)<br>• [`PRD-018`](docs/01-prd/PRD-018-Deterministic-Structured-Output-and-Self-Healing.md) | • Cheap-First 零成本试探：90% 常规流量锁定在免费模型通道闭环<br>• F7 动作优先权门禁与现场诊断三元组上下文继承<br>• 多候选强模型轮换池 (`gemini-3.5-flash-lite` ➔ `gemini-3.1-flash-lite` ➔ `gemini-3.8-flash`) 秒级容灾 |
 | **`v0.4.14` (已交付 ✅)** | **纯本地轻量混合检索 (BM25+字面密度)** | • [`PRD-006`](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md)<br>• [`RAG 架构白皮书`](docs/02-architecture/phase-2-knowledge-base-and-rag-architecture.md) | • 纯前端轻量内存分词与倒排索引（Local 模式零依赖）<br>• RRF (Reciprocal Rank Fusion) 融合两路**词法/字面**排序通道：BM25 词频秩 + n-gram 词项密度秩<br>• 检索匹配分值与关键词可视化高亮 |
 | **`v0.4.15` (已交付 ✅)** | **交叉重排 Reranker API 集成** | • [`PRD-006`](docs/01-prd/PRD-006-Knowledge-Base-and-RAG-Retrieval.md) | • 统一重排客户端：Cohere (`/v2/rerank`)、Jina、OpenAI 兼容 (SiliconFlow)、HuggingFace TEI (`/rerank`) 四协议<br>• 粗排→精排两阶段流水线：Top-N 截断、独立相关性阈值、降级安全气囊<br>• 位次跃迁遥测 (`original_rank` → `rerank_rank` → `rank_delta`) 画布徽章与属性面板可视化 |
-| **`v0.4.16`** | **本地数据主权暗室与资产脱敏** | • [`PRD-017`](docs/01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md)<br>• [`ADR-003`](docs/04-dev-notes/adr-003-event-sourcing-vs-checkpointing-and-local-first-lessons.md) | • 浏览器原生 Web Crypto API (`SubtleCrypto` AES-256-GCM) 本地主口令暗室<br>• LocalStorage/IndexedDB 零明文存储 API Key（免疫插件窃密）<br>• 工作流资产「一键安全脱敏导出」弹窗（剥离 Key 与本地物理路径）<br>• 存储适配器契约封板，单机零信任离线导入验证 |
+| **`v0.4.16` (已交付 ✅)** | **本地数据主权暗室与资产脱敏** | • [`PRD-017`](docs/01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md)<br>• [`ADR-003`](docs/04-dev-notes/adr-003-event-sourcing-vs-checkpointing-and-local-first-lessons.md) | • 浏览器原生 Web Crypto API (`SubtleCrypto` AES-256-GCM) 本地主口令暗室<br>• LocalStorage/IndexedDB 零明文存储 API Key（免疫插件窃密）<br>• 工作流资产「一键安全脱敏导出」弹窗（剥离 Key 与本地物理路径）<br>• 存储适配器契约封板，单机零信任离线导入验证 |
 | **`v0.4.18`** | **长效会话记忆与后台滚动摘要** | • [`PRD-010`](docs/01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md) | • 对话历史超出窗口时，轻量模型后台滚动生成浓缩摘要<br>• Chat 面板直观展示实时轮次与长效摘要 Token 开销<br>• 会话历史查看与单条记忆手动修正/清除 |
 | **`v0.4.20`** | **显式 Memory 节点与版本快照** | • [`PRD-010`](docs/01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md)<br>• [`Local-First 演进白皮书`](docs/02-architecture/local-first-architecture-and-evolution-strategy.md) | • 画布新增 `MemoryNode` 实体节点，支持挂载至多个 Agent/LLM<br>• 本地工作流版本快照（打标、JSON Diff 差异对比与一键回退）<br>• 一体化 `.patchcat` 绿色工程归档包 |
 | **`v0.6.0`** | **MCP Tool 导出与 Docker 交付** | • [`架构白皮书`](docs/02-architecture/patchcat-architecture-whitepaper.md) | • 画布工作流一键导出为标准 MCP Tool（直接挂载至 Cursor / Claude）<br>• 独立无依赖 TypeScript 无头脚本导出（支持 Edge / Node.js 运行）<br>• 生产级 `docker-compose.yml`（Vite + FastAPI + PostgreSQL pgvector） |
@@ -140,3 +141,4 @@ v0.6.0 (MCP与Docker大考) ◄── v0.4.20 (快照与归档) ◄────�
 - [x] **Phase 4.13 (v0.4.13)**：确定性模型级联路由与故障转移状态机 (2026-10-02)
 - [x] **Phase 4.14 (v0.4.14)**：纯本地轻量混合检索 (BM25+字面密度) 与 RRF 融合 (2026-10-02)
 - [x] **Phase 4.15 (v0.4.15)**：交叉重排 Reranker API 集成与位次跃迁遥测 (2026-10-07)
+- [x] **Phase 4.16 (v0.4.16)**：本地数据主权主口令暗室、零明文存储与资产一键安全脱敏 (2026-10-09)

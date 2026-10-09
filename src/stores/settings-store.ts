@@ -19,10 +19,30 @@ import {
   DEFAULT_NETWORK_SETTINGS,
 } from '../config/runtime-defaults.ts';
 import { PROJECT_VERSION } from '../config/project.ts';
+import { indexedDb } from '../services/storage/indexeddb-adapter.ts';
+import {
+  encryptSecret,
+  decryptSecret,
+  clearMasterKeyCache,
+  VAULT_CANARY_KEY,
+  VAULT_SECRETS_KEY,
+  VAULT_CANARY_PLAINTEXT,
+} from '../services/crypto/crypto-vault.ts';
+export {
+  VAULT_CANARY_KEY,
+  VAULT_SECRETS_KEY,
+  VAULT_CANARY_PLAINTEXT,
+} from '../services/crypto/crypto-vault.ts';
+
 
 export type ProviderId = 'openai' | 'deepseek' | 'siliconflow' | 'google' | 'ollama' | 'custom';
 export type AppView = 'canvas' | 'settings';
 export type SettingsTab = 'general' | 'execution' | 'memory' | 'providers' | 'logs';
+export type VaultStatus = 'unconfigured' | 'locked' | 'unlocked';
+
+// Ephemeral in-memory master passphrase cache for the current unlocked browser session.
+// NEVER persisted to LocalStorage, SessionStorage, or IndexedDB.
+let sessionMasterPassphrase: string | null = null;
 
 export interface ProviderConfig {
   id: ProviderId;
@@ -204,6 +224,18 @@ export interface SettingsStoreState {
     hasKey: boolean;
   };
   clearAllCaches: () => Promise<void>;
+
+  // Web Crypto Secure Vault (Phase 4.16 / PRD-017)
+  vaultStatus: VaultStatus;
+  isVaultInitialized: boolean;
+  vaultError: string | null;
+  hasLegacyKeysPending: boolean;
+  initVault: () => Promise<void>;
+  setupMasterPassphrase: (passphrase: string) => Promise<{ success: boolean; error?: string }>;
+  unlockVault: (passphrase: string) => Promise<{ success: boolean; error?: string }>;
+  lockVault: () => void;
+  changeMasterPassphrase: (oldPass: string, newPass: string) => Promise<{ success: boolean; error?: string }>;
+  persistVaultSecrets: () => Promise<void>;
 }
 
 // Helper to load settings from LocalStorage
@@ -218,6 +250,7 @@ function loadInitialState(): {
   editorPreferences: EditorPreferences;
   networkSettings: NetworkSettings;
   researchMode: boolean;
+  hasLegacyKeysPending: boolean;
 } {
   let language: Language = 'en';
   let activeProvider: ProviderId = 'deepseek';
@@ -229,6 +262,8 @@ function loadInitialState(): {
   let editorPreferences: EditorPreferences = DEFAULT_EDITOR_PREFERENCES;
   let networkSettings: NetworkSettings = DEFAULT_NETWORK_SETTINGS;
   let researchMode = false;
+  let hasLegacyKeys = false;
+  const legacyKeys: Partial<Record<ProviderId, string>> = {};
 
   if (typeof window !== 'undefined') {
     try {
@@ -303,13 +338,37 @@ function loadInitialState(): {
       if (raw) {
         const parsed = JSON.parse(raw);
         activeProvider = parsed.activeProvider || 'deepseek';
+        if (parsed.providers && typeof parsed.providers === 'object') {
+          for (const [id, p] of Object.entries(parsed.providers)) {
+            const pid = id as ProviderId;
+            if (p && typeof p === 'object' && 'apiKey' in p) {
+              const rawKey = String((p as Record<string, unknown>).apiKey || '').trim();
+              if (rawKey && pid !== 'ollama') {
+                hasLegacyKeys = true;
+                legacyKeys[pid] = rawKey;
+              }
+            }
+          }
+        }
         providers = {
           ...DEFAULT_PROVIDERS,
           ...(parsed.providers || {}),
         };
+        // Hydrate legacy keys into in-memory providers so session isn't broken
+        for (const [pid, key] of Object.entries(legacyKeys)) {
+          if (providers[pid as ProviderId] && key) {
+            providers[pid as ProviderId].apiKey = key;
+          }
+        }
       }
     } catch (e) {
       console.warn('[SettingsStore] Failed to load settings from localStorage:', e);
+    }
+
+    // IF legacy keys were detected in localStorage:
+    // IMMEDIATELY SCRUB localStorage to remove all plaintext keys (PRD-017 DoD)!
+    if (hasLegacyKeys) {
+      saveState({ activeProvider, providers });
     }
   }
 
@@ -324,6 +383,7 @@ function loadInitialState(): {
     editorPreferences,
     networkSettings,
     researchMode,
+    hasLegacyKeysPending: hasLegacyKeys,
   };
 }
 
@@ -333,11 +393,27 @@ function saveState(state: {
 }) {
   if (typeof window === 'undefined') return;
   try {
+    // SECURITY HARDENING (PRD-017 Section 3.2):
+    // Strip apiKey from all providers before persisting to localStorage!
+    // LocalStorage must NEVER contain plaintext API keys.
+    const sanitizedProviders: Record<string, Partial<ProviderConfig>> = {};
+    for (const [id, config] of Object.entries(state.providers)) {
+      sanitizedProviders[id] = {
+        id: config.id,
+        name: config.name,
+        baseUrl: config.baseUrl,
+        defaultModel: config.defaultModel,
+        availableModels: config.availableModels,
+        description: config.description,
+        // apiKey is intentionally stripped to guarantee zero plaintext in localStorage
+      };
+    }
+
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
         activeProvider: state.activeProvider,
-        providers: state.providers,
+        providers: sanitizedProviders,
       }),
     );
   } catch (e) {
@@ -430,6 +506,12 @@ export const useSettingsStore = create<SettingsStoreState>()(
         ollama: { status: 'idle' },
         custom: { status: 'idle' },
       },
+
+      // Web Crypto Secure Vault (Phase 4.16 / PRD-017)
+      vaultStatus: 'unconfigured',
+      isVaultInitialized: false,
+      vaultError: null,
+      hasLegacyKeysPending: initial.hasLegacyKeysPending,
 
       // Storage & Backend Mode
       storageMode: initial.storageMode,
@@ -792,6 +874,9 @@ export const useSettingsStore = create<SettingsStoreState>()(
           state.testResults[id] = { status: 'idle' };
         });
         saveState({ activeProvider: get().activeProvider, providers: get().providers });
+        if (partial.apiKey !== undefined && get().vaultStatus === 'unlocked') {
+          void get().persistVaultSecrets();
+        }
       },
 
       resetProviderConfig: (id) => {
@@ -800,6 +885,9 @@ export const useSettingsStore = create<SettingsStoreState>()(
           state.testResults[id] = { status: 'idle' };
         });
         saveState({ activeProvider: get().activeProvider, providers: get().providers });
+        if (get().vaultStatus === 'unlocked') {
+          void get().persistVaultSecrets();
+        }
       },
 
       getEffectiveConfig: (providerId) => {
@@ -995,6 +1083,187 @@ export const useSettingsStore = create<SettingsStoreState>()(
             state.testResults[id] = result;
           });
           return result;
+        }
+      },
+
+      // Web Crypto Secure Vault Methods (Phase 4.16 / PRD-017)
+      initVault: async () => {
+        if (typeof window === 'undefined') return;
+        try {
+          const canary = await indexedDb.getEncryptedSecret(VAULT_CANARY_KEY);
+          if (!canary) {
+            set((state) => {
+              state.vaultStatus = 'unconfigured';
+              state.isVaultInitialized = true;
+              state.vaultError = null;
+            });
+            return;
+          }
+
+          // Vault is configured with a canary! Set to locked initially
+          set((state) => {
+            state.vaultStatus = 'locked';
+            state.isVaultInitialized = true;
+            state.vaultError = null;
+            // Clear API keys from in-memory providers when locked
+            for (const [pid, p] of Object.entries(state.providers)) {
+              if (pid !== 'ollama') {
+                p.apiKey = '';
+              }
+            }
+          });
+        } catch (err) {
+          console.error('[SettingsStore] Failed to initialize secure vault:', err);
+          set((state) => {
+            state.vaultError = err instanceof Error ? err.message : 'Vault initialization failed';
+          });
+        }
+      },
+
+      setupMasterPassphrase: async (passphrase: string) => {
+        const clean = passphrase.trim();
+        if (clean.length < 6) {
+          return {
+            success: false,
+            error: '主口令长度至少需 6 位字符 (Passphrase must be at least 6 characters)',
+          };
+        }
+        try {
+          // 1. Create and save canary
+          const canary = await encryptSecret(VAULT_CANARY_PLAINTEXT, clean);
+          await indexedDb.saveEncryptedSecret(VAULT_CANARY_KEY, canary);
+
+          // 2. Collect current in-memory API keys
+          const currentProviders = get().providers;
+          const secretsMap: Record<string, string> = {};
+          for (const [pid, p] of Object.entries(currentProviders)) {
+            if (p.apiKey && p.apiKey.trim() && pid !== 'ollama') {
+              secretsMap[pid] = p.apiKey.trim();
+            }
+          }
+
+          // 3. Encrypt and save secrets map
+          const encryptedSecrets = await encryptSecret(JSON.stringify(secretsMap), clean);
+          await indexedDb.saveEncryptedSecret(VAULT_SECRETS_KEY, encryptedSecrets);
+
+          sessionMasterPassphrase = clean;
+
+          set((state) => {
+            state.vaultStatus = 'unlocked';
+            state.hasLegacyKeysPending = false;
+            state.vaultError = null;
+          });
+
+          return { success: true };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Failed to setup master passphrase';
+          set((state) => {
+            state.vaultError = msg;
+          });
+          return { success: false, error: msg };
+        }
+      },
+
+      unlockVault: async (passphrase: string) => {
+        const clean = passphrase.trim();
+        try {
+          const canary = await indexedDb.getEncryptedSecret(VAULT_CANARY_KEY);
+          if (!canary) {
+            return { success: false, error: '暗室未初始化 (Vault not configured)' };
+          }
+
+          // 1. Verify canary
+          let canaryText = '';
+          try {
+            canaryText = await decryptSecret(canary, clean);
+          } catch {
+            return {
+              success: false,
+              error: '主口令错误，解密失败 (Incorrect master passphrase)',
+            };
+          }
+
+          if (canaryText !== VAULT_CANARY_PLAINTEXT) {
+            return {
+              success: false,
+              error: '主口令校验不匹配 (Canary verification mismatch)',
+            };
+          }
+
+          // 2. Decrypt secrets map
+          const encryptedSecrets = await indexedDb.getEncryptedSecret(VAULT_SECRETS_KEY);
+          let secretsMap: Record<string, string> = {};
+          if (encryptedSecrets) {
+            try {
+              const decryptedJson = await decryptSecret(encryptedSecrets, clean);
+              secretsMap = JSON.parse(decryptedJson);
+            } catch (e) {
+              console.warn('[SettingsStore] Failed to decrypt or parse secrets:', e);
+            }
+          }
+
+          sessionMasterPassphrase = clean;
+
+          // 3. Hydrate into Zustand in-memory state
+          set((state) => {
+            state.vaultStatus = 'unlocked';
+            state.vaultError = null;
+            for (const [pid, key] of Object.entries(secretsMap)) {
+              if (state.providers[pid as ProviderId]) {
+                state.providers[pid as ProviderId].apiKey = key;
+              }
+            }
+          });
+
+          return { success: true };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Failed to unlock vault';
+          set((state) => {
+            state.vaultError = msg;
+          });
+          return { success: false, error: msg };
+        }
+      },
+
+      lockVault: () => {
+        sessionMasterPassphrase = null;
+        clearMasterKeyCache();
+        set((state) => {
+          state.vaultStatus = 'locked';
+          for (const [pid, p] of Object.entries(state.providers)) {
+            if (pid !== 'ollama') {
+              p.apiKey = '';
+            }
+          }
+        });
+      },
+
+      changeMasterPassphrase: async (oldPass: string, newPass: string) => {
+        const cleanNew = newPass.trim();
+        if (cleanNew.length < 6) {
+          return { success: false, error: '新主口令长度至少需 6 位字符' };
+        }
+        const unlockRes = await get().unlockVault(oldPass);
+        if (!unlockRes.success) {
+          return { success: false, error: unlockRes.error || '原主口令错误' };
+        }
+        return get().setupMasterPassphrase(cleanNew);
+      },
+
+      persistVaultSecrets: async () => {
+        if (!sessionMasterPassphrase || get().vaultStatus !== 'unlocked') return;
+        try {
+          const currentProviders = get().providers;
+          const secretsMap: Record<string, string> = {};
+          for (const [pid, p] of Object.entries(currentProviders)) {
+            if (p.apiKey && p.apiKey.trim() && pid !== 'ollama') {
+              secretsMap[pid] = p.apiKey.trim();
+            }
+          }
+          const encrypted = await encryptSecret(JSON.stringify(secretsMap), sessionMasterPassphrase);
+          await indexedDb.saveEncryptedSecret(VAULT_SECRETS_KEY, encrypted);
+        } catch (e) {
+          console.error('[SettingsStore] Failed to persist vault secrets:', e);
         }
       },
 

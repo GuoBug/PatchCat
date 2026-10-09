@@ -74,6 +74,7 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
   const setSettingsTab = useSettingsStore((s) => s.setSettingsTab);
   const activeProvider = useSettingsStore((s) => s.activeProvider);
   const providers = useSettingsStore((s) => s.providers);
+  const vaultStatus = useSettingsStore((s) => s.vaultStatus);
 
   const activeWorkflow = useProjectStore((s) =>
     s.workflows.find((w) => w.id === s.activeWorkflowId),
@@ -580,17 +581,39 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
               setCurrentView('settings');
             }}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all shadow-xs cursor-pointer ${
-              hasActiveKey
-                ? 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
-                : 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30 animate-pulse'
+              vaultStatus === 'locked'
+                ? 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30'
+                : hasActiveKey
+                  ? 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
+                  : 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30 animate-pulse'
             }`}
-            title={t.header.apiKeyTooltip}
+            title={
+              vaultStatus === 'locked'
+                ? language === 'zh'
+                  ? '本地暗室已锁定，点击解锁'
+                  : 'Secure Vault Locked, click to unlock'
+                : t.header.apiKeyTooltip
+            }
           >
-            <KeyRound className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline font-mono">{activeConfig?.name || 'API Key'}</span>
+            {vaultStatus === 'locked' ? (
+              <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            ) : (
+              <KeyRound className="w-3.5 h-3.5" />
+            )}
+            <span className="hidden sm:inline font-mono">
+              {vaultStatus === 'locked'
+                ? language === 'zh'
+                  ? '暗室已锁定'
+                  : 'Vault Locked'
+                : activeConfig?.name || 'API Key'}
+            </span>
             <span
               className={`w-1.5 h-1.5 rounded-full ${
-                hasActiveKey ? 'bg-emerald-500' : 'bg-amber-500'
+                vaultStatus === 'locked'
+                  ? 'bg-amber-500 animate-pulse'
+                  : hasActiveKey
+                    ? 'bg-emerald-500'
+                    : 'bg-amber-500'
               }`}
             />
           </button>

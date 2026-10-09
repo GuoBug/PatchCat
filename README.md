@@ -14,13 +14,13 @@
   </p>
 
   <p>
-    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/version-v0.4.15-blue.svg" alt="Release: v0.4.15" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/version-v0.4.16-blue.svg" alt="Release: v0.4.16" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-emerald.svg" alt="License: MIT" /></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" alt="React 18" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-432%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/Tests-512%20Passing-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
@@ -265,7 +265,7 @@ PatchCat comes with ready-to-use industrial presets:
 - [x] Deterministic Model Cascade Routing & State Machine (v0.4.13)
 - [x] Client-Side Zero-Dependency Hybrid Search (BM25 + N-gram Semantic Density Channel) & RRF Fusion (v0.4.14)
 - [x] Cross-Encoder Reranker API Integration & Rank-Transition Telemetry (v0.4.15)
-- [ ] Local Master Passphrase Crypto Vault & Sanitized Export (v0.4.16)
+- [x] Local Master Passphrase Crypto Vault & Sanitized Export (v0.4.16)
 
 ---
 

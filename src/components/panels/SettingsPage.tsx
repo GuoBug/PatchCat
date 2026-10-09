@@ -53,6 +53,7 @@ import { DangerConfirmModal } from './DangerConfirmModal.tsx';
 import { CatLogo } from '../icons/CatLogo.tsx';
 import type { LogLevel, LogType } from '../../engine/logger.ts';
 import { PROJECT_LINKS } from '../../config/project.ts';
+import { VaultControlPanel } from './VaultControlPanel.tsx';
 
 const PROVIDER_DOCS: Record<ProviderId, { label: string; url: string }> = {
   openai: { label: 'OpenAI API Keys', url: 'https://platform.openai.com/api-keys' },
@@ -1372,6 +1373,9 @@ export const SettingsPage: React.FC = () => {
                   {t.settings.providersSubtitle}
                 </p>
               </div>
+
+              {/* Web Crypto Vault Panel (PRD-017) */}
+              <VaultControlPanel />
 
               {/* Providers Tab Container */}
               <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col md:flex-row">

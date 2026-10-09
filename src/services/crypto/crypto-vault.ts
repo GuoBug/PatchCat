@@ -18,11 +18,15 @@ export interface EncryptedVaultPayload {
   authTagLength: 128;
 }
 
-export const PBKDF2_ITERATIONS = 100_000;
+export const PBKDF2_ITERATIONS = 600_000;
 export const SALT_BYTE_LENGTH = 16;
 export const IV_BYTE_LENGTH = 12;
 export const KEY_LENGTH_BITS = 256;
 export const AUTH_TAG_LENGTH_BITS = 128;
+
+export const VAULT_CANARY_KEY = '__vault_canary__';
+export const VAULT_SECRETS_KEY = 'provider_api_keys';
+export const VAULT_CANARY_PLAINTEXT = 'PATCHCAT_VAULT_CANARY_OK_v1';
 
 const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -105,9 +109,10 @@ export function isVaultPayload(value: unknown): value is EncryptedVaultPayload {
     typeof p['ivHex'] === 'string' &&
     p['ivHex'].length === 24 &&
     typeof p['ciphertextHex'] === 'string' &&
+    p['ciphertextHex'].length > 0 &&
     /^[0-9a-fA-F]+$/.test(p['saltHex']) &&
     /^[0-9a-fA-F]+$/.test(p['ivHex']) &&
-    (p['ciphertextHex'] === '' || /^[0-9a-fA-F]+$/.test(p['ciphertextHex']))
+    /^[0-9a-fA-F]+$/.test(p['ciphertextHex'])
   );
 }
 
@@ -193,7 +198,7 @@ export async function deriveMasterKey(
     ['deriveKey'],
   );
 
-  // 2. Derive 256-bit AES-GCM key with 100,000 SHA-256 iterations
+  // 2. Derive 256-bit AES-GCM key with 600,000 SHA-256 iterations (OWASP recommendation)
   const derivedKey = await subtle.deriveKey(
     {
       name: 'PBKDF2',
@@ -312,7 +317,7 @@ export async function decryptSecret(
       cipherBytes,
     );
     return new TextDecoder().decode(decryptedBuffer);
-  } catch (_err) {
+  } catch {
     throw new Error('Decryption failed: Invalid passphrase or corrupted vault payload.');
   }
 }

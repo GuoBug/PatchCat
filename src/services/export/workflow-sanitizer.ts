@@ -83,7 +83,7 @@ export interface SanitizedWorkflowResult<T = SavedWorkflow | WorkflowGraph> {
 const WINDOWS_ABSOLUTE_PATH_RE =
   /(?:[a-zA-Z]:[/\\]|\\\\[a-zA-Z0-9_.-]+\\[a-zA-Z0-9_.-]+\\)[^:*?"<>|\r\n\t\f\v'"]*/g;
 const POSIX_ABSOLUTE_PATH_RE =
-  /(?:\/(?:Users|home|root|var|etc|opt|tmp|private|usr|Volumes)\/[^\s:*?"<>|\r\n\t\f\v'"]*)/g;
+  /(?:^|(?<=[\s"'`=:]))(?:\/(?:Users|home|root|var|etc|opt|tmp|private|usr|Volumes)\/[^\s:*?"<>|\r\n\t\f\v'"]*)/g;
 
 // Regex for detecting sensitive prompt variable placeholders
 const SENSITIVE_PROMPT_VAR_RE =
@@ -140,7 +140,7 @@ export function sanitizeWorkflow<T extends SanitizableWorkflow = SavedWorkflow>(
         field: 'root.api_key',
         type: 'apiKey',
         action: 'stripped',
-        originalSnippet: cloned['api_key'].slice(0, 4) + '***',
+        originalSnippet: '[REDACTED_API_KEY]',
       });
       cloned['api_key'] = '';
       strippedApiKeysCount++;
@@ -150,7 +150,7 @@ export function sanitizeWorkflow<T extends SanitizableWorkflow = SavedWorkflow>(
         field: 'root.apiKey',
         type: 'apiKey',
         action: 'stripped',
-        originalSnippet: cloned['apiKey'].slice(0, 4) + '***',
+        originalSnippet: '[REDACTED_API_KEY]',
       });
       cloned['apiKey'] = '';
       strippedApiKeysCount++;
@@ -170,6 +170,7 @@ export function sanitizeWorkflow<T extends SanitizableWorkflow = SavedWorkflow>(
           field: `globalInputs.${key}`,
           type: 'apiKey',
           action: 'stripped',
+          originalSnippet: '[REDACTED_API_KEY]',
         });
       }
     }
@@ -199,7 +200,7 @@ export function sanitizeWorkflow<T extends SanitizableWorkflow = SavedWorkflow>(
               field: `config.${k}`,
               type: 'apiKey',
               action: 'stripped',
-              originalSnippet: v.slice(0, 4) + '***',
+              originalSnippet: '[REDACTED_API_KEY]',
             });
           }
         }
@@ -218,6 +219,7 @@ export function sanitizeWorkflow<T extends SanitizableWorkflow = SavedWorkflow>(
                 field: `config.authConfig.${authField}`,
                 type: 'apiKey',
                 action: 'stripped',
+                originalSnippet: '[REDACTED_API_KEY]',
               });
               authConfig[authField] = '';
               strippedApiKeysCount++;
@@ -238,7 +240,7 @@ export function sanitizeWorkflow<T extends SanitizableWorkflow = SavedWorkflow>(
               field: 'config.rerank.apiKey',
               type: 'apiKey',
               action: 'stripped',
-              originalSnippet: rerankConfig['apiKey'].slice(0, 4) + '***',
+              originalSnippet: '[REDACTED_API_KEY]',
             });
             rerankConfig['apiKey'] = '';
             strippedApiKeysCount++;
