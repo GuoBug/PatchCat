@@ -328,7 +328,7 @@
   - Added Dual-Anchor Rolling Summary toggle and tuning sliders in Settings > Memory tab.
 - [x] **5. Automated Verification Suite (`tests/rolling-summarizer.node.test.ts`, `tests/settings.node.test.ts`)**:
   - 18 new automated tests verifying partitioning, pinned message eviction bypass, prompt variable injection, offline fallback synthesis, telemetry statistics, and settings reactivity.
-  - **532/532 automated tests passing across 158 suites with 100% green rate**.
+  - **539/539 automated tests passing across 159 suites with 100% green rate**.
   - TypeScript strict check (`npm run typecheck`) and production build (`npm run build`) passing with zero errors.
 
 ---
@@ -697,7 +697,7 @@ npm run build
   - 在 Settings > Memory 选项卡中增加「双锚点长程滚动摘要」主开关、触发轮数阈值滑块、近期保留轮数滑块与摘要最大 Token 限制滑块。
 - [x] **5. 全量契约测试与工程验证 (`tests/rolling-summarizer.node.test.ts`, `tests/settings.node.test.ts`)**：
   - 新增 18 项专项自动化测试，全面覆盖消息切片划分、Pin 消息免淘汰特权、变量注入契约、离线气囊降级、遥测指标统计与设置项响应式联动；
-  - **全工程 532 项测试 / 158 套件 / 0 失败**，`tsc --noEmit` 0 报错，生产打包 100% 成功。
+  - **全工程 539 项测试 / 159 套件 / 0 失败**，`tsc --noEmit` 0 报错，生产打包 100% 成功。
 
 ---
 

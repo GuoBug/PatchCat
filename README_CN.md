@@ -14,13 +14,13 @@
   </p>
 
   <p>
-    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/版本-v0.4.16-blue.svg" alt="Release: v0.4.16" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/版本-v0.4.18-blue.svg" alt="Release: v0.4.18" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/开源协议-MIT-emerald.svg" alt="License: MIT" /></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" alt="React 18" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/自动化测试-514项全部通过-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/自动化测试-539项全部通过-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
@@ -208,7 +208,7 @@ npm run dev
 
 ## 🛠️ CLI 命令与质量工程
 
-PatchCat 具备严密的单元测试保障，拥有 440+ 项自动化单元测试覆盖核心拓扑调度、变量解析、沙箱隔离防护、LLM 客户端与日志系统：
+PatchCat 具备严密的单元测试保障，拥有 530+ 项自动化单元测试覆盖核心拓扑调度、变量解析、沙箱隔离防护、LLM 客户端与日志系统：
 
 ```bash
 # 运行全量单元测试 (拓扑排序, 执行引擎, LLM Client, 日志脱敏, 代码路由)
@@ -274,6 +274,7 @@ PatchCat 内置了开箱即用的工业级场景模板：
 - [x] 纯本地零依赖混合检索 (BM25 词频 + N-gram 语义密度通道) 与 RRF 倒数秩融合 (v0.4.14)
 - [x] 交叉重排 Reranker API 集成与位次跃迁遥测 (v0.4.15)
 - [x] 本地数据主权主口令暗室与资产安全脱敏 (v0.4.16)
+- [x] 纯前端双锚点长程滚动摘要与细粒度会话控制 (v0.4.18)
 
 ---
 

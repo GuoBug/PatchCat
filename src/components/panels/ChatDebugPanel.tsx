@@ -208,6 +208,7 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
   const [messages, setMessages] = useState<ChatMessageItem[]>([]);
   const [sessionSummary, setSessionSummary] = useState<SessionSummary | undefined>(undefined);
   const [isSummarizing, setIsSummarizing] = useState(false);
+  const isSummarizingRef = useRef(false);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState('');
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
@@ -366,7 +367,8 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
   };
 
   const handleTriggerSummarize = async () => {
-    if (messages.length === 0 || isSummarizing) return;
+    if (messages.length === 0 || isSummarizingRef.current) return;
+    isSummarizingRef.current = true;
     setIsSummarizing(true);
     try {
       const memoryMessages: MemoryMessage[] = messages.map((m) => ({
@@ -415,6 +417,7 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
     } catch (e) {
       console.warn('[ChatDebugPanel] Summarization failed:', e);
     } finally {
+      isSummarizingRef.current = false;
       setIsSummarizing(false);
     }
   };
@@ -580,7 +583,10 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
       inputsBag['chat_summary'] = injection.chat_summary;
       inputsBag['chat_history'] = injection.chat_history;
       inputsBag['conversation_history'] = injection.conversation_history;
-      inputsBag['history'] = injection.history;
+      // Safeguard against shadowing user-defined custom input variable named history
+      if (inputsBag['history'] === undefined) {
+        inputsBag['history'] = injection.history;
+      }
 
       // Check if rolling summary threshold is met to trigger non-blocking background auto-summarize
       if (memoryDefaults.autoSummarize) {
