@@ -333,6 +333,23 @@
 
 ---
 
+### 🔮 Upcoming Milestone: v0.4.19 Browser-Native Multi-Provider Embedding & Hybrid Search (Phase 4.19)
+> Based on [PRD-019](docs/01-prd/PRD-019-Browser-Native-Multi-Provider-Embedding-and-Hybrid-Search.md): bringing browser-native Local mode retrieval into parity with Server mode.
+
+- [ ] **1. Pure-Frontend Multi-Provider Embedding Client (`BrowserEmbeddingClient`)**:
+  - Connect to SiliconFlow, Ollama (`localhost:11434`), and OpenAI endpoints with 0 CSP modifications.
+  - Mandatory L2 pre-normalization and typed CORS failure interception with actionable remediation guidance.
+- [ ] **2. IndexedDB v6 Storage Schema & High-Performance Vector Index (`FlatVectorIndex`)**:
+  - Upgrade IndexedDB to `v6` with dedicated `vector_embeddings` object store.
+  - Multi-attribute dimension fingerprint (`provider / model / dimension`) stale invalidation mechanism.
+  - Continuous single-buffer `Float32Array` in-memory linear dot-product scanning engine.
+- [ ] **3. LocalKnowledgeAdapter Tri-Modal Hybrid Search & UI Ground Truth Benchmark**:
+  - Full hybrid fusion (BM25 + Dense Cosine) with visible degradation indicator (`is_degraded`).
+  - Strict preservation of L2 heuristic 0.45 floor with zero regressions to `ServerKnowledgeAdapter`.
+  - Side-by-side ground truth benchmark ("MacBook 崩溃卡死" vs "苹果笔记本电脑系统故障").
+
+---
+
 ### 🔮 Upcoming Milestone: v0.4.20 MemoryNode Canvas Visual Primitive & Workflow Version Snapshots (Phase 4.20)
 
 - [ ] **1. Dedicated `MemoryNode` Visual Workflow Primitive**:
@@ -698,6 +715,23 @@ npm run build
 - [x] **5. 全量契约测试与工程验证 (`tests/rolling-summarizer.node.test.ts`, `tests/settings.node.test.ts`)**：
   - 新增 18 项专项自动化测试，全面覆盖消息切片划分、Pin 消息免淘汰特权、变量注入契约、离线气囊降级、遥测指标统计与设置项响应式联动；
   - **全工程 539 项测试 / 159 套件 / 0 失败**，`tsc --noEmit` 0 报错，生产打包 100% 成功。
+
+---
+
+### 🔮 后续接续里程碑：v0.4.19 端侧多源向量嵌入与高工效三模混合检索 (Phase 4.19)
+> 依据 [PRD-019](docs/01-prd/PRD-019-Browser-Native-Multi-Provider-Embedding-and-Hybrid-Search.md) 推进：让 Local 纯端侧通道检索能力全面追平 Server 服务端真向量。
+
+- [ ] **1. 纯前端多源 Embedding 客户端 (`BrowserEmbeddingClient`)**：
+  - 直连硅基流动、Ollama（`localhost:11434`）与 OpenAI 端点，实现 0 CSP 改动。
+  - 强制 L2 预归一化（使余弦相似度退化为极速点积），对 Ollama 捕获 CORS 拦截并透出可操作诊断指引。
+- [ ] **2. IndexedDB v6 存储结构与全内存向量索引 (`FlatVectorIndex`)**：
+  - 升级底座至 `DB_VERSION = 6`，新增 `vector_embeddings` 专用对象仓库。
+  - 实现 `provider / model / dimension` 三要素失效指纹与自动保护机制。
+  - 构建单一大块连续 `Float32Array` 内存点积扫描器，1,000~5,000 分块毫秒级响应。
+- [ ] **3. LocalKnowledgeAdapter 端侧三模重构与基线对照实验**：
+  - 改造仅限 `LocalKnowledgeAdapter`（Server 模式零回归）；严格保留 L2 启发式 0.45 垫底防线。
+  - 检索元数据透出 `is_degraded` 显式降级状态标识。
+  - 产出真实基线对照表（「MacBook 崩溃卡死」vs「苹果笔记本电脑系统故障」）。
 
 ---
 
