@@ -19,7 +19,7 @@ import type { SavedWorkflow, WorkflowMemoryConfig } from '../../stores/project-s
 import type { EncryptedVaultPayload } from '../crypto/crypto-vault.ts';
 
 const DB_NAME = 'PatchCatDB';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 export const STORES = {
   WORKFLOWS: 'workflows', // Legacy monolithic store preserved for backward compatibility
@@ -32,6 +32,7 @@ export const STORES = {
   RUN_HISTORY: 'run_history',
   CHECKPOINTS: 'checkpoints',
   SECURE_VAULT: 'secure_vault', // v0.4.16: Web Crypto encrypted secrets vault (PRD-017)
+  VECTOR_EMBEDDINGS: 'vector_embeddings', // v0.4.19: Multi-provider browser vector embeddings (PRD-019)
 } as const;
 
 export type StoreName = (typeof STORES)[keyof typeof STORES];
@@ -161,6 +162,10 @@ export class IndexedDbAdapter {
         }
         if (!db.objectStoreNames.contains(STORES.SECURE_VAULT)) {
           db.createObjectStore(STORES.SECURE_VAULT, { keyPath: 'key' });
+        }
+        if (!db.objectStoreNames.contains(STORES.VECTOR_EMBEDDINGS)) {
+          const vecStore = db.createObjectStore(STORES.VECTOR_EMBEDDINGS, { keyPath: 'chunkId' });
+          vecStore.createIndex('kbId', 'kbId', { unique: false });
         }
       };
 
@@ -652,6 +657,127 @@ export class IndexedDbAdapter {
   public async clearEncryptedSecrets(): Promise<void> {
     await this.clear(STORES.SECURE_VAULT);
   }
+
+  // ── Vector Embeddings API (Phase 4.19 / PRD-019) ──────────────────────────
+
+  /**
+   * Atomically saves a batch of vector embedding records into IndexedDB vector_embeddings store.
+   * If memory fallback is active, stores in memory map.
+   */
+  public async saveVectorEmbeddingsBatch(records: VectorEmbeddingRecord[]): Promise<void> {
+    if (records.length === 0) return;
+
+    if (!this.isSupported()) {
+      const store = this.getMemoryStore(STORES.VECTOR_EMBEDDINGS);
+      for (const rec of records) {
+        store.set(rec.chunkId, rec);
+      }
+      this.writeCounts.put += records.length;
+      return;
+    }
+
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORES.VECTOR_EMBEDDINGS, 'readwrite');
+      const store = tx.objectStore(STORES.VECTOR_EMBEDDINGS);
+      for (const rec of records) {
+        store.put(rec);
+      }
+      tx.oncomplete = () => {
+        this.writeCounts.put += records.length;
+        resolve();
+      };
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(new Error('Transaction aborted'));
+    });
+  }
+
+  /**
+   * Retrieves all vector embedding records for a given knowledge base ID.
+   * Re-hydrates vector property into Float32Array if deserialized as Array or ArrayBuffer.
+   */
+  public async getVectorEmbeddingsByKb(kbId: string): Promise<VectorEmbeddingRecord[]> {
+    if (!this.isSupported()) {
+      const store = this.getMemoryStore(STORES.VECTOR_EMBEDDINGS);
+      const results: VectorEmbeddingRecord[] = [];
+      for (const val of store.values()) {
+        const rec = val as VectorEmbeddingRecord;
+        if (rec.kbId === kbId) {
+          results.push(rec);
+        }
+      }
+      return results;
+    }
+
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORES.VECTOR_EMBEDDINGS, 'readonly');
+      const store = tx.objectStore(STORES.VECTOR_EMBEDDINGS);
+      const index = store.index('kbId');
+      const req = index.getAll(kbId);
+
+      req.onsuccess = () => {
+        const raw = (req.result as VectorEmbeddingRecord[]) || [];
+        const records = raw.map((r) => ({
+          ...r,
+          vector: r.vector instanceof Float32Array ? r.vector : new Float32Array(r.vector),
+        }));
+        resolve(records);
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  /**
+   * Deletes all vector embedding records associated with a knowledge base ID.
+   */
+  public async deleteVectorEmbeddingsByKb(kbId: string): Promise<void> {
+    if (!this.isSupported()) {
+      const store = this.getMemoryStore(STORES.VECTOR_EMBEDDINGS);
+      for (const [key, val] of Array.from(store.entries())) {
+        if ((val as VectorEmbeddingRecord).kbId === kbId) {
+          store.delete(key);
+          this.writeCounts.delete++;
+        }
+      }
+      return;
+    }
+
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORES.VECTOR_EMBEDDINGS, 'readwrite');
+      const store = tx.objectStore(STORES.VECTOR_EMBEDDINGS);
+      const index = store.index('kbId');
+      const req = index.getAllKeys(kbId);
+
+      req.onsuccess = () => {
+        const keys = req.result || [];
+        for (const k of keys) {
+          store.delete(k);
+          this.writeCounts.delete++;
+        }
+      };
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  /**
+   * Deletes a single vector embedding record by chunk ID.
+   */
+  public async deleteVectorEmbedding(chunkId: string): Promise<void> {
+    await this.delete(STORES.VECTOR_EMBEDDINGS, chunkId);
+  }
+}
+
+export interface VectorEmbeddingRecord {
+  chunkId: string;
+  kbId: string;
+  vector: Float32Array; // L2 normalized (||v|| = 1.0)
+  provider: 'siliconflow' | 'openai' | 'ollama' | 'custom' | string;
+  model: string;
+  dimension: number;
+  createdAt: number;
 }
 
 export interface SecureVaultRecord {

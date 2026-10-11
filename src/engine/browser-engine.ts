@@ -1824,6 +1824,8 @@ export class BrowserWorkflowEngine {
           const serverBaseUrl = settings.serverBaseUrl || 'http://localhost:8000';
           let contextStr = '';
           let recalledChunks: unknown[] = [];
+          let vectorStatus: 'disabled' | 'active' | 'degraded' | undefined = undefined;
+          let vectorError: string | undefined = undefined;
 
           if (kbId) {
             // 1. If in server mode, try server retrieval endpoint
@@ -1866,11 +1868,37 @@ export class BrowserWorkflowEngine {
               try {
                 const adapter = this.resolveKnowledgeAdapter(options);
                 if (adapter) {
+                  const embeddingConfig = node.data.config?.['embedding'] as
+                    | {
+                        enabled?: boolean;
+                        provider?: 'siliconflow' | 'openai' | 'ollama' | 'custom';
+                        model?: string;
+                        dimension?: number;
+                        baseUrl?: string;
+                        apiKey?: string;
+                      }
+                    | undefined;
+
+                  const isEmbeddingEnabled = Boolean(
+                    embeddingConfig && embeddingConfig.enabled !== false && embeddingConfig.model,
+                  );
+
                   const retrieved = await adapter.retrieve(kbId, query, topK, scoreThreshold, {
                     searchMode,
                     bm25Weight,
                     vectorWeight,
                     rrfK,
+                    ...(isEmbeddingEnabled && embeddingConfig
+                      ? {
+                          embedding: {
+                            provider: embeddingConfig.provider || 'siliconflow',
+                            model: embeddingConfig.model || 'BAAI/bge-m3',
+                            dimension: embeddingConfig.dimension,
+                            baseUrl: embeddingConfig.baseUrl,
+                            apiKey: embeddingConfig.apiKey,
+                          },
+                        }
+                      : {}),
                     ...(node.data.config?.['rerank']
                       ? { rerank: node.data.config['rerank'] as KnowledgeRerankOptions }
                       : {}),
@@ -1878,6 +1906,10 @@ export class BrowserWorkflowEngine {
                   if (retrieved && retrieved.context) {
                     contextStr = retrieved.context;
                     recalledChunks = retrieved.chunks;
+                  }
+                  if (retrieved) {
+                    vectorStatus = retrieved.vector_status;
+                    vectorError = retrieved.vector_error;
                   }
                 }
               } catch (err) {
@@ -1926,6 +1958,8 @@ export class BrowserWorkflowEngine {
             chunks: recalledChunks,
             query,
             searchMode,
+            ...(vectorStatus ? { vector_status: vectorStatus } : {}),
+            ...(vectorError ? { vector_error: vectorError } : {}),
             ...(rerankRequested ? { rerank: { enabled: true } } : {}),
           };
           break;

@@ -1,9 +1,43 @@
 import React, { useState } from 'react';
-import { Database, Sparkles, Key, Eye, EyeOff } from 'lucide-react';
+import { Database, Sparkles, Key, Eye, EyeOff, Zap, AlertTriangle } from 'lucide-react';
 import { useTranslation } from '../../../i18n/useTranslation.ts';
 import { useKnowledgeStore } from '../../../stores/knowledge-store.ts';
 import { useSettingsStore, type ProviderId } from '../../../stores/settings-store.ts';
 import type { RerankProtocol, KnowledgeRerankOptions } from '../../../engine/types.ts';
+
+export type EmbeddingProvider = 'siliconflow' | 'openai' | 'ollama' | 'custom';
+
+const EMBEDDING_PRESETS: Record<
+  EmbeddingProvider,
+  { label: string; baseUrl: string; model: string; dimension: number; defaultKeyProvider?: ProviderId }
+> = {
+  siliconflow: {
+    label: 'SiliconFlow (BAAI/bge-m3, 1024d)',
+    baseUrl: 'https://api.siliconflow.cn',
+    model: 'BAAI/bge-m3',
+    dimension: 1024,
+    defaultKeyProvider: 'siliconflow',
+  },
+  openai: {
+    label: 'OpenAI (text-embedding-3-small, 1536d)',
+    baseUrl: 'https://api.openai.com',
+    model: 'text-embedding-3-small',
+    dimension: 1536,
+    defaultKeyProvider: 'openai',
+  },
+  ollama: {
+    label: 'Ollama Local (nomic-embed-text, 768d)',
+    baseUrl: 'http://localhost:11434',
+    model: 'nomic-embed-text',
+    dimension: 768,
+  },
+  custom: {
+    label: 'Custom OpenAI-Compatible',
+    baseUrl: 'http://localhost:8000',
+    model: 'text-embedding-3-small',
+    dimension: 1536,
+  },
+};
 
 const PROTOCOL_PRESETS: Record<
   RerankProtocol,
@@ -52,6 +86,46 @@ export const KnowledgeNodeProperties: React.FC<KnowledgeNodePropertiesProps> = (
   const openKnowledgeDetail = useKnowledgeStore((s) => s.openDetail);
   const settingsProviders = useSettingsStore((s) => s.providers);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [showEmbeddingApiKey, setShowEmbeddingApiKey] = useState(false);
+
+  const embeddingConfig = (config['embedding'] as {
+    enabled?: boolean;
+    provider?: EmbeddingProvider;
+    baseUrl?: string;
+    apiKey?: string;
+    model?: string;
+    dimension?: number;
+  } | undefined) || {};
+  const isEmbeddingEnabled = Boolean(embeddingConfig.enabled);
+  const embeddingProvider: EmbeddingProvider = embeddingConfig.provider || 'siliconflow';
+
+  const updateEmbeddingConfig = (patch: Partial<typeof embeddingConfig>) => {
+    const currentEmbedding = (config['embedding'] as typeof embeddingConfig | undefined) || {};
+    updateNodeConfig(nodeId, {
+      embedding: {
+        ...currentEmbedding,
+        ...patch,
+      },
+    });
+  };
+
+  const handleEmbeddingProviderChange = (newProvider: EmbeddingProvider) => {
+    const preset = EMBEDDING_PRESETS[newProvider];
+    if (!preset) return;
+    updateEmbeddingConfig({
+      provider: newProvider,
+      baseUrl: preset.baseUrl,
+      model: preset.model,
+      dimension: preset.dimension,
+    });
+  };
+
+  const inheritedEmbeddingKey =
+    embeddingProvider === 'siliconflow'
+      ? settingsProviders['siliconflow']?.apiKey || ''
+      : embeddingProvider === 'openai'
+        ? settingsProviders['openai']?.apiKey || ''
+        : '';
 
   const rerankConfig = (config['rerank'] as Partial<KnowledgeRerankOptions> | undefined) || {};
   const isRerankEnabled = Boolean(rerankConfig.enabled);
@@ -277,6 +351,156 @@ export const KnowledgeNodeProperties: React.FC<KnowledgeNodePropertiesProps> = (
             }
             className="w-full accent-cyan-600 dark:accent-cyan-400 bg-slate-200 dark:bg-slate-950 cursor-pointer"
           />
+        </div>
+
+        {/* ── Browser-Native Multi-Provider Vector Embedding Section (Phase 4.19) ── */}
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 overflow-hidden shadow-2xs">
+          <div
+            className="p-3 flex items-center justify-between cursor-pointer hover:bg-slate-100/60 dark:hover:bg-slate-800/40 transition-colors"
+            onClick={() => updateEmbeddingConfig({ enabled: !isEmbeddingEnabled })}
+          >
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div>
+                <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 block">
+                  {t.propertyPanel.embeddingConfig}
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 block leading-tight">
+                  {t.propertyPanel.embeddingToggleDesc}
+                </span>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={isEmbeddingEnabled}
+              onChange={(e) => updateEmbeddingConfig({ enabled: e.target.checked })}
+              className="accent-emerald-600 cursor-pointer w-4 h-4 rounded shrink-0"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+
+          {isEmbeddingEnabled && (
+            <div className="p-3 border-t border-slate-200/80 dark:border-slate-800/80 space-y-3 bg-white/60 dark:bg-slate-950/40">
+              {/* Threshold recalibration warning notice */}
+              <div className="p-2.5 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <span className="text-[11px] text-amber-800 dark:text-amber-300 leading-tight">
+                  {t.propertyPanel.embeddingThresholdWarning}
+                </span>
+              </div>
+
+              {/* Provider */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                  {t.propertyPanel.embeddingProvider}
+                </label>
+                <select
+                  value={embeddingProvider}
+                  onChange={(e) => handleEmbeddingProviderChange(e.target.value as EmbeddingProvider)}
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
+                >
+                  {(Object.keys(EMBEDDING_PRESETS) as EmbeddingProvider[]).map((p) => (
+                    <option key={p} value={p}>
+                      {EMBEDDING_PRESETS[p]?.label ?? p}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Ollama CORS Hint */}
+              {embeddingProvider === 'ollama' && (
+                <div className="p-2 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 text-[11px] text-blue-700 dark:text-blue-300">
+                  {t.propertyPanel.embeddingOllamaCorsHint}
+                </div>
+              )}
+
+              {/* Base URL */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                  {t.propertyPanel.embeddingBaseUrl}
+                </label>
+                <input
+                  type="text"
+                  value={embeddingConfig.baseUrl || ''}
+                  onChange={(e) => updateEmbeddingConfig({ baseUrl: e.target.value })}
+                  placeholder={EMBEDDING_PRESETS[embeddingProvider]?.baseUrl}
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                />
+              </div>
+
+              {/* Model */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                  {t.propertyPanel.embeddingModel}
+                </label>
+                <input
+                  type="text"
+                  value={embeddingConfig.model || ''}
+                  onChange={(e) => updateEmbeddingConfig({ model: e.target.value })}
+                  placeholder={EMBEDDING_PRESETS[embeddingProvider]?.model}
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                />
+              </div>
+
+              {/* Dimension */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                  {t.propertyPanel.embeddingDimension}
+                </label>
+                <input
+                  type="number"
+                  value={embeddingConfig.dimension || ''}
+                  onChange={(e) => {
+                    const parsed = parseInt(e.target.value, 10);
+                    updateEmbeddingConfig({ dimension: isNaN(parsed) ? undefined : parsed });
+                  }}
+                  placeholder={String(EMBEDDING_PRESETS[embeddingProvider]?.dimension || 1024)}
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                />
+              </div>
+
+              {/* API Key (if not Ollama) */}
+              {embeddingProvider !== 'ollama' && (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                      <Key className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                      <span>{t.propertyPanel.embeddingApiKey}</span>
+                    </label>
+                    {inheritedEmbeddingKey && !embeddingConfig.apiKey && (
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                        {t.propertyPanel.embeddingApiKeyInheritHint} {embeddingProvider}
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showEmbeddingApiKey ? 'text' : 'password'}
+                      value={embeddingConfig.apiKey || ''}
+                      onChange={(e) => updateEmbeddingConfig({ apiKey: e.target.value })}
+                      placeholder={
+                        inheritedEmbeddingKey
+                          ? `●●●●●●●●●●●● (${t.propertyPanel.embeddingApiKeyInheritHint} ${embeddingProvider})`
+                          : t.propertyPanel.embeddingApiKeyPlaceholder
+                      }
+                      className="w-full pl-2.5 pr-8 py-1.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowEmbeddingApiKey(!showEmbeddingApiKey)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    >
+                      {showEmbeddingApiKey ? (
+                        <EyeOff className="w-3.5 h-3.5" />
+                      ) : (
+                        <Eye className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ── Cross-Encoder Reranker Section (Phase 4) ── */}

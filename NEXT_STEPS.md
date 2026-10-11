@@ -1,9 +1,9 @@
 # 🎯 Next Steps / 接续开发清单
 
-> **Current Version**: `v0.4.18` (Completed & Verified ✅)  
-> **Last Updated**: 2026-10-11  
-> **Previous Milestone**: Phase 4.16 端侧数据主权暗室与资产一键安全脱敏 (`v0.4.16` Shipped ✅)  
-> **Current Milestone**: **Phase 4.18 长程会话双锚点滚动摘要与细粒度会话控制 (`v0.4.18` Shipped ✅)** (详见 [PRD-010](docs/01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md))  
+> **Current Version**: `v0.4.19` (Completed & Verified ✅)  
+> **Last Updated**: 2026-10-12  
+> **Previous Milestone**: Phase 4.18 长程会话双锚点滚动摘要与细粒度会话控制 (`v0.4.18` Shipped ✅)  
+> **Current Milestone**: **Phase 4.19 端侧多源向量嵌入与高工效三模混合检索 (`v0.4.19` Shipped ✅)** (详见 [PRD-019](docs/01-prd/PRD-019-Browser-Native-Multi-Provider-Embedding-and-Hybrid-Search.md))  
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -718,20 +718,21 @@ npm run build
 
 ---
 
-### 🔮 后续接续里程碑：v0.4.19 端侧多源向量嵌入与高工效三模混合检索 (Phase 4.19)
-> 依据 [PRD-019](docs/01-prd/PRD-019-Browser-Native-Multi-Provider-Embedding-and-Hybrid-Search.md) 推进：让 Local 纯端侧通道检索能力全面追平 Server 服务端真向量。
+### ⚡ 已完成里程碑：v0.4.19 端侧多源向量嵌入与高工效三模混合检索 (Phase 4.19 Shipped ✅)
+> 依据 [PRD-019](docs/01-prd/PRD-019-Browser-Native-Multi-Provider-Embedding-and-Hybrid-Search.md) 落地：让 Local 纯端侧通道检索能力全面追平 Server 服务端真向量。
 
-- [ ] **1. 纯前端多源 Embedding 客户端 (`BrowserEmbeddingClient`)**：
+- [x] **1. 纯前端多源 Embedding 客户端 (`BrowserEmbeddingClient`)**：
   - 直连硅基流动、Ollama（`localhost:11434`）与 OpenAI 端点，实现 0 CSP 改动。
-  - 强制 L2 预归一化（使余弦相似度退化为极速点积），对 Ollama 捕获 CORS 拦截并透出可操作诊断指引。
-- [ ] **2. IndexedDB v6 存储结构与全内存向量索引 (`FlatVectorIndex`)**：
+  - P1-A 强契约按 `item.index` 升序回排 OpenAI 批处理响应，彻底杜绝分块与向量错位。
+  - 强制 L2 预归一化（使余弦相似度退化为极速点积），对 Ollama 捕获 CORS 拦截并透出可操作诊断指引 (`OLLAMA_ORIGINS`)。
+- [x] **2. IndexedDB v6 存储结构与全内存向量索引 (`FlatVectorIndex`)**：
   - 升级底座至 `DB_VERSION = 6`，新增 `vector_embeddings` 专用对象仓库。
   - 实现 `provider / model / dimension` 三要素失效指纹与自动保护机制。
-  - 构建单一大块连续 `Float32Array` 内存点积扫描器，1,000~5,000 分块毫秒级响应。
-- [ ] **3. LocalKnowledgeAdapter 端侧三模重构与基线对照实验**：
+  - 构建单一大块连续 `Float32Array` 内存点积扫描器，1,000~5,000 分块毫秒级响应，支持 $O(1)$ swap-with-last 移除与动态扩容。
+- [x] **3. LocalKnowledgeAdapter 端侧三模重构与基线对照实验**：
   - 改造仅限 `LocalKnowledgeAdapter`（Server 模式零回归）；严格保留 L2 启发式 0.45 垫底防线。
-  - 检索元数据透出 `is_degraded` 显式降级状态标识。
-  - 产出真实基线对照表（「MacBook 崩溃卡死」vs「苹果笔记本电脑系统故障」）。
+  - 检索元数据透出 `vector_status: 'disabled' | 'active' | 'degraded'` 显式三态标识与 `vector_error` 诊断。
+  - 产出真实基线对照表（「MacBook 崩溃卡死」vs「苹果笔记本电脑系统故障」Top-1 命中），完成 17 项全量契约测试，全工程 556 项测试全绿。
 
 ---
 

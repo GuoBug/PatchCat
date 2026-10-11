@@ -138,6 +138,18 @@ export interface Translations {
     rankDeltaUnchanged: string;
     rerankBadgeOn: string;
     rerankAirbagActive: string;
+    embeddingConfig: string;
+    embeddingToggle: string;
+    embeddingToggleDesc: string;
+    embeddingProvider: string;
+    embeddingBaseUrl: string;
+    embeddingApiKey: string;
+    embeddingApiKeyPlaceholder: string;
+    embeddingApiKeyInheritHint: string;
+    embeddingModel: string;
+    embeddingDimension: string;
+    embeddingThresholdWarning: string;
+    embeddingOllamaCorsHint: string;
     showChunksView: string;
     showContextView: string;
     modelConfig: string;
@@ -527,6 +539,9 @@ export interface Translations {
     deleteDocConfirm: string;
     openInCanvas: string;
     manageKb: string;
+    rebuildVectorIndex: string;
+    rebuildingVectorIndex: string;
+    rebuildVectorSuccess: string;
   };
   chatDebug: {
     title: string;
@@ -819,6 +834,21 @@ export const translations: Record<Language, Translations> = {
       rankDeltaUnchanged: 'Unchanged',
       rerankBadgeOn: 'Rerank ON',
       rerankAirbagActive: 'Airbag Active (Coarse Fallback)',
+      embeddingConfig: 'Vector Embedding (L1)',
+      embeddingToggle: 'Enable True Vector Embedding',
+      embeddingToggleDesc:
+        'Connects to browser-native multi-provider endpoints (SiliconFlow / OpenAI / Ollama) for dense vector search.',
+      embeddingProvider: 'Embedding Provider',
+      embeddingBaseUrl: 'Endpoint Base URL',
+      embeddingApiKey: 'API Key (BYOK)',
+      embeddingApiKeyPlaceholder: 'Leave blank to inherit global provider key...',
+      embeddingApiKeyInheritHint: 'Inheriting key from Global Settings for',
+      embeddingModel: 'Embedding Model',
+      embeddingDimension: 'Vector Dimension (Auto-detected if blank)',
+      embeddingThresholdWarning:
+        'When true vector mode is active, similarity scores use raw [0, 1] cosine similarity without the 0.45 floor bias. Consider recalibrating your score threshold.',
+      embeddingOllamaCorsHint:
+        'Ollama browser connections require setting OLLAMA_ORIGINS="*" on your Ollama server environment.',
       showChunksView: 'Chunks & Rank Inspector',
       showContextView: 'Raw Context Text',
       modelConfig: 'Model Configuration',
@@ -1236,6 +1266,9 @@ export const translations: Record<Language, Translations> = {
       deleteDocConfirm: 'Are you sure you want to delete this document and all its chunks?',
       openInCanvas: 'Use in Canvas',
       manageKb: 'Manage Knowledge Bases',
+      rebuildVectorIndex: 'Rebuild Vector Index',
+      rebuildingVectorIndex: 'Rebuilding Vector Index...',
+      rebuildVectorSuccess: 'Vector index successfully rebuilt',
     },
     chatDebug: {
       title: 'Chat Debug Panel (Ctrl+Shift+D)',
@@ -1524,6 +1557,20 @@ export const translations: Record<Language, Translations> = {
       rankDeltaUnchanged: '位次持平',
       rerankBadgeOn: '精排已开启',
       rerankAirbagActive: '安全气囊生效 (已平稳降级至粗排)',
+      embeddingConfig: '端侧多源向量检索 (L1 真向量)',
+      embeddingToggle: '启用真向量嵌入通道',
+      embeddingToggleDesc: '直连 SiliconFlow / OpenAI / 本地 Ollama 向量模型，计算纯余弦相似度。',
+      embeddingProvider: '向量服务商 (Embedding Provider)',
+      embeddingBaseUrl: '端点 Base URL',
+      embeddingApiKey: 'API 密钥 (BYOK)',
+      embeddingApiKeyPlaceholder: '留空则自动继承全局设置中的服务商密钥...',
+      embeddingApiKeyInheritHint: '正在自动继承全局设置中的服务商密钥：',
+      embeddingModel: '向量模型 (Model)',
+      embeddingDimension: '向量维度 (留空自动推断)',
+      embeddingThresholdWarning:
+        '启用真向量后，相似度得分不再包含 0.45 垫底常数，原有相似度阈值（scoreThreshold）过滤效果会发生变化，建议重新校准阈值参数。',
+      embeddingOllamaCorsHint:
+        '若直连 Ollama 遇到 CORS 报错，请在 Ollama 运行环境中配置 OLLAMA_ORIGINS="*" 后重启服务。',
       showChunksView: '切片位次分析',
       showContextView: '组装上下文正文',
       modelConfig: '模型与推理配置',
@@ -1929,6 +1976,9 @@ export const translations: Record<Language, Translations> = {
       deleteDocConfirm: '确定要删除该文档及其全部切片吗？',
       openInCanvas: '在画布中检索',
       manageKb: '管理知识库',
+      rebuildVectorIndex: '重建向量索引',
+      rebuildingVectorIndex: '正在批处理生成向量索引...',
+      rebuildVectorSuccess: '向量索引已成功重建入库',
     },
     chatDebug: {
       title: '交互式多轮对话调试 (Ctrl+Shift+D)',

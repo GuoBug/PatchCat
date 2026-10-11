@@ -17,8 +17,15 @@ import {
   type RerankDocument,
 } from '../../engine/rerank-client.ts';
 import { RUNTIME_DEFAULTS } from '../../config/runtime-defaults.ts';
+import {
+  type EmbeddingConfig,
+  type IBrowserEmbeddingClient,
+  browserEmbeddingClient,
+} from '../embedding/browser-embedding-client.ts';
+import { FlatVectorIndex } from '../search/flat-vector-index.ts';
+import { indexedDb, type VectorEmbeddingRecord } from './indexeddb-adapter.ts';
 
-export type { KnowledgeRerankOptions };
+export type { KnowledgeRerankOptions, EmbeddingConfig, IBrowserEmbeddingClient };
 
 export interface KnowledgeBaseSummary {
   id: string;
@@ -95,6 +102,8 @@ export interface KnowledgeRetrievalChunk {
   similarity: number;
   token_count: number;
   search_mode?: 'hybrid' | 'bm25' | 'vector';
+  vector_status?: 'disabled' | 'active' | 'degraded';
+  vector_error?: string;
   bm25_score?: number;
   dense_score?: number;
   rrf_score?: number;
@@ -111,11 +120,14 @@ export interface KnowledgeRetrieveOptions {
   vectorWeight?: number;
   rrfK?: number;
   rerank?: KnowledgeRerankOptions;
+  embedding?: EmbeddingConfig;
 }
 
 export interface KnowledgeRetrievalResult {
   context: string;
   chunks: KnowledgeRetrievalChunk[];
+  vector_status?: 'disabled' | 'active' | 'degraded';
+  vector_error?: string;
 }
 
 export interface IKnowledgeAdapter {
@@ -126,7 +138,7 @@ export interface IKnowledgeAdapter {
   uploadDocument(
     kbId: string,
     file: File | { name: string; content: string; extension?: string; size?: number },
-    options?: ChunkOptions,
+    options?: ChunkOptions & { embedding?: EmbeddingConfig },
   ): Promise<DocumentItem>;
   deleteDocument(docId: string): Promise<void>;
   getDocumentChunks(docId: string): Promise<DocumentChunkItem[]>;
@@ -139,6 +151,11 @@ export interface IKnowledgeAdapter {
     scoreThreshold?: number,
     options?: KnowledgeRetrieveOptions,
   ): Promise<KnowledgeRetrievalResult>;
+  rebuildVectorEmbeddings?(
+    kbId: string,
+    config: EmbeddingConfig,
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<{ total: number; dimension: number }>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -466,6 +483,9 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
     let chunks = this.getStoredChunks();
     chunks = chunks.filter((c) => !docsToDelete.has(c.doc_id) && c.kb_id !== id);
     this.setStoredChunks(chunks);
+
+    // Clean up vector embeddings in IndexedDB
+    indexedDb.deleteVectorEmbeddingsByKb(id).catch(() => {});
   }
 
   async getDocuments(kbId: string): Promise<DocumentItem[]> {
@@ -476,7 +496,7 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
   async uploadDocument(
     kbId: string,
     fileInput: File | { name: string; content: string; extension?: string; size?: number },
-    options?: ChunkOptions,
+    options?: ChunkOptions & { embedding?: EmbeddingConfig },
   ): Promise<DocumentItem> {
     let filename: string;
     let text: string;
@@ -562,6 +582,36 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       this.setStoredKBs(kbs);
     }
 
+    // Generate vector embeddings if embedding options provided (PRD-019 §6.2)
+    if (options?.embedding) {
+      try {
+        const chunkTexts = newChunks.map((c) => c.content);
+        const vectors = await browserEmbeddingClient.embedBatch(chunkTexts, options.embedding);
+        const records: VectorEmbeddingRecord[] = [];
+        for (let i = 0; i < newChunks.length; i++) {
+          const chunk = newChunks[i];
+          const vec = vectors[i];
+          if (chunk && vec) {
+            records.push({
+              chunkId: chunk.id,
+              kbId,
+              vector: vec,
+              provider: options.embedding.provider,
+              model: options.embedding.model,
+              dimension: vec.length,
+              createdAt: Date.now(),
+            });
+          }
+        }
+        if (records.length > 0) {
+          await indexedDb.saveVectorEmbeddingsBatch(records);
+        }
+      } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        logger.warn('LocalKnowledgeAdapter', `Failed to embed chunks during upload: ${errMsg}`);
+      }
+    }
+
     return newDoc;
   }
 
@@ -573,18 +623,73 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
     this.setStoredDocs(docs.filter((d) => d.id !== docId));
 
     const chunks = this.getStoredChunks();
-    const deletedCount = chunks.filter((c) => c.doc_id === docId).length;
+    const deletedChunks = chunks.filter((c) => c.doc_id === docId);
     this.setStoredChunks(chunks.filter((c) => c.doc_id !== docId));
+
+    // Clean up vector embeddings for deleted chunks
+    for (const c of deletedChunks) {
+      indexedDb.deleteVectorEmbedding(c.id).catch(() => {});
+    }
 
     // Decrement KB counts
     const kbs = this.getStoredKBs();
     const kb = kbs.find((k) => k.id === doc.kb_id);
     if (kb) {
       kb.document_count = Math.max(0, kb.document_count - 1);
-      kb.total_chunks = Math.max(0, kb.total_chunks - deletedCount);
+      kb.total_chunks = Math.max(0, kb.total_chunks - deletedChunks.length);
       kb.updated_at = Date.now();
       this.setStoredKBs(kbs);
     }
+  }
+
+  async rebuildVectorEmbeddings(
+    kbId: string,
+    config: EmbeddingConfig,
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<{ total: number; dimension: number }> {
+    const chunks = this.getStoredChunks().filter((c) => c.kb_id === kbId && c.is_active !== false);
+    if (chunks.length === 0) {
+      await indexedDb.deleteVectorEmbeddingsByKb(kbId);
+      return { total: 0, dimension: 0 };
+    }
+
+    await indexedDb.deleteVectorEmbeddingsByKb(kbId);
+    const texts = chunks.map((c) => c.content);
+    const vectors = await browserEmbeddingClient.embedBatch(texts, config, onProgress);
+    const dimension = vectors[0]?.length || config.dimension || 1024;
+
+    const records: VectorEmbeddingRecord[] = [];
+    for (let idx = 0; idx < chunks.length; idx++) {
+      const chunk = chunks[idx];
+      const vec = vectors[idx];
+      if (chunk && vec) {
+        records.push({
+          chunkId: chunk.id,
+          kbId,
+          vector: vec,
+          provider: config.provider,
+          model: config.model,
+          dimension: vec.length,
+          createdAt: Date.now(),
+        });
+      }
+    }
+
+    if (records.length > 0) {
+      await indexedDb.saveVectorEmbeddingsBatch(records);
+    }
+
+    const kbs = this.getStoredKBs();
+    const kb = kbs.find((k) => k.id === kbId);
+    if (kb) {
+      kb.embedding_provider = config.provider;
+      kb.embedding_model = config.model;
+      kb.embedding_dimension = dimension;
+      kb.updated_at = Date.now();
+      this.setStoredKBs(kbs);
+    }
+
+    return { total: records.length, dimension };
   }
 
   async getDocumentChunks(docId: string): Promise<DocumentChunkItem[]> {
@@ -732,32 +837,106 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       }
     });
 
-    const denseScored = chunks.map((chunk) => {
+    const computeHeuristicDenseScore = (chunk: DocumentChunkItem): number => {
       const contentLower = chunk.content.toLowerCase();
       let termMatches = 0;
-
       terms.forEach((term) => {
-        if (contentLower.includes(term)) {
-          termMatches++;
-        }
+        if (contentLower.includes(term)) termMatches++;
       });
-
       let charOverlapCount = 0;
       chineseChars.forEach((ch) => {
         if (contentLower.includes(ch)) charOverlapCount++;
       });
-      const charOverlapRatio = chineseChars.length > 0 ? charOverlapCount / chineseChars.length : 0;
-
+      const charOverlapRatio =
+        chineseChars.length > 0 ? charOverlapCount / chineseChars.length : 0;
       const similarity =
         terms.size > 0
-          ? Math.min(0.96, 0.45 + (termMatches / Math.max(1, terms.size)) * 0.35 + charOverlapRatio * 0.16)
+          ? Math.min(
+              0.96,
+              0.45 +
+                (termMatches / Math.max(1, terms.size)) * 0.35 +
+                charOverlapRatio * 0.16,
+            )
           : 0.75;
+      return parseFloat(similarity.toFixed(2));
+    };
 
-      return {
-        chunk,
-        denseScore: parseFloat(similarity.toFixed(2)),
-      };
-    });
+    let vectorStatus: 'disabled' | 'active' | 'degraded' = 'disabled';
+    let vectorError: string | undefined = undefined;
+
+    const denseScored: Array<{ chunk: DocumentChunkItem; denseScore: number }> = [];
+
+    if (options?.embedding) {
+      try {
+        const storedVectors = await indexedDb.getVectorEmbeddingsByKb(kbId);
+        const matchingVectors = storedVectors.filter((v) => {
+          const matchProvider = v.provider === options.embedding!.provider;
+          const matchModel = v.model === options.embedding!.model;
+          const matchDim =
+            !options.embedding!.dimension || v.dimension === options.embedding!.dimension;
+          return matchProvider && matchModel && matchDim;
+        });
+
+        if (matchingVectors.length === 0) {
+          vectorStatus = 'degraded';
+          vectorError = `No vector embeddings matched active fingerprint (${options.embedding.provider}/${options.embedding.model}). Falling back to heuristic.`;
+          logger.warn('LocalKnowledgeAdapter', vectorError);
+        } else {
+          const queryVec = await browserEmbeddingClient.embedQuery(query, options.embedding);
+          const queryDim = queryVec.length;
+          const validForQuery = matchingVectors.filter((v) => v.vector.length === queryDim);
+
+          if (validForQuery.length === 0) {
+            vectorStatus = 'degraded';
+            vectorError = `Dimension mismatch: query vector is ${queryDim}d but stored vectors differ.`;
+            logger.warn('LocalKnowledgeAdapter', vectorError);
+          } else {
+            const flatIndex = new FlatVectorIndex(queryDim);
+            for (const v of validForQuery) {
+              flatIndex.add(v.chunkId, v.vector);
+            }
+
+            const searchHits = flatIndex.search(queryVec, flatIndex.size(), 0.0);
+            const hitMap = new Map<string, number>();
+            for (const hit of searchHits) {
+              hitMap.set(hit.chunkId, hit.score);
+            }
+
+            for (const chunk of chunks) {
+              if (hitMap.has(chunk.id)) {
+                denseScored.push({
+                  chunk,
+                  denseScore: hitMap.get(chunk.id)!,
+                });
+              } else {
+                // Consistency fallback per PRD-019 §6.2
+                denseScored.push({
+                  chunk,
+                  denseScore: computeHeuristicDenseScore(chunk),
+                });
+              }
+            }
+            vectorStatus = 'active';
+          }
+        }
+      } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        vectorStatus = 'degraded';
+        vectorError = errMsg;
+        logger.warn('LocalKnowledgeAdapter', `Vector retrieval degraded to heuristic: ${errMsg}`, {
+          error: String(err),
+        });
+      }
+    }
+
+    if (denseScored.length === 0) {
+      for (const chunk of chunks) {
+        denseScored.push({
+          chunk,
+          denseScore: computeHeuristicDenseScore(chunk),
+        });
+      }
+    }
 
     // 2. BM25 Inverted Index Search
     const bm25Index = this.getOrBuildBM25Index(kbId, chunks);
@@ -772,6 +951,8 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       chunk: DocumentChunkItem;
       similarity: number;
       search_mode: 'hybrid' | 'bm25' | 'vector';
+      vector_status?: 'disabled' | 'active' | 'degraded';
+      vector_error?: string;
       bm25_score?: number;
       dense_score?: number;
       rrf_score?: number;
@@ -795,6 +976,8 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
             chunk,
             similarity: parseFloat(sim.toFixed(2)),
             search_mode: 'bm25' as const,
+            vector_status: vectorStatus,
+            vector_error: vectorError,
             bm25_score: r.score,
             matched_terms: r.matchedTerms,
           };
@@ -811,6 +994,8 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
           chunk: d.chunk,
           similarity: d.denseScore,
           search_mode: 'vector' as const,
+          vector_status: vectorStatus,
+          vector_error: vectorError,
           dense_score: d.denseScore,
           matched_terms: matched,
         };
@@ -852,7 +1037,7 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
         const chunk = chunkMap.get(rrf.id)!;
         const bm25Hit = bm25Map.get(rrf.id);
         const bm25Score = bm25Hit?.score;
-        const denseScore = denseMap.get(rrf.id) ?? 0.75;
+        const denseScore = denseMap.get(rrf.id) ?? (vectorStatus === 'active' ? 0.0 : 0.75);
         const matchedTerms = bm25Hit?.matchedTerms || [];
 
         let bm25NormSim: number;
@@ -870,6 +1055,8 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
           chunk,
           similarity: parseFloat(hybridSim.toFixed(2)),
           search_mode: 'hybrid' as const,
+          vector_status: vectorStatus,
+          vector_error: vectorError,
           bm25_score: bm25Score,
           dense_score: denseScore,
           rrf_score: rrf.score,
@@ -994,6 +1181,8 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
       similarity: s.similarity,
       token_count: s.chunk.token_count,
       search_mode: s.search_mode,
+      vector_status: s.vector_status,
+      vector_error: s.vector_error,
       bm25_score: s.bm25_score,
       dense_score: s.dense_score,
       rrf_score: s.rrf_score,
@@ -1017,6 +1206,8 @@ export class LocalKnowledgeAdapter implements IKnowledgeAdapter {
     return {
       context: contextParts.join('\n\n'),
       chunks: formattedChunks,
+      ...(vectorStatus ? { vector_status: vectorStatus } : {}),
+      ...(vectorError ? { vector_error: vectorError } : {}),
     };
   }
 }

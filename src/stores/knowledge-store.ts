@@ -16,6 +16,7 @@ import {
   type ChunkPreviewResponse,
   type KnowledgeRetrievalResult,
   type KnowledgeRetrieveOptions,
+  type EmbeddingConfig,
   LocalKnowledgeAdapter,
   ServerKnowledgeAdapter,
 } from '../services/storage/knowledge-adapter.ts';
@@ -46,7 +47,7 @@ interface KnowledgeState {
   uploadDocument: (
     kbId: string,
     file: File | { name: string; content: string; extension?: string; size?: number },
-    options?: ChunkOptions,
+    options?: ChunkOptions & { embedding?: EmbeddingConfig },
   ) => Promise<DocumentItem>;
   deleteDocument: (docId: string) => Promise<void>;
   toggleChunk: (chunkId: string, isActive?: boolean) => Promise<void>;
@@ -58,6 +59,11 @@ interface KnowledgeState {
     scoreThreshold?: number,
     options?: KnowledgeRetrieveOptions,
   ) => Promise<KnowledgeRetrievalResult>;
+  rebuildVectorEmbeddings: (
+    kbId: string,
+    config: EmbeddingConfig,
+    onProgress?: (done: number, total: number) => void,
+  ) => Promise<{ total: number; dimension: number }>;
   setSearchQuery: (query: string) => void;
   openDetail: (kbId?: string) => void;
   closeDetail: () => void;
@@ -245,6 +251,20 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
     options?: KnowledgeRetrieveOptions,
   ) => {
     return getActiveAdapter().retrieve(kbId, query, topK, scoreThreshold, options);
+  },
+
+  rebuildVectorEmbeddings: async (
+    kbId: string,
+    config: EmbeddingConfig,
+    onProgress?: (done: number, total: number) => void,
+  ) => {
+    const adapter = getActiveAdapter();
+    if (adapter.rebuildVectorEmbeddings) {
+      const res = await adapter.rebuildVectorEmbeddings(kbId, config, onProgress);
+      await get().loadKnowledgeBases();
+      return res;
+    }
+    return { total: 0, dimension: 0 };
   },
 
   setSearchQuery: (query: string) => {

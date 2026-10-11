@@ -16,6 +16,10 @@ export const KnowledgeNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data
   const hasRerank = Boolean(rerankConfig?.enabled);
   const rerankTopN = typeof rerankConfig?.topN === 'number' ? rerankConfig.topN : topK;
 
+  const embeddingConfig = data.config?.['embedding'] as { enabled?: boolean; provider?: string } | undefined;
+  const isEmbeddingEnabled = Boolean(embeddingConfig?.enabled);
+  const runtimeVectorStatus = data.outputs?.['vector_status'] as 'disabled' | 'active' | 'degraded' | undefined;
+
   return (
     <BaseNode
       id={id}
@@ -36,13 +40,35 @@ export const KnowledgeNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data
           <span className="truncate">{kbName}</span>
         </div>
 
-        {/* Query & Top-K badge */}
+        {/* Query & Badges */}
         <div className="flex items-center justify-between gap-1 text-[10px] font-mono text-slate-500 dark:text-slate-400">
-          <div className="flex items-center gap-1 truncate max-w-[130px]" title={query}>
+          <div className="flex items-center gap-1 truncate max-w-[110px]" title={query}>
             <Search className="w-3 h-3 shrink-0 text-slate-400" />
             <span className="truncate text-slate-700 dark:text-slate-300">{query}</span>
           </div>
           <div className="flex items-center gap-1 shrink-0">
+            {runtimeVectorStatus === 'active' ? (
+              <span
+                className="px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-semibold border border-emerald-200 dark:border-emerald-700/50"
+                title="L1 Vector Active"
+              >
+                L1
+              </span>
+            ) : runtimeVectorStatus === 'degraded' ? (
+              <span
+                className="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-semibold border border-amber-200 dark:border-amber-700/50"
+                title="Vector Degraded (Heuristic Airbag)"
+              >
+                Degraded
+              </span>
+            ) : isEmbeddingEnabled ? (
+              <span
+                className="px-1.5 py-0.5 rounded bg-cyan-50 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300 font-semibold border border-cyan-200 dark:border-cyan-700/50"
+                title="Vector Enabled"
+              >
+                Vec
+              </span>
+            ) : null}
             {hasRerank && (
               <span
                 className="px-1.5 py-0.5 rounded bg-violet-50 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 font-semibold border border-violet-200 dark:border-violet-700/50"

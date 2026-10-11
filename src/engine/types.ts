@@ -376,6 +376,13 @@ export interface KnowledgeRetrievePortOptions {
   vectorWeight?: number;
   rrfK?: number;
   rerank?: KnowledgeRerankOptions;
+  embedding?: {
+    provider: 'siliconflow' | 'openai' | 'ollama' | 'custom';
+    model: string;
+    dimension?: number;
+    baseUrl?: string;
+    apiKey?: string;
+  };
 }
 
 /**
@@ -395,7 +402,12 @@ export interface KnowledgeRetrievePort {
     topK?: number,
     scoreThreshold?: number,
     options?: KnowledgeRetrievePortOptions,
-  ): Promise<{ context: string; chunks: unknown[] }>;
+  ): Promise<{
+    context: string;
+    chunks: unknown[];
+    vector_status?: 'disabled' | 'active' | 'degraded';
+    vector_error?: string;
+  }>;
 }
 
 /** Options bag passed to `IWorkflowEngineAdapter.executeWorkflow()`. */

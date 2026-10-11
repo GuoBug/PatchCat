@@ -12,8 +12,10 @@ import {
   Database,
   RefreshCw,
   FileCode,
+  Zap,
 } from 'lucide-react';
 import { useKnowledgeStore } from '../../stores/knowledge-store.ts';
+import { useSettingsStore } from '../../stores/settings-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
 import { parseDocumentFile } from '../../services/document-parser.ts';
 
@@ -33,6 +35,13 @@ export const KnowledgeDetailDrawer: React.FC = () => {
   const deleteDocument = useKnowledgeStore((s) => s.deleteDocument);
   const toggleChunk = useKnowledgeStore((s) => s.toggleChunk);
   const previewChunks = useKnowledgeStore((s) => s.previewChunks);
+  const rebuildVectorEmbeddings = useKnowledgeStore((s) => s.rebuildVectorEmbeddings);
+  const settingsProviders = useSettingsStore((s) => s.providers);
+
+  // Rebuild vector state
+  const [isRebuilding, setIsRebuilding] = useState(false);
+  const [rebuildProgress, setRebuildProgress] = useState<{ done: number; total: number } | null>(null);
+  const [rebuildMessage, setRebuildMessage] = useState<string | null>(null);
 
   // Upload dropzone local state
   const [dragActive, setDragActive] = useState(false);
@@ -54,6 +63,45 @@ export const KnowledgeDetailDrawer: React.FC = () => {
 
   const currentKb = knowledgeBases.find((k) => k.id === activeKbId);
   const currentDoc = documents.find((d) => d.id === activeDocId);
+
+  const handleRebuildVectorIndex = async () => {
+    if (!activeKbId || isRebuilding) return;
+    setIsRebuilding(true);
+    setRebuildMessage(null);
+    setRebuildProgress(null);
+    try {
+      const provider =
+        (currentKb?.embedding_provider as 'siliconflow' | 'openai' | 'ollama' | 'custom') ||
+        'siliconflow';
+      const model = currentKb?.embedding_model || 'BAAI/bge-m3';
+      const apiKey =
+        settingsProviders[provider]?.apiKey || settingsProviders['siliconflow']?.apiKey || '';
+      const baseUrl = settingsProviders[provider]?.baseUrl;
+
+      const res = await rebuildVectorEmbeddings(
+        activeKbId,
+        {
+          provider,
+          model,
+          baseUrl,
+          apiKey,
+        },
+        (done, total) => {
+          setRebuildProgress({ done, total });
+        },
+      );
+      setRebuildMessage(
+        `${t.knowledge.rebuildVectorSuccess} (${res.total} chunks, ${res.dimension}d)`,
+      );
+      setTimeout(() => setRebuildMessage(null), 5000);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      setUploadError(`Vector indexing failed: ${errMsg}`);
+    } finally {
+      setIsRebuilding(false);
+      setRebuildProgress(null);
+    }
+  };
 
   // Handle file selection
   const handleFileChange = async (file: File) => {
@@ -136,6 +184,24 @@ export const KnowledgeDetailDrawer: React.FC = () => {
     setUploadError(null);
     try {
       const ext = selectedFile.name.split('.').pop()?.toLowerCase() || '';
+      const rawProvider = currentKb?.embedding_provider;
+      const isExternalProvider =
+        rawProvider === 'siliconflow' ||
+        rawProvider === 'openai' ||
+        rawProvider === 'ollama' ||
+        rawProvider === 'custom';
+      const embeddingOpt = isExternalProvider
+        ? {
+            provider: rawProvider,
+            model: currentKb?.embedding_model || 'BAAI/bge-m3',
+            apiKey:
+              settingsProviders[rawProvider]?.apiKey ||
+              settingsProviders['siliconflow']?.apiKey ||
+              '',
+            baseUrl: settingsProviders[rawProvider]?.baseUrl,
+          }
+        : undefined;
+
       if (parsedContent !== null) {
         await uploadDocument(
           activeKbId,
@@ -145,10 +211,14 @@ export const KnowledgeDetailDrawer: React.FC = () => {
             extension: ext,
             size: selectedFile.size,
           },
-          { chunkSize, chunkOverlap },
+          { chunkSize, chunkOverlap, embedding: embeddingOpt },
         );
       } else {
-        await uploadDocument(activeKbId, selectedFile, { chunkSize, chunkOverlap });
+        await uploadDocument(activeKbId, selectedFile, {
+          chunkSize,
+          chunkOverlap,
+          embedding: embeddingOpt,
+        });
       }
       setSelectedFile(null);
       setParsedContent(null);
@@ -184,6 +254,36 @@ export const KnowledgeDetailDrawer: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4">
+            {rebuildMessage && (
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium animate-in fade-in">
+                {rebuildMessage}
+              </span>
+            )}
+
+            <button
+              type="button"
+              onClick={handleRebuildVectorIndex}
+              disabled={isRebuilding || chunks.length === 0}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 text-xs font-semibold cursor-pointer disabled:opacity-50 transition-all shadow-2xs"
+              title={t.knowledge.rebuildVectorIndex}
+            >
+              {isRebuilding ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>
+                    {rebuildProgress
+                      ? `${rebuildProgress.done}/${rebuildProgress.total}`
+                      : t.knowledge.rebuildingVectorIndex}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Zap className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>{t.knowledge.rebuildVectorIndex}</span>
+                </>
+              )}
+            </button>
+
             <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono">
               <span>
                 <strong className="text-slate-800 dark:text-slate-200 font-bold">

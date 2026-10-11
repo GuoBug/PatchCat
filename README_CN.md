@@ -14,13 +14,13 @@
   </p>
 
   <p>
-    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/版本-v0.4.18-blue.svg" alt="Release: v0.4.18" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/releases"><img src="https://img.shields.io/badge/版本-v0.4.19-blue.svg" alt="Release: v0.4.19" /></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/开源协议-MIT-emerald.svg" alt="License: MIT" /></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7%2B-3178c6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" alt="React 18" /></a>
     <a href="https://reactflow.dev/"><img src="https://img.shields.io/badge/XYFlow-v12-ff0072?logo=reactflow&logoColor=white" alt="XYFlow / React Flow" /></a>
     <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6.4-646cff?logo=vite&logoColor=white" alt="Vite" /></a>
-    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/自动化测试-539项全部通过-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
+    <a href="https://github.com/GuoBug/PatchCat/actions"><img src="https://img.shields.io/badge/自动化测试-556项全部通过-brightgreen?logo=githubactions&logoColor=white" alt="Tests Status" /></a>
   </p>
 
   <p>
@@ -275,6 +275,7 @@ PatchCat 内置了开箱即用的工业级场景模板：
 - [x] 交叉重排 Reranker API 集成与位次跃迁遥测 (v0.4.15)
 - [x] 本地数据主权主口令暗室与资产安全脱敏 (v0.4.16)
 - [x] 纯前端双锚点长程滚动摘要与细粒度会话控制 (v0.4.18)
+- [x] 端侧多源向量嵌入与高工效三模混合检索 (v0.4.19)
 
 ---
 
