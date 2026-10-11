@@ -16,9 +16,9 @@
 PatchCat adheres to a **Micro-Milestone cadence (~0.0.2 version increments)** and a **Local-First, Progressive Enhancement** architecture. Each micro-release focuses on a tightly scoped, fully verified feature slice with zero regressions, ironclad reliability watchdogs, and zero superficial testing theater.
 
 ```
-v0.4.18 (Current) ──► v0.4.20 (Snapshots) ──► v0.6.0 (MCP & Docker)
-                                                    │
-                                                    └──► v1.0.0 (Enterprise Ready)
+v0.4.18 (Current) ──► v0.4.19 (Vector RAG) ──► v0.4.20 (Snapshots) ──► v0.6.0 (MCP & Docker)
+                                                                        │
+                                                                        └──► v1.0.0 (Enterprise Ready)
 ```
 
 
@@ -87,9 +87,9 @@ v0.4.18 (Current) ──► v0.4.20 (Snapshots) ──► v0.6.0 (MCP & Docker)
 PatchCat 坚守 **`0.0.2` 微步演进路线（Micro-Milestone Cadence）** 与 **Local-First 纯本地免配置渐进增强** 原则。每个微版本聚焦于一个定义明确、边界清晰且彻底验证的特性切片，坚决杜绝“大版本跳跃与功能堆叠”，淘汰形式主义测试，死守零崩溃、零死锁、零假死底线。
 
 ```
-v0.4.18 (当前版本) ──► v0.4.20 (快照与归档) ──► v0.6.0 (MCP与Docker大考)
-                                                            │
-                                                            └──► v1.0.0 (企业生产交付)
+v0.4.18 (当前版本) ──► v0.4.19 (端侧真向量) ──► v0.4.20 (快照与归档) ──► v0.6.0 (MCP与Docker大考)
+                                                                            │
+                                                                            └──► v1.0.0 (企业生产交付)
 ```
 
 ---
