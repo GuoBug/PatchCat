@@ -1,0 +1,189 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" width="960" height="620" style="background:#090d16; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif;">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0f1d"/>
+      <stop offset="100%" stop-color="#050811"/>
+    </linearGradient>
+    <linearGradient id="cryptoGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <linearGradient id="vaultGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+    <linearGradient id="dangerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#dc2626"/>
+      <stop offset="100%" stop-color="#ef4444"/>
+    </linearGradient>
+    <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <filter id="neoShadow" x="-3%" y="-3%" width="106%" height="106%">
+      <feDropShadow dx="3" dy="4" stdDeviation="0" flood-color="#000000" flood-opacity="0.85"/>
+    </filter>
+    <marker id="arrowCyan" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#06b6d4"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#10b981"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowSlate" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <!-- Background Grid -->
+  <rect width="960" height="620" fill="url(#bgGrad)"/>
+  <rect x="12" y="12" width="936" height="596" rx="8" fill="none" stroke="#1e293b" stroke-width="2"/>
+
+  <!-- Top Header Banner -->
+  <rect x="28" y="24" width="904" height="52" rx="6" fill="#0f172a" stroke="#334155" stroke-width="2" filter="url(#neoShadow)"/>
+  <text x="46" y="56" font-size="16" font-weight="800" fill="#f8fafc" letter-spacing="0.5">PATCHCAT · WEB CRYPTO AES-256-GCM VAULT &amp; ZERO-PLAINTEXT DEFENSE</text>
+  <rect x="716" y="36" width="200" height="28" rx="4" fill="#0c4a6e" stroke="#0284c7" stroke-width="1.5"/>
+  <text x="728" y="54" font-size="11" font-weight="700" fill="#38bdf8">SUBTLECRYPTO · 600K PBKDF2</text>
+
+  <!-- COLUMN 1: Key Derivation & Memory Isolation (Left) -->
+  <g transform="translate(32, 92)">
+    <rect width="260" height="360" rx="8" fill="#091428" stroke="#0284c7" stroke-width="2" filter="url(#neoShadow)"/>
+    <rect x="14" y="14" width="232" height="26" rx="4" fill="#0369a1"/>
+    <text x="22" y="31" font-size="11" font-weight="800" fill="#ffffff" letter-spacing="0.5">1. 原生密钥派生与内存防护</text>
+
+    <!-- User Passphrase Node -->
+    <rect x="14" y="50" width="232" height="54" rx="5" fill="#111827" stroke="#1e293b" stroke-width="1.5"/>
+    <text x="24" y="70" font-size="10" font-weight="700" fill="#94a3b8">USER MASTER PASSPHRASE</text>
+    <text x="24" y="88" font-size="11" font-family="monospace" fill="#38bdf8">"User_Master_Key_123!"</text>
+
+    <!-- Arrow down -->
+    <path d="M 130 104 L 130 120" stroke="#06b6d4" stroke-width="2" marker-end="url(#arrowCyan)"/>
+
+    <!-- PBKDF2 Engine Box -->
+    <rect x="14" y="122" width="232" height="76" rx="5" fill="#082f49" stroke="#0284c7" stroke-width="1.5"/>
+    <text x="24" y="142" font-size="10" font-weight="800" fill="#38bdf8">PBKDF2 KEY DERIVATION</text>
+    <text x="24" y="160" font-size="9" fill="#bae6fd">• SHA-256 Hash Algorithm</text>
+    <text x="24" y="174" font-size="9" font-weight="700" fill="#38bdf8">• 600,000 Iterations (OWASP)</text>
+    <text x="24" y="188" font-size="9" fill="#bae6fd">• 16-Byte Cryptographic Salt</text>
+
+    <!-- Arrow down -->
+    <path d="M 130 198 L 130 214" stroke="#06b6d4" stroke-width="2" marker-end="url(#arrowCyan)"/>
+
+    <!-- 256-bit AES-GCM Key -->
+    <rect x="14" y="216" width="232" height="50" rx="5" fill="#111827" stroke="#06b6d4" stroke-width="1.5"/>
+    <text x="24" y="234" font-size="10" font-weight="700" fill="#06b6d4">256-BIT AES-GCM CRYPTOKEY</text>
+    <text x="24" y="252" font-size="9" fill="#cbd5e1">extractable: false (不可导出安全句柄)</text>
+
+    <!-- Ephemeral Session Banner -->
+    <rect x="14" y="278" width="232" height="66" rx="5" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.5"/>
+    <text x="24" y="296" font-size="10" font-weight="800" fill="#a5b4fc">EPHEMERAL SESSION MEMORY</text>
+    <text x="24" y="312" font-size="9" fill="#c7d2fe">• 仅模块级闭包驻留，绝对不落盘</text>
+    <text x="24" y="326" font-size="9" font-weight="700" fill="#a5b4fc">• pagehide / 手动加锁瞬时擦除</text>
+  </g>
+
+  <!-- Connect Column 1 to Column 2 -->
+  <path d="M 292 241 L 328 241" stroke="#06b6d4" stroke-width="2.5" marker-end="url(#arrowCyan)"/>
+
+  <!-- COLUMN 2: Two-Payload Cryptographic Engine (Center) -->
+  <g transform="translate(332, 92)">
+    <rect width="300" height="360" rx="8" fill="#042018" stroke="#059669" stroke-width="2" filter="url(#neoShadow)"/>
+    <rect x="14" y="14" width="272" height="26" rx="4" fill="#047857"/>
+    <text x="22" y="31" font-size="11" font-weight="800" fill="#ffffff" letter-spacing="0.5">2. 双载荷独立加解密与防篡改</text>
+
+    <!-- Payload 1: Canary Probe -->
+    <rect x="14" y="52" width="272" height="124" rx="5" fill="#064e3b" stroke="#10b981" stroke-width="1.5"/>
+    <text x="24" y="72" font-size="10" font-weight="800" fill="#6ee7b7">PAYLOAD A: CANARY VERIFICATION PROBE</text>
+    <text x="24" y="88" font-size="9" fill="#d1fae5">Key: <tspan font-family="monospace">__vault_canary__</tspan></text>
+    <rect x="24" y="96" width="252" height="42" rx="4" fill="#022c22" stroke="#059669" stroke-width="1"/>
+    <text x="32" y="112" font-size="9" fill="#a7f3d0">明文探针: PATCHCAT_VAULT_CANARY_OK_v1</text>
+    <text x="32" y="127" font-size="9" font-weight="700" fill="#34d399">作用: 解密密钥前先验口令，杜绝盲解密与侧信道</text>
+    <text x="24" y="158" font-size="9" fill="#a7f3d0">128-bit MAC Tag: 密文遭微篡改立即抛错拦截</text>
+
+    <!-- Payload 2: Secrets Map -->
+    <rect x="14" y="190" width="272" height="154" rx="5" fill="#064e3b" stroke="#10b981" stroke-width="1.5"/>
+    <text x="24" y="210" font-size="10" font-weight="800" fill="#6ee7b7">PAYLOAD B: ENCRYPTED SECRETS MAP</text>
+    <text x="24" y="226" font-size="9" fill="#d1fae5">Key: <tspan font-family="monospace">provider_api_keys</tspan></text>
+    <rect x="24" y="234" width="252" height="66" rx="4" fill="#022c22" stroke="#059669" stroke-width="1"/>
+    <text x="32" y="250" font-size="9" font-family="monospace" fill="#34d399">{ "deepseek": "sk-...", "openai": "sk-..." }</text>
+    <text x="32" y="266" font-size="9" fill="#a7f3d0">• AES-GCM 随机 12-byte IV (每次生成唯一向量)</text>
+    <text x="32" y="282" font-size="9" font-weight="700" fill="#6ee7b7">• 独立 16-byte 随机盐值与 128-bit 认证标签</text>
+    <text x="24" y="318" font-size="9" font-weight="700" fill="#34d399">安全保证: 口令错误时无法解析出任何有效 JSON</text>
+    <text x="24" y="332" font-size="9" fill="#d1fae5">内存映射: 解锁后注入活动状态，锁定即置空</text>
+  </g>
+
+  <!-- Connect Column 2 to Column 3 -->
+  <path d="M 632 180 L 668 180" stroke="#10b981" stroke-width="2.5" marker-end="url(#arrowGreen)"/>
+  <path d="M 632 320 L 668 320" stroke="#10b981" stroke-width="2.5" marker-end="url(#arrowGreen)"/>
+
+  <!-- COLUMN 3: Physical Storage Zero Plaintext (Right) -->
+  <g transform="translate(672, 92)">
+    <rect width="256" height="360" rx="8" fill="#1a1006" stroke="#d97706" stroke-width="2" filter="url(#neoShadow)"/>
+    <rect x="14" y="14" width="228" height="26" rx="4" fill="#b45309"/>
+    <text x="22" y="31" font-size="11" font-weight="800" fill="#ffffff" letter-spacing="0.5">3. 磁盘物理存储零明文硬红线</text>
+
+    <!-- LocalStorage Box (Zero Plaintext) -->
+    <rect x="14" y="50" width="228" height="136" rx="5" fill="#2d1303" stroke="#ef4444" stroke-width="2"/>
+    <rect x="22" y="58" width="120" height="20" rx="3" fill="#7f1d1d"/>
+    <text x="28" y="72" font-size="9" font-weight="800" fill="#fecaca">LOCALSTORAGE (公开)</text>
+    <text x="22" y="94" font-size="9" font-weight="700" fill="#f87171">严格无条件剔除所有 API KEY</text>
+    <rect x="22" y="102" width="212" height="48" rx="4" fill="#180802" stroke="#b91c1c" stroke-width="1"/>
+    <text x="30" y="118" font-size="8.5" font-family="monospace" fill="#fca5a5">{ "id": "deepseek", "baseUrl": "..." }</text>
+    <text x="30" y="132" font-size="8.5" font-family="monospace" fill="#ef4444">apiKey: undefined (物理擦除)</text>
+    <text x="30" y="144" font-size="8.5" font-weight="700" fill="#fca5a5">防范: 免疫任何恶意插件直接窃密</text>
+    <text x="22" y="172" font-size="8.5" fill="#fdba74">历史存量: 初次加载自动移入内存并清空盘存</text>
+
+    <!-- IndexedDB Box (Ciphertext Only) -->
+    <rect x="14" y="200" width="228" height="142" rx="5" fill="#042f2e" stroke="#14b8a6" stroke-width="2"/>
+    <rect x="22" y="208" width="134" height="20" rx="3" fill="#134e4a"/>
+    <text x="28" y="222" font-size="9" font-weight="800" fill="#ccfbf1">INDEXEDDB SECURE_VAULT</text>
+    <text x="22" y="244" font-size="9" font-weight="700" fill="#2dd4bf">仅允许持久化不可逆 AEAD 密文</text>
+    <rect x="22" y="252" width="212" height="52" rx="4" fill="#021f1e" stroke="#0d9488" stroke-width="1"/>
+    <text x="30" y="268" font-size="8.5" font-family="monospace" fill="#5eead4">saltHex: "9a2f...16B"</text>
+    <text x="30" y="281" font-size="8.5" font-family="monospace" fill="#5eead4">ivHex: "3c8d...12B"</text>
+    <text x="30" y="294" font-size="8.5" font-family="monospace" fill="#2dd4bf">ciphertextHex: "e4a7...256b+128mac"</text>
+    <text x="22" y="322" font-size="8.5" font-weight="700" fill="#99f6e4">原子事务: saveEncryptedSecretsBatch</text>
+    <text x="22" y="334" font-size="8.5" fill="#ccfbf1">Canary 与 Secrets 同步落盘防半损坏</text>
+  </g>
+
+  <!-- BOTTOM BAR: UX Edge Cases & Review Remediation (Bottom) -->
+  <g transform="translate(32, 470)">
+    <rect width="896" height="124" rx="8" fill="#0f172a" stroke="#334155" stroke-width="2" filter="url(#neoShadow)"/>
+    <rect x="16" y="14" width="240" height="24" rx="4" fill="#334155"/>
+    <text x="24" y="30" font-size="11" font-weight="800" fill="#f8fafc" letter-spacing="0.5">两轮白盒审计排查的边缘缺陷与闭环防御</text>
+
+    <!-- 4 Defense Badges -->
+    <g transform="translate(16, 48)">
+      <!-- Box 1: P1-A SessionStorage fallback -->
+      <rect width="205" height="62" rx="5" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+      <text x="10" y="20" font-size="10" font-weight="800" fill="#38bdf8">1. 升级用户误刷防丢 (P1-A)</text>
+      <text x="10" y="36" font-size="8.5" fill="#cbd5e1">• 置顶强提醒 + 一键跳设置</text>
+      <text x="10" y="49" font-size="8.5" fill="#cbd5e1">• sessionStorage 会话级暂存容灾</text>
+    </g>
+
+    <g transform="translate(236, 48)">
+      <!-- Box 2: P1-B Inline Feedback -->
+      <rect width="205" height="62" rx="5" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="10" y="20" font-size="10" font-weight="800" fill="#f59e0b">2. 输入点持久化三态 (P1-B)</text>
+      <text x="10" y="36" font-size="8.5" fill="#cbd5e1">• unconfigured: 黄色警示</text>
+      <text x="10" y="49" font-size="8.5" fill="#cbd5e1">• locked: 锁定 / unlocked: 绿盾</text>
+    </g>
+
+    <g transform="translate(456, 48)">
+      <!-- Box 3: P2-C Pagehide -->
+      <rect width="205" height="62" rx="5" fill="#1e293b" stroke="#10b981" stroke-width="1.5"/>
+      <text x="10" y="20" font-size="10" font-weight="800" fill="#10b981">3. 页面离开安全守卫 (P2-C)</text>
+      <text x="10" y="36" font-size="8.5" fill="#cbd5e1">• beforeunload 仅阻断不擦钥</text>
+      <text x="10" y="49" font-size="8.5" fill="#cbd5e1">• pagehide 真正卸载才 lockVault</text>
+    </g>
+
+    <g transform="translate(676, 48)">
+      <!-- Box 4: P2-D Atomic Batch -->
+      <rect width="205" height="62" rx="5" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+      <text x="10" y="20" font-size="10" font-weight="800" fill="#a855f7">4. 原生原子事务批量落盘 (P2-D)</text>
+      <text x="10" y="36" font-size="8.5" fill="#cbd5e1">• saveEncryptedSecretsBatch</text>
+      <text x="10" y="49" font-size="8.5" fill="#cbd5e1">• 轮转口令要么全成要么全滚回</text>
+    </g>
+  </g>
+</svg>
