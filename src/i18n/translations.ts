@@ -554,6 +554,20 @@ export interface Translations {
     copied: string;
     viewJson: string;
     viewRaw: string;
+    pinMessage: string;
+    unpinMessage: string;
+    pinned: string;
+    editMessage: string;
+    saveEdit: string;
+    cancelEdit: string;
+    deleteMessage: string;
+    edited: string;
+    summarizeNow: string;
+    summarizing: string;
+    summaryTitle: string;
+    clearSummary: string;
+    memoryTelemetry: string;
+    tokensUsage: string;
   };
   publishApi: {
     title: string;
@@ -1250,6 +1264,20 @@ export const translations: Record<Language, Translations> = {
       copied: 'Copied!',
       viewJson: 'JSON',
       viewRaw: 'Raw',
+      pinMessage: 'Pin Message',
+      unpinMessage: 'Unpin Message',
+      pinned: 'Pinned',
+      editMessage: 'Edit Message',
+      saveEdit: 'Save',
+      cancelEdit: 'Cancel',
+      deleteMessage: 'Delete',
+      edited: 'Edited',
+      summarizeNow: 'Summarize Now',
+      summarizing: 'Summarizing...',
+      summaryTitle: 'Long-Term Context Summary',
+      clearSummary: 'Clear Summary',
+      memoryTelemetry: 'Memory Telemetry',
+      tokensUsage: 'Tokens',
     },
     publishApi: {
       title: 'Publish Workflow as REST API',
@@ -1929,6 +1957,20 @@ export const translations: Record<Language, Translations> = {
       copied: '已复制！',
       viewJson: '结构化 JSON',
       viewRaw: '原始文本',
+      pinMessage: '置顶保护',
+      unpinMessage: '取消置顶',
+      pinned: '已置顶',
+      editMessage: '编辑消息',
+      saveEdit: '保存',
+      cancelEdit: '取消',
+      deleteMessage: '删除',
+      edited: '已编辑',
+      summarizeNow: '提炼摘要',
+      summarizing: '正在提炼摘要...',
+      summaryTitle: '长效上下文摘要',
+      clearSummary: '清空摘要',
+      memoryTelemetry: '记忆开销',
+      tokensUsage: 'Tokens',
     },
     publishApi: {
       title: '发布工作流为 REST API',

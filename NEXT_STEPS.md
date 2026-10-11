@@ -1,9 +1,9 @@
 # 🎯 Next Steps / 接续开发清单
 
-> **Current Version**: `v0.4.16` (Completed & Verified ✅)  
-> **Last Updated**: 2026-10-09  
-> **Previous Milestone**: Phase 4.15 Cross-Encoder Reranker API Integration (`v0.4.15` Shipped ✅)  
-> **Current Milestone**: **Phase 4.16 端侧数据主权暗室与资产一键安全脱敏 (`v0.4.16` Shipped ✅)** (详见 [PRD-017](docs/01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md))  
+> **Current Version**: `v0.4.18` (Completed & Verified ✅)  
+> **Last Updated**: 2026-10-11  
+> **Previous Milestone**: Phase 4.16 端侧数据主权暗室与资产一键安全脱敏 (`v0.4.16` Shipped ✅)  
+> **Current Milestone**: **Phase 4.18 长程会话双锚点滚动摘要与细粒度会话控制 (`v0.4.18` Shipped ✅)** (详见 [PRD-010](docs/01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md))  
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -307,14 +307,40 @@
 
 ---
 
-### 🔮 Upcoming Milestone: v0.4.17 Enterprise Multi-Tenant Workspaces & RBAC (Phase 4.17)
+### ⚡ Completed Milestone: Phase 4.18 Long-Term Conversation Memory & Dual-Anchor Rolling Summary (v0.4.18)
+> Implemented pure-frontend dual-anchor conversation memory and per-entry controls based on [PRD-010](docs/01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md).
 
-- [ ] **1. Multi-Tenant Workspace Isolation**:
-  - Namespace separation for workflows, knowledge bases, and API keys.
-- [ ] **2. Role-Based Access Control (RBAC)**:
-  - Viewer, Editor, and Admin permission tiers for shared canvas environments.
-- [ ] **3. Advanced Audit Logging & Export**:
-  - Cryptographically hashed audit trails for compliance verification.
+- [x] **1. Pure-Frontend Incremental Dual-Anchor Rolling Summarizer (`src/services/memory/rolling-summarizer.ts`)**:
+  - Implemented `partitionMessagesForSummarization`: splits conversation history into an archival slice (condensed into markdown facts) and recent verbatim turns (`recentWindowMessages`).
+  - Implemented `buildContextInjectionBag`: injects `chat_summary`, `chat_history`, and combined `conversation_history` / `history` runtime prompt variables into workflow execution context.
+  - Implemented `synthesizeRollingSummary`: merges previous summary with newly archived turns, enforcing `maxTokens` limits (`MEMORY_SUMMARY_MAX_TOKENS = 500`).
+  - Implemented `generateDeterministicSummaryFallback`: zero-throw offline airbag extracting key queries, conclusions, and errors when offline or unauthenticated.
+  - Implemented `computeMemoryTelemetry`: calculates total session tokens, summary tokens, window tokens, compression ratios, and pinned message status.
+- [x] **2. Per-Entry Session Controls & Immunity Contract (`src/services/storage/session-storage.ts`)**:
+  - Pinned messages (`isPinned`) are granted permanent immunity from sliding-window and token-budget eviction.
+  - Inline message editing (`isEdited`) via `updateSessionMessage` and turn deletion via `deleteSessionMessage`.
+  - Backward-compatible IndexedDB schema in `getSessionData` supporting both legacy flat message arrays and modern `{ sessionKey, messages, summary, updatedAt }` payloads.
+- [x] **3. Dual-Anchor Memory Telemetry Bar & Session Inspector (`src/components/panels/ChatDebugPanel.tsx`)**:
+  - Real-time token breakdown gauge, compression ratio badge, summary status tag, collapsible summary drawer, and manual "Summarize Now" trigger.
+  - Per-message Pin/Unpin, inline text editing, and turn deletion action buttons.
+- [x] **4. Central Runtime Defaults & Reactive Settings (`src/config/runtime-defaults.ts`, `src/stores/settings-store.ts`, `SettingsPage.tsx`)**:
+  - Added Section 10 runtime defaults: `MEMORY_ROLLING_SUMMARY_ENABLED`, `MEMORY_SUMMARY_THRESHOLD_ROUNDS`, `MEMORY_SUMMARY_MAX_TOKENS`, `MEMORY_RECENT_WINDOW_ROUNDS`.
+  - Added Dual-Anchor Rolling Summary toggle and tuning sliders in Settings > Memory tab.
+- [x] **5. Automated Verification Suite (`tests/rolling-summarizer.node.test.ts`, `tests/settings.node.test.ts`)**:
+  - 18 new automated tests verifying partitioning, pinned message eviction bypass, prompt variable injection, offline fallback synthesis, telemetry statistics, and settings reactivity.
+  - **532/532 automated tests passing across 158 suites with 100% green rate**.
+  - TypeScript strict check (`npm run typecheck`) and production build (`npm run build`) passing with zero errors.
+
+---
+
+### 🔮 Upcoming Milestone: v0.4.20 MemoryNode Canvas Visual Primitive & Workflow Version Snapshots (Phase 4.20)
+
+- [ ] **1. Dedicated `MemoryNode` Visual Workflow Primitive**:
+  - Canvas node allowing visual reading, writing, and querying of conversation memory variables directly in DAG orchestration.
+- [ ] **2. Workflow Version Snapshots & Diff Inspector**:
+  - Named workflow version checkpoints with visual graph diffs and rollback capabilities.
+- [ ] **3. Advanced Multi-Session Cross-Workflow Memory Federation**:
+  - Shared global memory pools across distinct workflow instances and canvas sessions.
 
 ---
 
@@ -650,14 +676,39 @@ npm run build
 
 ---
 
-### 🔮 后续接续里程碑：v0.4.17 企业级多租户工作空间与 RBAC 权限体系 (Phase 4.17)
+### ⚡ 已交付里程碑：Phase 4.18 长程会话双锚点滚动摘要与细粒度会话控制 (v0.4.18)
+> 依据 [PRD-010: 会话记忆与存储架构演进](docs/01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md) 与端侧双锚点长程记忆规范推进。
 
-- [ ] **1. 多租户工作空间命名空间隔离**：
-  - 支持工作流、知识库与密钥的租户级物理分区。
-- [ ] **2. 细粒度角色访问控制 (RBAC)**：
-  - 针对画布编排与 API 发布提供只读审阅者、编辑者与系统管理员三级权限。
-- [ ] **3. 合规审计日志与数字签名链**：
-  - 针对工作流发布与重要拓扑变更引入密码学哈希审计底册。
+- [x] **1. 纯前端增量双锚点滚动摘要引擎 (`src/services/memory/rolling-summarizer.ts`)**：
+  - 实现 `partitionMessagesForSummarization`：将对话历史划分为待压缩归档切片与近期逐字滑动窗口（`recentWindowMessages`），彻底化解全量累加导致的 Token 爆炸与直接截断引起的记忆遗忘；
+  - 实现 `buildContextInjectionBag`：向画布执行上下文精准注入 `chat_summary`（历史滚动摘要事实清单）、`chat_history`（近期多轮逐字记录）以及向下兼容的 `conversation_history` / `history` 组合变量；
+  - 实现 `synthesizeRollingSummary`：以旧摘要为底座，结合新移出窗口的对话切片进行增量滚转归纳，严格受控于 `maxTokens`（默认 500 Token）；
+  - 实现 `generateDeterministicSummaryFallback`：离线/无 Key/网络抖动时的零崩溃确定性降级气囊，从用户首尾提问、助手核心结论与错误日志中无损提取结构化 Markdown 事实；
+  - 实现 `computeMemoryTelemetry`：精准统计会话总 Token、摘要 Token、近期窗口 Token、动态压缩率与固定消息状态。
+- [x] **2. 逐条消息细粒度控制与固定消息免疫契约 (`src/services/storage/session-storage.ts`)**：
+  - 消息关键固定 (`isPinned`)：用户可针对核心约束或 Prompt 指令设置 Pin，被固定消息获得永久免驱逐免疫权，不参与滑动窗口淘汰与预算截断；
+  - 消息就地编辑 (`isEdited`) 与单条删除：支持 `updateSessionMessage` 与 `deleteSessionMessage`，自动触发存储同步与摘要上下文刷新；
+  - 平滑向后兼容的 IndexedDB 仓储底座：`getSessionData` 自动无缝解析旧版扁平 `MemoryMessage[]` 数组与全新 `{ sessionKey, messages, summary, updatedAt }` 结构体，零数据迁移风险。
+- [x] **3. 会话面板双锚点遥测条与交互看板 (`src/components/panels/ChatDebugPanel.tsx`)**：
+  - 会话抽屉实时记忆遥测仪表盘：Token 消耗分解指示条、压缩率百分比徽章、摘要状态指示、可折叠摘要抽屉与一键手动「立即压缩摘要」按钮；
+  - 逐条消息操作菜单：支持 Pin/Unpin 切换、就地文本编辑框（含保存与取消）与消息单条删除。
+- [x] **4. 集中式运行时默认值与响应式设置项 (`src/config/runtime-defaults.ts`, `src/stores/settings-store.ts`, `SettingsPage.tsx`)**：
+  - 新增 Section 10 集中式默认值：`MEMORY_ROLLING_SUMMARY_ENABLED`、`MEMORY_SUMMARY_THRESHOLD_ROUNDS`、`MEMORY_SUMMARY_MAX_TOKENS`、`MEMORY_RECENT_WINDOW_ROUNDS`；
+  - 在 Settings > Memory 选项卡中增加「双锚点长程滚动摘要」主开关、触发轮数阈值滑块、近期保留轮数滑块与摘要最大 Token 限制滑块。
+- [x] **5. 全量契约测试与工程验证 (`tests/rolling-summarizer.node.test.ts`, `tests/settings.node.test.ts`)**：
+  - 新增 18 项专项自动化测试，全面覆盖消息切片划分、Pin 消息免淘汰特权、变量注入契约、离线气囊降级、遥测指标统计与设置项响应式联动；
+  - **全工程 532 项测试 / 158 套件 / 0 失败**，`tsc --noEmit` 0 报错，生产打包 100% 成功。
+
+---
+
+### 🔮 后续接续里程碑：v0.4.20 MemoryNode 画布原语与工作流版本快照管理 (Phase 4.20)
+
+- [ ] **1. 专属 `MemoryNode` 画布工作流原语**：
+  - 支持在 DAG 编排中直接以可视化节点形式读写、检索与操控多轮会话记忆变量。
+- [ ] **2. 工作流版本命名快照与差异对比 (Workflow Snapshots & Diff)**：
+  - 支持画布拓扑版本打标命名、历史版本回退与双版本可视化差异图比对。
+- [ ] **3. 跨工作流与多会话记忆联邦共享**：
+  - 支持在多个不同工作流或画布执行会话之间共享全局长程记忆池。
 
 ---
 

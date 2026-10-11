@@ -5,6 +5,29 @@ All notable changes to the **PatchCat** project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.18] - 2026-10-11
+
+### Added
+- **Pure-Frontend Dual-Anchor Long-Term Conversation Memory & Rolling Summary Engine (`src/services/memory/rolling-summarizer.ts`, PRD-010)**:
+  - **Dual-Anchor Partitioning**: Splits conversation history into an archival slice (condensed into markdown factual points) and a recent verbatim sliding window (`recentWindowMessages`), eliminating catastrophic context loss without exponential token inflation.
+  - **Prompt Context Injection**: Seamlessly exposes `chat_summary` (historical rolling summary), `chat_history` (recent dialogue turns), and merged backward-compatible `conversation_history` / `history` variables to the canvas prompt evaluation pipeline.
+  - **Offline & Zero-Throw Rule-Based Airbag**: `generateDeterministicSummaryFallback` deterministically extracts user questions, assistant conclusions, and system errors when offline, unauthenticated, or on network drops.
+  - **Rolling Incremental Synthesis**: Re-summarizes by integrating the previous summary with newly archived turns, enforcing `maxTokens` limits (`MEMORY_SUMMARY_MAX_TOKENS = 500`).
+  - **Precise Memory Telemetry**: Computes total session tokens, summary tokens, verbatim window tokens, compression ratios, and pinned message status.
+- **Per-Message Granular Controls & Pinned Message Immunity Contract (`src/services/storage/session-storage.ts`)**:
+  - **Message Pinning (`isPinned`)**: Users can pin critical prompts or instructions. Pinned messages are granted permanent immunity from sliding-window and token-budget eviction.
+  - **Inline Editing (`isEdited`) & Erasure**: Supports inline modification (`updateSessionMessage`) and deletion (`deleteSessionMessage`) of conversation turns with automatic session data updates.
+  - **Backward-Compatible IndexedDB Schema**: Upgraded `getSessionData` transparently deserializes both legacy flat `MemoryMessage[]` arrays and modern `{ sessionKey, messages, summary, updatedAt }` records without data loss.
+- **Dual-Anchor Memory Telemetry Bar & Session Inspector (`src/components/panels/ChatDebugPanel.tsx`)**:
+  - **Live Telemetry Bar**: Visual token consumption gauge, real-time compression ratio badge, summary status tag, collapsible summary drawer, and manual "Summarize Now" trigger.
+  - **Message Interaction Menu**: Per-message Pin/Unpin action toggle, inline content editing mode with save/cancel, and turn deletion.
+- **Global Memory Settings & Central Runtime Defaults (`src/config/runtime-defaults.ts`, `src/stores/settings-store.ts`, `SettingsPage.tsx`)**:
+  - Centralized runtime defaults for rolling summary (`MEMORY_ROLLING_SUMMARY_ENABLED`, `MEMORY_SUMMARY_THRESHOLD_ROUNDS`, `MEMORY_SUMMARY_MAX_TOKENS`, `MEMORY_RECENT_WINDOW_ROUNDS`).
+  - Added dedicated Dual-Anchor Rolling Summary toggle and tuning sliders (trigger threshold, verbatim rounds, max summary tokens) in Settings > Memory tab.
+- **Automated Verification Suite (`tests/rolling-summarizer.node.test.ts`, `tests/settings.node.test.ts`)**:
+  - 18 new automated tests verifying partitioning, pinned message eviction bypass, prompt variable injection, offline fallback synthesis, telemetry statistics, and settings reactivity.
+  - Expanded automated test suite to **532 passing tests across 158 test suites** (100% green rate).
+
 ## [0.4.16] - 2026-10-09
 
 ### Added

@@ -70,6 +70,14 @@ export const RUNTIME_DEFAULTS = {
   // is floored around 0.45. A single numeric threshold is therefore NOT portable
   // between the two stages — the rerank stage keeps its own, permissive default.
   RERANK_SCORE_THRESHOLD: 0.0,
+
+  // ── 10. Long-Term Conversation Memory & Rolling Summary (Phase 4.18) ────────
+  MEMORY_ROLLING_SUMMARY_ENABLED: true,
+  MEMORY_SUMMARY_THRESHOLD_ROUNDS: 5,
+  MEMORY_SUMMARY_THRESHOLD_ROUNDS_MIN: 2,
+  MEMORY_SUMMARY_THRESHOLD_ROUNDS_MAX: 20,
+  MEMORY_SUMMARY_MAX_TOKENS: 500,
+  MEMORY_RECENT_WINDOW_ROUNDS: 3,
 } as const;
 
 export interface RuntimeProtectionSettings {

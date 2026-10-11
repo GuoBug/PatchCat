@@ -215,12 +215,18 @@ describe('Settings Store & Provider Configuration', () => {
       maxHistoryRounds: 5,
       maxTokenBudget: 3000,
       pruningStrategy: 'hybrid',
+      autoSummarize: true,
+      summarizeThresholdRounds: 5,
+      maxSummaryTokens: 500,
+      recentWindowRounds: 3,
     });
 
     store.updateMemoryDefaults({
       maxHistoryRounds: 8,
       maxTokenBudget: 4500,
       pruningStrategy: 'token_budget',
+      autoSummarize: false,
+      summarizeThresholdRounds: 10,
     });
 
     const updated = useSettingsStore.getState().memoryDefaults;
@@ -228,6 +234,8 @@ describe('Settings Store & Provider Configuration', () => {
     assert.equal(updated.maxTokenBudget, 4500);
     assert.equal(updated.pruningStrategy, 'token_budget');
     assert.equal(updated.enabled, true);
+    assert.equal(updated.autoSummarize, false);
+    assert.equal(updated.summarizeThresholdRounds, 10);
 
     store.resetMemoryDefaults();
     const reset = useSettingsStore.getState().memoryDefaults;
@@ -236,6 +244,10 @@ describe('Settings Store & Provider Configuration', () => {
       maxHistoryRounds: 5,
       maxTokenBudget: 3000,
       pruningStrategy: 'hybrid',
+      autoSummarize: true,
+      summarizeThresholdRounds: 5,
+      maxSummaryTokens: 500,
+      recentWindowRounds: 3,
     });
   });
 

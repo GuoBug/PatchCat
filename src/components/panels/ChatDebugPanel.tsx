@@ -21,6 +21,11 @@ import {
   Tag,
   Copy,
   Check,
+  Pin,
+  PinOff,
+  Edit3,
+  FileText,
+  Zap,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import { useSettingsStore } from '../../stores/settings-store.ts';
@@ -28,10 +33,17 @@ import { useProjectStore } from '../../stores/project-store.ts';
 import {
   sessionStorageAdapter,
   estimateMessageTokens,
-  pruneConversationMessages,
-  formatMessagesToPlainText,
   type MemoryMessage,
+  type SessionSummary,
 } from '../../services/storage/session-storage.ts';
+import {
+  synthesizeRollingSummary,
+  computeMemoryTelemetry,
+  buildContextInjectionBag,
+  partitionMessagesForSummarization,
+  type MemoryTelemetry,
+} from '../../services/memory/rolling-summarizer.ts';
+import { streamChatCompletion } from '../../engine/llm-client.ts';
 import { BrowserWorkflowEngine } from '../../engine/browser-engine.ts';
 import { getTestScenario } from '../../presets/self-healing-scenarios.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
@@ -166,6 +178,9 @@ export interface ChatMessageItem {
   timestamp: number;
   role: 'user' | 'assistant';
   content: string;
+  isPinned?: boolean;
+  isEdited?: boolean;
+  originalContent?: string;
   rawInputs?: Record<string, unknown>;
   outputs?: Record<string, unknown>;
   tokenUsage?: { prompt: number; completion: number; total: number };
@@ -186,9 +201,16 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
   const activeWorkflowId = useProjectStore((s) => s.activeWorkflowId);
   const workflows = useProjectStore((s) => s.workflows);
   const memoryDefaults = useSettingsStore((s) => s.memoryDefaults);
+  const providers = useSettingsStore((s) => s.providers);
+  const activeProvider = useSettingsStore((s) => s.activeProvider);
   const workflowKey = activeWorkflowId || 'default';
 
   const [messages, setMessages] = useState<ChatMessageItem[]>([]);
+  const [sessionSummary, setSessionSummary] = useState<SessionSummary | undefined>(undefined);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState('');
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
   const isLoadedRef = useRef(false);
 
   const [inputQuery, setInputQuery] = useState('');
@@ -199,14 +221,15 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<BrowserWorkflowEngine>(new BrowserWorkflowEngine());
 
-  // Load session messages from IndexedDB adapter when workflow changes or on mount
+  // Load session messages and summary from IndexedDB adapter when workflow changes or on mount
   useEffect(() => {
     let isCancelled = false;
     isLoadedRef.current = false;
 
-    sessionStorageAdapter.getSessionMessages(workflowKey).then((loaded) => {
+    sessionStorageAdapter.getSessionData(workflowKey).then((data) => {
       if (isCancelled) return;
-      if (loaded.length === 0 && typeof sessionStorage !== 'undefined') {
+      setSessionSummary(data.summary);
+      if (data.messages.length === 0 && typeof sessionStorage !== 'undefined') {
         try {
           const old = sessionStorage.getItem('patchcat_chat_history');
           if (old) {
@@ -221,11 +244,14 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
           // ignore
         }
       }
-      const chatItems: ChatMessageItem[] = loaded.map((m) => ({
+      const chatItems: ChatMessageItem[] = data.messages.map((m) => ({
         id: m.id,
         timestamp: m.timestamp,
         role: m.role === 'user' ? 'user' : 'assistant',
         content: m.content,
+        isPinned: m.isPinned,
+        isEdited: m.isEdited,
+        originalContent: m.originalContent,
         rawInputs: m.metadata?.rawInputs,
         outputs: m.metadata?.outputs as Record<string, unknown> | undefined,
         tokenUsage: m.metadata?.tokenUsage,
@@ -250,6 +276,9 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
       role: m.role,
       content: m.content,
       timestamp: m.timestamp,
+      isPinned: m.isPinned,
+      isEdited: m.isEdited,
+      originalContent: m.originalContent,
       metadata: {
         rawInputs: m.rawInputs,
         outputs: m.outputs,
@@ -265,6 +294,135 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
       console.warn('[ChatDebugPanel] Failed to save session messages:', err);
     });
   }, [messages, workflowKey]);
+
+  // Compute fine-grained memory telemetry
+  const telemetry: MemoryTelemetry = useMemo(() => {
+    const memoryMessages: MemoryMessage[] = messages.map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: m.content,
+      timestamp: m.timestamp,
+      isPinned: m.isPinned,
+      isEdited: m.isEdited,
+      originalContent: m.originalContent,
+      metadata: {
+        tokenCount: estimateMessageTokens(m.content),
+      },
+    }));
+
+    const currentWorkflow = workflows.find((w) => w.id === activeWorkflowId);
+    const effectiveBudget =
+      currentWorkflow?.memoryConfig?.maxTokenBudget ?? memoryDefaults.maxTokenBudget;
+
+    return computeMemoryTelemetry({
+      messages: memoryMessages,
+      summary: sessionSummary,
+      budgetLimit: effectiveBudget,
+      recentWindowRounds: memoryDefaults.recentWindowRounds ?? 3,
+    });
+  }, [messages, sessionSummary, memoryDefaults, activeWorkflowId, workflows]);
+
+  const handleTogglePin = (msgId: string) => {
+    setMessages((prev) =>
+      prev.map((m) => (m.id === msgId ? { ...m, isPinned: !m.isPinned } : m)),
+    );
+  };
+
+  const handleDeleteMessage = (msgId: string) => {
+    setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    sessionStorageAdapter.deleteSessionMessage(workflowKey, msgId).catch(console.warn);
+  };
+
+  const handleStartEdit = (msgId: string, currentContent: string) => {
+    setEditingMessageId(msgId);
+    setEditingContent(currentContent);
+  };
+
+  const handleSaveEdit = (msgId: string) => {
+    if (!editingContent.trim()) return;
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m.id === msgId) {
+          const isChanged = m.content !== editingContent;
+          return {
+            ...m,
+            content: editingContent,
+            isEdited: isChanged || m.isEdited,
+            originalContent: isChanged && !m.originalContent ? m.content : m.originalContent,
+          };
+        }
+        return m;
+      }),
+    );
+    sessionStorageAdapter
+      .updateSessionMessage(workflowKey, msgId, { content: editingContent })
+      .catch(console.warn);
+    setEditingMessageId(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setEditingContent('');
+  };
+
+  const handleTriggerSummarize = async () => {
+    if (messages.length === 0 || isSummarizing) return;
+    setIsSummarizing(true);
+    try {
+      const memoryMessages: MemoryMessage[] = messages.map((m) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        timestamp: m.timestamp,
+        isPinned: m.isPinned,
+        isEdited: m.isEdited,
+        originalContent: m.originalContent,
+        metadata: {
+          tokenCount: estimateMessageTokens(m.content),
+        },
+      }));
+
+      let llmCaller: ((prompt: string) => Promise<string>) | undefined = undefined;
+      const provider = providers[activeProvider];
+      const apiKey = provider?.apiKey;
+      if (provider && provider.baseUrl && apiKey) {
+        llmCaller = async (prompt: string) => {
+          const res = await streamChatCompletion({
+            baseUrl: provider.baseUrl,
+            apiKey: apiKey,
+            model: provider.defaultModel || 'Qwen/Qwen2.5-7B-Instruct',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.3,
+          });
+          return res.response;
+        };
+      }
+
+      const updated = await synthesizeRollingSummary({
+        messages: memoryMessages,
+        currentSummary: sessionSummary,
+        options: {
+          enabled: memoryDefaults.autoSummarize,
+          thresholdRounds: memoryDefaults.summarizeThresholdRounds,
+          maxSummaryTokens: memoryDefaults.maxSummaryTokens,
+          recentWindowRounds: memoryDefaults.recentWindowRounds,
+        },
+        llmCaller,
+      });
+
+      setSessionSummary(updated);
+      await sessionStorageAdapter.saveSessionSummary(workflowKey, updated);
+    } catch (e) {
+      console.warn('[ChatDebugPanel] Summarization failed:', e);
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
+
+  const handleClearSummary = async () => {
+    setSessionSummary(undefined);
+    await sessionStorageAdapter.saveSessionSummary(workflowKey, undefined);
+  };
 
   // Scroll to bottom on new message or streaming text
   useEffect(() => {
@@ -380,13 +538,16 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
       inputsBag[mainQueryKey] = query;
     }
 
-    // If conversation memory is enabled, prune history and inject into inputsBag
+    // If conversation memory is enabled, compute dual-anchor pruned history and inject into inputsBag
     if (memoryDefaults.enabled && messages.length > 0) {
       const memoryMessages: MemoryMessage[] = messages.map((m) => ({
         id: m.id,
         role: m.role,
         content: m.content,
         timestamp: m.timestamp,
+        isPinned: m.isPinned,
+        isEdited: m.isEdited,
+        originalContent: m.originalContent,
         metadata: {
           rawInputs: m.rawInputs,
           outputs: m.outputs,
@@ -404,16 +565,33 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
       const effectiveMaxTokenBudget =
         currentWorkflow?.memoryConfig?.maxTokenBudget ?? memoryDefaults.maxTokenBudget;
 
-      const pruned = pruneConversationMessages(memoryMessages, {
-        maxHistoryRounds: effectiveMaxHistoryRounds,
-        maxTokenBudget: effectiveMaxTokenBudget,
-        pruningStrategy: memoryDefaults.pruningStrategy,
+      const injection = buildContextInjectionBag({
+        messages: memoryMessages,
+        summary: sessionSummary,
+        options: {
+          maxHistoryRounds: effectiveMaxHistoryRounds,
+          maxTokenBudget: effectiveMaxTokenBudget,
+          pruningStrategy: memoryDefaults.pruningStrategy,
+          recentWindowRounds: memoryDefaults.recentWindowRounds ?? 3,
+          preservePinned: true,
+        },
       });
 
-      const plainTextHistory = formatMessagesToPlainText(pruned);
-      inputsBag['chat_history'] = plainTextHistory;
-      inputsBag['conversation_history'] = plainTextHistory;
-      inputsBag['history'] = plainTextHistory;
+      inputsBag['chat_summary'] = injection.chat_summary;
+      inputsBag['chat_history'] = injection.chat_history;
+      inputsBag['conversation_history'] = injection.conversation_history;
+      inputsBag['history'] = injection.history;
+
+      // Check if rolling summary threshold is met to trigger non-blocking background auto-summarize
+      if (memoryDefaults.autoSummarize) {
+        const partition = partitionMessagesForSummarization(memoryMessages, sessionSummary, {
+          thresholdRounds: memoryDefaults.summarizeThresholdRounds,
+          recentWindowRounds: memoryDefaults.recentWindowRounds,
+        });
+        if (partition.hasTriggerThreshold) {
+          handleTriggerSummarize().catch(console.warn);
+        }
+      }
     }
 
     // Capture non-empty auxiliary parameters used for this round
@@ -594,6 +772,111 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
         </div>
       </div>
 
+      {/* Memory Telemetry & Rolling Summary Bar */}
+      {memoryDefaults.enabled && (
+        <div className="px-4 py-2.5 bg-slate-100/90 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 text-[11px] flex flex-col gap-1.5 shrink-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 shrink-0">
+                <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                {t.chatDebug.memoryTelemetry}
+              </span>
+              <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400">
+                {telemetry.totalTokens} / {telemetry.budgetLimit > 0 ? telemetry.budgetLimit : '∞'} {t.chatDebug.tokensUsage} ({Math.round(telemetry.budgetUsageRatio * 100)}%)
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              {sessionSummary?.text && (
+                <button
+                  type="button"
+                  onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+                  className="px-2 py-0.5 rounded-lg border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-medium text-[10px] flex items-center gap-1 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors cursor-pointer"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>{isSummaryExpanded ? '收起摘要' : '查看摘要'}</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleTriggerSummarize}
+                disabled={isSummarizing || messages.length === 0}
+                className="px-2 py-0.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-medium text-[10px] flex items-center gap-1 transition-colors cursor-pointer shadow-xs"
+                title={t.chatDebug.summarizeNow}
+              >
+                {isSummarizing ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>{t.chatDebug.summarizing}</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-3 h-3" />
+                    <span>{t.chatDebug.summarizeNow}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Token Usage Progress Gauge */}
+          {telemetry.budgetLimit > 0 && (
+            <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden flex">
+              <div
+                style={{ width: `${Math.min(100, (telemetry.summaryTokens / telemetry.budgetLimit) * 100)}%` }}
+                className="bg-purple-500 h-full"
+                title={`Summary Tokens: ${telemetry.summaryTokens}`}
+              />
+              <div
+                style={{ width: `${Math.min(100, (telemetry.pinnedTokens / telemetry.budgetLimit) * 100)}%` }}
+                className="bg-amber-500 h-full"
+                title={`Pinned Tokens: ${telemetry.pinnedTokens}`}
+              />
+              <div
+                style={{ width: `${Math.min(100, (telemetry.activeTokens / telemetry.budgetLimit) * 100)}%` }}
+                className="bg-blue-500 h-full"
+                title={`Active Tokens: ${telemetry.activeTokens}`}
+              />
+            </div>
+          )}
+
+          {/* Sub-Badges */}
+          <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+            <span>活跃: {telemetry.activeWindowMessagesCount}</span>
+            <span>•</span>
+            <span className={telemetry.pinnedMessagesCount > 0 ? 'text-amber-600 dark:text-amber-400 font-semibold' : ''}>
+              置顶: {telemetry.pinnedMessagesCount}
+            </span>
+            <span>•</span>
+            <span className={telemetry.summarizedMessagesCount > 0 ? 'text-purple-600 dark:text-purple-400 font-semibold' : ''}>
+              摘要已压缩: {telemetry.summarizedMessagesCount} 轮
+            </span>
+          </div>
+
+          {/* Expandable Executive Summary Viewer */}
+          {isSummaryExpanded && sessionSummary?.text && (
+            <div className="mt-1 p-2.5 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-950 text-xs shadow-xs space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  {t.chatDebug.summaryTitle} ({sessionSummary.tokenCount} tok)
+                </span>
+                <button
+                  type="button"
+                  onClick={handleClearSummary}
+                  className="text-[10px] text-rose-500 hover:text-rose-600 transition-colors cursor-pointer"
+                >
+                  {t.chatDebug.clearSummary}
+                </button>
+              </div>
+              <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 font-mono text-[11px] leading-relaxed max-h-40 overflow-y-auto whitespace-pre-wrap text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800">
+                {sessionSummary.text}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Messages List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 font-sans text-xs min-w-0">
         {messages.length === 0 && (
@@ -615,35 +898,115 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
               msg.role === 'user' ? 'items-end' : 'items-start'
             }`}
           >
-            <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400 px-1">
-              {msg.role === 'user' ? (
-                <>
-                  <span>{t.chatDebug.userRole}</span>
-                  <User className="w-3 h-3 text-emerald-500" />
-                </>
-              ) : (
-                <>
-                  <Bot className="w-3 h-3 text-blue-500" />
-                  <span>{t.chatDebug.assistantRole}</span>
-                  {msg.durationMs && (
-                    <span className="flex items-center gap-0.5 ml-1 text-slate-400">
-                      <Clock className="w-2.5 h-2.5" />
-                      {msg.durationMs}ms
-                    </span>
-                  )}
-                  {msg.tokenUsage && (
-                    <span className="flex items-center gap-0.5 ml-1 px-1 rounded bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
-                      <Coins className="w-2.5 h-2.5" />
-                      {msg.tokenUsage.total} tok
-                    </span>
-                  )}
-                </>
-              )}
+            <div className="flex items-center justify-between w-full text-[10px] font-mono text-slate-400 px-1">
+              <div className="flex items-center gap-1.5">
+                {msg.role === 'user' ? (
+                  <>
+                    <span>{t.chatDebug.userRole}</span>
+                    <User className="w-3 h-3 text-emerald-500" />
+                  </>
+                ) : (
+                  <>
+                    <Bot className="w-3 h-3 text-blue-500" />
+                    <span>{t.chatDebug.assistantRole}</span>
+                    {msg.durationMs && (
+                      <span className="flex items-center gap-0.5 ml-1 text-slate-400">
+                        <Clock className="w-2.5 h-2.5" />
+                        {msg.durationMs}ms
+                      </span>
+                    )}
+                    {msg.tokenUsage && (
+                      <span className="flex items-center gap-0.5 ml-1 px-1 rounded bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
+                        <Coins className="w-2.5 h-2.5" />
+                        {msg.tokenUsage.total} tok
+                      </span>
+                    )}
+                  </>
+                )}
+                {msg.isPinned && (
+                  <span className="px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-bold border border-amber-300 dark:border-amber-700/60 flex items-center gap-0.5">
+                    <Pin className="w-2.5 h-2.5 fill-amber-500" />
+                    {t.chatDebug.pinned}
+                  </span>
+                )}
+                {msg.isEdited && (
+                  <span className="px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 font-normal">
+                    ({t.chatDebug.edited})
+                  </span>
+                )}
+              </div>
+
+              {/* Action Buttons for this Message */}
+              <div className="flex items-center gap-1 ml-auto shrink-0 opacity-80 hover:opacity-100 transition-opacity">
+                <button
+                  type="button"
+                  onClick={() => handleTogglePin(msg.id)}
+                  className={`p-1 rounded transition-colors cursor-pointer ${
+                    msg.isPinned
+                      ? 'text-amber-500 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100'
+                      : 'text-slate-400 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                  title={msg.isPinned ? t.chatDebug.unpinMessage : t.chatDebug.pinMessage}
+                >
+                  {msg.isPinned ? <PinOff className="w-3 h-3 text-amber-500" /> : <Pin className="w-3 h-3" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleStartEdit(msg.id, msg.content)}
+                  className="p-1 rounded text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  title={t.chatDebug.editMessage}
+                >
+                  <Edit3 className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteMessage(msg.id)}
+                  className="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  title={t.chatDebug.deleteMessage}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
             </div>
 
-            {/* Bubble rendering */}
-            {msg.role === 'user' ? (
-              <div className="p-3 rounded-2xl rounded-tr-xs bg-blue-600 text-white max-w-[92%] text-xs leading-relaxed shadow-xs min-w-0 break-words break-all [overflow-wrap:anywhere] overflow-hidden">
+            {/* Editing Box or Bubble rendering */}
+            {editingMessageId === msg.id ? (
+              <div className="w-full max-w-[95%] p-3 rounded-2xl border border-indigo-400 dark:border-indigo-600 bg-white dark:bg-slate-900 shadow-md flex flex-col gap-2">
+                <div className="flex items-center justify-between text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">
+                  <span>{t.chatDebug.editMessage}</span>
+                  {msg.originalContent && (
+                    <span className="text-[10px] text-slate-400 font-mono truncate max-w-[200px]">
+                      Original: {msg.originalContent}
+                    </span>
+                  )}
+                </div>
+                <textarea
+                  value={editingContent}
+                  onChange={(e) => setEditingContent(e.target.value)}
+                  rows={3}
+                  className="w-full p-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono resize-y"
+                />
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCancelEdit}
+                    className="px-2.5 py-1 text-xs rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    {t.chatDebug.cancelEdit}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSaveEdit(msg.id)}
+                    className="px-2.5 py-1 text-xs rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-xs transition-colors cursor-pointer"
+                  >
+                    {t.chatDebug.saveEdit}
+                  </button>
+                </div>
+              </div>
+            ) : msg.role === 'user' ? (
+              <div className={`p-3 rounded-2xl rounded-tr-xs bg-blue-600 text-white max-w-[92%] text-xs leading-relaxed shadow-xs min-w-0 break-words break-all [overflow-wrap:anywhere] overflow-hidden ${
+                msg.isPinned ? 'ring-2 ring-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.3)]' : ''
+              }`}>
                 {/* If auxiliary parameters exist, show parameter badges */}
                 {msg.rawInputs && Object.keys(msg.rawInputs).length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-2 pb-1.5 border-b border-blue-400/40 text-[10px] font-mono">
@@ -662,7 +1025,9 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
                 <div className="whitespace-pre-wrap">{msg.content}</div>
               </div>
             ) : (
-              <AssistantContentCard content={msg.content} isError={Boolean(msg.error)} />
+              <div className={`w-full max-w-[95%] ${msg.isPinned ? 'ring-2 ring-amber-400/80 rounded-2xl' : ''}`}>
+                <AssistantContentCard content={msg.content} isError={Boolean(msg.error)} />
+              </div>
             )}
 
             {/* Collapsible Execution Trace (Assistant Only) */}

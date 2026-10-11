@@ -41,6 +41,7 @@ import {
   FlaskConical,
   Lock,
   AlertTriangle,
+  Sparkles,
 } from 'lucide-react';
 import {
   useSettingsStore,
@@ -1173,6 +1174,118 @@ export const SettingsPage: React.FC = () => {
                           </div>
                         )}
                       </div>
+                    </div>
+
+                    {/* Dual-Anchor Background Rolling Summary Configuration (Phase 4.18) */}
+                    <div className="pt-3 border-t border-slate-200/80 dark:border-slate-800/80 space-y-3.5">
+                      <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 flex items-center justify-between gap-4">
+                        <div>
+                          <span className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                            {language === 'zh'
+                              ? '长效背景滚动摘要 (Dual-Anchor Rolling Summary)'
+                              : 'Dual-Anchor Background Rolling Summary'}
+                          </span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed block mt-0.5">
+                            {language === 'zh'
+                              ? '在对话超出活跃窗口时，后台自动将远期轮次浓缩为结构化事实摘要并持久化，与近期原始窗口合并注入 DAG，既防止长效失忆又严格控制 Token 消耗。'
+                              : 'Incrementally condenses older dialogue turns into structured factual summaries, preserving critical facts without causing long-term amnesia or token bloat.'}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={memoryDefaults.autoSummarize}
+                          onClick={() => updateMemoryDefaults({ autoSummarize: !memoryDefaults.autoSummarize })}
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                            memoryDefaults.autoSummarize ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
+                          }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                              memoryDefaults.autoSummarize ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {memoryDefaults.autoSummarize && (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                          {/* Summarize Threshold Rounds */}
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block">
+                              {language === 'zh' ? '触发摘要轮数' : 'Trigger Threshold'}
+                            </label>
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="number"
+                                min={2}
+                                max={20}
+                                step={1}
+                                value={memoryDefaults.summarizeThresholdRounds}
+                                onChange={(e) =>
+                                  updateMemoryDefaults({
+                                    summarizeThresholdRounds: Math.max(2, parseInt(e.target.value, 10) || 2),
+                                  })
+                                }
+                                className="w-24 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                              />
+                              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                                {language === 'zh' ? '轮' : 'rounds'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Recent Window Rounds */}
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block">
+                              {language === 'zh' ? '近期保留原样' : 'Recent Verbatim Window'}
+                            </label>
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="number"
+                                min={1}
+                                max={10}
+                                step={1}
+                                value={memoryDefaults.recentWindowRounds}
+                                onChange={(e) =>
+                                  updateMemoryDefaults({
+                                    recentWindowRounds: Math.max(1, parseInt(e.target.value, 10) || 1),
+                                  })
+                                }
+                                className="w-24 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                              />
+                              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                                {language === 'zh' ? '轮' : 'rounds'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Max Summary Tokens */}
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block">
+                              {language === 'zh' ? '摘要目标上限' : 'Max Summary Tokens'}
+                            </label>
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="number"
+                                min={100}
+                                max={2000}
+                                step={50}
+                                value={memoryDefaults.maxSummaryTokens}
+                                onChange={(e) =>
+                                  updateMemoryDefaults({
+                                    maxSummaryTokens: Math.max(100, parseInt(e.target.value, 10) || 100),
+                                  })
+                                }
+                                className="w-28 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                              />
+                              <span className="text-[11px] text-slate-500 dark:text-slate-400">Tokens</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

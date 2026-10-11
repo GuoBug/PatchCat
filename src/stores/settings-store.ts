@@ -14,6 +14,7 @@ import {
   type RuntimeProtectionSettings,
   type EditorPreferences,
   type NetworkSettings,
+  RUNTIME_DEFAULTS,
   DEFAULT_RUNTIME_PROTECTION,
   DEFAULT_EDITOR_PREFERENCES,
   DEFAULT_NETWORK_SETTINGS,
@@ -144,6 +145,10 @@ export interface MemoryDefaults {
   maxHistoryRounds: number;
   maxTokenBudget: number;
   pruningStrategy: 'window' | 'token_budget' | 'hybrid' | 'none';
+  autoSummarize: boolean;
+  summarizeThresholdRounds: number;
+  maxSummaryTokens: number;
+  recentWindowRounds: number;
 }
 
 export const DEFAULT_MEMORY_SETTINGS: MemoryDefaults = {
@@ -151,6 +156,10 @@ export const DEFAULT_MEMORY_SETTINGS: MemoryDefaults = {
   maxHistoryRounds: 5,
   maxTokenBudget: 3000,
   pruningStrategy: 'hybrid',
+  autoSummarize: RUNTIME_DEFAULTS.MEMORY_ROLLING_SUMMARY_ENABLED,
+  summarizeThresholdRounds: RUNTIME_DEFAULTS.MEMORY_SUMMARY_THRESHOLD_ROUNDS,
+  maxSummaryTokens: RUNTIME_DEFAULTS.MEMORY_SUMMARY_MAX_TOKENS,
+  recentWindowRounds: RUNTIME_DEFAULTS.MEMORY_RECENT_WINDOW_ROUNDS,
 };
 
 export interface SettingsStoreState {
