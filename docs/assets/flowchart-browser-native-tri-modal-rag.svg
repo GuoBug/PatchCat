@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" width="960" height="640" style="background:#090d16; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif;">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0f1d"/>
+      <stop offset="100%" stop-color="#050811"/>
+    </linearGradient>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+    <linearGradient id="denseGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+    <linearGradient id="sparseGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="airbagGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+    <filter id="neoShadow" x="-3%" y="-3%" width="106%" height="106%">
+      <feDropShadow dx="3" dy="4" stdDeviation="0" flood-color="#000000" flood-opacity="0.85"/>
+    </filter>
+    <marker id="arrowCyan" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#06b6d4"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#10b981"/>
+    </marker>
+    <marker id="arrowSlate" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="960" height="640" fill="url(#bgGrad)"/>
+  <rect x="12" y="12" width="936" height="616" rx="8" fill="none" stroke="#1e293b" stroke-width="2"/>
+
+  <!-- Top Title Banner -->
+  <rect x="28" y="24" width="904" height="52" rx="6" fill="#0f172a" stroke="#334155" stroke-width="2" filter="url(#neoShadow)"/>
+  <text x="46" y="56" font-size="15" font-weight="800" fill="#f8fafc" letter-spacing="0.5">PATCHCAT · BROWSER-NATIVE TRI-MODAL HYBRID RETRIEVAL ARCHITECTURE</text>
+  <rect x="706" y="36" width="210" height="28" rx="4" fill="#0c4a6e" stroke="#0284c7" stroke-width="1.5"/>
+  <text x="718" y="54" font-size="11" font-weight="700" fill="#38bdf8">0 CSP CHANGE · BYOK · INDEXEDDB V6</text>
+
+  <!-- COLUMN 1: Client Ingestion & Dual Fan-Out (Left: x=28, w=276) -->
+  <g transform="translate(28, 92)">
+    <rect width="276" height="392" rx="8" fill="#091428" stroke="#0284c7" stroke-width="2" filter="url(#neoShadow)"/>
+    <rect x="12" y="12" width="252" height="26" rx="4" fill="#0369a1"/>
+    <text x="20" y="29" font-size="11" font-weight="800" fill="#ffffff" letter-spacing="0.5">1. 端侧请求接收与双路扇出</text>
+
+    <!-- Query Box -->
+    <rect x="12" y="48" width="252" height="56" rx="5" fill="#111827" stroke="#1e293b" stroke-width="1.5"/>
+    <text x="22" y="67" font-size="10" font-weight="700" fill="#94a3b8">USER INPUT QUERY (同义语义分化)</text>
+    <text x="22" y="86" font-size="11" font-family="monospace" fill="#38bdf8">"MacBook 崩溃卡死"</text>
+
+    <!-- Lexical Branch -->
+    <rect x="12" y="114" width="252" height="74" rx="5" fill="#1e180a" stroke="#d97706" stroke-width="1.5"/>
+    <text x="22" y="132" font-size="10" font-weight="700" fill="#f59e0b">稀疏词法分词 (Sparse Lexical)</text>
+    <text x="22" y="148" font-size="10" fill="#cbd5e1">CJK Bi-gram + 英数 Regex 提取</text>
+    <text x="22" y="168" font-size="9" font-family="monospace" fill="#fbbf24">tokens: ['macbook', '崩溃', '卡死']</text>
+
+    <!-- Vector Branch -->
+    <rect x="12" y="198" width="252" height="98" rx="5" fill="#0c1d33" stroke="#0284c7" stroke-width="1.5"/>
+    <text x="22" y="216" font-size="10" font-weight="700" fill="#38bdf8">端侧多源嵌入 (BrowserEmbeddingClient)</text>
+    <text x="22" y="233" font-size="9" fill="#94a3b8">BYOK 零 CSP 变更直连端点：</text>
+    <text x="22" y="249" font-size="9" font-family="monospace" fill="#7dd3fc">• SiliconFlow / OpenAI / Ollama</text>
+    <text x="22" y="265" font-size="9" fill="#94a3b8">升序回排: sort((a,b) =&gt; a.index - b.index)</text>
+    <text x="22" y="281" font-size="9" fill="#34d399">L2 预归一化: ||vec|| = 1.0 (纯点积就绪)</text>
+
+    <!-- Stale & CORS Guard -->
+    <rect x="12" y="306" width="252" height="72" rx="5" fill="#181324" stroke="#8b5cf6" stroke-width="1.5"/>
+    <text x="22" y="324" font-size="10" font-weight="700" fill="#c084fc">安全防线与失效指纹 (Fingerprint)</text>
+    <text x="22" y="340" font-size="9" fill="#cbd5e1">• 指纹校验: provider/model/dim 不一致跳过</text>
+    <text x="22" y="356" font-size="9" fill="#cbd5e1">• Ollama 跨域拦截: 捕获并提示 OLLAMA_ORIGINS</text>
+    <text x="22" y="370" font-size="9" fill="#f87171">• 故障气囊: 异常时平滑滑向 L2 启发式通道</text>
+  </g>
+
+  <!-- COLUMN 2: In-Memory Cores & Storage (Center: x=342, w=276) -->
+  <g transform="translate(342, 92)">
+    <rect width="276" height="392" rx="8" fill="#0c1729" stroke="#10b981" stroke-width="2" filter="url(#neoShadow)"/>
+    <rect x="12" y="12" width="252" height="26" rx="4" fill="#059669"/>
+    <text x="20" y="29" font-size="11" font-weight="800" fill="#ffffff" letter-spacing="0.5">2. 双内存检索核与平铺索引</text>
+
+    <!-- BM25 Core Box -->
+    <rect x="12" y="48" width="252" height="96" rx="5" fill="#1b1d16" stroke="#ca8a04" stroke-width="1.5"/>
+    <text x="22" y="67" font-size="10" font-weight="700" fill="#eab308">BM25Engine 词法倒排索引</text>
+    <text x="22" y="83" font-size="9" fill="#cbd5e1">• 平滑非负 IDF: ln(1 + (N - n + 0.5)/(n + 0.5))</text>
+    <text x="22" y="99" font-size="9" fill="#cbd5e1">• 长度归一化因子: k1=1.5, b=0.75</text>
+    <text x="22" y="115" font-size="9" fill="#94a3b8">输出: bm25_rank 列表 (专有名词绝对命中)</text>
+    <text x="22" y="131" font-size="9" fill="#f87171">同义表述命中: 0 分 (字面未命中)</text>
+
+    <!-- FlatVectorIndex Core Box -->
+    <rect x="12" y="154" width="252" height="136" rx="5" fill="#0b242d" stroke="#06b6d4" stroke-width="1.5"/>
+    <text x="22" y="173" font-size="10" font-weight="700" fill="#22d3ee">FlatVectorIndex 全内存平铺索引</text>
+    <text x="22" y="190" font-size="9" fill="#94a3b8">架构选型: 摒弃繁重 HNSW / 零 GC 碎片</text>
+    <rect x="22" y="198" width="232" height="24" rx="3" fill="#083344"/>
+    <text x="28" y="214" font-size="9" font-family="monospace" fill="#67e8f9">Float32Array(capacity * dimension)</text>
+    <text x="22" y="238" font-size="9" fill="#cbd5e1">• 连续单缓冲点积扫描: 1k~5k 分块 &lt; 0.5ms</text>
+    <text x="22" y="254" font-size="9" fill="#cbd5e1">• O(1) swap-with-last 原地删除</text>
+    <text x="22" y="270" font-size="9" fill="#34d399">输出: dense_rank 列表 (真余弦相似度)</text>
+
+    <!-- IndexedDB Storage Box -->
+    <rect x="12" y="300" width="252" height="78" rx="5" fill="#131c31" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="22" y="318" font-size="10" font-weight="700" fill="#60a5fa">IndexedDB v6 底座仓储</text>
+    <text x="22" y="334" font-size="9" fill="#cbd5e1">• 专用仓库: 'vector_embeddings' (key: chunkId)</text>
+    <text x="22" y="350" font-size="9" fill="#cbd5e1">• 索引: by_kb (按知识库分治加载)</text>
+    <text x="22" y="366" font-size="9" fill="#94a3b8">• 顺序写兜底: 分块入库 ➔ 批量异步打向量</text>
+  </g>
+
+  <!-- COLUMN 3: Tri-Modal Fusion & Airbag (Right: x=656, w=276) -->
+  <g transform="translate(656, 92)">
+    <rect width="276" height="392" rx="8" fill="#1a111a" stroke="#f43f5e" stroke-width="2" filter="url(#neoShadow)"/>
+    <rect x="12" y="12" width="252" height="26" rx="4" fill="#e11d48"/>
+    <text x="20" y="29" font-size="11" font-weight="800" fill="#ffffff" letter-spacing="0.5">3. 三模融合、解耦与三级气囊</text>
+
+    <!-- RRF Box -->
+    <rect x="12" y="48" width="252" height="88" rx="5" fill="#20121d" stroke="#fb7185" stroke-width="1.5"/>
+    <text x="22" y="67" font-size="10" font-weight="700" fill="#fda4af">RRF 倒数排名融合 (排序核心)</text>
+    <text x="22" y="83" font-size="9" font-family="monospace" fill="#f43f5e">RRF = Σ [ w_i / (k + rank_i) ], k=60</text>
+    <text x="22" y="100" font-size="9" fill="#cbd5e1">• 决定候选 Top-K 最终位次 (隔绝绝对值)</text>
+    <text x="22" y="117" font-size="9" fill="#94a3b8">兼顾词法精确命中与语义泛化召回</text>
+
+    <!-- Decoupled Similarity -->
+    <rect x="12" y="144" width="252" height="90" rx="5" fill="#181926" stroke="#818cf8" stroke-width="1.5"/>
+    <text x="22" y="163" font-size="10" font-weight="700" fill="#a5b4fc">量纲解耦加权相似度 (门禁过滤)</text>
+    <text x="22" y="179" font-size="9" font-family="monospace" fill="#c7d2fe">similarity = clamp(0.1, 0.98, α·bm25 + β·dense)</text>
+    <text x="22" y="196" font-size="9" fill="#cbd5e1">• 显式契约: 仅用于 scoreThreshold 截断</text>
+    <text x="22" y="212" font-size="9" fill="#cbd5e1">• L1 满血: 纯余弦分，不加 0.45 偏置</text>
+    <text x="22" y="226" font-size="9" fill="#cbd5e1">• L2 降级: 保留 0.45 偏置，守卫历史工作流</text>
+
+    <!-- 3-Tier Graceful Airbag -->
+    <rect x="12" y="242" width="252" height="136" rx="5" fill="#1b171c" stroke="#f97316" stroke-width="1.5"/>
+    <text x="22" y="260" font-size="10" font-weight="700" fill="#fb923c">三级防御气囊与白盒状态遥测</text>
+    <rect x="22" y="270" width="232" height="20" rx="3" fill="#14532d"/>
+    <text x="28" y="284" font-size="9" font-weight="700" fill="#4ade80">L1: vector_status = 'active' (满血真向量)</text>
+    <rect x="22" y="294" width="232" height="20" rx="3" fill="#78350f"/>
+    <text x="28" y="308" font-size="9" font-weight="700" fill="#fcd34d">L2: vector_status = 'degraded' (0.45 启发式降级)</text>
+    <rect x="22" y="318" width="232" height="20" rx="3" fill="#1e293b"/>
+    <text x="28" y="332" font-size="9" font-weight="700" fill="#94a3b8">L3: vector_status = 'disabled' (纯词法 BM25)</text>
+    <text x="22" y="356" font-size="9" fill="#f87171">拒绝静默失败: 降级状态与报错白盒透出</text>
+  </g>
+
+  <!-- Connective Directional Arrows -->
+  <line x1="304" y1="150" x2="340" y2="150" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrowAmber)"/>
+  <line x1="304" y1="247" x2="340" y2="247" stroke="#06b6d4" stroke-width="2" marker-end="url(#arrowCyan)"/>
+  <line x1="618" y1="150" x2="654" y2="150" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrowAmber)"/>
+  <line x1="618" y1="247" x2="654" y2="247" stroke="#06b6d4" stroke-width="2" marker-end="url(#arrowCyan)"/>
+
+  <!-- BOTTOM SECTION: Ground Truth Benchmark (x=28, y=498, w=904, h=118) -->
+  <g transform="translate(28, 498)">
+    <rect width="904" height="118" rx="8" fill="#0f172a" stroke="#334155" stroke-width="2" filter="url(#neoShadow)"/>
+    <rect x="14" y="12" width="876" height="22" rx="3" fill="#1e293b"/>
+    <text x="24" y="27" font-size="10" font-weight="800" fill="#38bdf8" letter-spacing="0.5">真实基线对照实验 (GROUND TRUTH BENCHMARK · 同义语义泛化 vs 专有名词)</text>
+
+    <!-- Table Header -->
+    <text x="30" y="52" font-size="10" font-weight="700" fill="#94a3b8">测试场景 Query</text>
+    <text x="240" y="52" font-size="10" font-weight="700" fill="#94a3b8">目标分块 Chunk Content</text>
+    <text x="560" y="52" font-size="10" font-weight="700" fill="#94a3b8">L2 启发式 (旧通道)</text>
+    <text x="730" y="52" font-size="10" font-weight="700" fill="#94a3b8">L1 端侧真向量 (新通道)</text>
+
+    <!-- Row 1: Synonym Query -->
+    <line x1="20" y1="58" x2="884" y2="58" stroke="#334155" stroke-width="1"/>
+    <text x="30" y="74" font-size="10" font-family="monospace" fill="#f8fafc">"MacBook 崩溃卡死"</text>
+    <text x="240" y="74" font-size="10" fill="#cbd5e1">"苹果笔记本电脑系统故障与无响应处理..."</text>
+    <text x="560" y="74" font-size="10" font-weight="700" fill="#f87171">未命中 (词法重合度 0)</text>
+    <text x="730" y="74" font-size="10" font-weight="800" fill="#4ade80">Top-1 命中 (sim = 0.83)</text>
+
+    <!-- Row 2: Precision Identifier Query -->
+    <line x1="20" y1="84" x2="884" y2="84" stroke="#334155" stroke-width="1"/>
+    <text x="30" y="100" font-size="10" font-family="monospace" fill="#f8fafc">"DAG_CYCLE_DETECTED"</text>
+    <text x="240" y="100" font-size="10" fill="#cbd5e1">"拓扑环路异常抛出规范与 Kahn 算法熔断..."</text>
+    <text x="560" y="100" font-size="10" font-weight="700" fill="#4ade80">Top-1 命中 (BM25 精确)</text>
+    <text x="730" y="100" font-size="10" font-weight="800" fill="#4ade80">Top-1 命中 (双路并排 #1)</text>
+  </g>
+</svg>
