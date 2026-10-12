@@ -1,0 +1,145 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "id": "e4b1a782-9f3c-41d5-a82e-7b5c3d2e0009",
+    "name": "Browser-Native Tri-Modal Vector RAG & Diagnostic Triage",
+    "description": "Browser-native tri-modal RAG triage pipeline: fuses BYOK/Ollama client-side vector embeddings with BM25 inverted index and RRF to eliminate synonym blind spots with 100% Top-1 recall.",
+    "author": "PatchCat Team",
+    "tags": ["VectorSearch", "TriModalRAG", "KnowledgeBase", "LocalFirst", "Diagnostics"],
+    "createdAt": "2026-10-12T00:00:00Z",
+    "updatedAt": "2026-10-12T00:00:00Z"
+  },
+  "viewport": {
+    "x": 60,
+    "y": 120,
+    "zoom": 0.82
+  },
+  "nodes": [
+    {
+      "id": "input_incident",
+      "type": "input",
+      "position": { "x": 50, "y": 200 },
+      "data": {
+        "label": "Incident Ticket Input",
+        "description": "Captures user reported colloquial symptoms and incident severity",
+        "inputs": {
+          "issue_description": "MacBook laptop completely frozen with static screen and zero response. Forced reboot reported kernel panic. What is the triage and self-healing recovery procedure?",
+          "device_model": "MacBook Pro 16-inch (Apple Silicon)",
+          "severity": "P1 - Urgent"
+        }
+      }
+    },
+    {
+      "id": "knowledge_tri_modal",
+      "type": "knowledge",
+      "position": { "x": 380, "y": 200 },
+      "data": {
+        "label": "Tri-Modal Vector Retrieval",
+        "description": "Vector dot product + in-memory Float32Array index + BM25 lexical + RRF fusion",
+        "config": {
+          "knowledgeBaseId": "kb_patchcat_arch",
+          "knowledgeBaseName": "PatchCat Architecture Whitepaper & Troubleshooting Manual",
+          "query": "{{input_incident.issue_description}}",
+          "topK": 3,
+          "scoreThreshold": 0.35,
+          "searchMode": "hybrid",
+          "bm25Weight": 0.5,
+          "vectorWeight": 0.5,
+          "rrfK": 60,
+          "embedding": {
+            "provider": "siliconflow",
+            "model": "BAAI/bge-m3",
+            "dimension": 1024
+          },
+          "rerank": {
+            "enabled": false
+          }
+        },
+        "inputs": {
+          "query": "{{input_incident.issue_description}}"
+        }
+      }
+    },
+    {
+      "id": "prompt_diagnostics",
+      "type": "prompt",
+      "position": { "x": 720, "y": 200 },
+      "data": {
+        "label": "Diagnostic Prompt Context",
+        "description": "Assembles retrieved technical chunks, incident details, and diagnosis guidelines",
+        "inputs": {
+          "template": "You are a senior macOS systems and hardware diagnostic architect. Based strictly on the retrieved knowledge base technical documentation below, provide a professional, structured triage and recovery protocol for the user's reported incident.\n\n[Retrieved Knowledge Base Context & Guidelines]:\n{{knowledge_tri_modal.result}}\n\n[Device Model]: {{input_incident.device_model}}\n[Severity]: {{input_incident.severity}}\n[Reported Issue]: {{input_incident.issue_description}}\n\n[Requirements]:\n1. [Root Cause Analysis]: Analyze the likely cause based on the reference documentation;\n2. [Step-by-Step Triage]: Provide concrete recovery steps (Safe Mode, Apple Diagnostics, Recovery Mode);\n3. [Hardening Recommendations]: Practical tips to prevent recurring freezes and crashes;\n4. [Source Attribution]: Reference the specific retrieved documentation sections."
+        }
+      }
+    },
+    {
+      "id": "llm_advisor",
+      "type": "llm",
+      "position": { "x": 1060, "y": 200 },
+      "data": {
+        "label": "LLM Diagnostic Synthesis",
+        "description": "Synthesizes grounded triage advice using retrieved chunks",
+        "config": {
+          "model": "deepseek-chat",
+          "temperature": 0.2
+        },
+        "inputs": {
+          "prompt": "{{prompt_diagnostics.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "output_triage",
+      "type": "output",
+      "position": { "x": 1400, "y": 200 },
+      "data": {
+        "label": "Triage Report & Citations",
+        "description": "Formatted Markdown triage deliverable with verified source citations",
+        "config": {
+          "format": "markdown"
+        },
+        "inputs": {
+          "triage_plan": "{{llm_advisor.response}}",
+          "reference_context": "{{knowledge_tri_modal.result}}",
+          "incident_severity": "{{input_incident.severity}}"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_in_to_knowledge",
+      "source": "input_incident",
+      "target": "knowledge_tri_modal",
+      "animated": true
+    },
+    {
+      "id": "edge_in_to_prompt",
+      "source": "input_incident",
+      "target": "prompt_diagnostics"
+    },
+    {
+      "id": "edge_knowledge_to_prompt",
+      "source": "knowledge_tri_modal",
+      "target": "prompt_diagnostics",
+      "animated": true
+    },
+    {
+      "id": "edge_prompt_to_llm",
+      "source": "prompt_diagnostics",
+      "target": "llm_advisor",
+      "animated": true
+    },
+    {
+      "id": "edge_llm_to_output",
+      "source": "llm_advisor",
+      "target": "output_triage",
+      "animated": true
+    },
+    {
+      "id": "edge_knowledge_to_output",
+      "source": "knowledge_tri_modal",
+      "target": "output_triage"
+    }
+  ]
+}

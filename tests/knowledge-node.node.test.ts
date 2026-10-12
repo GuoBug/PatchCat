@@ -201,6 +201,44 @@ describe('Knowledge Node & RAG Pipeline Execution', () => {
     assert.ok(finalResult.knowledge_sources.includes('Similarity'));
   });
 
+  it('should validate and execute the Local Tri-Modal Vector RAG preset (local-vector-rag) end-to-end', async () => {
+    const { PRESETS_DATA } = await import('../src/presets/index.ts');
+    const zhPreset = PRESETS_DATA.zh['local-vector-rag'];
+    assert.ok(zhPreset, 'Chinese Local Vector RAG preset must exist');
+    assert.equal(zhPreset.data.nodes.length, 5, 'Local Vector RAG preset must have 5 nodes');
+
+    const enPreset = PRESETS_DATA.en['local-vector-rag'];
+    assert.ok(enPreset, 'English Local Vector RAG preset must exist');
+    assert.equal(enPreset.data.nodes.length, 5, 'English Local Vector RAG preset must have 5 nodes');
+
+    // Verify tri-modal knowledge node configuration
+    const kNode = zhPreset.data.nodes.find((n) => n.id === 'knowledge_tri_modal');
+    assert.ok(kNode, 'Must contain knowledge_tri_modal node');
+    assert.equal(kNode.data.config.searchMode, 'hybrid');
+    assert.equal(kNode.data.config.bm25Weight, 0.5);
+    assert.equal(kNode.data.config.vectorWeight, 0.5);
+    assert.equal(kNode.data.config.embedding?.provider, 'siliconflow');
+    assert.equal(kNode.data.config.embedding?.model, 'BAAI/bge-m3');
+
+    // Execute the preset graph with skipLLM mode
+    const events: unknown[] = [];
+    for await (const event of engine.executeWorkflow(zhPreset.data, { skipLLM: true })) {
+      events.push(event);
+    }
+
+    const outputFinish = events.find(
+      (e: any) => (e.type === 'NODE_COMPLETE' || e.type === 'NODE_ERROR') && e.payload?.nodeId === 'output_triage',
+    ) as any;
+
+    assert.ok(outputFinish, 'Local Vector RAG output node must complete');
+    assert.equal(outputFinish.type, 'NODE_COMPLETE', 'Must complete successfully without error');
+    assert.ok(outputFinish.payload.output.finalResult, 'Output node must have finalResult');
+    const finalResult = outputFinish.payload.output.finalResult as any;
+    assert.ok(finalResult.triage_plan);
+    assert.ok(finalResult.reference_context.includes('Similarity'));
+    assert.equal(finalResult.incident_severity, 'P1 - Urgent');
+  });
+
   it('should forward node retrieval tuning to the injected knowledge adapter port', async () => {
     const captured: unknown[][] = [];
     const injectedAdapter = {

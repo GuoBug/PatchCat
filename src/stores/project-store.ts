@@ -112,6 +112,7 @@ export const OFFICIAL_PRESET_KEYS = [
   'rag-agentic-auditor',
   'conditional-routing',
   'weather-api',
+  'local-vector-rag',
 ] as const;
 
 export function getInitialLanguage(): 'en' | 'zh' {

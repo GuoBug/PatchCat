@@ -6,6 +6,7 @@ import ragAgenticAuditorEn from './en/rag-agentic-auditor.json' with { type: 'js
 import conditionalRoutingEn from './en/conditional-customer-routing.json' with { type: 'json' };
 import weatherApiEn from './en/weather-api-integration.json' with { type: 'json' };
 import agentToolCallingEn from './en/agent-tool-calling.json' with { type: 'json' };
+import localVectorRagEn from './en/local-vector-rag.json' with { type: 'json' };
 
 import customerSupportZh from './zh/customer-support-routing.json' with { type: 'json' };
 import reportCriticZh from './zh/report-generation-critic.json' with { type: 'json' };
@@ -15,6 +16,7 @@ import ragAgenticAuditorZh from './zh/rag-agentic-auditor.json' with { type: 'js
 import conditionalRoutingZh from './zh/conditional-customer-routing.json' with { type: 'json' };
 import weatherApiZh from './zh/weather-api-integration.json' with { type: 'json' };
 import agentToolCallingZh from './zh/agent-tool-calling.json' with { type: 'json' };
+import localVectorRagZh from './zh/local-vector-rag.json' with { type: 'json' };
 
 import type { WorkflowGraph } from '../engine/types.ts';
 import type { Language } from '../i18n/translations.ts';
@@ -76,6 +78,12 @@ export const PRESETS_DATA: Record<Language, Record<string, PresetItem>> = {
       desc: 'ReAct Agent with Lookup & Calculation Tools',
       data: agentToolCallingEn as unknown as WorkflowGraph,
     },
+    'local-vector-rag': {
+      key: 'local-vector-rag',
+      name: 'Local Tri-Modal Vector RAG',
+      desc: 'Browser-Native Vector Dot Product & RRF Hybrid Triage',
+      data: localVectorRagEn as unknown as WorkflowGraph,
+    },
   },
   zh: {
     'customer-support': {
@@ -126,6 +134,12 @@ export const PRESETS_DATA: Record<Language, Record<string, PresetItem>> = {
       desc: 'ReAct 自主循环调用汇率与运算工具',
       data: agentToolCallingZh as unknown as WorkflowGraph,
     },
+    'local-vector-rag': {
+      key: 'local-vector-rag',
+      name: '端侧多源向量三模混合检索排障',
+      desc: '端侧连续内存点积 + BM25 词频 + RRF 融合排障流',
+      data: localVectorRagZh as unknown as WorkflowGraph,
+    },
   },
 };
 
@@ -138,6 +152,7 @@ export {
   conditionalRoutingEn,
   weatherApiEn,
   agentToolCallingEn,
+  localVectorRagEn,
   customerSupportZh,
   reportCriticZh,
   modelArenaZh,
@@ -146,4 +161,5 @@ export {
   conditionalRoutingZh,
   weatherApiZh,
   agentToolCallingZh,
+  localVectorRagZh,
 };

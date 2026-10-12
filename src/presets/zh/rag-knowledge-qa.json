@@ -40,7 +40,10 @@
           "knowledgeBaseName": "PatchCat 架构白皮书",
           "query": "{{input_user.query}}",
           "topK": 3,
-          "scoreThreshold": 0.3
+          "scoreThreshold": 0.3,
+          "searchMode": "hybrid",
+          "bm25Weight": 0.5,
+          "vectorWeight": 0.5
         },
         "inputs": {
           "query": "{{input_user.query}}"

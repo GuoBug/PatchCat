@@ -333,20 +333,25 @@
 
 ---
 
-### 🔮 Upcoming Milestone: v0.4.19 Browser-Native Multi-Provider Embedding & Hybrid Search (Phase 4.19)
+### ⚡ Completed Milestone: Phase 4.19 Browser-Native Multi-Provider Embedding & Hybrid Search (v0.4.19 Shipped ✅)
 > Based on [PRD-019](docs/01-prd/PRD-019-Browser-Native-Multi-Provider-Embedding-and-Hybrid-Search.md): bringing browser-native Local mode retrieval into parity with Server mode.
 
-- [ ] **1. Pure-Frontend Multi-Provider Embedding Client (`BrowserEmbeddingClient`)**:
+- [x] **1. Pure-Frontend Multi-Provider Embedding Client (`BrowserEmbeddingClient`)**:
   - Connect to SiliconFlow, Ollama (`localhost:11434`), and OpenAI endpoints with 0 CSP modifications.
   - Mandatory L2 pre-normalization and typed CORS failure interception with actionable remediation guidance.
-- [ ] **2. IndexedDB v6 Storage Schema & High-Performance Vector Index (`FlatVectorIndex`)**:
+  - Strict ascending sort on OpenAI-compatible response batch `item.index` to guarantee chunk-vector alignment.
+- [x] **2. IndexedDB v6 Storage Schema & High-Performance Vector Index (`FlatVectorIndex`)**:
   - Upgrade IndexedDB to `v6` with dedicated `vector_embeddings` object store.
   - Multi-attribute dimension fingerprint (`provider / model / dimension`) stale invalidation mechanism.
-  - Continuous single-buffer `Float32Array` in-memory linear dot-product scanning engine.
-- [ ] **3. LocalKnowledgeAdapter Tri-Modal Hybrid Search & UI Ground Truth Benchmark**:
-  - Full hybrid fusion (BM25 + Dense Cosine) with visible degradation indicator (`is_degraded`).
+  - Continuous single-buffer `Float32Array` in-memory linear dot-product scanning engine with $O(1)$ swap-with-last removal and dynamic capacity scaling.
+- [x] **3. LocalKnowledgeAdapter Tri-Modal Hybrid Search & UI Ground Truth Benchmark**:
+  - Full hybrid fusion (BM25 + Dense Cosine) with visible degradation indicator (`vector_status: 'disabled' | 'active' | 'degraded'`).
   - Strict preservation of L2 heuristic 0.45 floor with zero regressions to `ServerKnowledgeAdapter`.
-  - Side-by-side ground truth benchmark ("MacBook 崩溃卡死" vs "苹果笔记本电脑系统故障").
+  - Side-by-side ground truth benchmark ("MacBook 崩溃卡死" vs "苹果笔记本电脑系统故障") with 100% Top-1 recall.
+- [x] **4. Official Preset Workflow & Template Gallery Integration (`local-vector-rag`)**:
+  - 5-node diagnostic pipeline preset (`input_incident` ➔ `knowledge_tri_modal` ➔ `prompt_diagnostics` ➔ `llm_advisor` ➔ `output_triage`) in both English and Chinese.
+  - Seeded into sidebar `OFFICIAL_PRESET_KEYS` and registered in Template Showcase Gallery under category `rag`.
+  - Validated across all 565 automated tests with zero regressions.
 
 ---
 
@@ -732,7 +737,11 @@ npm run build
 - [x] **3. LocalKnowledgeAdapter 端侧三模重构与基线对照实验**：
   - 改造仅限 `LocalKnowledgeAdapter`（Server 模式零回归）；严格保留 L2 启发式 0.45 垫底防线。
   - 检索元数据透出 `vector_status: 'disabled' | 'active' | 'degraded'` 显式三态标识与 `vector_error` 诊断。
-  - 产出真实基线对照表（「MacBook 崩溃卡死」vs「苹果笔记本电脑系统故障」Top-1 命中），完成 17 项全量契约测试，全工程 556 项测试全绿。
+  - 产出真实基线对照表（「MacBook 崩溃卡死」vs「苹果笔记本电脑系统故障」Top-1 命中），完成 17 项全量契约测试。
+- [x] **4. 端侧三模向量 RAG 场景预设与模板画廊联动 (`local-vector-rag`)**：
+  - 构建中英双语 5 节点官方工作流预设（`input_incident` ➔ `knowledge_tri_modal` ➔ `prompt_diagnostics` ➔ `llm_advisor` ➔ `output_triage`）。
+  - 接入侧边栏内置种子清单 `OFFICIAL_PRESET_KEYS` 与模板展示画廊（`rag` 分类），配置胶囊化管线标识。
+  - 全工程 565 项自动化测试 100% 通过，严格保障英文 JSON 零中文字符纯度与节点端口连线安全。
 
 ---
 

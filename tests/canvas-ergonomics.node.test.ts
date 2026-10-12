@@ -264,11 +264,11 @@ describe('v0.4.6 Canvas Ergonomics & Productivity Tests', () => {
   });
 
   describe('v0.4.8 (PRD-013) Scenario Template Gallery Metadata Integrity', () => {
-    it('verifies all 8 scenario templates have complete metadata, tags, and pipelines in both languages', () => {
+    it('verifies all 9 scenario templates have complete metadata, tags, and pipelines in both languages', () => {
       const zhKeys = Object.keys(TEMPLATES_META.zh);
       const enKeys = Object.keys(TEMPLATES_META.en);
-      assert.strictEqual(zhKeys.length, 8);
-      assert.strictEqual(enKeys.length, 8);
+      assert.strictEqual(zhKeys.length, 9);
+      assert.strictEqual(enKeys.length, 9);
 
       for (const lang of ['zh', 'en'] as const) {
         for (const [key, tpl] of Object.entries(TEMPLATES_META[lang])) {

@@ -261,8 +261,8 @@ describe('Project & Workflow Folder Management Store', () => {
     assert.equal(defaultF.name, '默认目录');
     assert.equal(presetsF.name, '预设模版');
 
-    // 2. All 7 presets exist and ALL are in 'presets' folder
-    assert.equal(result.workflows.length, 7);
+    // 2. All 8 presets exist and ALL are in 'presets' folder
+    assert.equal(result.workflows.length, 8);
     for (const wf of result.workflows) {
       assert.equal(wf.folderId, 'presets', `Preset ${wf.id} must be in presets folder`);
       assert.equal(wf.isPreset, true);

@@ -1,0 +1,145 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "id": "e4b1a782-9f3c-41d5-a82e-7b5c3d2e0009",
+    "name": "端侧多源向量三模混合检索排障 (Local Tri-Modal Vector RAG)",
+    "description": "基于端侧真向量与 BM25 倒排索引的三模混合检索排障流：针对别名与同义词（如「MacBook 卡死」vs「苹果电脑系统故障」）实现 100% Top-1 语义召回，无 Python 后端依赖。",
+    "author": "PatchCat Team",
+    "tags": ["VectorSearch", "TriModalRAG", "KnowledgeBase", "LocalFirst", "Diagnostics"],
+    "createdAt": "2026-10-12T00:00:00Z",
+    "updatedAt": "2026-10-12T00:00:00Z"
+  },
+  "viewport": {
+    "x": 60,
+    "y": 120,
+    "zoom": 0.82
+  },
+  "nodes": [
+    {
+      "id": "input_incident",
+      "type": "input",
+      "position": { "x": 50, "y": 200 },
+      "data": {
+        "label": "故障申报入参",
+        "description": "接收用户申报的口语化与同义词技术故障",
+        "inputs": {
+          "issue_description": "MacBook 笔记本电脑严重卡死、屏幕完全静止定格且无响应，长按电源键重启后提示内核异常，应当如何排查与自愈恢复？",
+          "device_model": "MacBook Pro 16-inch (Apple Silicon)",
+          "severity": "P1 - Urgent"
+        }
+      }
+    },
+    {
+      "id": "knowledge_tri_modal",
+      "type": "knowledge",
+      "position": { "x": 380, "y": 200 },
+      "data": {
+        "label": "端侧三模向量混合检索",
+        "description": "硅基流动/Ollama 向量生成 + 内存 Float32Array 点积扫描 + BM25 词频 + RRF 融合",
+        "config": {
+          "knowledgeBaseId": "kb_patchcat_arch",
+          "knowledgeBaseName": "PatchCat 核心架构白皮书 & 故障处理手册",
+          "query": "{{input_incident.issue_description}}",
+          "topK": 3,
+          "scoreThreshold": 0.35,
+          "searchMode": "hybrid",
+          "bm25Weight": 0.5,
+          "vectorWeight": 0.5,
+          "rrfK": 60,
+          "embedding": {
+            "provider": "siliconflow",
+            "model": "BAAI/bge-m3",
+            "dimension": 1024
+          },
+          "rerank": {
+            "enabled": false
+          }
+        },
+        "inputs": {
+          "query": "{{input_incident.issue_description}}"
+        }
+      }
+    },
+    {
+      "id": "prompt_diagnostics",
+      "type": "prompt",
+      "position": { "x": 720, "y": 200 },
+      "data": {
+        "label": "排障提示词组装",
+        "description": "组装高维召回切片、故障现象与系统排障原则",
+        "inputs": {
+          "template": "你是一名资深 macOS 硬件与系统内核级排障架构师。请依据以下检索到的知识库技术文档，结合用户申报的具体故障现象，提供专业、严谨且条理清晰的应急排障与自愈恢复方案。\n\n【检索知识库参考规范与处置依据】：\n{{knowledge_tri_modal.result}}\n\n【申报设备型号】：{{input_incident.device_model}}\n【故障严重等级】：{{input_incident.severity}}\n【申报故障现象】：{{input_incident.issue_description}}\n\n【输出规范】：\n1. 【故障定性分析】：结合参考文档，分析屏幕定格与内核异常的根本诱因；\n2. 【应急处置流程】：提供包含组合键安全模式、NVRAM 重置或恢复模式诊断的步骤清单；\n3. 【系统加固建议】：提供预防二次崩溃的系统参数或工作流调度韧性建议；\n4. 【引文溯源说明】：明确列出本解答引用的知识库核心条款与匹配度。"
+        }
+      }
+    },
+    {
+      "id": "llm_advisor",
+      "type": "llm",
+      "position": { "x": 1060, "y": 200 },
+      "data": {
+        "label": "专家模型推理与诊断",
+        "description": "基于真实向量召回切片生成结构化处置工单",
+        "config": {
+          "model": "deepseek-chat",
+          "temperature": 0.2
+        },
+        "inputs": {
+          "prompt": "{{prompt_diagnostics.promptText}}"
+        }
+      }
+    },
+    {
+      "id": "output_triage",
+      "type": "output",
+      "position": { "x": 1400, "y": 200 },
+      "data": {
+        "label": "排障工单与引文溯源",
+        "description": "汇总模型处置方案、引文依据与检索状态",
+        "config": {
+          "format": "markdown"
+        },
+        "inputs": {
+          "triage_plan": "{{llm_advisor.response}}",
+          "reference_context": "{{knowledge_tri_modal.result}}",
+          "incident_severity": "{{input_incident.severity}}"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_in_to_knowledge",
+      "source": "input_incident",
+      "target": "knowledge_tri_modal",
+      "animated": true
+    },
+    {
+      "id": "edge_in_to_prompt",
+      "source": "input_incident",
+      "target": "prompt_diagnostics"
+    },
+    {
+      "id": "edge_knowledge_to_prompt",
+      "source": "knowledge_tri_modal",
+      "target": "prompt_diagnostics",
+      "animated": true
+    },
+    {
+      "id": "edge_prompt_to_llm",
+      "source": "prompt_diagnostics",
+      "target": "llm_advisor",
+      "animated": true
+    },
+    {
+      "id": "edge_llm_to_output",
+      "source": "llm_advisor",
+      "target": "output_triage",
+      "animated": true
+    },
+    {
+      "id": "edge_knowledge_to_output",
+      "source": "knowledge_tri_modal",
+      "target": "output_triage"
+    }
+  ]
+}
