@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" width="960" height="640" style="background:#090d16; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif;">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0f1d"/>
+      <stop offset="100%" stop-color="#050811"/>
+    </linearGradient>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <linearGradient id="channelGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <linearGradient id="guardGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <filter id="neoShadow" x="-3%" y="-3%" width="106%" height="106%">
+      <feDropShadow dx="3" dy="4" stdDeviation="0" flood-color="#000000" flood-opacity="0.85"/>
+    </filter>
+    <marker id="arrowIndigo" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#6366f1"/>
+    </marker>
+    <marker id="arrowCyan" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#06b6d4"/>
+    </marker>
+    <marker id="arrowEmerald" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#10b981"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#f59e0b"/>
+    </marker>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="960" height="640" fill="url(#bgGrad)"/>
+  <rect x="12" y="12" width="936" height="616" rx="8" fill="none" stroke="#1e293b" stroke-width="2"/>
+
+  <!-- Top Title Banner -->
+  <rect x="28" y="24" width="904" height="52" rx="6" fill="#0f172a" stroke="#334155" stroke-width="2" filter="url(#neoShadow)"/>
+  <text x="46" y="56" font-size="15" font-weight="800" fill="#f8fafc" letter-spacing="0.5">PATCHCAT · MEMORYNODE ARCHITECTURE &amp; DETERMINISTIC SCHEDULING</text>
+  <rect x="670" y="36" width="246" height="28" rx="4" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="682" y="54" font-size="11" font-weight="700" fill="#a5b4fc">READ-ONLY · L4 NEVER-THROW · NON-CACHEABLE</text>
+
+  <!-- COLUMN 1: Session Ingestion & Dual Trigger (Left: x=28, w=276) -->
+  <g transform="translate(28, 92)">
+    <rect width="276" height="520" rx="8" fill="#0b1120" stroke="#3b82f6" stroke-width="2" filter="url(#neoShadow)"/>
+    <rect x="12" y="12" width="252" height="26" rx="4" fill="#1d4ed8"/>
+    <text x="20" y="29" font-size="11" font-weight="800" fill="#ffffff" letter-spacing="0.5">1. 会话触发源与持久存储层</text>
+
+    <!-- Trigger A: Canvas Standalone Run -->
+    <rect x="12" y="48" width="252" height="74" rx="5" fill="#111827" stroke="#374151" stroke-width="1.5"/>
+    <text x="22" y="67" font-size="10" font-weight="700" fill="#94a3b8">触发通道 A：画布顶部「运行」按钮</text>
+    <text x="22" y="86" font-size="11" font-family="monospace" fill="#ef4444">sessionKey = undefined (无会话)</text>
+    <text x="22" y="106" font-size="10" fill="#64748b">触发 L4 优雅降级 ➔ 输出 no_session 零抛错</text>
+
+    <!-- Trigger B: Chat Debug Panel Run -->
+    <rect x="12" y="132" width="252" height="74" rx="5" fill="#111827" stroke="#1e3a8a" stroke-width="1.5"/>
+    <text x="22" y="151" font-size="10" font-weight="700" fill="#38bdf8">触发通道 B：调试面板交互会话</text>
+    <text x="22" y="170" font-size="11" font-family="monospace" fill="#34d399">sessionKey = "wf_1::default"</text>
+    <text x="22" y="190" font-size="10" fill="#64748b">绑定当前工作流与活跃多轮会话状态</text>
+
+    <!-- Storage Adapter Section -->
+    <rect x="12" y="218" width="252" height="152" rx="6" fill="#0f172a" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="22" y="238" font-size="11" font-weight="700" fill="#93c5fd">端侧存储：IndexedDBSessionAdapter</text>
+    <text x="22" y="256" font-size="10" font-family="monospace" fill="#64748b">patchcat_chat_db / chat_sessions</text>
+
+    <rect x="20" y="268" width="236" height="42" rx="4" fill="#020617" stroke="#1e293b" stroke-width="1"/>
+    <text x="28" y="285" font-size="10" font-weight="600" fill="#f59e0b">● SessionSummary (滚动长效摘要)</text>
+    <text x="28" y="300" font-size="9" fill="#94a3b8">chat_summary · 异步非阻塞滑动汇总</text>
+
+    <rect x="20" y="318" width="236" height="42" rx="4" fill="#020617" stroke="#1e293b" stroke-width="1"/>
+    <text x="28" y="335" font-size="10" font-weight="600" fill="#a78bfa">● MemoryMessage[] (逐字轮次集合)</text>
+    <text x="28" y="350" font-size="9" fill="#94a3b8">role / content / isPinned 状态标记</text>
+
+    <!-- IoC Injection Banner -->
+    <rect x="12" y="380" width="252" height="124" rx="5" fill="#030712" stroke="#1e293b" stroke-width="1.5"/>
+    <text x="22" y="400" font-size="10" font-weight="700" fill="#cbd5e1">IoC 依赖注入契约 (Testbench Friendly)</text>
+    <text x="22" y="418" font-size="9" font-family="monospace" fill="#94a3b8">options.context.sessionStorage</text>
+    <text x="22" y="436" font-size="9" fill="#64748b">✓ 单元测试注入 MockSessionStorageAdapter</text>
+    <text x="22" y="452" font-size="9" fill="#64748b">✓ 浏览器运行自动回退到单例 Adapter</text>
+    <text x="22" y="468" font-size="9" fill="#64748b">✓ Node.js 内存回退，无需浏览器 DOM/IDB Mock</text>
+  </g>
+
+  <!-- COLUMN 2: MemoryNode Processing Pipeline (Middle: x=324, w=312) -->
+  <g transform="translate(324, 92)">
+    <rect width="312" height="520" rx="8" fill="#0f1123" stroke="#6366f1" stroke-width="2" filter="url(#neoShadow)"/>
+    <rect x="12" y="12" width="288" height="26" rx="4" fill="#4338ca"/>
+    <text x="20" y="29" font-size="11" font-weight="800" fill="#ffffff" letter-spacing="0.5">2. MemoryNode 只读解耦提取流水线</text>
+
+    <!-- Three Extractor Channels -->
+    <rect x="12" y="48" width="288" height="70" rx="5" fill="#18182b" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="22" y="67" font-size="10" font-weight="700" fill="#a5b4fc">通道 ① 滚动摘要 (include.summary)</text>
+    <text x="22" y="85" font-size="9" fill="#94a3b8">提取 sessionData.summary?.text</text>
+    <text x="22" y="102" font-size="9" font-family="monospace" fill="#38bdf8">输出字段: summary (无摘要时为 '')</text>
+
+    <rect x="12" y="126" width="288" height="88" rx="5" fill="#18182b" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="22" y="145" font-size="10" font-weight="700" fill="#c084fc">通道 ② 近期逐字窗口 (include.recentWindow)</text>
+    <text x="22" y="163" font-size="9" fill="#94a3b8">轮数裁剪：recentRounds * 2 条非置顶消息</text>
+    <text x="22" y="180" font-size="9" fill="#94a3b8">预算熔断：maxTokens 从老到新逐条剔除超额消息</text>
+    <text x="22" y="198" font-size="9" font-family="monospace" fill="#38bdf8">超额标记: meta.truncated = true</text>
+
+    <rect x="12" y="222" width="288" height="70" rx="5" fill="#18182b" stroke="#a21caf" stroke-width="1.5"/>
+    <text x="22" y="241" font-size="10" font-weight="700" fill="#f472b6">通道 ③ 置顶消息 (include.pinned)</text>
+    <text x="22" y="259" font-size="9" fill="#94a3b8">筛选 isPinned === true 重点标记消息</text>
+    <text x="22" y="276" font-size="9" fill="#f43f5e">★ 独立专有通道，绝不受 recentRounds 窗口裁剪</text>
+
+    <!-- Format Shaper Dual Mode -->
+    <rect x="12" y="302" width="288" height="106" rx="5" fill="#090d16" stroke="#334155" stroke-width="1.5"/>
+    <text x="22" y="322" font-size="10" font-weight="700" fill="#38bdf8">格式塑形器 Format Shaper (双模输出)</text>
+
+    <rect x="20" y="332" width="130" height="42" rx="4" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+    <text x="26" y="348" font-size="10" font-weight="700" fill="#f8fafc">format: 'text'</text>
+    <text x="26" y="364" font-size="8" fill="#94a3b8">换行字符串 ➔ Prompt</text>
+
+    <rect x="158" y="332" width="134" height="42" rx="4" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+    <text x="164" y="348" font-size="10" font-weight="700" fill="#a78bfa">format: 'messages'</text>
+    <text x="164" y="364" font-size="8" fill="#94a3b8">ChatML 数组 ➔ LLM/Agent</text>
+
+    <text x="22" y="394" font-size="9" fill="#64748b">输出契约: { summary, history, pinned, meta }</text>
+
+    <!-- Status Metadata Box -->
+    <rect x="12" y="418" width="288" height="86" rx="5" fill="#020617" stroke="#10b981" stroke-width="1.5"/>
+    <text x="22" y="438" font-size="10" font-weight="700" fill="#34d399">运行态元数据 (Telemetry Meta)</text>
+    <text x="22" y="456" font-size="9" fill="#94a3b8">session_status: 'active' | 'empty' | 'no_session'</text>
+    <text x="22" y="473" font-size="9" fill="#94a3b8">rounds: 轮次数 · tokens: 消耗估算 · truncated: 截断标记</text>
+    <text x="22" y="490" font-size="9" fill="#10b981">✓ 严格满足 L4 Never-Throw 零阻断下游契约</text>
+  </g>
+
+  <!-- COLUMN 3: Downstream & Safety Defense Guards (Right: x=656, w=276) -->
+  <g transform="translate(656, 92)">
+    <rect width="276" height="520" rx="8" fill="#061317" stroke="#10b981" stroke-width="2" filter="url(#neoShadow)"/>
+    <rect x="12" y="12" width="252" height="26" rx="4" fill="#047857"/>
+    <text x="20" y="29" font-size="11" font-weight="800" fill="#ffffff" letter-spacing="0.5">3. 下游消费与三大确定性防御规约</text>
+
+    <!-- Downstream DAG Consumers -->
+    <rect x="12" y="48" width="252" height="96" rx="5" fill="#0b1e1a" stroke="#059669" stroke-width="1.5"/>
+    <text x="22" y="67" font-size="10" font-weight="700" fill="#6ee7b7">下游 DAG 节点无感消费</text>
+    <text x="22" y="86" font-size="9" font-family="monospace" fill="#e2e8f0">{{memory_1.history}}</text>
+    <text x="22" y="103" font-size="9" font-family="monospace" fill="#e2e8f0">{{memory_1.summary}}</text>
+    <text x="22" y="120" font-size="9" font-family="monospace" fill="#e2e8f0">{{memory_1.pinned}}</text>
+    <text x="22" y="136" font-size="9" fill="#94a3b8">Prompt / LLM / Agent 节点按需引用</text>
+
+    <!-- Guard 1: Non-cacheable Resumption -->
+    <rect x="12" y="154" width="252" height="106" rx="5" fill="#0f172a" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="22" y="174" font-size="10" font-weight="700" fill="#fbbf24">规约 ① 断点续跑非缓存标记</text>
+    <text x="22" y="192" font-size="9" fill="#fef08a">isNonCacheable: memory 节点恒不复用缓存</text>
+    <text x="22" y="209" font-size="9" fill="#94a3b8">原因：会话在外部可能已有新轮次写入。</text>
+    <text x="22" y="226" font-size="9" fill="#94a3b8">若复用祖先缓存将导致会话滞后死锁；</text>
+    <text x="22" y="243" font-size="9" fill="#38bdf8">续跑或单节点重试时，强制重新读取 IDB。</text>
+
+    <!-- Guard 2: SubWorkflow Isolation -->
+    <rect x="12" y="270" width="252" height="96" rx="5" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="22" y="290" font-size="10" font-weight="700" fill="#60a5fa">规约 ② 子工作流作用域强隔离</text>
+    <text x="22" y="308" font-size="9" fill="#bfdbfe">SubWorkflowNode 独立调用子引擎</text>
+    <text x="22" y="325" font-size="9" fill="#94a3b8">sessionKey 严格禁止向下游子图透传；</text>
+    <text x="22" y="342" font-size="9" fill="#94a3b8">子流程内部 MemoryNode 恒为 no_session，</text>
+    <text x="22" y="358" font-size="9" fill="#34d399">彻底阻断父子工作流数据泄漏与串话。</text>
+
+    <!-- Guard 3: Read-Only Immunity -->
+    <rect x="12" y="376" width="252" height="128" rx="5" fill="#0f172a" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="22" y="396" font-size="10" font-weight="700" fill="#f87171">规约 ③ 只读免疫三类重度缺陷</text>
+    <text x="22" y="414" font-size="9" fill="#fecaca">v1 原语严格只读，面板为唯一写入方：</text>
+    <text x="22" y="432" font-size="9" fill="#94a3b8">1. 免除双写竞争 (面板写一次 + 节点写一次)</text>
+    <text x="22" y="449" font-size="9" fill="#94a3b8">2. 免除重放写污染 (断点重跑非幂等追加)</text>
+    <text x="22" y="466" font-size="9" fill="#94a3b8">3. 免除 Dry-Run 污染 (模拟回答污染真会话)</text>
+    <text x="22" y="483" font-size="9" fill="#38bdf8">后续写模式需依赖幂等键与 Dry-Run 屏蔽。</text>
+  </g>
+
+  <!-- Flow Arrows connecting columns -->
+  <!-- Col 1 to Col 2 -->
+  <path d="M 304 220 L 324 220" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrowCyan)"/>
+  <path d="M 304 350 L 324 350" stroke="#6366f1" stroke-width="2" marker-end="url(#arrowIndigo)"/>
+
+  <!-- Col 2 to Col 3 -->
+  <path d="M 636 100 L 656 100" stroke="#10b981" stroke-width="2" marker-end="url(#arrowEmerald)"/>
+  <path d="M 636 210 L 656 210" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrowAmber)"/>
+  <path d="M 636 320 L 656 320" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrowCyan)"/>
+</svg>
