@@ -100,7 +100,7 @@
     <text x="22" y="190" font-size="9" fill="#94a3b8">架构选型: 摒弃繁重 HNSW / 零 GC 碎片</text>
     <rect x="22" y="198" width="232" height="24" rx="3" fill="#083344"/>
     <text x="28" y="214" font-size="9" font-family="monospace" fill="#67e8f9">Float32Array(capacity * dimension)</text>
-    <text x="22" y="238" font-size="9" fill="#cbd5e1">• 连续单缓冲点积扫描: 1k~5k 分块 &lt; 0.5ms</text>
+    <text x="22" y="238" font-size="9" fill="#cbd5e1">• 连续单缓冲点积扫描: 适配千级分块规模</text>
     <text x="22" y="254" font-size="9" fill="#cbd5e1">• O(1) swap-with-last 原地删除</text>
     <text x="22" y="270" font-size="9" fill="#34d399">输出: dense_rank 列表 (真余弦相似度)</text>
 
@@ -168,7 +168,7 @@
     <text x="30" y="74" font-size="10" font-family="monospace" fill="#f8fafc">"MacBook 崩溃卡死"</text>
     <text x="240" y="74" font-size="10" fill="#cbd5e1">"苹果笔记本电脑系统故障与无响应处理..."</text>
     <text x="560" y="74" font-size="10" font-weight="700" fill="#f87171">未命中 (词法重合度 0)</text>
-    <text x="730" y="74" font-size="10" font-weight="800" fill="#4ade80">Top-1 命中 (sim = 0.83)</text>
+    <text x="730" y="74" font-size="10" font-weight="800" fill="#4ade80">Top-1 命中 (契约测试 · 模拟向量)</text>
 
     <!-- Row 2: Precision Identifier Query -->
     <line x1="20" y1="84" x2="884" y2="84" stroke="#334155" stroke-width="1"/>
