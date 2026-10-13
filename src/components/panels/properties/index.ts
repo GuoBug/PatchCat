@@ -10,3 +10,4 @@ export { HttpNodeProperties } from './HttpNodeProperties.tsx';
 export { AgentNodeProperties } from './AgentNodeProperties.tsx';
 export { LoopNodeProperties } from './LoopNodeProperties.tsx';
 export { SubWorkflowProperties } from './SubWorkflowProperties.tsx';
+export { MemoryNodeProperties } from './MemoryNodeProperties.tsx';

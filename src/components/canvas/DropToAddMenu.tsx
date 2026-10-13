@@ -92,6 +92,13 @@ export const DropToAddMenu: React.FC<DropToAddMenuProps> = ({
       icon: '🦾',
       color: 'border-indigo-500/40 text-indigo-400',
     },
+    {
+      type: 'memory',
+      name: t.nodeTypes.memory,
+      desc: isZh ? '会话记忆与历史上下文提取' : 'Extract conversation memory and history context',
+      icon: '🧠',
+      color: 'border-indigo-500/40 text-indigo-400',
+    },
   ];
 
   const filtered = nodeOptions.filter(

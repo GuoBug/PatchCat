@@ -3,11 +3,13 @@ import type { INodeExecutor } from './types.ts';
 import { InputNodeExecutor } from './input.ts';
 import { PromptNodeExecutor } from './prompt.ts';
 import { OutputNodeExecutor } from './output.ts';
+import { memoryNodeExecutor } from './memory.ts';
 
 export * from './types.ts';
 export { InputNodeExecutor } from './input.ts';
 export { PromptNodeExecutor } from './prompt.ts';
 export { OutputNodeExecutor } from './output.ts';
+export { MemoryNodeExecutor, memoryNodeExecutor } from './memory.ts';
 
 /**
  * Registry of modular node executors.
@@ -18,4 +20,5 @@ export const NODE_EXECUTORS: Partial<Record<NodeType, INodeExecutor>> = {
   input: InputNodeExecutor,
   prompt: PromptNodeExecutor,
   output: OutputNodeExecutor,
+  memory: memoryNodeExecutor,
 };

@@ -21,6 +21,7 @@ import {
   RotateCcw,
   Lock,
   FastForward,
+  Brain,
 } from 'lucide-react';
 import type { NodeType, NodeStatus, NodeExecutionResult } from '../../engine/types.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
@@ -135,6 +136,13 @@ const typeConfig: Record<
       'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30',
     handleColor: '#F59E0B',
     badge: 'SUBFLOW',
+  },
+  memory: {
+    icon: Brain,
+    color:
+      'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/30',
+    handleColor: '#6366F1',
+    badge: 'MEMORY',
   },
 };
 

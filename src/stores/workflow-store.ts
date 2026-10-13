@@ -201,6 +201,7 @@ const nodeCounters: Record<NodeType, number> = {
   agent: 0,
   loop: 0,
   sub_workflow: 0,
+  memory: 0,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -68,6 +68,7 @@ export interface Translations {
     agent: string;
     loop: string;
     sub_workflow: string;
+    memory: string;
     inputDesc: string;
     promptDesc: string;
     llmDesc: string;
@@ -80,6 +81,7 @@ export interface Translations {
     agentDesc: string;
     loopDesc: string;
     sub_workflowDesc: string;
+    memoryDesc: string;
   };
   propertyPanel: {
     title: string;
@@ -271,6 +273,24 @@ export interface Translations {
     subWorkflowTarget: string;
     subWorkflowInputMapping: string;
     subWorkflowOutputMapping: string;
+    // Memory Node
+    memorySection: string;
+    memoryIncludeSummary: string;
+    memoryIncludeSummaryDesc: string;
+    memoryIncludeRecentWindow: string;
+    memoryIncludeRecentWindowDesc: string;
+    memoryIncludePinned: string;
+    memoryIncludePinnedDesc: string;
+    memoryRecentRounds: string;
+    memoryRecentRoundsDesc: string;
+    memoryMaxTokens: string;
+    memoryMaxTokensDesc: string;
+    memoryFormat: string;
+    memoryFormatText: string;
+    memoryFormatMessages: string;
+    memoryFormatDesc: string;
+    memorySessionStatus: string;
+    memoryNoSessionWarning: string;
   };
   settings: {
     pageTitle: string;
@@ -761,6 +781,7 @@ export const translations: Record<Language, Translations> = {
       agent: 'AI Agent',
       loop: 'Loop Iterator',
       sub_workflow: 'Sub-Workflow',
+      memory: 'Conversation Memory',
       inputDesc: 'Defines initial workflow input parameters and default values as the data source.',
       promptDesc: 'Composes structured prompt templates, dynamically resolving {{nodeId.outputKey}} variables.',
       llmDesc: 'Calls cloud or local LLMs to generate streaming responses from composed prompts.',
@@ -773,6 +794,7 @@ export const translations: Record<Language, Translations> = {
       agentDesc: 'Runs an autonomous ReAct loop where the model plans, calls tools, and synthesizes results. Includes built-in loop deadlock breakers and execution watchdogs.',
       loopDesc: 'Iterates through array items to execute batch sub-topologies, bounded by maximum iteration safety caps.',
       sub_workflowDesc: 'Encapsulates an entire workflow as a nested node with isolated variable scope for modular orchestration.',
+      memoryDesc: 'Extracts session summary, recent dialog window, and pinned messages from conversation storage.',
     },
     propertyPanel: {
       title: 'Node Properties',
@@ -972,6 +994,24 @@ export const translations: Record<Language, Translations> = {
       subWorkflowTarget: 'Target Workflow',
       subWorkflowInputMapping: 'Input Mapping',
       subWorkflowOutputMapping: 'Output Mapping',
+      // Memory Node
+      memorySection: 'Conversation Memory Configuration',
+      memoryIncludeSummary: 'Include Rolling Summary',
+      memoryIncludeSummaryDesc: 'Retrieves long-term chat summary (chat_summary)',
+      memoryIncludeRecentWindow: 'Include Recent Window',
+      memoryIncludeRecentWindowDesc: 'Retrieves recent verbatim conversation turns (chat_history)',
+      memoryIncludePinned: 'Include Pinned Messages',
+      memoryIncludePinnedDesc: 'Extracts pinned important messages (isPinned)',
+      memoryRecentRounds: 'Recent Window Rounds',
+      memoryRecentRoundsDesc: 'Number of recent dialog turns (0 = inherit workflow default)',
+      memoryMaxTokens: 'Max Token Budget',
+      memoryMaxTokensDesc: 'Token limit for memory outputs (0 = unlimited / inherit)',
+      memoryFormat: 'Output Format',
+      memoryFormatText: 'Plain Text (Concatenated string for prompt templates)',
+      memoryFormatMessages: 'Message Array (ChatML array for LLM / Agent nodes)',
+      memoryFormatDesc: 'Format emitted on {{memoryNode.history}} output port',
+      memorySessionStatus: 'Session Status',
+      memoryNoSessionWarning: 'Canvas runs without active session output empty values and never throw.',
     },
     settings: {
       pageTitle: 'Settings & Configuration',
@@ -1486,6 +1526,7 @@ export const translations: Record<Language, Translations> = {
       agent: 'AI 智能体',
       loop: '循环迭代器',
       sub_workflow: '子工作流',
+      memory: '会话记忆',
       inputDesc: '定义工作流的初始输入参数与默认值，作为整条流水线的数据源头。',
       promptDesc: '编写结构化提示词模板，支持通过 {{nodeId.outputKey}} 动态注入上游数据。',
       llmDesc: '接入主流大语言模型，将提示词发送至云端或本地端点并流式生成回答。',
@@ -1498,6 +1539,7 @@ export const translations: Record<Language, Translations> = {
       agentDesc: '运行 ReAct 目标规划自主循环，模型根据任务自主决定思考并动态调用工具，直至输出最终成果。内置循环死锁监测与单步超时看门狗。',
       loopDesc: '对输入数组或批处理列表逐项执行子拓扑处理并聚合结果，内置最大迭代次数保护以防无限循环。',
       sub_workflowDesc: '将另一个完整工作流封装为当前画布的黑盒节点，具备独立作用域隔离，实现大型复杂工程的模块化解耦。',
+      memoryDesc: '从当前会话提取滚动摘要、近期对话窗口与置顶消息，供下游节点作为确定性记忆上下文。',
     },
     propertyPanel: {
       title: '节点属性配置',
@@ -1692,6 +1734,24 @@ export const translations: Record<Language, Translations> = {
       subWorkflowTarget: '目标工作流',
       subWorkflowInputMapping: '输入映射',
       subWorkflowOutputMapping: '输出映射',
+      // Memory Node
+      memorySection: '会话记忆配置',
+      memoryIncludeSummary: '包含滚动摘要',
+      memoryIncludeSummaryDesc: '提取长效对话摘要 (chat_summary)',
+      memoryIncludeRecentWindow: '包含近期对话窗口',
+      memoryIncludeRecentWindowDesc: '提取近期逐字对话轮次 (chat_history)',
+      memoryIncludePinned: '包含置顶消息',
+      memoryIncludePinnedDesc: '提取标记置顶的重点消息 (isPinned)',
+      memoryRecentRounds: '近期窗口轮数',
+      memoryRecentRoundsDesc: '保留的近期对话轮次 (0 = 继承工作流级默认值)',
+      memoryMaxTokens: 'Token 预算上限',
+      memoryMaxTokensDesc: '记忆输出的 Token 预算限制 (0 = 不限制 / 继承默认值)',
+      memoryFormat: '输出格式',
+      memoryFormatText: '纯文本 (适合拼接进 Prompt 模板)',
+      memoryFormatMessages: '消息数组 (ChatML 数组，供 LLM / Agent 节点直接作为上下文)',
+      memoryFormatDesc: '决定 {{memoryNode.history}} 输出端口的数据结构',
+      memorySessionStatus: '会话状态',
+      memoryNoSessionWarning: '画布顶部直接运行无会话时，本节点输出空值并标记无会话状态，绝不阻塞下游。',
     },
     settings: {
       pageTitle: '系统设置与配置',

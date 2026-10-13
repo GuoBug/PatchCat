@@ -60,7 +60,7 @@ describe('Frontend Visual Presentation & Visual Readability Tests', () => {
     });
   });
 
-  describe('2. All 9 Node Types Visual Descriptor Verification', () => {
+  describe('2. All Node Types Visual Descriptor Verification', () => {
     const allNodeTypes = [
       'input',
       'prompt',
@@ -71,6 +71,10 @@ describe('Frontend Visual Presentation & Visual Readability Tests', () => {
       'condition',
       'aggregator',
       'http',
+      'agent',
+      'loop',
+      'sub_workflow',
+      'memory',
     ] as const;
 
     it('has readable names and descriptions for every node type in both languages', () => {

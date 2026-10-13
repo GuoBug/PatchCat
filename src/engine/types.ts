@@ -19,8 +19,9 @@
 import type { Node, Edge } from '@xyflow/react';
 import { RUNTIME_DEFAULTS } from '../config/runtime-defaults.ts';
 import type { KnowledgeRerankOptions, RerankProtocol } from './rerank-client.ts';
+import type { MemoryMessage, SessionData } from '../services/storage/session-storage.ts';
 
-export type { KnowledgeRerankOptions, RerankProtocol };
+export type { KnowledgeRerankOptions, RerankProtocol, MemoryMessage, SessionData };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Enumerations & Literal Unions
@@ -40,6 +41,10 @@ export type { KnowledgeRerankOptions, RerankProtocol };
  * | `condition`  | Evaluates conditional branch rules and routes execution   |
  * | `aggregator` | Merges outputs from multiple branches back into single path|
  * | `http`       | Invokes external REST APIs and Webhooks                   |
+ * | `agent`      | Autonomous Agent with ReAct reasoning and dynamic tools   |
+ * | `loop`       | Iterates over arrays with concurrency control             |
+ * | `sub_workflow`| Modular sub-workflow execution with scope isolation       |
+ * | `memory`     | Visual canvas memory retrieval primitive (PRD-020 Part A) |
  */
 export type NodeType =
   | 'input'
@@ -53,7 +58,8 @@ export type NodeType =
   | 'http'
   | 'agent'
   | 'loop'
-  | 'sub_workflow';
+  | 'sub_workflow'
+  | 'memory';
 
 /**
  * Execution lifecycle status for an individual node.
@@ -443,6 +449,7 @@ export interface WorkflowRunOptions {
       availableModels?: string[];
     };
     knowledgeAdapter?: unknown;
+    sessionStorage?: unknown;
     subWorkflows?: Record<string, GraphInput>;
     strictSubWorkflow?: boolean;
     scenarioResolver?: (scenarioId: string) => {
@@ -452,6 +459,8 @@ export interface WorkflowRunOptions {
     } | undefined;
     [key: string]: unknown;
   };
+  /** Scoped conversation session key for MemoryNode retrieval (Phase 4.20 / PRD-020 Part A). */
+  sessionKey?: string;
   /** ID of the workflow being executed, used for audit telemetry. */
   workflowId?: string;
   /** Title/label of the workflow being executed. */
@@ -604,7 +613,40 @@ export interface SubWorkflowNodeConfig {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 11b. Structured Output & LLM Node Configuration
+// 11b. Memory Node Configuration & Output (Phase 4.20 / PRD-020 Part A)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface MemoryNodeConfig {
+  /** Output contents to include */
+  include: {
+    summary: boolean;        // Rolling summary (chat_summary)
+    recentWindow: boolean;   // Recent verbatim window (chat_history)
+    pinned: boolean;         // Pinned messages (isPinned)
+  };
+  recentRounds: number;      // Override workflow-level maxHistoryRounds (0 = inherit)
+  maxTokens: number;         // Node-level token budget limit (0 = unlimited / inherit)
+  format: 'text' | 'messages'; // Plain text concatenation or ChatML Message[] array
+}
+
+export interface MemoryNodeOutput {
+  summary: string;
+  history: string | MemoryMessage[];
+  pinned: string;
+  meta: {
+    session_status: 'active' | 'empty' | 'no_session';
+    rounds: number;
+    tokens: number;
+    truncated: boolean;
+  };
+}
+
+export interface SessionStoragePort {
+  getSessionData(workflowId: string, sessionId?: string): Promise<SessionData>;
+  getSessionMessages(workflowId: string, sessionId?: string): Promise<MemoryMessage[]>;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 11c. Structured Output & LLM Node Configuration
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type ResponseFormatMode = 'json_schema' | 'json_object' | 'none';
@@ -854,6 +896,17 @@ export function getDefaultNodeConfig(type: NodeType): Record<string, unknown> {
         inputMapping: {},
         outputMapping: {},
       };
+    case 'memory':
+      return {
+        include: {
+          summary: true,
+          recentWindow: true,
+          pinned: true,
+        },
+        recentRounds: 5,
+        maxTokens: 0,
+        format: 'text',
+      };
   }
 }
 
@@ -874,6 +927,7 @@ export function getDefaultNodeLabel(type: NodeType): string {
     agent: 'AI Agent',
     loop: 'Loop Iterator',
     sub_workflow: 'Sub-Workflow',
+    memory: 'Conversation Memory',
   };
   return labels[type];
 }

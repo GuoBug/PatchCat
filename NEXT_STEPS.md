@@ -357,9 +357,12 @@
 
 ### 🔮 Upcoming Milestone: v0.4.20 MemoryNode Canvas Visual Primitive & Workflow Version Snapshots (Phase 4.20)
 
-- [ ] **1. Dedicated `MemoryNode` Visual Workflow Primitive**:
-  - Canvas node allowing visual reading, writing, and querying of conversation memory variables directly in DAG orchestration.
-- [ ] **2. Workflow Version Snapshots & Diff Inspector**:
+- [x] **1. Dedicated `MemoryNode` Visual Workflow Primitive (Part A Delivered ✅)**:
+  - Visual DAG memory extraction node with three configurable channels: rolling summary (`chat_summary`), recent verbatim turns (`chat_history`), and pinned items (`isPinned`).
+  - L4 Never-Throw contract: headless canvas executions without active sessions output empty values and `no_session` metadata without crashing downstream nodes.
+  - Breakpoint resumption non-cacheable contract: re-reads live conversation history on resume rather than hitting stale cache.
+  - SubWorkflow scope isolation: nested flows strictly evaluate with `no_session`.
+- [ ] **2. Workflow Version Snapshots & Diff Inspector (Part B deferred to v0.4.22 per PRD-020)**:
   - Named workflow version checkpoints with visual graph diffs and rollback capabilities.
 - [ ] **3. Advanced Multi-Session Cross-Workflow Memory Federation**:
   - Shared global memory pools across distinct workflow instances and canvas sessions.
@@ -747,9 +750,12 @@ npm run build
 
 ### 🔮 后续接续里程碑：v0.4.20 MemoryNode 画布原语与工作流版本快照管理 (Phase 4.20)
 
-- [ ] **1. 专属 `MemoryNode` 画布工作流原语**：
-  - 支持在 DAG 编排中直接以可视化节点形式读写、检索与操控多轮会话记忆变量。
-- [ ] **2. 工作流版本命名快照与差异对比 (Workflow Snapshots & Diff)**：
+- [x] **1. 专属 `MemoryNode` 画布工作流原语（Part A 已交付 ✅）**：
+  - 可视化 DAG 会话记忆提取节点，支持三通道独立勾选：滚动摘要 (`chat_summary`)、近期对话窗口 (`chat_history`) 与置顶重点消息 (`isPinned`)。
+  - L4 Never-Throw 契约：画布顶部直接执行无会话时，安全输出空值与 `no_session` 状态，绝不阻塞下游节点。
+  - 断点续跑非缓存规约：续跑与单节点重试时重读实时会话，不复用陈旧缓存。
+  - 子工作流作用域隔离：嵌套子流内严格隔离为 `no_session`。
+- [ ] **2. 工作流版本命名快照与差异对比 (Workflow Snapshots & Diff，依 PRD-020 顺延至 v0.4.22)**：
   - 支持画布拓扑版本打标命名、历史版本回退与双版本可视化差异图比对。
 - [ ] **3. 跨工作流与多会话记忆联邦共享**：
   - 支持在多个不同工作流或画布执行会话之间共享全局长程记忆池。

@@ -453,6 +453,12 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
       color: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30',
       badge: 'Beta',
     },
+    {
+      type: 'memory',
+      label: t.nodeTypes.memory,
+      desc: t.nodeTypes.memoryDesc,
+      color: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30',
+    },
   ];
 
   return (

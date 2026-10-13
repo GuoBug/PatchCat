@@ -455,7 +455,10 @@ export class BrowserWorkflowEngine {
           const incoming = incomingEdgesMap.get(tId) || [];
           for (const edge of incoming) {
             const pId = edge.source;
-            const hasCachedOutput = context[pId] && Object.keys(context[pId]).length > 0;
+            const predNode = graph.nodes.find((n) => n.id === pId);
+            const isNonCacheable = (predNode?.data?.type || predNode?.type) === 'memory';
+            const hasCachedOutput =
+              !isNonCacheable && context[pId] && Object.keys(context[pId]).length > 0;
             if (!hasCachedOutput && !targetNodesToRun.has(pId)) {
               targetNodesToRun.add(pId);
               expanded = true;
@@ -476,7 +479,8 @@ export class BrowserWorkflowEngine {
 
       // Register cached outputs for all ancestor / non-pruned nodes
       for (const node of graph.nodes) {
-        if (!prunedNodeIds.has(node.id) && context[node.id]) {
+        const isNonCacheable = (node.data?.type || node.type) === 'memory';
+        if (!isNonCacheable && !prunedNodeIds.has(node.id) && context[node.id]) {
           const existing = nodeStatesMap[node.id];
           nodeStatesMap[node.id] = {
             nodeId: node.id,
@@ -650,7 +654,9 @@ export class BrowserWorkflowEngine {
                   : false;
                 const isErrorStatus = node.data.status === 'error';
                 const hasReexecutedParent = incoming.some((edge) => reexecutedNodes.has(edge.source));
+                const isNonCacheable = (node.data?.type || node.type) === 'memory';
                 const hasValidCachedOutput =
+                  !isNonCacheable &&
                   node.data.status === 'success' &&
                   node.data.outputs &&
                   Object.keys(node.data.outputs).length > 0;

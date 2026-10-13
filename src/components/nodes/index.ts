@@ -16,6 +16,7 @@ import { HttpNode } from './HttpNode';
 import { AgentNode } from './AgentNode';
 import { LoopNode } from './LoopNode';
 import { SubWorkflowNode } from './SubWorkflowNode';
+import { MemoryNode } from './MemoryNode';
 
 export { BaseNode } from './BaseNode';
 export { InputNode } from './InputNode';
@@ -30,6 +31,7 @@ export { HttpNode } from './HttpNode';
 export { AgentNode } from './AgentNode';
 export { LoopNode } from './LoopNode';
 export { SubWorkflowNode } from './SubWorkflowNode';
+export { MemoryNode } from './MemoryNode';
 
 /**
  * Standard NodeTypes dictionary registered in React Flow
@@ -48,6 +50,7 @@ export const nodeTypes: NodeTypes = {
   loop: LoopNode,
   sub_workflow: SubWorkflowNode,
   subworkflow: SubWorkflowNode,
+  memory: MemoryNode,
 };
 
 export const SUPPORTED_NODE_TYPES = [
@@ -64,6 +67,7 @@ export const SUPPORTED_NODE_TYPES = [
   'loop',
   'sub_workflow',
   'subworkflow',
+  'memory',
 ] as const;
 
 export type RegisteredNodeType = (typeof SUPPORTED_NODE_TYPES)[number];

@@ -640,6 +640,8 @@ export const ChatDebugPanel: React.FC<ChatDebugPanelProps> = ({ isOpen, onClose 
       const graphInput = { nodes, edges };
       const eventGen = engineRef.current.executeWorkflow(graphInput, {
         inputs: inputsBag,
+        sessionKey: workflowKey,
+        workflowId: workflowKey,
         context: {
           scenarioResolver: getTestScenario,
         },

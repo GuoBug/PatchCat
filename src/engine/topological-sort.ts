@@ -273,6 +273,18 @@ export function validateGraphTopology(graph: GraphInput): GraphValidationResult 
         }
       }
     }
+
+    if (node.data?.type === 'memory' || node.type === 'memory') {
+      const config = (node.data?.config || {}) as {
+        include?: { summary?: boolean; recentWindow?: boolean; pinned?: boolean };
+      };
+      const inc = config.include;
+      if (inc && inc.summary === false && inc.recentWindow === false && inc.pinned === false) {
+        warnings.push(
+          `Memory node "${node.data?.label || node.id}" has all retrieval sources disabled (summary, recentWindow, pinned)`,
+        );
+      }
+    }
   }
 
   // 3. Build upstream ancestor reachability map to detect Ghost Edges

@@ -25,6 +25,7 @@ import {
   AgentNodeProperties,
   LoopNodeProperties,
   SubWorkflowProperties,
+  MemoryNodeProperties,
 } from './properties/index.ts';
 
 export const PropertyPanel: React.FC = () => {
@@ -182,6 +183,9 @@ export const PropertyPanel: React.FC = () => {
     ),
     sub_workflow: () => (
       <SubWorkflowProperties nodeId={id} config={config} updateNodeConfig={updateNodeConfig} />
+    ),
+    memory: () => (
+      <MemoryNodeProperties nodeId={id} config={config} updateNodeConfig={updateNodeConfig} />
     ),
   };
 
