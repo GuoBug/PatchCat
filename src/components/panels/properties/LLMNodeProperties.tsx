@@ -54,7 +54,7 @@ export const LLMNodeProperties: React.FC<LLMNodePropertiesProps> = ({
   const currentProvider = providers[activeProvider];
   const hasKey =
     activeProvider === 'ollama' ? true : Boolean(currentProvider?.apiKey?.trim());
-  const availableModels = currentProvider?.availableModels || [];
+  const availableModels = React.useMemo(() => currentProvider?.availableModels || [], [currentProvider?.availableModels]);
 
   const defaultModel =
     currentProvider?.defaultModel || availableModels[0] || 'gpt-4o-mini';

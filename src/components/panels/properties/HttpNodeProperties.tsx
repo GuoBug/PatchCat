@@ -44,7 +44,8 @@ export const HttpNodeProperties: React.FC<HttpNodePropertiesProps> = ({
       const result: Record<string, string> = {};
       for (const item of raw) {
         if (item && typeof item === 'object' && 'key' in item) {
-          result[String((item as any).key || '')] = String((item as any).value ?? '');
+          const entry = item as { key?: unknown; value?: unknown };
+          result[String(entry.key || '')] = String(entry.value ?? '');
         }
       }
       return result;
@@ -53,7 +54,8 @@ export const HttpNodeProperties: React.FC<HttpNodePropertiesProps> = ({
       const result: Record<string, string> = {};
       for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
         if (v && typeof v === 'object' && 'key' in v) {
-          result[String((v as any).key || k)] = String((v as any).value ?? '');
+          const entry = v as { key?: unknown; value?: unknown };
+          result[String(entry.key || k)] = String(entry.value ?? '');
         } else {
           result[k] = typeof v === 'string' ? v : String(v ?? '');
         }

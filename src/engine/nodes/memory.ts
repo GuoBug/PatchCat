@@ -64,7 +64,7 @@ export class MemoryNodeExecutor implements INodeExecutor {
       sessionStorageAdapter;
 
     let wfId: string;
-    let sessionId = 'default';
+    let sessionId: string;
     if (rawSessionKey.includes('::')) {
       const parts = rawSessionKey.split('::');
       wfId = parts[0] || 'default';

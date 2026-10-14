@@ -249,7 +249,7 @@ export class BrowserEmbeddingClient implements IBrowserEmbeddingClient {
     }
 
     if (!res.ok) {
-      let errDetail = '';
+      let errDetail: string;
       try {
         const errJson = await res.json();
         errDetail = errJson.error?.message || errJson.message || JSON.stringify(errJson);
@@ -294,13 +294,15 @@ export class BrowserEmbeddingClient implements IBrowserEmbeddingClient {
    * Conforms to P1-A hard contract.
    */
   private parseAndNormalizeEmbeddings(
-    json: any,
+    json: unknown,
     _expectedCount: number,
     provider: string,
   ): Float32Array[] {
+    const raw = (json && typeof json === 'object' ? json : null) as Record<string, unknown> | null;
+
     // Case 1: Standard OpenAI-compatible format { data: [{ embedding: number[], index: number }] }
-    if (json && Array.isArray(json.data)) {
-      const items = json.data as Array<{ embedding: number[]; index?: number }>;
+    if (raw && Array.isArray(raw.data)) {
+      const items = raw.data as Array<{ embedding: number[]; index?: number }>;
       // Sort strictly by index to prevent chunk-vector misplacement (P1-A)
       items.sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
 
@@ -308,13 +310,13 @@ export class BrowserEmbeddingClient implements IBrowserEmbeddingClient {
     }
 
     // Case 2: Ollama /api/embed format { embeddings: number[][] }
-    if (json && Array.isArray(json.embeddings)) {
-      return json.embeddings.map((emb: number[]) => l2Normalize(emb));
+    if (raw && Array.isArray(raw.embeddings)) {
+      return (raw.embeddings as number[][]).map((emb: number[]) => l2Normalize(emb));
     }
 
     // Case 3: Ollama legacy /api/embeddings format { embedding: number[] }
-    if (json && Array.isArray(json.embedding)) {
-      return [l2Normalize(json.embedding)];
+    if (raw && Array.isArray(raw.embedding)) {
+      return [l2Normalize(raw.embedding as number[])];
     }
 
     throw new EmbeddingError({

@@ -22,7 +22,7 @@ import (
 
 // Version constants
 const (
-	AppVersion = "0.4.15-merlin"
+	AppVersion = "0.4.19-merlin"
 	AppName    = "PatchCat-Merlin-Gateway"
 )
 
@@ -412,6 +412,12 @@ func corsMiddleware(next http.Handler) http.Handler {
 		origin := r.Header.Get("Origin")
 		allowed := isAllowedOrigin(origin, config.Server.AllowedOrigins)
 
+		// Strictly reject any cross-origin request from an unauthorized Origin
+		if origin != "" && !allowed {
+			http.Error(w, `{"error": "Forbidden: CORS origin not allowed"}`, http.StatusForbidden)
+			return
+		}
+
 		// Set CORS headers only when Origin is present AND explicitly permitted
 		if origin != "" && allowed {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
@@ -422,10 +428,6 @@ func corsMiddleware(next http.Handler) http.Handler {
 		}
 
 		if r.Method == http.MethodOptions {
-			if origin != "" && !allowed {
-				http.Error(w, `{"error": "Forbidden: CORS origin not allowed"}`, http.StatusForbidden)
-				return
-			}
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}

@@ -36,8 +36,8 @@ Include the following information in your report:
 
 PatchCat is designed with a **Local-First & BYOK (Bring Your Own Key)** security architecture:
 
-1. **Client-Side Key Management**: API keys are stored in the user's browser LocalStorage and sent directly to configured AI provider endpoints, or optionally proxied via the local router Go Gateway strictly to whitelisted upstream AI providers with RFC1918 private IP and SSRF blocking.
-2. **Automatic Credential Sanitization**: All log outputs recursively mask API keys (`sk-***`, `AIzaSy***`), Bearer tokens, and password fields via the `sanitizeData` engine.
+1. **Client-Side Cryptographic Vault & Zero Plaintext Storage**: API keys are encrypted via the Web Crypto API using AES-256-GCM with a master key derived via PBKDF2 (600,000 SHA-256 iterations) conforming to OWASP standards. Plaintext API keys are strictly forbidden from `localStorage`, persisted solely as encrypted authenticated payloads in IndexedDB, and kept ephemeral in-memory only while the vault is unlocked.
+2. **Automatic Credential Sanitization**: All log outputs recursively mask API keys (`sk-***`, `AIzaSy***`), Bearer tokens, and password fields via the `sanitizeData` engine. Exported workflows are stripped of credentials and localized paths via `workflow-sanitizer`.
 3. **Code & Expression Sandbox Isolation**: User-submitted JavaScript in Code Nodes and Condition expressions executes in an isolated Web Worker sandbox with an automated watchdog timeout (3–5s), stripped of network APIs (`fetch`, `XMLHttpRequest`, `WebSocket`), DOM, and `localStorage` access.
 4. **No Telemetry / No Tracking**: PatchCat collects zero analytics, telemetry, or remote usage tracking data.
 

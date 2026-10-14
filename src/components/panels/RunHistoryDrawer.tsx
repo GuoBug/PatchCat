@@ -6,7 +6,7 @@
  *   aggregate KPI metrics, execution waterfall timeline, and OTel JSON export.
  */
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import { useProjectStore } from '../../stores/project-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
@@ -33,35 +33,32 @@ export const RunHistoryDrawer: React.FC = () => {
   const [restoredSuccess, setRestoredSuccess] = useState(false);
 
   // Load recent runs whenever drawer opens or lastRunRecord updates
-  const fetchRecentRuns = async () => {
+  const fetchRecentRuns = useCallback(async () => {
     setIsLoading(true);
     try {
       const records = await indexedDb.getRecentRuns(activeWorkflowId, 10);
       setRuns(records);
-      if (records.length > 0 && !selectedRunRecord) {
-        setSelectedRunRecord(records[0] || null);
-      } else if (records.length > 0 && selectedRunRecord) {
-        const stillExists = records.find((r) => r.runId === selectedRunRecord.runId);
-        if (stillExists) {
-          setSelectedRunRecord(stillExists);
-        } else {
-          setSelectedRunRecord(records[0] || null);
-        }
-      } else if (records.length === 0) {
+      const currentSelected = useWorkflowStore.getState().selectedRunRecord;
+      if (records.length === 0) {
         setSelectedRunRecord(null);
+      } else if (!currentSelected) {
+        setSelectedRunRecord(records[0] || null);
+      } else {
+        const stillExists = records.find((r) => r.runId === currentSelected.runId);
+        setSelectedRunRecord(stillExists || records[0] || null);
       }
     } catch (err) {
       console.error('Failed to load recent runs:', err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [activeWorkflowId, setSelectedRunRecord]);
 
   useEffect(() => {
     if (isRunHistoryOpen) {
-      fetchRecentRuns();
+      void fetchRecentRuns();
     }
-  }, [isRunHistoryOpen, activeWorkflowId, lastRunRecord]);
+  }, [isRunHistoryOpen, fetchRecentRuns, lastRunRecord]);
 
   // Aggregate stats across recent runs
   const stats = useMemo(() => {

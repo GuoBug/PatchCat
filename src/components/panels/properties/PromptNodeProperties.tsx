@@ -207,16 +207,10 @@ export const PromptNodeProperties: React.FC<PromptNodePropertiesProps> = ({
     const start = input.selectionStart;
     const end = input.selectionEnd;
 
-    let newText = '';
-    let newCursorPos = 0;
-
-    if (replaceAt && start > 0 && template[start - 1] === '@') {
-      newText = template.substring(0, start - 1) + token + template.substring(end);
-      newCursorPos = start - 1 + token.length;
-    } else {
-      newText = template.substring(0, start) + token + template.substring(end);
-      newCursorPos = start + token.length;
-    }
+    const replaceAtSign = replaceAt && start > 0 && template[start - 1] === '@';
+    const cutStart = replaceAtSign ? start - 1 : start;
+    const newText = template.substring(0, cutStart) + token + template.substring(end);
+    const newCursorPos = cutStart + token.length;
 
     onTemplateChange(newText);
     setShowMentionMenu(false);

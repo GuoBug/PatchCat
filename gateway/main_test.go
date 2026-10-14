@@ -195,12 +195,15 @@ func TestCorsMiddleware(t *testing.T) {
 		t.Errorf("CORS should never return wildcard *")
 	}
 
-	// Case 2: Disallowed origin does NOT receive Access-Control-Allow-Origin
+	// Case 2: Disallowed origin returns 403 Forbidden and does NOT receive Access-Control-Allow-Origin
 	reqDisallowed := httptest.NewRequest(http.MethodGet, "/api/v1/health", nil)
 	reqDisallowed.Header.Set("Origin", "https://evil.com")
 	recDisallowed := httptest.NewRecorder()
 	handler.ServeHTTP(recDisallowed, reqDisallowed)
 
+	if recDisallowed.Code != http.StatusForbidden {
+		t.Errorf("GET from disallowed origin expected 403, got %d", recDisallowed.Code)
+	}
 	if recDisallowed.Header().Get("Access-Control-Allow-Origin") != "" {
 		t.Errorf("Disallowed origin must NOT receive Access-Control-Allow-Origin header")
 	}
@@ -213,6 +216,16 @@ func TestCorsMiddleware(t *testing.T) {
 
 	if recOptions.Code != http.StatusForbidden {
 		t.Errorf("OPTIONS from disallowed origin expected 403, got %d", recOptions.Code)
+	}
+
+	// Case 4: Disallowed origin simple POST returns 403 Forbidden
+	reqPost := httptest.NewRequest(http.MethodPost, "/api/proxy", nil)
+	reqPost.Header.Set("Origin", "https://evil.com")
+	recPost := httptest.NewRecorder()
+	handler.ServeHTTP(recPost, reqPost)
+
+	if recPost.Code != http.StatusForbidden {
+		t.Errorf("POST from disallowed origin expected 403, got %d", recPost.Code)
 	}
 }
 

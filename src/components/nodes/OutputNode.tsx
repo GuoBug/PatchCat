@@ -22,12 +22,7 @@ export const OutputNode: React.FC<NodeProps<WorkflowNode>> = memo(({ id, data, s
 
   const handleCopy = (format: 'md' | 'text' | 'json', e: React.MouseEvent) => {
     e.stopPropagation();
-    let text = '';
-    if (format === 'json') {
-      text = JSON.stringify(outputs, null, 2);
-    } else {
-      text = getOutputText();
-    }
+    const text = format === 'json' ? JSON.stringify(outputs, null, 2) : getOutputText();
     if (!text) return;
     navigator.clipboard.writeText(text).then(() => {
       setCopiedFormat(format);

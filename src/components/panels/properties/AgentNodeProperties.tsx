@@ -19,7 +19,7 @@ export const AgentNodeProperties: React.FC<AgentNodePropertiesProps> = ({
   const activeProvider = useSettingsStore((s) => s.activeProvider);
   const providers = useSettingsStore((s) => s.providers);
   const currentProvider = providers[activeProvider];
-  const availableModels = currentProvider?.availableModels || [];
+  const availableModels = React.useMemo(() => currentProvider?.availableModels || [], [currentProvider?.availableModels]);
   const defaultModel = currentProvider?.defaultModel || availableModels[0] || 'gpt-4o';
   const currentModel = (config.model as string) || defaultModel;
 
