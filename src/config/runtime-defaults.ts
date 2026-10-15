@@ -78,6 +78,11 @@ export const RUNTIME_DEFAULTS = {
   MEMORY_SUMMARY_THRESHOLD_ROUNDS_MAX: 20,
   MEMORY_SUMMARY_MAX_TOKENS: 500,
   MEMORY_RECENT_WINDOW_ROUNDS: 3,
+
+  // ── 11. Workflow Version Snapshots (PRD-020 Part B) ─────────────────────────
+  // Hard cap per workflow. When full, new saves are rejected; user-named
+  // versions are never evicted automatically.
+  WORKFLOW_VERSION_MAX_PER_WORKFLOW: 30,
 } as const;
 
 export interface RuntimeProtectionSettings {

@@ -18,3 +18,6 @@ export { ShadowDraftRecoveryBanner } from './ShadowDraftRecoveryBanner';
 export { RunHistoryDrawer } from './RunHistoryDrawer';
 export { StepDataInspector } from './StepDataInspector';
 export { VaultControlPanel } from './VaultControlPanel';
+export { WorkflowVersionDrawer } from './WorkflowVersionDrawer.tsx';
+export { WorkflowDiffModal } from './WorkflowDiffModal.tsx';
+export { CreateVersionModal } from './CreateVersionModal.tsx';

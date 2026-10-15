@@ -19,7 +19,7 @@ import type { SavedWorkflow, WorkflowMemoryConfig } from '../../stores/project-s
 import type { EncryptedVaultPayload } from '../crypto/crypto-vault.ts';
 
 const DB_NAME = 'PatchCatDB';
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 export const STORES = {
   WORKFLOWS: 'workflows', // Legacy monolithic store preserved for backward compatibility
@@ -33,6 +33,7 @@ export const STORES = {
   CHECKPOINTS: 'checkpoints',
   SECURE_VAULT: 'secure_vault', // v0.4.16: Web Crypto encrypted secrets vault (PRD-017)
   VECTOR_EMBEDDINGS: 'vector_embeddings', // v0.4.19: Multi-provider browser vector embeddings (PRD-019)
+  WORKFLOW_VERSIONS: 'workflow_versions', // PRD-020 Part B: user-named workflow topology versions
 } as const;
 
 export type StoreName = (typeof STORES)[keyof typeof STORES];
@@ -167,13 +168,37 @@ export class IndexedDbAdapter {
           const vecStore = db.createObjectStore(STORES.VECTOR_EMBEDDINGS, { keyPath: 'chunkId' });
           vecStore.createIndex('kbId', 'kbId', { unique: false });
         }
+        if (!db.objectStoreNames.contains(STORES.WORKFLOW_VERSIONS)) {
+          const verStore = db.createObjectStore(STORES.WORKFLOW_VERSIONS, { keyPath: 'id' });
+          verStore.createIndex('by_workflow', 'workflowId', { unique: false });
+          verStore.createIndex('by_created_at', 'createdAt', { unique: false });
+        }
+      };
+
+      let blockedTimer: ReturnType<typeof setTimeout> | null = null;
+
+      request.onblocked = () => {
+        console.warn(`[IndexedDB] Database upgrade blocked for "${DB_NAME}". Another tab is holding the older schema connection.`);
+        if (!blockedTimer) {
+          blockedTimer = setTimeout(() => {
+            this.dbPromise = null;
+            reject(new Error(`IndexedDB upgrade blocked: please close other tabs running PatchCat to allow schema upgrade.`));
+          }, 5000);
+        }
       };
 
       request.onsuccess = () => {
-        resolve(request.result);
+        if (blockedTimer) clearTimeout(blockedTimer);
+        const db = request.result;
+        db.onversionchange = () => {
+          db.close();
+          this.dbPromise = null;
+        };
+        resolve(db);
       };
 
       request.onerror = () => {
+        if (blockedTimer) clearTimeout(blockedTimer);
         this.dbPromise = null;
         reject(new Error(`Failed to open IndexedDB "${DB_NAME}": ${request.error?.message}`));
       };
@@ -767,6 +792,132 @@ export class IndexedDbAdapter {
    */
   public async deleteVectorEmbedding(chunkId: string): Promise<void> {
     await this.delete(STORES.VECTOR_EMBEDDINGS, chunkId);
+  }
+
+  // ── Workflow Version Snapshots API (PRD-020 Part B) ───────────────────────
+
+  /**
+   * Inserts a workflow version only if the workflow currently holds fewer than
+   * `maxPerWorkflow` versions. The count and the write run inside one readwrite
+   * transaction, so concurrent saves cannot overshoot the quota.
+   *
+   * Never evicts existing versions. Throws {@link WorkflowVersionQuotaError}
+   * when the quota is full.
+   */
+  public async saveWorkflowVersionWithQuota(
+    record: WorkflowVersionRecord,
+    maxPerWorkflow: number,
+  ): Promise<void> {
+    if (!this.isSupported()) {
+      const store = this.getMemoryStore(STORES.WORKFLOW_VERSIONS);
+      let count = 0;
+      for (const v of store.values()) {
+        if ((v as WorkflowVersionRecord).workflowId === record.workflowId) count++;
+      }
+      if (count >= maxPerWorkflow) {
+        throw new WorkflowVersionQuotaError(record.workflowId, count, maxPerWorkflow);
+      }
+      store.set(record.id, record);
+      this.writeCounts.put++;
+      return;
+    }
+
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORES.WORKFLOW_VERSIONS, 'readwrite');
+      const store = tx.objectStore(STORES.WORKFLOW_VERSIONS);
+      let quotaError: WorkflowVersionQuotaError | null = null;
+
+      const countReq = store.index('by_workflow').count(record.workflowId);
+      countReq.onsuccess = () => {
+        const count = countReq.result;
+        if (count >= maxPerWorkflow) {
+          quotaError = new WorkflowVersionQuotaError(record.workflowId, count, maxPerWorkflow);
+          tx.abort();
+          return;
+        }
+        const putReq = store.put(record);
+        putReq.onsuccess = () => {
+          this.writeCounts.put++;
+        };
+      };
+
+      tx.oncomplete = () => resolve();
+      tx.onabort = () => reject(quotaError ?? tx.error ?? new Error('Transaction aborted'));
+      tx.onerror = () => {
+        if (!quotaError) reject(tx.error);
+      };
+    });
+  }
+
+  /** Lists versions for a workflow, newest first. */
+  public async getWorkflowVersions(workflowId: string): Promise<WorkflowVersionRecord[]> {
+    let list: WorkflowVersionRecord[];
+    if (!this.isSupported()) {
+      list = (await this.getAll<WorkflowVersionRecord>(STORES.WORKFLOW_VERSIONS)).filter(
+        (v) => v.workflowId === workflowId,
+      );
+    } else {
+      const db = await this.getDB();
+      list = await new Promise<WorkflowVersionRecord[]>((resolve, reject) => {
+        const tx = db.transaction(STORES.WORKFLOW_VERSIONS, 'readonly');
+        const req = tx.objectStore(STORES.WORKFLOW_VERSIONS).index('by_workflow').getAll(workflowId);
+        req.onsuccess = () => resolve((req.result as WorkflowVersionRecord[]) || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    return list.sort((a, b) => b.createdAt - a.createdAt || (a.id < b.id ? 1 : -1));
+  }
+
+  public async getWorkflowVersion(id: string): Promise<WorkflowVersionRecord | null> {
+    return this.get<WorkflowVersionRecord>(STORES.WORKFLOW_VERSIONS, id);
+  }
+
+  public async deleteWorkflowVersion(id: string): Promise<void> {
+    await this.delete(STORES.WORKFLOW_VERSIONS, id);
+  }
+}
+
+/**
+ * A user-named, sanitized snapshot of a workflow's logical topology.
+ * Contains no runtime outputs and no API keys (PRD-020 §3.1).
+ */
+export interface WorkflowVersionRecord {
+  id: string;
+  workflowId: string;
+  label: string;
+  description?: string;
+  createdAt: number;
+  graph: {
+    nodes: WorkflowNode[];
+    edges: WorkflowEdge[];
+    globalInputs?: Record<string, unknown>;
+  };
+  /** SHA-256 hex of the canonical logical graph (layout & runtime state excluded). */
+  graphHash: string;
+  metadata: {
+    nodeCount: number;
+    edgeCount: number;
+    sanitized: boolean;
+    strippedApiKeysCount: number;
+  };
+}
+
+export class WorkflowVersionQuotaError extends Error {
+  public readonly code = 'WORKFLOW_VERSION_QUOTA_EXCEEDED';
+  public readonly workflowId: string;
+  public readonly count: number;
+  public readonly limit: number;
+
+  constructor(workflowId: string, count: number, limit: number) {
+    super(
+      `Workflow "${workflowId}" already has ${count} versions (limit ${limit}). ` +
+        'Delete unused versions before saving a new one.',
+    );
+    this.name = 'WorkflowVersionQuotaError';
+    this.workflowId = workflowId;
+    this.count = count;
+    this.limit = limit;
   }
 }
 

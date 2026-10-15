@@ -708,6 +708,52 @@ export interface Translations {
     copiedToast: string;
     closeBtn: string;
   };
+  workflowVersions: {
+    drawerTitle: string;
+    drawerDesc: string;
+    createBtn: string;
+    saveSnapshotBtn: string;
+    quotaBadge: string;
+    quotaFullWarning: string;
+    noVersionsTitle: string;
+    noVersionsDesc: string;
+    diffWithCanvas: string;
+    rollbackBtn: string;
+    rollbackConfirmTitle: string;
+    rollbackConfirmDesc: string;
+    rollbackConfirmAction: string;
+    rollbackSuccessToast: string;
+    rollbackDirtyTitle: string;
+    rollbackDirtyDesc: string;
+    rollbackSaveAndProceed: string;
+    rollbackDiscardAndProceed: string;
+    rollbackExecutingError: string;
+    deleteBtn: string;
+    deleteConfirm: string;
+    modalCreateTitle: string;
+    modalCreateDesc: string;
+    versionLabelLabel: string;
+    versionLabelPlaceholder: string;
+    versionDescLabel: string;
+    versionDescPlaceholder: string;
+    saveSuccessToast: string;
+    duplicateWarning: string;
+    diffModalTitle: string;
+    diffModalDesc: string;
+    diffStatsAddedNodes: string;
+    diffStatsDeletedNodes: string;
+    diffStatsModifiedNodes: string;
+    diffStatsLayoutOnly: string;
+    diffStatsAddedEdges: string;
+    diffStatsDeletedEdges: string;
+    noDiffTitle: string;
+    noDiffDesc: string;
+    layoutOnlyToggle: string;
+    layoutOnlyCollapsedHint: string;
+    fieldDiffLabel: string;
+    diffOldValue: string;
+    diffNewValue: string;
+  };
 }
 
 export const translations: Record<Language, Translations> = {
@@ -1456,6 +1502,52 @@ export const translations: Record<Language, Translations> = {
       copiedToast: 'Sanitized JSON copied to clipboard!',
       closeBtn: 'Close',
     },
+    workflowVersions: {
+      drawerTitle: 'Workflow Versions & Snapshots',
+      drawerDesc: 'Named topological milestones, structural DAG diff, and safe rollback with undo support.',
+      createBtn: 'New Snapshot',
+      saveSnapshotBtn: 'Save Version Snapshot',
+      quotaBadge: 'Quota',
+      quotaFullWarning: 'Version quota reached (30/30). Please delete older snapshots before creating new ones.',
+      noVersionsTitle: 'No Saved Versions Yet',
+      noVersionsDesc: 'Capture milestone versions to track topology changes and safely experiment with prompts and models.',
+      diffWithCanvas: 'Diff with Canvas',
+      rollbackBtn: 'Rollback',
+      rollbackConfirmTitle: 'Rollback to Version',
+      rollbackConfirmDesc: 'This will replace the active canvas with this version. You can press Ctrl+Z to undo this rollback anytime.',
+      rollbackConfirmAction: 'Confirm Rollback',
+      rollbackSuccessToast: 'Workflow successfully rolled back to version: {label} (Press Ctrl+Z to undo)',
+      rollbackDirtyTitle: 'Unsaved Changes Detected',
+      rollbackDirtyDesc: 'Your current canvas has unsaved changes compared to the latest snapshot. Direct rollback will discard these changes. How would you like to proceed?',
+      rollbackSaveAndProceed: 'Save Snapshot & Rollback',
+      rollbackDiscardAndProceed: 'Discard Changes & Rollback',
+      rollbackExecutingError: 'Cannot rollback while workflow is executing.',
+      deleteBtn: 'Delete',
+      deleteConfirm: 'Are you sure you want to delete version snapshot "{label}"? This action cannot be undone.',
+      modalCreateTitle: 'Create Version Snapshot',
+      modalCreateDesc: 'Persist a clean, sanitized snapshot of the current topology and node configuration.',
+      versionLabelLabel: 'Version Label',
+      versionLabelPlaceholder: 'e.g. v1.2 Adjusted QA Prompts and Models',
+      versionDescLabel: 'Description (Optional)',
+      versionDescPlaceholder: 'Brief note on rationale, parameter tweaks or topology adjustments...',
+      saveSuccessToast: 'Version snapshot "{label}" created successfully.',
+      duplicateWarning: 'The canvas is logically identical to the latest saved version. No changes to save.',
+      diffModalTitle: 'Workflow Structural Diff',
+      diffModalDesc: 'Comparing version milestone with current canvas topology (layout movements collapsed by default).',
+      diffStatsAddedNodes: 'Added Nodes',
+      diffStatsDeletedNodes: 'Deleted Nodes',
+      diffStatsModifiedNodes: 'Modified Nodes',
+      diffStatsLayoutOnly: 'Layout Position Shifts',
+      diffStatsAddedEdges: 'Added Edges',
+      diffStatsDeletedEdges: 'Deleted Edges',
+      noDiffTitle: 'Canvas is Logically Identical',
+      noDiffDesc: 'All nodes, configs, and connections match this version exactly.',
+      layoutOnlyToggle: 'Show Layout & Position Shifts',
+      layoutOnlyCollapsedHint: '{count} node(s) only changed canvas position without any config or connection changes.',
+      fieldDiffLabel: 'Field Changed',
+      diffOldValue: 'Snapshot Value',
+      diffNewValue: 'Canvas Value',
+    },
   },
   zh: {
     common: {
@@ -2185,6 +2277,52 @@ export const translations: Record<Language, Translations> = {
       copyJsonBtn: '复制脱敏 JSON 内容',
       copiedToast: '脱敏后的工作流 JSON 已成功复制到剪贴板！',
       closeBtn: '关闭',
+    },
+    workflowVersions: {
+      drawerTitle: '工作流版本快照与历史追溯',
+      drawerDesc: '支持命名版本打标、DAG 结构化语义 Diff 与安全可逆回滚（支持 Ctrl+Z 撤回）。',
+      createBtn: '新建快照',
+      saveSnapshotBtn: '存为版本快照',
+      quotaBadge: '版本配额',
+      quotaFullWarning: '版本快照已达 30 个上限。为保证存储健康，请先删除不需要的快照后再创建。',
+      noVersionsTitle: '暂无保存的版本快照',
+      noVersionsDesc: '在调整提示词或大改拓扑前打一个快照，随时可以一键安全回滚或比对差异。',
+      diffWithCanvas: '与当前画布比对',
+      rollbackBtn: '回滚',
+      rollbackConfirmTitle: '确认回滚至该版本？',
+      rollbackConfirmDesc: '此操作将使用该版本的拓扑与配置覆盖当前画布。覆盖前会自动压入撤销栈，随时可按 Ctrl+Z 撤回。',
+      rollbackConfirmAction: '确认覆盖回滚',
+      rollbackSuccessToast: '已成功回滚至版本：{label}（按 Ctrl+Z 可随时撤销回滚）',
+      rollbackDirtyTitle: '检测到未保存改动',
+      rollbackDirtyDesc: '当前画布相较最新快照存在未持久化变更。若直接回滚，未保存内容将被覆盖。请选择操作方式：',
+      rollbackSaveAndProceed: '先保存快照并回滚',
+      rollbackDiscardAndProceed: '放弃改动直接回滚',
+      rollbackExecutingError: '工作流运行中不可执行回滚。',
+      deleteBtn: '删除',
+      deleteConfirm: '确定要删除版本快照「{label}」吗？此操作无法撤销。',
+      modalCreateTitle: '创建工作流版本快照',
+      modalCreateDesc: '自动剥离运行态输出与明文凭证，持久化纯净的拓扑与节点配置。',
+      versionLabelLabel: '版本标签名称',
+      versionLabelPlaceholder: '如：v1.2 优化质检 Prompt 与参数',
+      versionDescLabel: '版本说明（可选）',
+      versionDescPlaceholder: '简要记录改动原因、模型替换或业务逻辑微调...',
+      saveSuccessToast: '版本快照「{label}」已成功保存！',
+      duplicateWarning: '当前画布拓扑与最新快照完全一致，无需重复创建。',
+      diffModalTitle: '工作流结构化差异比对 (DAG Diff)',
+      diffModalDesc: '比对快照版本与当前画布的逻辑拓扑差异（仅坐标移动默认自动折叠）。',
+      diffStatsAddedNodes: '新增节点',
+      diffStatsDeletedNodes: '删除节点',
+      diffStatsModifiedNodes: '属性修改',
+      diffStatsLayoutOnly: '仅排版位移',
+      diffStatsAddedEdges: '新增连线',
+      diffStatsDeletedEdges: '删除连线',
+      noDiffTitle: '两版本完全一致',
+      noDiffDesc: '所有节点、参数配置与连线关系完全相同，未检测到任何逻辑差异。',
+      layoutOnlyToggle: '查看排版与坐标位移',
+      layoutOnlyCollapsedHint: '检测到 {count} 个节点仅发生了画布坐标移动，节点配置与连线完全未变。',
+      fieldDiffLabel: '变更字段',
+      diffOldValue: '快照原值',
+      diffNewValue: '当前画布值',
     },
   },
 };

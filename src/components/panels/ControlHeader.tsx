@@ -22,11 +22,13 @@ import {
   Search,
   FastForward,
   Download,
+  Clock,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import { useProjectStore } from '../../stores/project-store.ts';
 import { useSettingsStore } from '../../stores/settings-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
+import { listWorkflowVersions } from '../../services/versioning/workflow-version-service.ts';
 import { BrowserWorkflowEngine } from '../../engine/browser-engine.ts';
 import { validateGraphTopology } from '../../engine/topological-sort.ts';
 import type { NodeType, TokenUsage } from '../../engine/types.ts';
@@ -85,6 +87,27 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
   const [alertNotification, setAlertNotification] = useState<AlertNotification | null>(null);
   const [showUnconfiguredModal, setShowUnconfiguredModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+
+  const isVersionDrawerOpen = useWorkflowStore((s) => s.isVersionDrawerOpen);
+  const isCreateVersionModalOpen = useWorkflowStore((s) => s.isCreateVersionModalOpen);
+  const activeWorkflowId = useProjectStore((s) => s.activeWorkflowId);
+  const [versionCount, setVersionCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (activeWorkflowId) {
+      listWorkflowVersions(activeWorkflowId)
+        .then((records) => {
+          if (active) setVersionCount(records.length);
+        })
+        .catch(() => {});
+    } else {
+      setVersionCount(null);
+    }
+    return () => {
+      active = false;
+    };
+  }, [activeWorkflowId, isVersionDrawerOpen, isCreateVersionModalOpen]);
 
   const addMenuRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<BrowserWorkflowEngine>(new BrowserWorkflowEngine());
@@ -670,6 +693,21 @@ export const ControlHeader: React.FC<ControlHeaderProps> = ({
           >
             <Activity className="w-3.5 h-3.5 text-indigo-500" />
             <span className="hidden md:inline">{language === 'zh' ? '运行历史' : 'History'}</span>
+          </button>
+
+          {/* Workflow Version Snapshots Drawer Button (PRD-020 Part B) */}
+          <button
+            onClick={() => useWorkflowStore.getState().toggleVersionDrawer()}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 text-xs font-medium transition-colors shadow-xs cursor-pointer"
+            title={language === 'zh' ? '工作流版本快照 (Ctrl+Shift+S 新建快照)' : 'Workflow Versions & Snapshots (Ctrl+Shift+S for new)'}
+          >
+            <Clock className="w-3.5 h-3.5 text-amber-500" />
+            <span className="hidden md:inline">{language === 'zh' ? '版本快照' : 'Versions'}</span>
+            {versionCount !== null && versionCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-amber-500/15 text-amber-600 dark:text-amber-400 font-semibold leading-none">
+                {versionCount}
+              </span>
+            )}
           </button>
 
           {/* Settings Page Navigation Button */}

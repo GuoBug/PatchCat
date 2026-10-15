@@ -13,6 +13,7 @@ import {
   ShadowDraftRecoveryBanner,
   RunHistoryDrawer,
   StepDataInspector,
+  WorkflowVersionDrawer,
 } from './components/panels';
 import { WorkflowCanvas } from './components/canvas';
 import { AppErrorBoundary } from './components/AppErrorBoundary';
@@ -66,7 +67,7 @@ export const App: React.FC = () => {
     void initVault();
   }, [initVault]);
 
-  // Global Ctrl+Shift+D (Chat Debug) & Ctrl+Shift+H (Run History) shortcuts
+  // Global Ctrl+Shift+D (Chat Debug), Ctrl+Shift+H (Run History), & Ctrl+Shift+S (Create Snapshot) shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
@@ -76,6 +77,10 @@ export const App: React.FC = () => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'H' || e.key === 'h')) {
         e.preventDefault();
         useWorkflowStore.getState().toggleRunHistory();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'S' || e.key === 's')) {
+        e.preventDefault();
+        useWorkflowStore.getState().setCreateVersionModalOpen(true);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -228,6 +233,9 @@ export const App: React.FC = () => {
 
         {/* Run Observability History Drawer (v0.4.8) */}
         <RunHistoryDrawer />
+
+        {/* Workflow Version Snapshots Drawer (PRD-020 Part B) */}
+        <WorkflowVersionDrawer />
 
         {/* Step Data Freeze-Frame Inspector Modal (v0.4.8) */}
         <StepDataInspector />

@@ -152,6 +152,20 @@ export interface WorkflowStoreState {
   canUndo: () => boolean;
   canRedo: () => boolean;
 
+  // ── Workflow Version Rollback (PRD-020 Part B) ───────────────────────────
+  /**
+   * Replaces the canvas with a saved version's graph as ONE undoable step
+   * (the pre-rollback canvas is pushed onto the undo stack, so Ctrl+Z reverts
+   * the rollback). Runtime state is reset. Refuses while a run is in progress.
+   *
+   * @returns `true` if the canvas was replaced.
+   */
+  restoreVersionGraph: (graph: {
+    nodes: WorkflowNode[];
+    edges: WorkflowEdge[];
+    globalInputs?: Record<string, unknown>;
+  }) => boolean;
+
   // ── In-Place Local Retry & Resumption (v0.4.10) ─────────────────────────
   retryNode: (nodeId: string, options?: { resumeDownstream?: boolean; isNodeTest?: boolean }) => Promise<void>;
   retryAllFailedNodes: () => Promise<void>;
@@ -177,6 +191,15 @@ export interface WorkflowStoreState {
   setSelectedSnapshot: (snapshot: NodeRunSnapshot | null) => void;
   lastRunRecord: RunHistoryRecord | null;
   setLastRunRecord: (record: RunHistoryRecord | null) => void;
+
+  // ── Workflow Version Snapshots (PRD-020 Part B) ──────────────────────────
+  isVersionDrawerOpen: boolean;
+  toggleVersionDrawer: () => void;
+  setVersionDrawerOpen: (open: boolean) => void;
+  isCreateVersionModalOpen: boolean;
+  setCreateVersionModalOpen: (open: boolean) => void;
+  diffTargetVersionId: string | null;
+  setDiffTargetVersionId: (versionId: string | null) => void;
 }
 
 
@@ -340,6 +363,31 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
     setLastRunRecord: (record) => {
       set((state) => {
         state.lastRunRecord = record;
+      });
+    },
+
+    // ── Workflow Version Snapshots (PRD-020 Part B) ──────────────────────────
+    isVersionDrawerOpen: false,
+    toggleVersionDrawer: () => {
+      set((state) => {
+        state.isVersionDrawerOpen = !state.isVersionDrawerOpen;
+      });
+    },
+    setVersionDrawerOpen: (open) => {
+      set((state) => {
+        state.isVersionDrawerOpen = open;
+      });
+    },
+    isCreateVersionModalOpen: false,
+    setCreateVersionModalOpen: (open) => {
+      set((state) => {
+        state.isCreateVersionModalOpen = open;
+      });
+    },
+    diffTargetVersionId: null,
+    setDiffTargetVersionId: (versionId) => {
+      set((state) => {
+        state.diffTargetVersionId = versionId;
       });
     },
 
@@ -784,6 +832,58 @@ export const useWorkflowStore = create<WorkflowStoreState>()(
 
     canUndo: () => historyManager.canUndo(),
     canRedo: () => historyManager.canRedo(),
+
+    // ── Workflow Version Rollback (PRD-020 Part B) ──────────────────────────
+    restoreVersionGraph: (graph) => {
+      if (get().isExecuting) return false;
+
+      // Push the pre-rollback canvas so Ctrl+Z reverts the rollback.
+      get().captureSnapshot();
+
+      const cloned =
+        typeof structuredClone === 'function'
+          ? structuredClone({
+              nodes: graph.nodes ?? [],
+              edges: graph.edges ?? [],
+              globalInputs: graph.globalInputs,
+            })
+          : JSON.parse(
+              JSON.stringify({
+                nodes: graph.nodes ?? [],
+                edges: graph.edges ?? [],
+                globalInputs: graph.globalInputs,
+              }),
+            );
+
+      set((state) => {
+        if (cloned.globalInputs) {
+          state.globalInputs = { ...cloned.globalInputs };
+        }
+        state.nodes = (cloned.nodes as WorkflowNode[]).map((node) => ({
+          ...node,
+          selected: false,
+          data: {
+            ...node.data,
+            type: node.type,
+            status: 'idle',
+            inputs: node.data?.inputs || {},
+            outputs: {},
+            executionResult: undefined,
+            config: node.data?.config || getDefaultNodeConfig(node.type),
+          },
+        }));
+        state.edges = (cloned.edges as WorkflowEdge[]).map((e) => ({
+          ...e,
+          selected: false,
+          animated: false,
+        }));
+        if (state.selectedNodeId && !state.nodes.some((n) => n.id === state.selectedNodeId)) {
+          state.selectedNodeId = null;
+        }
+        state.highlightedNodeId = null;
+      });
+      return true;
+    },
 
     // ── In-Place Local Retry ─────────────────────────────────────────────────
     retryNode: async (

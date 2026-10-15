@@ -189,64 +189,6 @@ export function sanitizeWorkflow<T extends SanitizableWorkflow = SavedWorkflow>(
 
       // A. Strip API Keys & Credentials
       if (stripApiKeys) {
-        // Direct config keys
-        for (const [k, v] of Object.entries(config)) {
-          if (SENSITIVE_KEY_NAME_RE.test(k) && typeof v === 'string' && v.trim() !== '') {
-            config[k] = '';
-            strippedApiKeysCount++;
-            details.push({
-              nodeId,
-              nodeType,
-              field: `config.${k}`,
-              type: 'apiKey',
-              action: 'stripped',
-              originalSnippet: '[REDACTED_API_KEY]',
-            });
-          }
-        }
-
-        // Auth config in HTTP node
-        const authConfig = config['authConfig'] as Record<string, unknown> | undefined;
-        if (authConfig && typeof authConfig === 'object') {
-          for (const authField of ['keyValue', 'token', 'password']) {
-            if (
-              typeof authConfig[authField] === 'string' &&
-              (authConfig[authField] as string).trim() !== ''
-            ) {
-              details.push({
-                nodeId,
-                nodeType,
-                field: `config.authConfig.${authField}`,
-                type: 'apiKey',
-                action: 'stripped',
-                originalSnippet: '[REDACTED_API_KEY]',
-              });
-              authConfig[authField] = '';
-              strippedApiKeysCount++;
-            }
-          }
-        }
-
-        // Rerank config in Knowledge node
-        const rerankConfig = config['rerank'] as Record<string, unknown> | undefined;
-        if (rerankConfig && typeof rerankConfig === 'object') {
-          if (
-            typeof rerankConfig['apiKey'] === 'string' &&
-            rerankConfig['apiKey'].trim() !== ''
-          ) {
-            details.push({
-              nodeId,
-              nodeType,
-              field: 'config.rerank.apiKey',
-              type: 'apiKey',
-              action: 'stripped',
-              originalSnippet: '[REDACTED_API_KEY]',
-            });
-            rerankConfig['apiKey'] = '';
-            strippedApiKeysCount++;
-          }
-        }
-
         // Headers in HTTP node
         const headers = config['headers'] as Record<string, string> | undefined;
         if (headers && typeof headers === 'object') {
@@ -283,22 +225,36 @@ export function sanitizeWorkflow<T extends SanitizableWorkflow = SavedWorkflow>(
           }
         }
 
-        // Provider Overrides
-        const providerOverrides = config['providerOverrides'] || config['providerOverride'];
-        if (providerOverrides && typeof providerOverrides === 'object') {
-          const po = providerOverrides as Record<string, unknown>;
-          if (typeof po['apiKey'] === 'string' && po['apiKey'].trim() !== '') {
-            po['apiKey'] = '';
-            strippedApiKeysCount++;
-            details.push({
-              nodeId,
-              nodeType,
-              field: 'config.providerOverrides.apiKey',
-              type: 'apiKey',
-              action: 'stripped',
-            });
+        // Recursive sensitive key stripping for config (embedding, rerank, authConfig, providerOverrides, etc.)
+        const walkAndStrip = (obj: Record<string, unknown>, pathPrefix: string) => {
+          for (const [k, v] of Object.entries(obj)) {
+            if (k === 'headers' || k === 'queryParams') continue;
+            const currentPath = pathPrefix ? `${pathPrefix}.${k}` : k;
+            if (v && typeof v === 'object') {
+              if (Array.isArray(v)) {
+                v.forEach((item, idx) => {
+                  if (item && typeof item === 'object') {
+                    walkAndStrip(item as Record<string, unknown>, `${currentPath}[${idx}]`);
+                  }
+                });
+              } else {
+                walkAndStrip(v as Record<string, unknown>, currentPath);
+              }
+            } else if (typeof v === 'string' && v.trim() !== '' && SENSITIVE_KEY_NAME_RE.test(k)) {
+              obj[k] = '';
+              strippedApiKeysCount++;
+              details.push({
+                nodeId,
+                nodeType,
+                field: currentPath,
+                type: 'apiKey',
+                action: 'stripped',
+                originalSnippet: '[REDACTED_API_KEY]',
+              });
+            }
           }
-        }
+        };
+        walkAndStrip(config, 'config');
 
         // Node inputs credential check
         const inputs = nodeData['inputs'] as Record<string, unknown> | undefined;
@@ -523,4 +479,38 @@ export function downloadSanitizedWorkflow<T extends SanitizableWorkflow = SavedW
   }
 
   return result;
+}
+
+/**
+ * Recursively inspects a node array to verify that zero plaintext secrets remain
+ * in node configs or inputs.
+ */
+export function isGraphFullySanitized(nodes: WorkflowNode[]): boolean {
+  if (!Array.isArray(nodes)) return true;
+
+  const hasSecret = (val: unknown, keyName?: string): boolean => {
+    if (typeof val === 'string' && val.trim() !== '') {
+      if (keyName && SENSITIVE_KEY_NAME_RE.test(keyName)) return true;
+    }
+    if (val && typeof val === 'object') {
+      if (Array.isArray(val)) {
+        for (const item of val) {
+          if (hasSecret(item)) return true;
+        }
+      } else {
+        for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+          if (hasSecret(v, k)) return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  for (const node of nodes) {
+    const data = node.data as Record<string, unknown> | undefined;
+    if (!data) continue;
+    if (data.config && hasSecret(data.config)) return false;
+    if (data.inputs && hasSecret(data.inputs)) return false;
+  }
+  return true;
 }
