@@ -25,6 +25,20 @@ import {
 import { WorkflowDiffModal } from './WorkflowDiffModal.tsx';
 import { CreateVersionModal } from './CreateVersionModal.tsx';
 
+function formatRelativeTime(timestamp: number, isZh: boolean, language: string): string {
+  const diffMs = Date.now() - timestamp;
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffSec < 60) return isZh ? '刚刚' : 'just now';
+  if (diffMin < 60) return isZh ? `${diffMin} 分钟前` : `${diffMin}m ago`;
+  if (diffHour < 24) return isZh ? `${diffHour} 小时前` : `${diffHour}h ago`;
+  if (diffDay < 7) return isZh ? `${diffDay} 天前` : `${diffDay}d ago`;
+  return new Date(timestamp).toLocaleDateString(language);
+}
+
 export const WorkflowVersionDrawer: React.FC = () => {
   const isVersionDrawerOpen = useWorkflowStore((s) => s.isVersionDrawerOpen);
   const setVersionDrawerOpen = useWorkflowStore((s) => s.setVersionDrawerOpen);
@@ -138,20 +152,6 @@ export const WorkflowVersionDrawer: React.FC = () => {
       await deleteWorkflowVersion(ver.id);
       await fetchVersions();
     }
-  };
-
-  const formatRelativeTime = (timestamp: number) => {
-    const diffMs = Date.now() - timestamp;
-    const diffSec = Math.floor(diffMs / 1000);
-    const diffMin = Math.floor(diffSec / 60);
-    const diffHour = Math.floor(diffMin / 60);
-    const diffDay = Math.floor(diffHour / 24);
-
-    if (diffSec < 60) return isZh ? '刚刚' : 'just now';
-    if (diffMin < 60) return isZh ? `${diffMin} 分钟前` : `${diffMin}m ago`;
-    if (diffHour < 24) return isZh ? `${diffHour} 小时前` : `${diffHour}h ago`;
-    if (diffDay < 7) return isZh ? `${diffDay} 天前` : `${diffDay}d ago`;
-    return new Date(timestamp).toLocaleDateString(language);
   };
 
   return (
@@ -302,7 +302,7 @@ export const WorkflowVersionDrawer: React.FC = () => {
                       </div>
 
                       <div className="text-[11px] text-slate-400 whitespace-nowrap font-mono">
-                        {formatRelativeTime(ver.createdAt)}
+                        {formatRelativeTime(ver.createdAt, isZh, language)}
                       </div>
                     </div>
 
