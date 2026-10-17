@@ -89,14 +89,17 @@ const POSIX_ABSOLUTE_PATH_RE =
 const SENSITIVE_PROMPT_VAR_RE =
   /\[SECRET_[A-Za-z0-9_]+\]|\{\{\s*SECRET_[A-Za-z0-9_]+\s*\}\}/g;
 
-// Sensitive key name patterns
-const SENSITIVE_KEY_NAME_RE =
-  /^(apiKey|api_key|token|secret|secretKey|secret_key|accessToken|access_token|privateKey|private_key|auth_token|keyValue|password)$/i;
+// Sensitive key name patterns (supports plural forms like apiKeys, tokens, etc.)
+export const SENSITIVE_KEY_NAME_RE =
+  /^(api_?keys?|tokens?|secrets?|secret_?keys?|access_?tokens?|private_?keys?|auth_?tokens?|key_?values?|passwords?)$/i;
 
-const SENSITIVE_HEADER_RE =
-  /^(authorization|x-api-key|api-key|apikey|x-token|token|bearer|secret|proxy-authorization)$/i;
+export const SENSITIVE_HEADER_RE =
+  /^(authorization|proxy-authorization|x-api-key|api-key|apikey|x-token|token|bearer|secret|private-token|x-auth|x-auth-token|x-gitlab-token|x-github-token|.*[-_](token|secret|key|auth|credential))$/i;
 
-const SENSITIVE_QUERY_PARAM_RE =
+export const SENSITIVE_VALUE_HEURISTIC_RE =
+  /^(?:Bearer|Basic|Token)\s+\S+|^sk-[a-zA-Z0-9_-]{8,}|^ghp_[A-Za-z0-9]{16,}|^glpat-[A-Za-z0-9_-]{16,}/i;
+
+export const SENSITIVE_QUERY_PARAM_RE =
   /^(key|api_key|apikey|token|secret|access_token|auth)$/i;
 
 /**
@@ -193,7 +196,11 @@ export function sanitizeWorkflow<T extends SanitizableWorkflow = SavedWorkflow>(
         const headers = config['headers'] as Record<string, string> | undefined;
         if (headers && typeof headers === 'object') {
           for (const [hKey, hVal] of Object.entries(headers)) {
-            if (SENSITIVE_HEADER_RE.test(hKey) && hVal) {
+            if (
+              typeof hVal === 'string' &&
+              hVal.trim() !== '' &&
+              (SENSITIVE_HEADER_RE.test(hKey) || SENSITIVE_VALUE_HEURISTIC_RE.test(hVal))
+            ) {
               headers[hKey] = redactedPlaceholder;
               strippedApiKeysCount++;
               details.push({
@@ -229,28 +236,65 @@ export function sanitizeWorkflow<T extends SanitizableWorkflow = SavedWorkflow>(
         const walkAndStrip = (obj: Record<string, unknown>, pathPrefix: string) => {
           for (const [k, v] of Object.entries(obj)) {
             if (k === 'headers' || k === 'queryParams') continue;
+            // P2-3: Do not strip legitimate user prompt template variables (e.g. config.variables.token)
+            if (k === 'variables' || pathPrefix === 'config.variables' || pathPrefix.startsWith('config.variables.')) continue;
+
             const currentPath = pathPrefix ? `${pathPrefix}.${k}` : k;
             if (v && typeof v === 'object') {
               if (Array.isArray(v)) {
+                // P2-4: If array is under sensitive key (e.g. apiKeys: ['sk-1', 'sk-2'])
+                if (SENSITIVE_KEY_NAME_RE.test(k)) {
+                  let hasSecretInArray = false;
+                  v.forEach((item, idx) => {
+                    if (typeof item === 'string' && item.trim() !== '') {
+                      (v as unknown[])[idx] = '';
+                      strippedApiKeysCount++;
+                      hasSecretInArray = true;
+                    }
+                  });
+                  if (hasSecretInArray) {
+                    details.push({
+                      nodeId,
+                      nodeType,
+                      field: currentPath,
+                      type: 'apiKey',
+                      action: 'stripped',
+                      originalSnippet: '[REDACTED_API_KEYS_ARRAY]',
+                    });
+                  }
+                }
                 v.forEach((item, idx) => {
                   if (item && typeof item === 'object') {
                     walkAndStrip(item as Record<string, unknown>, `${currentPath}[${idx}]`);
+                  } else if (typeof item === 'string' && SENSITIVE_VALUE_HEURISTIC_RE.test(item)) {
+                    (v as unknown[])[idx] = '';
+                    strippedApiKeysCount++;
+                    details.push({
+                      nodeId,
+                      nodeType,
+                      field: `${currentPath}[${idx}]`,
+                      type: 'apiKey',
+                      action: 'stripped',
+                      originalSnippet: '[REDACTED_API_KEY]',
+                    });
                   }
                 });
               } else {
                 walkAndStrip(v as Record<string, unknown>, currentPath);
               }
-            } else if (typeof v === 'string' && v.trim() !== '' && SENSITIVE_KEY_NAME_RE.test(k)) {
-              obj[k] = '';
-              strippedApiKeysCount++;
-              details.push({
-                nodeId,
-                nodeType,
-                field: currentPath,
-                type: 'apiKey',
-                action: 'stripped',
-                originalSnippet: '[REDACTED_API_KEY]',
-              });
+            } else if (typeof v === 'string' && v.trim() !== '') {
+              if (SENSITIVE_KEY_NAME_RE.test(k) || SENSITIVE_VALUE_HEURISTIC_RE.test(v)) {
+                obj[k] = '';
+                strippedApiKeysCount++;
+                details.push({
+                  nodeId,
+                  nodeType,
+                  field: currentPath,
+                  type: 'apiKey',
+                  action: 'stripped',
+                  originalSnippet: '[REDACTED_API_KEY]',
+                });
+              }
             }
           }
         };
@@ -488,18 +532,51 @@ export function downloadSanitizedWorkflow<T extends SanitizableWorkflow = SavedW
 export function isGraphFullySanitized(nodes: WorkflowNode[]): boolean {
   if (!Array.isArray(nodes)) return true;
 
-  const hasSecret = (val: unknown, keyName?: string): boolean => {
-    if (typeof val === 'string' && val.trim() !== '') {
+  const isRedactedOrEmpty = (val: unknown): boolean => {
+    return (
+      val === '' ||
+      val === '[REDACTED]' ||
+      val === '[MASKED_SECRET]' ||
+      val === '[LOCAL_PATH_REDACTED]'
+    );
+  };
+
+  const hasSecret = (val: unknown, keyName?: string, pathPrefix = ''): boolean => {
+    // P2-3: Exclude prompt variables from secret checks
+    if (keyName === 'variables' || pathPrefix === 'config.variables' || pathPrefix.startsWith('config.variables.')) {
+      return false;
+    }
+
+    if (typeof val === 'string') {
+      const trimmed = val.trim();
+      if (isRedactedOrEmpty(trimmed)) return false;
       if (keyName && SENSITIVE_KEY_NAME_RE.test(keyName)) return true;
+      if (
+        pathPrefix.includes('headers') &&
+        (SENSITIVE_HEADER_RE.test(keyName || '') || SENSITIVE_VALUE_HEURISTIC_RE.test(trimmed))
+      ) {
+        return true;
+      }
+      if (SENSITIVE_VALUE_HEURISTIC_RE.test(trimmed)) return true;
     }
     if (val && typeof val === 'object') {
       if (Array.isArray(val)) {
+        if (keyName && SENSITIVE_KEY_NAME_RE.test(keyName)) {
+          for (const item of val) {
+            if (typeof item === 'string' && !isRedactedOrEmpty(item.trim())) return true;
+          }
+        }
         for (const item of val) {
-          if (hasSecret(item)) return true;
+          if (typeof item === 'string') {
+            if (isRedactedOrEmpty(item.trim())) continue;
+            if (SENSITIVE_VALUE_HEURISTIC_RE.test(item.trim())) return true;
+          }
+          if (hasSecret(item, keyName, pathPrefix)) return true;
         }
       } else {
         for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
-          if (hasSecret(v, k)) return true;
+          const nextPrefix = pathPrefix ? `${pathPrefix}.${k}` : k;
+          if (hasSecret(v, k, nextPrefix)) return true;
         }
       }
     }
@@ -509,8 +586,8 @@ export function isGraphFullySanitized(nodes: WorkflowNode[]): boolean {
   for (const node of nodes) {
     const data = node.data as Record<string, unknown> | undefined;
     if (!data) continue;
-    if (data.config && hasSecret(data.config)) return false;
-    if (data.inputs && hasSecret(data.inputs)) return false;
+    if (data.config && hasSecret(data.config, 'config', 'config')) return false;
+    if (data.inputs && hasSecret(data.inputs, 'inputs', 'inputs')) return false;
   }
   return true;
 }

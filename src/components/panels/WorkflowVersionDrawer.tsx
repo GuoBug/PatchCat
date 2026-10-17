@@ -84,8 +84,7 @@ export const WorkflowVersionDrawer: React.FC = () => {
     }
   }, [isVersionDrawerOpen, fetchVersions]);
 
-  if (!isVersionDrawerOpen) return null;
-
+  const isLocked = useProjectStore((s) => s.workflows.find((w) => w.id === activeWorkflowId)?.isLocked ?? false);
   const isQuotaFull = versions.length >= MAX_WORKFLOW_VERSIONS;
 
   const requestRollback = async (ver: WorkflowVersionRecord) => {
@@ -93,14 +92,23 @@ export const WorkflowVersionDrawer: React.FC = () => {
       showToast(vt.rollbackExecutingError);
       return;
     }
+    if (isLocked) {
+      showToast(isZh ? '当前工作流已锁定，无法回滚' : 'Current workflow is locked; rollback is disabled');
+      return;
+    }
     const { nodes, edges } = useWorkflowStore.getState();
-    const dirty = await getDirtyState(activeWorkflowId, nodes, edges);
+    const globalInputs = useWorkflowStore.getState().globalInputs;
+    const dirty = await getDirtyState(activeWorkflowId, nodes, edges, globalInputs);
     setRollbackCandidate({ version: ver, isDirty: dirty.isDirty });
   };
 
   const executeRollback = (ver: WorkflowVersionRecord) => {
     if (useWorkflowStore.getState().isExecuting) {
       showToast(vt.rollbackExecutingError);
+      return;
+    }
+    if (isLocked) {
+      showToast(isZh ? '当前工作流已锁定，无法回滚' : 'Current workflow is locked; rollback is disabled');
       return;
     }
     const success = restoreVersionGraph(ver.graph);
@@ -116,13 +124,17 @@ export const WorkflowVersionDrawer: React.FC = () => {
   };
 
   const handleSaveAndRollback = async (ver: WorkflowVersionRecord) => {
+    if (isLocked) {
+      showToast(isZh ? '当前工作流已锁定，无法回滚' : 'Current workflow is locked; rollback is disabled');
+      return;
+    }
     setIsRollbackProcessing(true);
     try {
       const nextIndex = versions.length + 1;
       const autoLabel = isZh
         ? `回滚前自动备份 (v${nextIndex})`
         : `Pre-rollback snapshot (v${nextIndex})`;
-      const { nodes: curNodes, edges: curEdges } = useWorkflowStore.getState();
+      const { nodes: curNodes, edges: curEdges, globalInputs: curGlobalInputs } = useWorkflowStore.getState();
       await createWorkflowVersion({
         workflowId: activeWorkflowId,
         label: autoLabel,
@@ -131,6 +143,7 @@ export const WorkflowVersionDrawer: React.FC = () => {
           : `Auto-saved before rolling back to "${ver.label}"`,
         nodes: curNodes,
         edges: curEdges,
+        globalInputs: curGlobalInputs,
       });
       await fetchVersions();
       executeRollback(ver);
@@ -156,12 +169,13 @@ export const WorkflowVersionDrawer: React.FC = () => {
 
   return (
     <>
-      <div className="fixed inset-0 z-40 overflow-hidden">
-        {/* Dark semi-transparent backdrop */}
-        <div
-          className="absolute inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
-          onClick={() => setVersionDrawerOpen(false)}
-        />
+      {isVersionDrawerOpen && (
+        <div className="fixed inset-0 z-40 overflow-hidden">
+          {/* Dark semi-transparent backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+            onClick={() => setVersionDrawerOpen(false)}
+          />
 
         <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
           <aside className="w-screen max-w-xl bg-white dark:bg-[#0B0F17] border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col z-50">
@@ -331,8 +345,10 @@ export const WorkflowVersionDrawer: React.FC = () => {
 
                         <button
                           type="button"
+                          disabled={isLocked}
                           onClick={() => void requestRollback(ver)}
-                          className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-xs font-medium transition-colors cursor-pointer flex items-center gap-1"
+                          title={isLocked ? (isZh ? '工作流已锁定' : 'Workflow is locked') : vt.rollbackBtn}
+                          className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-xs font-medium transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <span>↺</span>
                           <span>{vt.rollbackBtn}</span>
@@ -355,6 +371,7 @@ export const WorkflowVersionDrawer: React.FC = () => {
           </aside>
         </div>
       </div>
+      )}
 
       {/* Diff Inspector Modal */}
       <WorkflowDiffModal

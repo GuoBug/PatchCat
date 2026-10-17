@@ -18,7 +18,12 @@
 
 import type { WorkflowNode, WorkflowEdge } from '../../engine/types.ts';
 import { sanitizeWorkflow, isGraphFullySanitized } from '../export/workflow-sanitizer.ts';
-import { computeCanonicalGraphHash } from '../diff/workflow-diff.ts';
+import {
+  computeCanonicalGraphHash,
+  diffWorkflowGraphs,
+  type GraphLike,
+  type WorkflowDiffResult,
+} from '../diff/workflow-diff.ts';
 import {
   indexedDb,
   WorkflowVersionQuotaError,
@@ -50,6 +55,7 @@ export class DuplicateWorkflowVersionError extends Error {
 export interface PreparedVersionGraph {
   nodes: WorkflowNode[];
   edges: WorkflowEdge[];
+  globalInputs?: Record<string, unknown>;
   strippedApiKeysCount: number;
   isSanitized: boolean;
 }
@@ -66,9 +72,10 @@ const EDGE_UI_FIELDS = ['selected', 'animated', 'style'] as const;
 export function prepareVersionGraph(
   nodes: WorkflowNode[],
   edges: WorkflowEdge[],
+  globalInputs?: Record<string, unknown>,
 ): PreparedVersionGraph {
   const { sanitizedWorkflow, stats } = sanitizeWorkflow(
-    { nodes, edges } as unknown as Record<string, unknown>,
+    { nodes, edges, ...(globalInputs ? { globalInputs } : {}) } as unknown as Record<string, unknown>,
     {
       stripApiKeys: true,
       clearExecutionOutputs: true,
@@ -76,7 +83,11 @@ export function prepareVersionGraph(
       stripLocalPaths: false,
     },
   );
-  const sw = sanitizedWorkflow as unknown as { nodes?: WorkflowNode[]; edges?: WorkflowEdge[] };
+  const sw = sanitizedWorkflow as unknown as {
+    nodes?: WorkflowNode[];
+    edges?: WorkflowEdge[];
+    globalInputs?: Record<string, unknown>;
+  };
 
   const cleanNodes = (sw.nodes ?? []).map((n) => {
     const node = { ...n } as Record<string, unknown>;
@@ -104,6 +115,9 @@ export function prepareVersionGraph(
   return {
     nodes: cleanNodes,
     edges: cleanEdges,
+    ...(sw.globalInputs && Object.keys(sw.globalInputs).length > 0
+      ? { globalInputs: sw.globalInputs }
+      : {}),
     strippedApiKeysCount: stats.strippedApiKeysCount,
     isSanitized,
   };
@@ -116,9 +130,10 @@ export function prepareVersionGraph(
 export async function computeWorkflowStateHash(
   nodes: WorkflowNode[],
   edges: WorkflowEdge[],
+  globalInputs?: Record<string, unknown>,
 ): Promise<string> {
-  const prepared = prepareVersionGraph(nodes, edges);
-  return computeCanonicalGraphHash(prepared.nodes, prepared.edges);
+  const prepared = prepareVersionGraph(nodes, edges, globalInputs);
+  return computeCanonicalGraphHash(prepared.nodes, prepared.edges, prepared.globalInputs);
 }
 
 function generateVersionId(): string {
@@ -133,6 +148,7 @@ export interface CreateVersionInput {
   description?: string;
   nodes: WorkflowNode[];
   edges: WorkflowEdge[];
+  globalInputs?: Record<string, unknown>;
   /** Injectable clock for deterministic tests. */
   now?: number;
 }
@@ -146,8 +162,12 @@ export async function createWorkflowVersion(
   const label = (input.label ?? '').trim().slice(0, MAX_VERSION_LABEL_LENGTH);
   if (!label) throw new Error('createWorkflowVersion: label is required.');
 
-  const prepared = prepareVersionGraph(input.nodes, input.edges);
-  const graphHash = await computeCanonicalGraphHash(prepared.nodes, prepared.edges);
+  const prepared = prepareVersionGraph(input.nodes, input.edges, input.globalInputs);
+  const graphHash = await computeCanonicalGraphHash(
+    prepared.nodes,
+    prepared.edges,
+    prepared.globalInputs,
+  );
 
   const existing = await indexedDb.getWorkflowVersions(workflowId);
   const latest = existing[0];
@@ -167,7 +187,13 @@ export async function createWorkflowVersion(
     label,
     ...(description ? { description } : {}),
     createdAt: input.now ?? Date.now(),
-    graph: { nodes: prepared.nodes, edges: prepared.edges },
+    graph: {
+      nodes: prepared.nodes,
+      edges: prepared.edges,
+      ...(prepared.globalInputs && Object.keys(prepared.globalInputs).length > 0
+        ? { globalInputs: prepared.globalInputs }
+        : {}),
+    },
     graphHash,
     metadata: {
       nodeCount: prepared.nodes.length,
@@ -193,6 +219,23 @@ export function deleteWorkflowVersion(id: string): Promise<void> {
   return indexedDb.deleteWorkflowVersion(id);
 }
 
+/**
+ * Diffs a saved version snapshot against a live canvas graph.
+ * Automatically sanitizes live graph credentials and transient state first,
+ * preventing phantom diffs and preventing credential leakage.
+ */
+export function diffVersionAgainstLive(
+  versionGraph: GraphLike,
+  liveGraph: GraphLike,
+): WorkflowDiffResult {
+  const prepared = prepareVersionGraph(liveGraph.nodes, liveGraph.edges, liveGraph.globalInputs);
+  return diffWorkflowGraphs(versionGraph, {
+    nodes: prepared.nodes,
+    edges: prepared.edges,
+    globalInputs: prepared.globalInputs,
+  });
+}
+
 export interface DirtyState {
   currentHash: string;
   latestVersion: WorkflowVersionRecord | null;
@@ -209,9 +252,10 @@ export async function getDirtyState(
   workflowId: string,
   nodes: WorkflowNode[],
   edges: WorkflowEdge[],
+  globalInputs?: Record<string, unknown>,
 ): Promise<DirtyState> {
   const [currentHash, versions] = await Promise.all([
-    computeWorkflowStateHash(nodes, edges),
+    computeWorkflowStateHash(nodes, edges, globalInputs),
     indexedDb.getWorkflowVersions(workflowId),
   ]);
   const latestVersion = versions[0] ?? null;

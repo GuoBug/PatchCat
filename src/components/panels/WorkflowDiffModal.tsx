@@ -14,12 +14,11 @@ import React, { useState, useMemo } from 'react';
 import { useWorkflowStore } from '../../stores/workflow-store.ts';
 import { useTranslation } from '../../i18n/useTranslation.ts';
 import {
-  diffWorkflowGraphs,
   diffTextLines,
   type WorkflowDiffResult,
 } from '../../services/diff/workflow-diff.ts';
 import {
-  prepareVersionGraph,
+  diffVersionAgainstLive,
   type WorkflowVersionRecord,
 } from '../../services/versioning/workflow-version-service.ts';
 
@@ -50,6 +49,7 @@ export const WorkflowDiffModal: React.FC<WorkflowDiffModalProps> = ({
 
   const currentNodes = useWorkflowStore((s) => s.nodes);
   const currentEdges = useWorkflowStore((s) => s.edges);
+  const currentGlobalInputs = useWorkflowStore((s) => s.globalInputs);
 
   // User confirmed decision: Layout-only shifts collapsed by default!
   const [showLayoutOnly, setShowLayoutOnly] = useState(false);
@@ -58,12 +58,12 @@ export const WorkflowDiffModal: React.FC<WorkflowDiffModalProps> = ({
 
   const diffResult: WorkflowDiffResult | null = useMemo(() => {
     if (!version) return null;
-    const cleanCurrent = prepareVersionGraph(currentNodes, currentEdges);
-    return diffWorkflowGraphs(version.graph, {
-      nodes: cleanCurrent.nodes,
-      edges: cleanCurrent.edges,
+    return diffVersionAgainstLive(version.graph, {
+      nodes: currentNodes,
+      edges: currentEdges,
+      globalInputs: currentGlobalInputs,
     });
-  }, [version, currentNodes, currentEdges]);
+  }, [version, currentNodes, currentEdges, currentGlobalInputs]);
 
   if (!isOpen || !version || !diffResult) return null;
 

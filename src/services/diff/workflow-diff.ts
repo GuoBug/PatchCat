@@ -21,6 +21,11 @@
  */
 
 import type { WorkflowNode, WorkflowEdge } from '../../engine/types.ts';
+import {
+  SENSITIVE_KEY_NAME_RE,
+  SENSITIVE_HEADER_RE,
+  SENSITIVE_VALUE_HEURISTIC_RE,
+} from '../export/workflow-sanitizer.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Canonical form
@@ -191,7 +196,7 @@ export interface NodeDiff {
 export interface WorkflowDiffResult {
   /** Any difference at all, including pure coordinate moves. */
   hasChanges: boolean;
-  /** Node add/delete, logical property change, or edge add/delete. */
+  /** Node add/delete, logical property change, edge add/delete, or globalInputs change. */
   hasLogicalChanges: boolean;
   nodes: {
     added: WorkflowNode[];
@@ -203,6 +208,7 @@ export interface WorkflowDiffResult {
     added: CanonicalEdge[];
     deleted: CanonicalEdge[];
   };
+  globals?: NodePropertyDiff[];
   stats: {
     addedNodeCount: number;
     deletedNodeCount: number;
@@ -290,6 +296,11 @@ export function diffWorkflowGraphs(base: GraphLike, target: GraphLike): Workflow
   for (const [k, e] of targetEdges) if (!baseEdges.has(k)) addedEdges.push(e);
   for (const [k, e] of baseEdges) if (!targetEdges.has(k)) deletedEdges.push(e);
 
+  const globalInputsChanges: NodePropertyDiff[] = [];
+  if (base.globalInputs || target.globalInputs) {
+    collectDeepDiff(base.globalInputs ?? {}, target.globalInputs ?? {}, 'globalInputs', globalInputsChanges);
+  }
+
   const byId = (a: { id: string }, b: { id: string }) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
   added.sort(byId);
   deleted.sort(byId);
@@ -301,13 +312,15 @@ export function diffWorkflowGraphs(base: GraphLike, target: GraphLike): Workflow
     deleted.length > 0 ||
     modified.length > 0 ||
     addedEdges.length > 0 ||
-    deletedEdges.length > 0;
+    deletedEdges.length > 0 ||
+    globalInputsChanges.length > 0;
 
   return {
     hasChanges: hasLogicalChanges || layoutOnly.length > 0,
     hasLogicalChanges,
     nodes: { added, deleted, modified, layoutOnly },
     edges: { added: addedEdges, deleted: deletedEdges },
+    ...(globalInputsChanges.length > 0 ? { globals: globalInputsChanges } : {}),
     stats: {
       addedNodeCount: added.length,
       deletedNodeCount: deleted.length,
@@ -321,6 +334,26 @@ export function diffWorkflowGraphs(base: GraphLike, target: GraphLike): Workflow
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === 'object' && !Array.isArray(v);
+}
+
+function maskSensitiveDiffValue(val: unknown, path: string): unknown {
+  if (val === undefined || val === null) return val;
+  const segments = path.split('.');
+  const lastKey = segments[segments.length - 1] || '';
+  const isHeader = segments.includes('headers');
+
+  if (typeof val === 'string') {
+    if (
+      SENSITIVE_KEY_NAME_RE.test(lastKey) ||
+      (isHeader && SENSITIVE_HEADER_RE.test(lastKey)) ||
+      SENSITIVE_VALUE_HEURISTIC_RE.test(val)
+    ) {
+      return val ? '••••••••' : '';
+    }
+  } else if (Array.isArray(val) && SENSITIVE_KEY_NAME_RE.test(lastKey)) {
+    return val.map((item) => (typeof item === 'string' && item ? '••••••••' : item));
+  }
+  return val;
 }
 
 /**
@@ -337,7 +370,9 @@ function collectDeepDiff(a: unknown, b: unknown, path: string, out: NodeProperty
     return;
   }
   if (canonicalStringify(a ?? null) !== canonicalStringify(b ?? null)) {
-    out.push({ path, oldValue: a, newValue: b });
+    const maskedA = maskSensitiveDiffValue(a, path);
+    const maskedB = maskSensitiveDiffValue(b, path);
+    out.push({ path, oldValue: maskedA, newValue: maskedB });
   }
 }
 

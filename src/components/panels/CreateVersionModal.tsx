@@ -16,13 +16,12 @@ import { useTranslation } from '../../i18n/useTranslation.ts';
 import {
   createWorkflowVersion,
   listWorkflowVersions,
-  prepareVersionGraph,
   MAX_WORKFLOW_VERSIONS,
   MAX_VERSION_LABEL_LENGTH,
   DuplicateWorkflowVersionError,
   WorkflowVersionQuotaError,
+  diffVersionAgainstLive,
 } from '../../services/versioning/workflow-version-service.ts';
-import { diffWorkflowGraphs } from '../../services/diff/workflow-diff.ts';
 
 interface CreateVersionModalProps {
   isOpen: boolean;
@@ -41,6 +40,7 @@ export const CreateVersionModal: React.FC<CreateVersionModalProps> = ({
 
   const nodes = useWorkflowStore((s) => s.nodes);
   const edges = useWorkflowStore((s) => s.edges);
+  const globalInputs = useWorkflowStore((s) => s.globalInputs);
   const activeWorkflowId = useProjectStore((s) => s.activeWorkflowId) || 'default-workflow';
 
   const [label, setLabel] = useState('');
@@ -67,6 +67,7 @@ export const CreateVersionModal: React.FC<CreateVersionModalProps> = ({
 
     const currentNodes = useWorkflowStore.getState().nodes;
     const currentEdges = useWorkflowStore.getState().edges;
+    const currentGlobalInputs = useWorkflowStore.getState().globalInputs;
 
     // Default label based on date and count
     void listWorkflowVersions(activeWorkflowId).then((versions) => {
@@ -79,10 +80,10 @@ export const CreateVersionModal: React.FC<CreateVersionModalProps> = ({
 
       const latest = versions[0];
       if (latest) {
-        const cleanCurrent = prepareVersionGraph(currentNodes, currentEdges);
-        const diff = diffWorkflowGraphs(latest.graph, {
-          nodes: cleanCurrent.nodes,
-          edges: cleanCurrent.edges,
+        const diff = diffVersionAgainstLive(latest.graph, {
+          nodes: currentNodes,
+          edges: currentEdges,
+          globalInputs: currentGlobalInputs,
         });
         setDiffSummary({
           hasLogical: diff.hasLogicalChanges,
@@ -113,6 +114,7 @@ export const CreateVersionModal: React.FC<CreateVersionModalProps> = ({
         description: description.trim() || undefined,
         nodes,
         edges,
+        globalInputs,
       });
 
       onClose();

@@ -172,6 +172,12 @@ export class IndexedDbAdapter {
           const verStore = db.createObjectStore(STORES.WORKFLOW_VERSIONS, { keyPath: 'id' });
           verStore.createIndex('by_workflow', 'workflowId', { unique: false });
           verStore.createIndex('by_created_at', 'createdAt', { unique: false });
+          verStore.createIndex('by_workflow_created', ['workflowId', 'createdAt'], { unique: false });
+        } else {
+          const verStore = request.transaction?.objectStore(STORES.WORKFLOW_VERSIONS);
+          if (verStore && !verStore.indexNames.contains('by_workflow_created')) {
+            verStore.createIndex('by_workflow_created', ['workflowId', 'createdAt'], { unique: false });
+          }
         }
       };
 
@@ -388,24 +394,45 @@ export class IndexedDbAdapter {
   }
 
   /**
-   * Atomically deletes both metadata and payload for a workflow.
+   * Atomically deletes metadata, payload, and cascades deletion of all version snapshots for a workflow.
    */
   public async deleteWorkflowFromDb(id: string): Promise<void> {
     if (!this.isSupported()) {
       const metaStore = this.getMemoryStore(STORES.WORKFLOWS_META);
       const payloadStore = this.getMemoryStore(STORES.WORKFLOWS_PAYLOAD);
+      const verStore = this.getMemoryStore(STORES.WORKFLOW_VERSIONS);
       metaStore.delete(id);
       payloadStore.delete(id);
       this.writeCounts.delete += 2;
+      for (const [verId, ver] of Array.from(verStore.entries())) {
+        if ((ver as { workflowId?: string })?.workflowId === id) {
+          verStore.delete(verId);
+          this.writeCounts.delete++;
+        }
+      }
       return;
     }
 
     const db = await this.getDB();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction([STORES.WORKFLOWS_META, STORES.WORKFLOWS_PAYLOAD], 'readwrite');
+      const tx = db.transaction(
+        [STORES.WORKFLOWS_META, STORES.WORKFLOWS_PAYLOAD, STORES.WORKFLOW_VERSIONS],
+        'readwrite',
+      );
       tx.objectStore(STORES.WORKFLOWS_META).delete(id);
       tx.objectStore(STORES.WORKFLOWS_PAYLOAD).delete(id);
       this.writeCounts.delete += 2;
+
+      const verStore = tx.objectStore(STORES.WORKFLOW_VERSIONS);
+      const index = verStore.index('by_workflow');
+      const req = index.getAllKeys(id);
+      req.onsuccess = () => {
+        const keys = req.result || [];
+        for (const k of keys) {
+          verStore.delete(k);
+          this.writeCounts.delete++;
+        }
+      };
 
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);

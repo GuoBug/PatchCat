@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Atomic five-step rollback execution: execution state guard, 3-choice dirty-state prompt (Save & Rollback / Overwrite / Cancel), pushing current canvas into memory history stack (`Ctrl+Z` undoable), deep-clone state restoration to idle, and double-layer persistence (`WORKFLOWS_PAYLOAD`).
   - Added `Ctrl+Shift+S` global shortcut for instant snapshot creation, snapshot counter badge, and responsive drawer UI.
 - **Automated Verification & Code Quality**:
-  - Added comprehensive test suites (`tests/memory-node.node.test.ts`, `tests/workflow-version-snapshots.node.test.ts`), expanding total automated tests to **592 passing tests across 172 test suites (100% green rate)**.
+  - Added comprehensive test suites (`tests/memory-node.node.test.ts`, `tests/workflow-version-snapshots.node.test.ts`), expanding total automated tests to **598 passing tests across 172 test suites (100% green rate)**.
   - Resolved React 19 rendering purity warnings (`react-hooks/purity`).
 
 ## [0.4.19] - 2026-10-12
