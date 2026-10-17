@@ -22,12 +22,15 @@ import {
   type WorkflowVersionRecord,
 } from '../../services/versioning/workflow-version-service.ts';
 
-const SENSITIVE_PATH_RE = /(api[-_]?key|token|secret|password|auth)/i;
+const SENSITIVE_PATH_RE = /(api[-_]?key|token|secret|password|auth|credentials)/i;
 function formatDiffValue(path: string, val: unknown): string {
+  if (val === '••••••••') return '"[REDACTED]"';
   if (SENSITIVE_PATH_RE.test(path) && typeof val === 'string' && val.length > 0) {
     return '"[REDACTED]"';
   }
-  return JSON.stringify(val);
+  const serialized = JSON.stringify(val);
+  if (!serialized) return 'null';
+  return serialized.replace(/"••••••••"/g, '"[REDACTED]"');
 }
 
 interface WorkflowDiffModalProps {

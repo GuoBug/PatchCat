@@ -350,9 +350,21 @@ function maskSensitiveDiffValue(val: unknown, path: string): unknown {
     ) {
       return val ? '••••••••' : '';
     }
-  } else if (Array.isArray(val) && SENSITIVE_KEY_NAME_RE.test(lastKey)) {
-    return val.map((item) => (typeof item === 'string' && item ? '••••••••' : item));
+    return val;
   }
+
+  if (Array.isArray(val)) {
+    return val.map((item, idx) => maskSensitiveDiffValue(item, `${path}[${idx}]`));
+  }
+
+  if (typeof val === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+      out[k] = maskSensitiveDiffValue(v, `${path}.${k}`);
+    }
+    return out;
+  }
+
   return val;
 }
 

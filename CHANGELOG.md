@@ -13,8 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **L4 Never-Throw & Headless Resilience**: Safely executes on canvas without active chat sessions by emitting `meta.session_status = 'no_session'` and empty string fallbacks, preventing downstream execution cascades from stalling.
   - **Non-Cacheable Resumption Contract**: Bypasses stale DAG checkpoint caches during node resumption and single-node retries, always fetching live multi-turn context.
   - **Sub-Workflow Context Isolation**: Evaluates nested sub-workflows strictly within an isolated `no_session` context, eliminating parent session bleed.
-- **Workflow Version Snapshots & IndexedDB v7 Storage (`src/services/versioning/workflow-version-service.ts`, `src/services/storage/indexeddb-adapter.ts`, PRD-020 Part B)**:
-  - **IndexedDB v7 Schema**: Introduced dedicated `workflow_versions` object store with compound index `by_workflow_created: ['workflowId', 'createdAt']` and cascading workflow deletion.
+- **Workflow Version Snapshots & IndexedDB v8 Storage (`src/services/versioning/workflow-version-service.ts`, `src/services/storage/indexeddb-adapter.ts`, PRD-020 Part B)**:
+  - **IndexedDB v8 Schema**: Introduced dedicated `workflow_versions` object store with compound index `by_workflow_created: ['workflowId', 'createdAt']` and cascading workflow deletion.
   - **30-Version Hard Quota Guard**: Single-transaction quota enforcement rejecting additions beyond 30 versions per workflow with `WorkflowVersionQuotaError` to prevent silent FIFO eviction of named baselines.
   - **Recursive White-Box Sanitization**: Automatically strips credentials (including nested embedding and reranker API keys) and clears runtime outputs before persistence, backed by `isGraphFullySanitized` pre-save verification.
 - **Pure-Frontend Canonical Topological Hashing (SHA-256) & Invariance Engine (`src/services/diff/workflow-diff.ts`)**:
@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Atomic five-step rollback execution: execution state guard, 3-choice dirty-state prompt (Save & Rollback / Overwrite / Cancel), pushing current canvas into memory history stack (`Ctrl+Z` undoable), deep-clone state restoration to idle, and double-layer persistence (`WORKFLOWS_PAYLOAD`).
   - Added `Ctrl+Shift+S` global shortcut for instant snapshot creation, snapshot counter badge, and responsive drawer UI.
 - **Automated Verification & Code Quality**:
-  - Added comprehensive test suites (`tests/memory-node.node.test.ts`, `tests/workflow-version-snapshots.node.test.ts`), expanding total automated tests to **598 passing tests across 172 test suites (100% green rate)**.
+  - Added comprehensive test suites (`tests/memory-node.node.test.ts`, `tests/workflow-version-snapshots.node.test.ts`), expanding total automated tests to **603 passing tests across 172 test suites (100% green rate)**.
   - Resolved React 19 rendering purity warnings (`react-hooks/purity`).
 
 ## [0.4.19] - 2026-10-12

@@ -19,7 +19,7 @@ import type { SavedWorkflow, WorkflowMemoryConfig } from '../../stores/project-s
 import type { EncryptedVaultPayload } from '../crypto/crypto-vault.ts';
 
 const DB_NAME = 'PatchCatDB';
-const DB_VERSION = 7;
+const DB_VERSION = 8;
 
 export const STORES = {
   WORKFLOWS: 'workflows', // Legacy monolithic store preserved for backward compatibility

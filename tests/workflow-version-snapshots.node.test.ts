@@ -236,6 +236,52 @@ describe('PRD-020 Part B: Workflow Version Snapshots & Structural Diff', () => {
       assert.equal(prepared.strippedApiKeysCount, 0);
       assert.equal(prepared.isSanitized, true);
     });
+
+    it('§2.E: strips explicit credentials in prompt variables while preserving normal user text', () => {
+      const promptNode = createMockNode('p1', 'prompt', { x: 0, y: 0 }, {
+        variables: {
+          token: 'natural-language-word',
+          apiKey: 'sk-proj-leak-credential-12345678',
+        },
+      });
+
+      const prepared = prepareVersionGraph([promptNode], []);
+      const cfg = prepared.nodes[0]!.data.config as Record<string, any>;
+      assert.equal(cfg.variables.token, 'natural-language-word');
+      assert.equal(cfg.variables.apiKey, '');
+      assert.equal(prepared.strippedApiKeysCount, 1);
+      assert.equal(prepared.isSanitized, true);
+    });
+
+    it('§2.F: preserves Idempotency-Key header while stripping real secret token headers', () => {
+      const httpNode = createMockNode('http1', 'http', { x: 0, y: 0 }, {
+        headers: {
+          'Idempotency-Key': 'order-idem-uuid-987654',
+          'X-Custom-Secret': 'sk-custom-secret-key-123',
+        },
+      });
+
+      const prepared = prepareVersionGraph([httpNode], []);
+      const cfg = prepared.nodes[0]!.data.config as Record<string, any>;
+      assert.equal(cfg.headers['Idempotency-Key'], 'order-idem-uuid-987654');
+      assert.equal(cfg.headers['X-Custom-Secret'], '[REDACTED]');
+      assert.equal(prepared.isSanitized, true);
+    });
+
+    it('§2.C: sanitizes globalInputs deeply and verifies via isGraphFullySanitized', () => {
+      const globalInputs = {
+        env: 'prod',
+        auth: 'Bearer TEST-LEAK-TOKEN-VALUE',
+        nested: { secret: 'sk-nested-secret-value-123' },
+      };
+
+      const prepared = prepareVersionGraph([createMockNode('n1', 'input')], [], globalInputs);
+      assert.equal(prepared.strippedApiKeysCount, 2);
+      assert.equal(prepared.isSanitized, true);
+      assert.equal(prepared.globalInputs?.['auth'], '');
+      assert.equal((prepared.globalInputs?.['nested'] as Record<string, any>)?.['secret'], '');
+      assert.equal(isGraphFullySanitized(prepared.nodes, prepared.globalInputs), true);
+    });
   });
 
   // ── 3. Version CRUD & Quota Governance ────────────────────────────────────
@@ -503,6 +549,29 @@ describe('PRD-020 Part B: Workflow Version Snapshots & Structural Diff', () => {
       assert.equal(diff.hasLogicalChanges, true);
       assert.equal(diff.globals?.length, 2);
     });
+
+    it('§2.B: masks container-level additions in diff so objects with secrets never leak plaintext', () => {
+      const base = {
+        nodes: [createMockNode('http1', 'http', { x: 0, y: 0 }, { url: 'https://api.example.com' })],
+        edges: [],
+      };
+      const target = {
+        nodes: [
+          createMockNode('http1', 'http', { x: 0, y: 0 }, {
+            url: 'https://api.example.com',
+            headers: { 'PRIVATE-TOKEN': 'glpat-token-should-not-survive-in-diff' },
+          }),
+        ],
+        edges: [],
+      };
+
+      const diff = diffWorkflowGraphs(base, target);
+      assert.equal(diff.hasLogicalChanges, true);
+      assert.ok(!JSON.stringify(diff).includes('glpat-token-should-not-survive-in-diff'));
+      const headerChange = diff.nodes.modified[0]?.changes.find((c) => c.path === 'data.config.headers');
+      assert.notEqual(headerChange, undefined);
+      assert.deepEqual(headerChange?.newValue, { 'PRIVATE-TOKEN': '••••••••' });
+    });
   });
 
   // ── 5. Rollback State Machine & Undo Stack Integration ─────────────────────
@@ -753,34 +822,136 @@ describe('PRD-020 Part B: Workflow Version Snapshots & Structural Diff', () => {
       assert.equal(versionsAfter.length, 0);
     });
 
-    it('P2-6: onupgradeneeded schema migration establishes workflow_versions with compound index', () => {
-      let createdStoreName = '';
-      const createdIndices: string[] = [];
+    it('P2-6: onupgradeneeded clean installation establishes workflow_versions with compound index via getDB', async () => {
+      let openVersion = 0;
+      const createdStores = new Map<string, any>();
+      const createdIndices = new Map<string, string[]>();
 
       const mockDb: any = {
         objectStoreNames: {
-          contains: (name: string) => name !== STORES.WORKFLOW_VERSIONS,
+          contains: (name: string) => createdStores.has(name),
         },
-        createObjectStore: (name: string, _options: any) => {
-          createdStoreName = name;
+        createObjectStore: (name: string, _opt: any) => {
+          createdStores.set(name, true);
+          createdIndices.set(name, []);
           return {
-            createIndex: (idxName: string, _keyPath: any, _opt: any) => {
-              createdIndices.push(idxName);
+            createIndex: (idxName: string, _keyPath: any, _options: any) => {
+              createdIndices.get(name)!.push(idxName);
             },
           };
         },
       };
 
-      // Call the internal schema creation logic directly
-      if (!mockDb.objectStoreNames.contains(STORES.WORKFLOW_VERSIONS)) {
-        const verStore = mockDb.createObjectStore(STORES.WORKFLOW_VERSIONS, { keyPath: 'id' });
-        verStore.createIndex('by_workflow', 'workflowId', { unique: false });
-        verStore.createIndex('by_created_at', 'createdAt', { unique: false });
-        verStore.createIndex('by_workflow_created', ['workflowId', 'createdAt'], { unique: false });
-      }
+      const mockRequest: any = {
+        result: mockDb,
+        transaction: {
+          objectStore: (name: string) => ({
+            indexNames: {
+              contains: (idxName: string) => createdIndices.get(name)?.includes(idxName) ?? false,
+            },
+            createIndex: (idxName: string) => {
+              createdIndices.get(name)?.push(idxName);
+            },
+          }),
+        },
+      };
 
-      assert.equal(createdStoreName, STORES.WORKFLOW_VERSIONS);
-      assert.deepEqual(createdIndices, ['by_workflow', 'by_created_at', 'by_workflow_created']);
+      const originalWindow = (globalThis as any).window;
+      (globalThis as any).window = {
+        indexedDB: {
+          open: (_name: string, version: number) => {
+            openVersion = version;
+            setTimeout(() => {
+              if (mockRequest.onupgradeneeded) {
+                mockRequest.onupgradeneeded({ target: mockRequest });
+              }
+              if (mockRequest.onsuccess) {
+                mockRequest.onsuccess();
+              }
+            }, 0);
+            return mockRequest;
+          },
+        },
+      };
+
+      const originalIsSupported = indexedDb.isSupported.bind(indexedDb);
+      (indexedDb as any).isSupported = () => true;
+      (indexedDb as any).dbPromise = null;
+
+      try {
+        await (indexedDb as any).getDB();
+        assert.equal(openVersion, 8); // Validates DB_VERSION is 8!
+        assert.equal(createdStores.has(STORES.WORKFLOW_VERSIONS), true);
+        assert.deepEqual(createdIndices.get(STORES.WORKFLOW_VERSIONS), [
+          'by_workflow',
+          'by_created_at',
+          'by_workflow_created',
+        ]);
+      } finally {
+        (indexedDb as any).dbPromise = null;
+        (indexedDb as any).isSupported = originalIsSupported;
+        (globalThis as any).window = originalWindow;
+      }
+    });
+
+    it('P2-6: onupgradeneeded adds compound index when upgrading an existing workflow_versions store to v8', async () => {
+      let openVersion = 0;
+      const existingIndices = ['by_workflow', 'by_created_at'];
+
+      const mockDb: any = {
+        objectStoreNames: {
+          contains: (_name: string) => true, // All stores exist in v7 DB
+        },
+        createObjectStore: () => ({ createIndex: () => {} }),
+      };
+
+      const mockVerStore: any = {
+        indexNames: {
+          contains: (idxName: string) => existingIndices.includes(idxName),
+        },
+        createIndex: (idxName: string) => {
+          existingIndices.push(idxName);
+        },
+      };
+
+      const mockRequest: any = {
+        result: mockDb,
+        transaction: {
+          objectStore: (name: string) => (name === STORES.WORKFLOW_VERSIONS ? mockVerStore : null),
+        },
+      };
+
+      const originalWindow = (globalThis as any).window;
+      (globalThis as any).window = {
+        indexedDB: {
+          open: (_name: string, version: number) => {
+            openVersion = version;
+            setTimeout(() => {
+              if (mockRequest.onupgradeneeded) {
+                mockRequest.onupgradeneeded({ target: mockRequest });
+              }
+              if (mockRequest.onsuccess) {
+                mockRequest.onsuccess();
+              }
+            }, 0);
+            return mockRequest;
+          },
+        },
+      };
+
+      const originalIsSupported = indexedDb.isSupported.bind(indexedDb);
+      (indexedDb as any).isSupported = () => true;
+      (indexedDb as any).dbPromise = null;
+
+      try {
+        await (indexedDb as any).getDB();
+        assert.equal(openVersion, 8);
+        assert.equal(existingIndices.includes('by_workflow_created'), true);
+      } finally {
+        (indexedDb as any).dbPromise = null;
+        (indexedDb as any).isSupported = originalIsSupported;
+        (globalThis as any).window = originalWindow;
+      }
     });
   });
 });

@@ -110,7 +110,7 @@ export function prepareVersionGraph(
     return edge as unknown as WorkflowEdge;
   });
 
-  const isSanitized = isGraphFullySanitized(cleanNodes);
+  const isSanitized = isGraphFullySanitized(cleanNodes, sw.globalInputs);
 
   return {
     nodes: cleanNodes,
@@ -259,8 +259,12 @@ export async function getDirtyState(
     indexedDb.getWorkflowVersions(workflowId),
   ]);
   const latestVersion = versions[0] ?? null;
+  const hasContent =
+    (nodes?.length ?? 0) > 0 ||
+    (edges?.length ?? 0) > 0 ||
+    (globalInputs !== undefined && Object.keys(globalInputs).length > 0);
   const isDirty = latestVersion
     ? latestVersion.graphHash !== currentHash
-    : (nodes?.length ?? 0) > 0 || (edges?.length ?? 0) > 0;
+    : hasContent;
   return { currentHash, latestVersion, isDirty };
 }
