@@ -33,8 +33,11 @@
 | [PRD-013](01-prd/PRD-013-Empty-Canvas-Onboarding-Template-Gallery-and-Node-Ergonomics.md) | **Empty Canvas Guidance, Template Showcase Gallery & Draft Recovery** | Phase 4.3 | ✅ Done |
 | [PRD-014](01-prd/PRD-014-Merlin-Router-Plugin-and-Lightweight-Gateway.md) | **Merlin Router Plugin & Lightweight Gateway Packaging** | Phase 4.7 | ✅ Done |
 | [PRD-015](01-prd/PRD-015-Run-Observability-Trace-Inspection-and-OTel-Alignment.md) | **Run Observability, Step Snapshot Inspection & OpenTelemetry Tracing** | Phase 4.8 | ✅ Done |
-| [PRD-016](01-prd/PRD-016-Immutable-Checkpointing-and-Resumable-DAG-Execution.md) | **Immutable Checkpointing & Resumable DAG Execution** | Phase 4.10 | ✅ Done |
-| [PRD-017](01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md) | **Local Data Sovereignty, Web Crypto Vault & Storage Hardening** | Phase 4.11 / 4.13 | 📋 In Progress |
+| [PRD-017](01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md) | **Local Data Sovereignty, Web Crypto Vault & Storage Hardening** | Phase 4.16 | ✅ Done |
+| [PRD-018](01-prd/PRD-018-Deterministic-Structured-Output-and-Self-Healing.md) | **Deterministic Structured Output & Self-Healing State Machine** | Phase 4.12 / 4.13 | ✅ Done |
+| [PRD-019](01-prd/PRD-019-Browser-Native-Multi-Provider-Embedding-and-Hybrid-Search.md) | **Browser-Native Multi-Provider Embedding & Hybrid Search** | Phase 4.19 | ✅ Done |
+| [PRD-020](01-prd/PRD-020-MemoryNode-and-Workflow-Version-Snapshots.md) | **MemoryNode Visual Primitive & Workflow Version Snapshots** | Phase 4.20 | ✅ Done |
+| [PRD-021](01-prd/PRD-021-Canvas-Subgraph-Folding-and-Reusable-Component-Contract.md) | **Canvas Subgraph Folding & Reusable Component Contract** | Phase 4.22 | 📋 In Review |
 
 ---
 
@@ -130,8 +133,11 @@
 | [PRD-013](01-prd/PRD-013-Empty-Canvas-Onboarding-Template-Gallery-and-Node-Ergonomics.md) | **空画布灵感引导、场景模板画廊与草稿安全体系** | Phase 4.3 | ✅ 已完成 |
 | [PRD-014](01-prd/PRD-014-Merlin-Router-Plugin-and-Lightweight-Gateway.md) | **华硕 Merlin 路由器插件包与轻量网关服务** | Phase 4.7 | ✅ 已完成 |
 | [PRD-015](01-prd/PRD-015-Run-Observability-Trace-Inspection-and-OTel-Alignment.md) | **运行可观测性、节点单步数据快照与 OpenTelemetry 标准对齐** | Phase 4.8 | ✅ 已完成 |
-| [PRD-016](01-prd/PRD-016-Immutable-Checkpointing-and-Resumable-DAG-Execution.md) | **端侧不可变 Checkpointing 与容错断点续跑** | Phase 4.10 | ✅ 已完成 |
-| [PRD-017](01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md) | **端侧数据主权、Web Crypto 本地暗室与存储防膨胀治理** | Phase 4.11 / 4.13 | 📋 进行中 |
+| [PRD-017](01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md) | **端侧数据主权、Web Crypto 本地暗室与存储防膨胀治理** | Phase 4.16 | ✅ 已完成 |
+| [PRD-018](01-prd/PRD-018-Deterministic-Structured-Output-and-Self-Healing.md) | **确定性结构化输出与自愈状态机** | Phase 4.12 / 4.13 | ✅ 已完成 |
+| [PRD-019](01-prd/PRD-019-Browser-Native-Multi-Provider-Embedding-and-Hybrid-Search.md) | **端侧多源向量嵌入与高工效三模混合检索** | Phase 4.19 | ✅ 已完成 |
+| [PRD-020](01-prd/PRD-020-MemoryNode-and-Workflow-Version-Snapshots.md) | **MemoryNode 画布记忆原语与工作流版本快照** | Phase 4.20 | ✅ 已完成 |
+| [PRD-021](01-prd/PRD-021-Canvas-Subgraph-Folding-and-Reusable-Component-Contract.md) | **画布子图折叠封装与可复用组件契约** | Phase 4.22 | 📋 评审中 |
 
 ---
 
