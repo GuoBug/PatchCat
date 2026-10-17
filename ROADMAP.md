@@ -1,7 +1,7 @@
 # 🗺️ PatchCat Product Roadmap
 
-> **Current Stage**: `v0.4.19` (Released ✅)  
-> **Last Updated**: 2026-10-12  
+> **Current Stage**: `v0.4.20` (Released ✅)  
+> **Last Updated**: 2026-10-17  
 > **Positioning**: A production-grade, local-first deterministic AI workflow engine · interactive playground  
 
 [English](#english) | [简体中文](#简体中文)
@@ -16,7 +16,7 @@
 PatchCat adheres to a **Micro-Milestone cadence (~0.0.2 version increments)** and a **Local-First, Progressive Enhancement** architecture. Each micro-release focuses on a tightly scoped, fully verified feature slice with zero regressions, ironclad reliability watchdogs, and zero superficial testing theater.
 
 ```
-v0.4.19 (Current) ──► v0.4.20 (Snapshots) ──► v0.6.0 (MCP & Docker)
+v0.4.20 (Current) ──► v0.4.22 (Subgraph Folding) ──► v0.6.0 (MCP & Docker)
                                                 │
                                                 └──► v1.0.0 (Enterprise Ready)
 ```
@@ -40,7 +40,8 @@ v0.4.19 (Current) ──► v0.4.20 (Snapshots) ──► v0.6.0 (MCP & Docker)
 | **`v0.4.16` (Shipped ✅)** | **Local Data Sovereignty & Crypto Vault** | • [`PRD-017`](docs/01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md)<br>• [`ADR-003`](docs/04-dev-notes/adr-003-event-sourcing-vs-checkpointing-and-local-first-lessons.md) | • Web Crypto API (`SubtleCrypto` AES-256-GCM) master-passphrase local encryption vault<br>• Zero plain-text API keys in LocalStorage/IndexedDB<br>• 1-Click Sanitized Workflow Export modal (stripping API keys & local paths)<br>• Storage adapter contract freezing & offline export verification |
 | **`v0.4.18` (Shipped ✅)** | **Long-Term Memory & Dual-Anchor Rolling Summary** | • [`PRD-010`](docs/01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md) | • Background incremental LLM/heuristic rolling summarization of older turns with zero runtime throws<br>• Pinned message (`isPinned`) lock protecting critical user constraints from sliding window or budget drops<br>• Per-entry in-place edit mode with provenance tracking (`isEdited`, `originalContent`) and single message delete<br>• Memory telemetry status bar with real-time token breakdown gauge (`summaryTokens`, `pinnedTokens`, `activeTokens`) |
 | **`v0.4.19` (Shipped ✅)** | **Browser-Native Multi-Provider Embedding & Hybrid Search** | • [`PRD-019`](docs/01-prd/PRD-019-Browser-Native-Multi-Provider-Embedding-and-Hybrid-Search.md) | • Multi-provider browser embedding client (SiliconFlow, Ollama, OpenAI) with zero CSP change<br>• IndexedDB v6 `vector_embeddings` with dimension fingerprint & stale invalidation<br>• High-performance `FlatVectorIndex` continuous TypedArray linear dot-product scan<br>• 3-tier hybrid search with visible degradation indicators & zero server regressions |
-| **`v0.4.20`** | **Memory Node & Workflow Version Diff** | • [`PRD-010`](docs/01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md)<br>• [`Local-First Strategy`](docs/02-architecture/local-first-architecture-and-evolution-strategy.md) | • Dedicated `MemoryNode` component wireable to multiple Agent/LLM nodes<br>• Local workflow version snapshots with visual JSON diff & rollback<br>• Portable `.patchcat` single-file archive bundle |
+| **`v0.4.20` (Shipped ✅)** | **Memory Node & Workflow Version Snapshots** | • [`PRD-020`](docs/01-prd/PRD-020-MemoryNode-and-Workflow-Version-Snapshots.md)<br>• [`Local-First Strategy`](docs/02-architecture/local-first-architecture-and-evolution-strategy.md) | • Dedicated `MemoryNode` component with 3 extraction channels & L4 never-throw contract<br>• Local workflow version snapshots with SHA-256 canonical graph hashing & 30-version quota<br>• Structural DAG diff engine with LCS line diffing & reversible atomic rollback (`Ctrl+Z`) |
+| **`v0.4.22`** | **Canvas Subgraph Folding & Reusable Component Contract** | • [`PRD-021`](docs/01-prd/PRD-021-Canvas-Subgraph-Folding-and-Reusable-Component-Contract.md) | • Multi-node selection 1-click fold into reusable Composite/Group Node<br>• Drawer-style subgraph nested editing with scoped I/O handle mapping<br>• Zero-overhead topological flattening scheduler & local component catalog |
 | **`v0.6.0`** | **MCP Tool Export & Docker Deployment** | • [`Whitepaper`](docs/02-architecture/patchcat-architecture-whitepaper.md) | • 1-Click export visual workflow as standard MCP (Model Context Protocol) Tool<br>• Standalone zero-dependency TypeScript headless runner script export<br>• Production `docker-compose.yml` packaging Vite, FastAPI, and PostgreSQL `pgvector` |
 | **`v1.0.0`** | **Enterprise Production Baseline** | • [`Graph Schema Spec`](docs/02-architecture/graph-schema-specification.json) | • Core Graph Schema v1 frozen with backward compatibility guarantee<br>• Multi-user system & RBAC role-based access control<br>• Collaborative real-time workspace & encrypted shareable preview links |
 
@@ -72,6 +73,7 @@ v0.4.19 (Current) ──► v0.4.20 (Snapshots) ──► v0.6.0 (MCP & Docker)
 - [x] **Phase 4.16 (v0.4.16)**: Local Data Sovereignty, Web Crypto Master Vault & Sanitized Export (2026-10-09)
 - [x] **Phase 4.18 (v0.4.18)**: Pure-Frontend Dual-Anchor Rolling Summary & Conversation Memory (2026-10-11)
 - [x] **Phase 4.19 (v0.4.19)**: Browser-Native Multi-Provider Embedding & Tri-Modal Hybrid Search (2026-10-12)
+- [x] **Phase 4.20 (v0.4.20)**: MemoryNode Canvas Visual Primitive, Workflow Version Snapshots & Structural DAG Diff (2026-10-17)
 
 ---
 
@@ -80,8 +82,8 @@ v0.4.19 (Current) ──► v0.4.20 (Snapshots) ──► v0.6.0 (MCP & Docker)
 <a name="简体中文"></a>
 ## 简体中文
 
-> **当前阶段**：`v0.4.19` (已发布 ✅)  
-> **最近更新**：2026-10-12  
+> **当前阶段**：`v0.4.20` (已发布 ✅)  
+> **最近更新**：2026-10-17  
 > **定位**：生产级、本地优先的确定性 AI 工作流引擎 · 交互式实验工坊  
 
 ### 🧭 演进节奏与设计哲学
@@ -89,7 +91,7 @@ v0.4.19 (Current) ──► v0.4.20 (Snapshots) ──► v0.6.0 (MCP & Docker)
 PatchCat 坚守 **`0.0.2` 微步演进路线（Micro-Milestone Cadence）** 与 **Local-First 纯本地免配置渐进增强** 原则。每个微版本聚焦于一个定义明确、边界清晰且彻底验证的特性切片，坚决杜绝“大版本跳跃与功能堆叠”，淘汰形式主义测试，死守零崩溃、零死锁、零假死底线。
 
 ```
-v0.4.19 (当前版本) ──► v0.4.20 (快照与归档) ──► v0.6.0 (MCP与Docker大考)
+v0.4.20 (当前版本) ──► v0.4.22 (子图折叠封装) ──► v0.6.0 (MCP与Docker大考)
                                                 │
                                                 └──► v1.0.0 (企业生产交付)
 ```
@@ -112,7 +114,8 @@ v0.4.19 (当前版本) ──► v0.4.20 (快照与归档) ──► v0.6.0 (MCP
 | **`v0.4.16` (已交付 ✅)** | **本地数据主权暗室与资产脱敏** | • [`PRD-017`](docs/01-prd/PRD-017-Local-Data-Sovereignty-and-Storage-Hardening.md)<br>• [`ADR-003`](docs/04-dev-notes/adr-003-event-sourcing-vs-checkpointing-and-local-first-lessons.md) | • 浏览器原生 Web Crypto API (`SubtleCrypto` AES-256-GCM) 本地主口令暗室<br>• LocalStorage/IndexedDB 零明文存储 API Key（免疫插件窃密）<br>• 工作流资产「一键安全脱敏导出」弹窗（剥离 Key 与本地物理路径）<br>• 存储适配器契约封板，单机零信任离线导入验证 |
 | **`v0.4.18` (已交付 ✅)** | **长效会话记忆与双锚点背景滚动摘要** | • [`PRD-010`](docs/01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md) | • 背景增量 LLM/规则滚动提炼老轮次事实摘要，无网络零 Throw 优雅降级<br>• 置顶消息锁定（`isPinned`）免受滑动窗口与预算硬截断淘汰<br>• 单条消息就地热编辑模式与溯源标记（`isEdited`、`originalContent`）及单条删除<br>• 会话记忆 Token 开销遥测条（实时分色指示 `summaryTokens`、`pinnedTokens`、`activeTokens` 与水位预警） |
 | **`v0.4.19` (已交付 ✅)** | **端侧多源向量嵌入与高工效三模混合检索** | • [`PRD-019`](docs/01-prd/PRD-019-Browser-Native-Multi-Provider-Embedding-and-Hybrid-Search.md) | • 纯前端零 CSP 变更向量客户端（适配硅基流动、Ollama、OpenAI）<br>• IndexedDB v6 `vector_embeddings` 专用仓储与维度指纹失效保护<br>• 全内存单一大块 TypedArray 连续点积扫描（`FlatVectorIndex`）<br>• 三模检索显式降级状态感知与 Server 模式零回归保障 |
-| **`v0.4.20`** | **显式 Memory 节点与版本快照** | • [`PRD-010`](docs/01-prd/PRD-010-Conversation-Memory-and-Storage-Architecture.md)<br>• [`Local-First 演进白皮书`](docs/02-architecture/local-first-architecture-and-evolution-strategy.md) | • 画布新增 `MemoryNode` 实体节点，支持挂载至多个 Agent/LLM<br>• 本地工作流版本快照（打标、JSON Diff 差异对比与一键回退）<br>• 一体化 `.patchcat` 绿色工程归档包 |
+| **`v0.4.20` (已交付 ✅)** | **显式 Memory 节点与版本快照** | • [`PRD-020`](docs/01-prd/PRD-020-MemoryNode-and-Workflow-Version-Snapshots.md)<br>• [`Local-First 演进白皮书`](docs/02-architecture/local-first-architecture-and-evolution-strategy.md) | • 画布新增 `MemoryNode` 实体节点，三通道独立只读抽取与 L4 Never-Throw 契约<br>• 本地工作流版本快照（SHA-256 拓扑规范化指纹、30 版本单事务配额守卫与入库脱敏）<br>• 纯前端结构化 DAG 语义 Diff 引擎（LCS 行级高亮、布局噪声折叠）与可悔棋回滚（`Ctrl+Z`） |
+| **`v0.4.22`** | **画布子图折叠封装与可复用组件契约** | • [`PRD-021`](docs/01-prd/PRD-021-Canvas-Subgraph-Folding-and-Reusable-Component-Contract.md) | • 多选节点一键折叠封装为自定义复合组件（Composite/Group Node）<br>• 抽屉式局部子图无感微调与内外 I/O Handle 端口映射<br>• 零运行时开销的拓扑扁平化调度器与本地组件库沉淀 |
 | **`v0.6.0`** | **MCP Tool 导出与 Docker 交付** | • [`架构白皮书`](docs/02-architecture/patchcat-architecture-whitepaper.md) | • 画布工作流一键导出为标准 MCP Tool（直接挂载至 Cursor / Claude）<br>• 独立无依赖 TypeScript 无头脚本导出（支持 Edge / Node.js 运行）<br>• 生产级 `docker-compose.yml`（Vite + FastAPI + PostgreSQL pgvector） |
 | **`v1.0.0`** | **企业级生产基线与正式交付** | • [`图 Schema 规范`](docs/02-architecture/graph-schema-specification.json) | • 核心 Graph Schema v1 规范冻结并提供向前兼容性保障<br>• 用户系统与 RBAC 角色权限控制（可选企业层）<br>• 多人实时协同编辑、只读预览分享链接与加密导出 |
 
@@ -144,4 +147,5 @@ v0.4.19 (当前版本) ──► v0.4.20 (快照与归档) ──► v0.6.0 (MCP
 - [x] **Phase 4.16 (v0.4.16)**：本地数据主权主口令暗室、零明文存储与资产一键安全脱敏 (2026-10-09)
 - [x] **Phase 4.18 (v0.4.18)**：纯前端双锚点长程滚动摘要与细粒度会话控制 (2026-10-11)
 - [x] **Phase 4.19 (v0.4.19)**：端侧多源向量嵌入与高工效三模混合检索 (2026-10-12)
+- [x] **Phase 4.20 (v0.4.20)**：MemoryNode 画布会话记忆原语、工作流版本快照与结构化 DAG Diff 引擎 (2026-10-17)
 

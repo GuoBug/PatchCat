@@ -5,6 +5,31 @@ All notable changes to the **PatchCat** project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.20] - 2026-10-17
+
+### Added
+- **`MemoryNode` Dedicated Canvas Visual Primitive (`src/engine/nodes/memory.ts`, `MemoryNode.tsx`, `MemoryNodeProperties.tsx`, PRD-020 Part A)**:
+  - **Read-Only Multi-Channel Extraction**: Ingests live conversation history without mutating session data or causing double-write races; exposes three granular channels: rolling summary (`chat_summary`), recent verbatim dialogue turns (`chat_history`), and pinned critical instructions (`isPinned`).
+  - **L4 Never-Throw & Headless Resilience**: Safely executes on canvas without active chat sessions by emitting `meta.session_status = 'no_session'` and empty string fallbacks, preventing downstream execution cascades from stalling.
+  - **Non-Cacheable Resumption Contract**: Bypasses stale DAG checkpoint caches during node resumption and single-node retries, always fetching live multi-turn context.
+  - **Sub-Workflow Context Isolation**: Evaluates nested sub-workflows strictly within an isolated `no_session` context, eliminating parent session bleed.
+- **Workflow Version Snapshots & IndexedDB v7 Storage (`src/services/versioning/workflow-version-service.ts`, `src/services/storage/indexeddb-adapter.ts`, PRD-020 Part B)**:
+  - **IndexedDB v7 Schema**: Introduced dedicated `workflow_versions` object store with compound index `by_workflow_created: ['workflowId', 'createdAt']` and cascading workflow deletion.
+  - **30-Version Hard Quota Guard**: Single-transaction quota enforcement rejecting additions beyond 30 versions per workflow with `WorkflowVersionQuotaError` to prevent silent FIFO eviction of named baselines.
+  - **Recursive White-Box Sanitization**: Automatically strips credentials (including nested embedding and reranker API keys) and clears runtime outputs before persistence, backed by `isGraphFullySanitized` pre-save verification.
+- **Pure-Frontend Canonical Topological Hashing (SHA-256) & Invariance Engine (`src/services/diff/workflow-diff.ts`)**:
+  - Computes deterministic 64-character hex SHA-256 digests invariant to node/edge array permutations and coordinate jitter (`dx, dy`), accurately distinguishing semantic topology changes from layout adjustments.
+  - Powers non-redundant save guards and real-time canvas dirty-state tracking.
+- **Structural DAG Diff Engine & LCS Text Diffing (`src/services/diff/workflow-diff.ts`, `WorkflowDiffModal.tsx`)**:
+  - Compares topological graphs across nodes, edges, and configurations; isolates pure coordinate movements as `layoutOnly` with one-click folding.
+  - Computes line-level text differences using bounded Longest Common Subsequence (LCS) algorithm (`MAX_LCS_CELLS = 4_000_000`) for prompts and code snippets.
+- **Safe Rollback State Machine & Reversible Undo Stack (`src/stores/workflow-store.ts`, `WorkflowVersionDrawer.tsx`)**:
+  - Atomic five-step rollback execution: execution state guard, 3-choice dirty-state prompt (Save & Rollback / Overwrite / Cancel), pushing current canvas into memory history stack (`Ctrl+Z` undoable), deep-clone state restoration to idle, and double-layer persistence (`WORKFLOWS_PAYLOAD`).
+  - Added `Ctrl+Shift+S` global shortcut for instant snapshot creation, snapshot counter badge, and responsive drawer UI.
+- **Automated Verification & Code Quality**:
+  - Added comprehensive test suites (`tests/memory-node.node.test.ts`, `tests/workflow-version-snapshots.node.test.ts`), expanding total automated tests to **592 passing tests across 172 test suites (100% green rate)**.
+  - Resolved React 19 rendering purity warnings (`react-hooks/purity`).
+
 ## [0.4.19] - 2026-10-12
 
 ### Added

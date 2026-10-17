@@ -1,9 +1,9 @@
 # 🎯 Next Steps / 接续开发清单
 
-> **Current Version**: `v0.4.19` (Completed & Verified ✅)  
-> **Last Updated**: 2026-10-12  
-> **Previous Milestone**: Phase 4.18 长程会话双锚点滚动摘要与细粒度会话控制 (`v0.4.18` Shipped ✅)  
-> **Current Milestone**: **Phase 4.19 端侧多源向量嵌入与高工效三模混合检索 (`v0.4.19` Shipped ✅)** (详见 [PRD-019](docs/01-prd/PRD-019-Browser-Native-Multi-Provider-Embedding-and-Hybrid-Search.md))  
+> **Current Version**: `v0.4.20` (Completed & Verified ✅)  
+> **Last Updated**: 2026-10-17  
+> **Previous Milestone**: Phase 4.19 端侧多源向量嵌入与高工效三模混合检索 (`v0.4.19` Shipped ✅)  
+> **Current Milestone**: **Phase 4.20 MemoryNode 画布原语与工作流版本快照管理 (`v0.4.20` Shipped ✅)** (详见 [PRD-020](docs/01-prd/PRD-020-MemoryNode-and-Workflow-Version-Snapshots.md))  
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -355,17 +355,36 @@
 
 ---
 
-### 🔮 Upcoming Milestone: v0.4.20 MemoryNode Canvas Visual Primitive & Workflow Version Snapshots (Phase 4.20)
+### ⚡ Completed Milestone: Phase 4.20 MemoryNode Canvas Visual Primitive & Workflow Version Snapshots (v0.4.20 Shipped ✅)
+> Implemented pursuant to [PRD-020: MemoryNode and Workflow Version Snapshots](docs/01-prd/PRD-020-MemoryNode-and-Workflow-Version-Snapshots.md).
 
 - [x] **1. Dedicated `MemoryNode` Visual Workflow Primitive (Part A Delivered ✅)**:
   - Visual DAG memory extraction node with three configurable channels: rolling summary (`chat_summary`), recent verbatim turns (`chat_history`), and pinned items (`isPinned`).
   - L4 Never-Throw contract: headless canvas executions without active sessions output empty values and `no_session` metadata without crashing downstream nodes.
   - Breakpoint resumption non-cacheable contract: re-reads live conversation history on resume rather than hitting stale cache.
   - SubWorkflow scope isolation: nested flows strictly evaluate with `no_session`.
-- [ ] **2. Workflow Version Snapshots & Diff Inspector (Part B deferred to v0.4.22 per PRD-020)**:
-  - Named workflow version checkpoints with visual graph diffs and rollback capabilities.
-- [ ] **3. Advanced Multi-Session Cross-Workflow Memory Federation**:
-  - Shared global memory pools across distinct workflow instances and canvas sessions.
+- [x] **2. Workflow Version Snapshots & IndexedDB v7 Storage (Part B Delivered ✅)**:
+  - Pure-frontend SHA-256 canonical graph hashing invariant to node/edge permutations and coordinate jitter.
+  - IndexedDB v7 `workflow_versions` store with 30-version hard quota and transaction abort protection.
+  - Recursive credential stripping and runtime output clearance with `isGraphFullySanitized` pre-save verification.
+  - Structural DAG diff engine with LCS line-level diffing and layout movement folding.
+  - Reversible atomic rollback state machine with dirty-state safety guard and `Ctrl+Z` undo stack integration.
+- [x] **3. Automated Verification & Code Quality**:
+  - 592/592 tests passing across 172 test suites with zero failures.
+  - Zero typecheck errors and React 19 rendering purity compliance.
+
+---
+
+### 🔮 Upcoming Milestone: v0.4.22 Canvas Subgraph Folding & Reusable Component Contract (Phase 4.22)
+> Focus on visual organization, composite nodes, and modular workflow reuse pursuant to PRD-021.
+
+- [ ] **1. Multi-Node Selection & 1-Click Subgraph Folding**:
+  - Box-select or multi-select canvas nodes and fold into a unified Composite/Group Node.
+  - Automatically infer boundary inputs/outputs and map them to custom handles.
+- [ ] **2. Drawer-Style Subgraph Micro-Editor**:
+  - Double-click composite node to open an isolated slide-over canvas editor for internal DAG inspection and tuning.
+- [ ] **3. Zero-Overhead Topological Flattening Scheduler**:
+  - Inline subgraphs at runtime into the parent DAG execution waves to maintain Kahn's topological guarantees with zero nesting overhead.
 
 ---
 
@@ -748,17 +767,33 @@ npm run build
 
 ---
 
-### 🔮 后续接续里程碑：v0.4.20 MemoryNode 画布原语与工作流版本快照管理 (Phase 4.20)
+### ⚡ 已完成里程碑：v0.4.20 MemoryNode 画布原语与工作流版本快照管理 (Phase 4.20 Shipped ✅)
+> 依据 [PRD-020](docs/01-prd/PRD-020-MemoryNode-and-Workflow-Version-Snapshots.md) 落地：会话长程记忆抽取原语与可悔棋版本演进快照。
 
 - [x] **1. 专属 `MemoryNode` 画布工作流原语（Part A 已交付 ✅）**：
   - 可视化 DAG 会话记忆提取节点，支持三通道独立勾选：滚动摘要 (`chat_summary`)、近期对话窗口 (`chat_history`) 与置顶重点消息 (`isPinned`)。
   - L4 Never-Throw 契约：画布顶部直接执行无会话时，安全输出空值与 `no_session` 状态，绝不阻塞下游节点。
   - 断点续跑非缓存规约：续跑与单节点重试时重读实时会话，不复用陈旧缓存。
   - 子工作流作用域隔离：嵌套子流内严格隔离为 `no_session`。
-- [ ] **2. 工作流版本命名快照与差异对比 (Workflow Snapshots & Diff，依 PRD-020 顺延至 v0.4.22)**：
-  - 支持画布拓扑版本打标命名、历史版本回退与双版本可视化差异图比对。
-- [ ] **3. 跨工作流与多会话记忆联邦共享**：
-  - 支持在多个不同工作流或画布执行会话之间共享全局长程记忆池。
+- [x] **2. 工作流版本快照与结构化 Diff 引擎（Part B 已交付 ✅）**：
+  - 纯前端 SHA-256 规范化拓扑指纹算法，稳定过滤坐标位移与数组排序抖动噪声。
+  - IndexedDB v7 `workflow_versions` 专用对象仓库，落地 30 版本单事务配额守卫与白盒脱敏防线。
+  - 结构化 DAG 语义 Diff 引擎，支持字段级 LCS 行比对与纯布局位移折叠。
+  - 原子回滚状态机：执行态守卫、脏状态三选一弹窗、回滚前自动推入 `Ctrl+Z` 内存撤销栈与持久化落盘。
+- [x] **3. 质量验收与测试保障**：
+  - 全量 592 项自动化测试 / 172 个测试套件 100% 绿灯，React 19 渲染纯度严格合规。
+
+---
+
+### 🔮 后续接续里程碑：v0.4.22 画布子图折叠封装与可复用组件契约 (Phase 4.22)
+> 围绕节点组织效率与模块化复用推进，详见 [PRD-021](docs/01-prd/PRD-021-Canvas-Subgraph-Folding-and-Reusable-Component-Contract.md)。
+
+- [ ] **1. 多选节点一键折叠封装 (Subgraph Packaging)**：
+  - 支持多选画布节点一键“折叠打包”为 Composite/Group 复合节点，自动推导边界连线并映射为内外 I/O Handle。
+- [ ] **2. 抽屉式局部子图微调编辑器 (Subgraph Drawer)**：
+  - 双击复合节点呼出局部子图抽屉，支持在独立画布视口中微调子节点参数与连线，主画布拓扑保持极简。
+- [ ] **3. 拓扑扁平化内联调度器 (Topology Flattening Scheduler)**：
+  - 执行期零嵌套调度开销：调度器自动将复合节点内联展开至全局 DAG 执行波次，死守 Kahn 拓扑排序与断点续跑契约。
 
 ---
 
