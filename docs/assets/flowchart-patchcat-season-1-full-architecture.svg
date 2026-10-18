@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" width="960" height="640" style="background:#090d16; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif;">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0f1d"/>
+      <stop offset="100%" stop-color="#050811"/>
+    </linearGradient>
+    <linearGradient id="titleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#34d399"/>
+    </linearGradient>
+    <filter id="neoShadow" x="-3%" y="-3%" width="106%" height="106%">
+      <feDropShadow dx="3" dy="4" stdDeviation="0" flood-color="#000000" flood-opacity="0.85"/>
+    </filter>
+    <marker id="arrowIndigo" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#6366f1"/>
+    </marker>
+    <marker id="arrowCyan" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#06b6d4"/>
+    </marker>
+    <marker id="arrowEmerald" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#10b981"/>
+    </marker>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="960" height="640" fill="url(#bgGrad)"/>
+  <rect x="12" y="12" width="936" height="616" rx="8" fill="none" stroke="#1e293b" stroke-width="2"/>
+
+  <!-- Top Title Banner -->
+  <rect x="28" y="24" width="904" height="54" rx="6" fill="#0f172a" stroke="#334155" stroke-width="2" filter="url(#neoShadow)"/>
+  <text x="46" y="57" font-size="15" font-weight="800" fill="#f8fafc" letter-spacing="0.5">PATCHCAT · LOCAL-FIRST AI WORKFLOW ARCHITECTURE (SEASON 1 FINALE)</text>
+  <rect x="680" y="36" width="236" height="30" rx="4" fill="#064e3b" stroke="#10b981" stroke-width="1.5"/>
+  <text x="694" y="56" font-size="11" font-weight="700" fill="#6ee7b7">v0.4.x TO v0.5.0 · 592 TESTS PASS</text>
+
+  <!-- COLUMN 1: Deterministic DAG & State Machine (Left: x=28, w=288) -->
+  <g transform="translate(28, 94)">
+    <rect width="288" height="434" rx="8" fill="#0b1120" stroke="#3b82f6" stroke-width="2" filter="url(#neoShadow)"/>
+    <rect x="12" y="12" width="264" height="28" rx="4" fill="#1d4ed8"/>
+    <text x="20" y="31" font-size="11" font-weight="800" fill="#ffffff" letter-spacing="0.5">1. 确定性调度与 DAG 状态机</text>
+
+    <!-- Block 1.1: Kahn Topo Engine -->
+    <rect x="12" y="52" width="264" height="80" rx="5" fill="#111827" stroke="#1e3a8a" stroke-width="1.5"/>
+    <text x="22" y="73" font-size="11" font-weight="700" fill="#93c5fd">● Kahn 拓扑排序与环路熔断</text>
+    <text x="22" y="93" font-size="9.5" fill="#cbd5e1">入度为 0 动态就绪队列 · O(V+E) 确定性调度</text>
+    <text x="22" y="112" font-size="9" font-family="monospace" fill="#38bdf8">Deadlock Watchdog ➔ 零无限死锁挂起</text>
+
+    <!-- Block 1.2: Checkpoint & Reverse BFS -->
+    <rect x="12" y="144" width="264" height="80" rx="5" fill="#111827" stroke="#1e3a8a" stroke-width="1.5"/>
+    <text x="22" y="165" font-size="11" font-weight="700" fill="#93c5fd">● 状态快照与反向 BFS 续跑</text>
+    <text x="22" y="185" font-size="9.5" fill="#cbd5e1">节点执行结果增量记忆 · 局部失败快速定位</text>
+    <text x="22" y="204" font-size="9" font-family="monospace" fill="#a5b4fc">Reverse BFS Sieve ➔ 仅重跑脏节点子树</text>
+
+    <!-- Block 1.3: Cascade Routing -->
+    <rect x="12" y="236" width="264" height="80" rx="5" fill="#111827" stroke="#1e3a8a" stroke-width="1.5"/>
+    <text x="22" y="257" font-size="11" font-weight="700" fill="#93c5fd">● 模型级联路由与优雅回退</text>
+    <text x="22" y="277" font-size="9.5" fill="#cbd5e1">低成本轻量模型优先 · 429/超时自动级联</text>
+    <text x="22" y="296" font-size="9" font-family="monospace" fill="#34d399">Cascade Fallback ➔ 保证业务下游绝对可用</text>
+
+    <!-- Bottom summary badge -->
+    <rect x="12" y="328" width="264" height="92" rx="5" fill="#020617" stroke="#1e293b" stroke-width="1.5"/>
+    <text x="22" y="350" font-size="10" font-weight="700" fill="#f59e0b">核心工程哲学：拒绝黑盒偶发性</text>
+    <text x="22" y="372" font-size="9" fill="#94a3b8">将任意复杂提示词流抽象为严格有向无环图</text>
+    <text x="22" y="392" font-size="9" fill="#94a3b8">每一个状态跃迁都有明确的边界条件与耗时记录</text>
+    <text x="22" y="410" font-size="8.5" font-family="monospace" fill="#64748b">Zustand Store + State Machine Contract</text>
+  </g>
+
+  <!-- COLUMN 2: Browser-Native AI & Primitives (Middle: x=336, w=288) -->
+  <g transform="translate(336, 94)">
+    <rect width="288" height="434" rx="8" fill="#0b1120" stroke="#06b6d4" stroke-width="2" filter="url(#neoShadow)"/>
+    <rect x="12" y="12" width="264" height="28" rx="4" fill="#0891b2"/>
+    <text x="20" y="31" font-size="11" font-weight="800" fill="#ffffff" letter-spacing="0.5">2. 纯端侧检索与会话显式原语</text>
+
+    <!-- Block 2.1: Browser Vector Embedding -->
+    <rect x="12" y="52" width="264" height="80" rx="5" fill="#111827" stroke="#155e75" stroke-width="1.5"/>
+    <text x="22" y="73" font-size="11" font-weight="700" fill="#67e8f9">● 纯前端 Web Workers 向量化</text>
+    <text x="22" y="93" font-size="9.5" fill="#cbd5e1">BGE-small 端侧量化模型 · 独立 Worker 隔离</text>
+    <text x="22" y="112" font-size="9" font-family="monospace" fill="#22d3ee">Cosine Similarity ➔ 零网络外发私有计算</text>
+
+    <!-- Block 2.2: BM25 + RRF Hybrid -->
+    <rect x="12" y="144" width="264" height="80" rx="5" fill="#111827" stroke="#155e75" stroke-width="1.5"/>
+    <text x="22" y="165" font-size="11" font-weight="700" fill="#67e8f9">● 零依赖 BM25 倒排 + RRF 融合</text>
+    <text x="22" y="185" font-size="9.5" fill="#cbd5e1">关键词精确命中 + 语义向量召回双轨驱动</text>
+    <text x="22" y="204" font-size="9" font-family="monospace" fill="#a78bfa">Reciprocal Rank Fusion ➔ 抹平模型分差</text>
+
+    <!-- Block 2.3: MemoryNode Visual Primitive -->
+    <rect x="12" y="236" width="264" height="80" rx="5" fill="#111827" stroke="#155e75" stroke-width="1.5"/>
+    <text x="22" y="257" font-size="11" font-weight="700" fill="#67e8f9">● MemoryNode 画布显式原语</text>
+    <text x="22" y="277" font-size="9.5" fill="#cbd5e1">彻底废除隐藏后台的全局黑盒上下文注入</text>
+    <text x="22" y="296" font-size="9" font-family="monospace" fill="#34d399">Pinned Round + Summary ➔ 只读不可变切片</text>
+
+    <!-- Bottom summary badge -->
+    <rect x="12" y="328" width="264" height="92" rx="5" fill="#020617" stroke="#1e293b" stroke-width="1.5"/>
+    <text x="22" y="350" font-size="10" font-weight="700" fill="#f59e0b">核心工程哲学：算力下放与白盒化</text>
+    <text x="22" y="372" font-size="9" fill="#94a3b8">端侧 RAG 不依赖任何后端向量数据库</text>
+    <text x="22" y="392" font-size="9" fill="#94a3b8">会话历史作为普通 DAG 节点，输入输出清晰可见</text>
+    <text x="22" y="410" font-size="8.5" font-family="monospace" fill="#64748b">IndexedDB Storage + Pipeline Slicing</text>
+  </g>
+
+  <!-- COLUMN 3: Local Sovereignty & Evolution Safety (Right: x=644, w=288) -->
+  <g transform="translate(644, 94)">
+    <rect width="288" height="434" rx="8" fill="#0b1120" stroke="#10b981" stroke-width="2" filter="url(#neoShadow)"/>
+    <rect x="12" y="12" width="264" height="28" rx="4" fill="#047857"/>
+    <text x="20" y="31" font-size="11" font-weight="800" fill="#ffffff" letter-spacing="0.5">3. 本地数据主权与演进防御</text>
+
+    <!-- Block 3.1: Web Crypto Vault -->
+    <rect x="12" y="52" width="264" height="80" rx="5" fill="#111827" stroke="#064e3b" stroke-width="1.5"/>
+    <text x="22" y="73" font-size="11" font-weight="700" fill="#6ee7b7">● Web Crypto 本地硬件级密钥库</text>
+    <text x="22" y="93" font-size="9.5" fill="#cbd5e1">PBKDF2 强派生 + AES-GCM-256 原生加密</text>
+    <text x="22" y="112" font-size="9" font-family="monospace" fill="#34d399">Zero-Plaintext ➔ 内存脱敏，杜绝明文落盘</text>
+
+    <!-- Block 3.2: Flow Preflight -->
+    <rect x="12" y="144" width="264" height="80" rx="5" fill="#111827" stroke="#064e3b" stroke-width="1.5"/>
+    <text x="22" y="165" font-size="11" font-weight="700" fill="#6ee7b7">● Flow Preflight 静态语法分析</text>
+    <text x="22" y="185" font-size="9.5" fill="#cbd5e1">连线孤岛、缺失必填、类型不匹配毫秒级巡检</text>
+    <text x="22" y="204" font-size="9" font-family="monospace" fill="#facc15">Static Canvas Linter ➔ 运行时故障前置拦截</text>
+
+    <!-- Block 3.3: Version Snapshots & DAG Diff -->
+    <rect x="12" y="236" width="264" height="80" rx="5" fill="#111827" stroke="#064e3b" stroke-width="1.5"/>
+    <text x="22" y="257" font-size="11" font-weight="700" fill="#6ee7b7">● 版本快照与拓扑 LCS 结构化 Diff</text>
+    <text x="22" y="277" font-size="9.5" fill="#cbd5e1">SHA-256 规范化指纹 · 过滤坐标噪音</text>
+    <text x="22" y="296" font-size="9" font-family="monospace" fill="#38bdf8">IndexedDB v7 ➔ 30 版本硬配额与可撤销回滚</text>
+
+    <!-- Bottom summary badge -->
+    <rect x="12" y="328" width="264" height="92" rx="5" fill="#020617" stroke="#1e293b" stroke-width="1.5"/>
+    <text x="22" y="350" font-size="10" font-weight="700" fill="#f59e0b">核心工程哲学：用户绝对数据主权</text>
+    <text x="22" y="372" font-size="9" fill="#94a3b8">无中心化服务端窃取，密钥与逻辑归宿于用户</text>
+    <text x="22" y="392" font-size="9" fill="#94a3b8">快照比对与撤销栈给开发者放胆试错的底气</text>
+    <text x="22" y="410" font-size="8.5" font-family="monospace" fill="#64748b">Local-First · Zero Leakage · Fully Audited</text>
+  </g>
+
+  <!-- BOTTOM FOOTER BANNER: Season 1 Milestone -->
+  <g transform="translate(28, 542)">
+    <rect width="904" height="74" rx="6" fill="#030712" stroke="#334155" stroke-width="2" filter="url(#neoShadow)"/>
+    <rect x="12" y="12" width="220" height="50" rx="4" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.5"/>
+    <text x="26" y="32" font-size="10.5" font-weight="800" fill="#c7d2fe">研发哲学：边写边学与双模认知</text>
+    <text x="26" y="51" font-size="9.5" fill="#94a3b8">像实验室做功课般逐段推演验证</text>
+
+    <text x="250" y="33" font-size="10" font-weight="700" fill="#e2e8f0">第一季圆满封箱：从 0.4.x 原语筑基走向 0.5.0 生产稳态</text>
+    <text x="250" y="52" font-size="9" fill="#64748b">26 篇连贯硬核工程复盘 · 592 个自动化测试项 · 172 个全绿套件 · 纯前端 Local-First AI 工作流编排完整实战</text>
+
+    <rect x="760" y="16" width="130" height="42" rx="4" fill="#0f172a" stroke="#10b981" stroke-width="1.5"/>
+    <text x="778" y="34" font-size="9.5" font-weight="800" fill="#34d399">PATCHCAT v0.5.0</text>
+    <text x="778" y="49" font-size="8.5" font-family="monospace" fill="#94a3b8">READY TO DEPLOY</text>
+  </g>
+</svg>
