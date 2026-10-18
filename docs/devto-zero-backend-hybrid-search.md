@@ -3,7 +3,7 @@ title: Zero-Backend AI: Running Local Embeddings, BM25, and Hybrid RRF Search 10
 published: true
 description: Why pay monthly cloud bills for hosted vector databases when modern browsers can run quantized embeddings, an in-memory BM25 index, and reciprocal rank fusion locally? Here is the architecture, code, and trade-offs.
 tags: webdev, ai, javascript, architecture
-cover_image: https://guobug.github.io/assets/images/flowchart-bm25-rrf-hybrid-search.svg
+cover_image: https://guobug.github.io/assets/images/cover-patchcat-season-1-finale-architecture.jpg
 ---
 
 > Open-Source Repository: [GitHub - PatchCat](https://github.com/GuoBug/PatchCat)  
@@ -19,7 +19,7 @@ While building PatchCat—an open-source **AI Workflow Orchestration** studio de
 
 Here is the condensed architecture, the core logic, and the practical trade-offs.
 
-![PatchCat Dual-Channel Hybrid Retrieval](https://guobug.github.io/assets/images/flowchart-bm25-rrf-hybrid-search.svg)
+![PatchCat Dual-Channel Hybrid Retrieval](https://guobug.github.io/assets/images/flowchart-bm25-rrf-hybrid-search.png)
 
 ## 1. Why Pure Vector Search Fails on Real Workflows
 
