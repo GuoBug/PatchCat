@@ -1,4 +1,4 @@
-# 边写边学 AI 工作流引擎（六）：用一次“假药对照”，我们在大模型自愈中抓出了真凶
+﻿# 边写边学 AI 工作流引擎（六）：用一次“假药对照”，我们在大模型自愈中抓出了真凶
 
 > 导读：在上一篇中，我们记录了引入受限解码与自愈状态机后出现的反常现象：契约合规率暴涨至 92.9%，但核心意图分类准确率却倒跌了 7.1%（退款工单被合法化判定为物流）。本文真实记录我们的破案全过程：通过三组严格单变量隔离实验，引入医药研发级的“假药对照（安慰剂组）”刺破选项偏见假设，利用哨兵监控实现零误伤的语义判据注入（分类准确率回升至 92.9%，Fisher $p=0.003$），并白盒推翻此前对自愈的误判，深挖“不动点卡死”与“动态振荡”的物理边界。
 
@@ -15,7 +15,7 @@
 
 ---
 
-![用一次“假药对照”，我们在大模型自愈中抓出了真凶](../assets/eval-placebo-control-cover.jpg)
+![用一次“假药对照”，我们在大模型自愈中抓出了真凶](https://guobug.github.io/assets/images/eval-placebo-control-cover.jpg)
 
 > *核心结论*：  
 > 许多团队在优化大模型提示词与工作流时，常常陷入“改了三处代码、指标涨了，就把功劳归于自以为有效的那一项”的炼金术。在 **AI 工作流编排**（AI Workflow Orchestration）中，引入医药研发级的**“假药对照（安慰剂组）”**与哨兵监控，是刺破玄学、斩断“格式幻觉”的科学手段。
@@ -72,7 +72,7 @@
 
 作为 Product Engineer，在架构演进中最警惕的事情，就是为了修一个特异性 Bug，把原本跑得好好的老功能干崩了（俗称“按下葫芦浮起瓢”）。
 
-![哨兵监控与零误伤防线](../assets/eval-sentinel-watchlist-guard.jpg)
+![哨兵监控与零误伤防线](https://guobug.github.io/assets/images/eval-sentinel-watchlist-guard.jpg)
 
 为了杜绝这种次生灾害，我们在评测运行脚本中挂载了专门的 **哨兵监控（Sentinel Watch-List）**，在终端实时巡检三类最容易被误伤的边界用例：
 
@@ -133,7 +133,7 @@
 
 这个坑，绝不仅仅存在于客服工单。
 
-![受限解码保下限，业务判据定上限](../assets/eval-criteria-intelligence-upper-bound.jpg)
+![受限解码保下限，业务判据定上限](https://guobug.github.io/assets/images/eval-criteria-intelligence-upper-bound.jpg)
 
 当你使用确定性框架编排合同法务审查、金融信贷审批、代码自动生成等严肃业务时，完全相同的隐患会随时爆发：
 - 把选项枚举顺序调整一百遍，不如在 Schema 里明确一句“以承担实质违约义务方为准”；
@@ -154,3 +154,4 @@
 > **郭强 (GuoBug)**，Product Engineer，做平台工程也做业务增长。目前主要在折腾 AI 工作流编排、DAG 状态机与确定性系统架构。  
 > 开源项目与主页：[https://github.com/GuoBug](https://github.com/GuoBug) · [https://guobug.github.io](https://guobug.github.io)  
 > 欢迎就工作流引擎架构、拓扑调度和低门槛开发体验交流指教。
+

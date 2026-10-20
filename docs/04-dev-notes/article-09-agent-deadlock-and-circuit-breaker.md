@@ -1,4 +1,4 @@
----
+﻿---
 title: "边写边学 AI 工作流引擎（九）：别让 Agent 原地鬼打墙！连续 3 次相同工具调用的柔性引导与硬熔断"
 series: "边写边学 AI 工作流引擎"
 version: "1.0.0"
@@ -28,7 +28,7 @@ tags: ["AI 工作流编排", "确定性工作流", "DAG 状态机", "ReAct 循�
 
 ---
 
-![别让 Agent 原地鬼打墙！连续 3 次相同工具调用的柔性引导与硬熔断](../assets/agent-deadlock-circuit-breaker-cover.jpg)
+![别让 Agent 原地鬼打墙！连续 3 次相同工具调用的柔性引导与硬熔断](https://guobug.github.io/assets/images/agent-deadlock-circuit-breaker-cover.jpg)
 
 ## 一、 生产痛点：Agent 原地“鬼打墙”与工程暗礁
 
@@ -82,7 +82,7 @@ tags: ["AI 工作流编排", "确定性工作流", "DAG 状态机", "ReAct 循�
 | 自主纠偏几率 | 0%（无反思机会） | 极低（模型缺乏外部刺激） | 高（通过系统提示唤醒反思） |
 | 空间复杂度 | $O(N)$ 历史全记录 | $O(1)$ 仅计数器 | $O(1)$ 仅暂存上一次签名 |
 
-![柔性引导与硬熔断看门狗的分级防御隐喻](../assets/soft-hint-vs-hard-breaker.jpg)
+![柔性引导与硬熔断看门狗的分级防御隐喻](https://guobug.github.io/assets/images/soft-hint-vs-hard-breaker.jpg)
 
 ---
 
@@ -202,7 +202,7 @@ if (maxTokenBudget > 0 && totalUsage.total >= maxTokenBudget) {
 
 无论是参数微调的伪装循环，还是多工具震荡死锁，只要累积消耗的 Token 触达用户设定的红线，引擎均会立即切断循环，守护用户的账户余额。
 
-![看门狗与 Token 预算金库守护](../assets/watchdog-token-vault.jpg)
+![看门狗与 Token 预算金库守护](https://guobug.github.io/assets/images/watchdog-token-vault.jpg)
 
 ### 3. 单步看门狗协作：防范主线程假死
 
@@ -267,3 +267,4 @@ PatchCat 践行的原则是：在非确定性的模型内核之外，包裹一�
 > **郭强 (GuoBug)**，Product Engineer，做平台工程也做业务增长。目前主要在折腾 AI 工作流编排、DAG 状态机与确定性系统架构。  
 > 开源项目与主页：[https://github.com/GuoBug](https://github.com/GuoBug) · [https://guobug.github.io](https://guobug.github.io)  
 > 欢迎就工作流引擎架构、拓扑调度和低门槛开发体验交流指教。
+

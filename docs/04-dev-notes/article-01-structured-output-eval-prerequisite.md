@@ -1,4 +1,4 @@
-# 边写边学 AI 工作流引擎（一）：搞 Eval 评测前，先让输出闭合！结构化约束与业务契约防线
+﻿# 边写边学 AI 工作流引擎（一）：搞 Eval 评测前，先让输出闭合！结构化约束与业务契约防线
 
 > **导读**：模型输出不稳定时，下游的 `JSON.parse` 和 Eval 断言随时会炸。这篇文章记的是 PatchCat 在搭完可视化画布与 DAG 调度骨架之后，为什么又回头补“结构化输出与自愈状态机（Module 0）”这一课：Logits 掩码与受限解码是怎么在采样前把非法 Token 掐掉的，OpenAI / DeepSeek / Ollama 之间的能力差距怎么用三级协商抹平，以及为什么 JSON 能 parse 通了还不够，还得用 Zod 在业务契约层拦住越界数值、空壳字段和跨字段矛盾。
 
@@ -13,7 +13,7 @@
 
 ---
 
-![搞 Eval 评测前，先让输出闭合！](../assets/diagrams/structured-output-eval-prerequisite-cover.jpg)
+![搞 Eval 评测前，先让输出闭合！](https://guobug.github.io/assets/images/structured-output-eval-prerequisite-cover.jpg)
 
 > **核心架构设计原则**：  
 > *L1 管 JSON 能不能 parse，L2 管 parse 出来的东西能不能用。这两件事没搞定之前，谈 Eval 打分没有意义。*
@@ -39,7 +39,7 @@ Demo 层面上，它算是个成型的项目了。但我想要的不是“截图
 
 ![传统脆弱断流 vs PatchCat 确定性闭环防线](../assets/diagrams/flowchart-fragile-vs-deterministic-pipeline.svg)
 
-![确定性白盒铁轨 vs 脆弱断裂的概率湍流](../assets/diagrams/deterministic-rails-vs-fragile-flow.jpg)
+![确定性白盒铁轨 vs 脆弱断裂的概率湍流](https://guobug.github.io/assets/images/deterministic-rails-vs-fragile-flow.jpg)
 
 - **脆弱的传统链路**：`LLM 自由输出` $\to$ 混杂文本 / 残缺括号 $\to$ `JSON.parse()` 抛出 `SyntaxError` $\to$ 整条 DAG 中断；
 - **PatchCat 的做法**：`LLM 节点` $\to$ `L1 约束解码协商 + 物理修补` $\to$ `L2 Zod safeParse 契约截流` $\to$ 强类型 Payload 交给下游节点和 Eval。
@@ -111,7 +111,7 @@ $$
 
 ![模型能力探针与三级平滑降级矩阵](../assets/diagrams/flowchart-three-tier-negotiation-matrix.svg)
 
-![三级自适应协商矩阵与物理修剪导管](../assets/diagrams/three-tier-negotiation-conduit.jpg)
+![三级自适应协商矩阵与物理修剪导管](https://guobug.github.io/assets/images/three-tier-negotiation-conduit.jpg)
 
 - **Tier 1 (Strict Schema)**：给有原生受限解码的模型（如 gpt-4o），启用物理级 Logits 语法掩码；
 - **Tier 2 (JSON Mode)**：给 DeepSeek 这类只支持 `json_object` 的端点，自适应启用并把 Schema 注入 Prompt；
@@ -264,3 +264,4 @@ L1 和 L2 拼起来，就是 LLM 节点发起调用时的完整前置防线：
 > **郭强 (GuoBug)**，Product Engineer，做平台工程也做业务增长。目前主要在折腾 AI 工作流编排、DAG 状态机与确定性系统架构。  
 > 开源项目与主页：[https://github.com/GuoBug](https://github.com/GuoBug) · [https://guobug.github.io](https://guobug.github.io)  
 > 欢迎就工作流引擎架构、拓扑调度和低门槛开发体验交流指教。
+

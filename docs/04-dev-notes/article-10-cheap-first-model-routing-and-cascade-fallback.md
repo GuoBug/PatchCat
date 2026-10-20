@@ -1,4 +1,4 @@
----
+﻿---
 title: "边写边学 AI 工作流引擎（十）：90% 流量零成本闭环！经济模型试探、语义门禁拦截与强模型轮换池自愈升级"
 series: "边写边学 AI 工作流引擎"
 version: "1.0.0"
@@ -28,7 +28,7 @@ tags: ["AI 工作流编排", "确定性工作流", "DAG 状态机", "模型级�
 
 ---
 
-![90% 流量零成本闭环！经济模型试探、语义门禁拦截与强模型轮换池自愈升级](../assets/model-routing-cascade-failover-cover.jpg)
+![90% 流量零成本闭环！经济模型试探、语义门禁拦截与强模型轮换池自愈升级](https://guobug.github.io/assets/images/model-routing-cascade-failover-cover.jpg)
 
 ## 一、 工业现实的痛点：模型成本与质量的三难困境
 
@@ -146,7 +146,7 @@ interface DiagnosticTriplet {
 
 ## 五、 工程权衡与代价剖析：不讲神话，直面边界
 
-![成本算力与确定性架构的天平](../assets/cheap-first-cascade-balance.jpg)
+![成本算力与确定性架构的天平](https://guobug.github.io/assets/images/cheap-first-cascade-balance.jpg)
 
 任何工业级方案都不是灵丹妙药。作为兼具底层架构与增长视角的系统工程师，必须清醒地交代架构的代价、局限与边界条件。
 
@@ -191,3 +191,4 @@ PatchCat 的工程实践给出的答案是分层设防：用经济模型接住�
 > **郭强 (GuoBug)**，Product Engineer，做平台工程也做业务增长。目前主要在折腾 AI 工作流编排、DAG 状态机与确定性系统架构。  
 > 开源项目与主页：[https://github.com/GuoBug](https://github.com/GuoBug) · [https://guobug.github.io](https://guobug.github.io)  
 > 欢迎就工作流引擎架构、拓扑调度和低门槛开发体验交流指教。
+

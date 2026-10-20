@@ -1,4 +1,4 @@
-# 边写边学 AI 工作流引擎（三）：真实踩坑复盘 —— Case #7 的字段冻结陷阱与代码回滚
+﻿# 边写边学 AI 工作流引擎（三）：真实踩坑复盘 —— Case #7 的字段冻结陷阱与代码回滚
 
 > **导读**：上一篇我们拆解了由“原输出残片 + 报错路径 + 黄金范式”构成的 L3 自愈状态机。许多人以为自愈机制搭好后便能一劳永逸，但真实的工程研发从来充满意外。  
 > 为了追求极致的 Token 经济性，我们曾设计过一套看似精妙的“字段级冻结（Field Freezing）”局部微创优化，结果却在极限压测的 Case #7 中遭遇严重死锁。  
@@ -6,7 +6,7 @@
 
 ---
 
-![Case #7 字段冻结陷阱与分岔路口](../assets/case7-field-freezing-cover.jpg)
+![Case #7 字段冻结陷阱与分岔路口](https://guobug.github.io/assets/images/case7-field-freezing-cover.jpg)
 
 ---
 
@@ -132,7 +132,7 @@ Case #7 模拟的是售后工单中严苛的“高危工单深度阐述”与“
 虽然回归全局修复在基准测试样本中大幅提升了自愈收敛率，但作为一个严肃的 [PatchCat](https://github.com/GuoBug/PatchCat) 编排引擎，我们必须面对不可回避的失效场景：
 > 如果模型遭遇了极端恶意的 Prompt 注入、API 彻底超时，或者 3 轮重试后依然无法合规，系统该怎么办？
 
-![L4 终极安全金库与 Never-Throw 确定性防线](../assets/l4-never-throw-vault.jpg)
+![L4 终极安全金库与 Never-Throw 确定性防线](https://guobug.github.io/assets/images/l4-never-throw-vault.jpg)
 
 ### 1. 传统代码的灾难做法：`throw new Error()`
 在单体脚本或简单的 Demo 里，很多人的做法是在 3 次失败后直接抛出异常：
@@ -225,3 +225,4 @@ return {
 > **郭强 (GuoBug)**，Product Engineer，做平台工程也做业务增长。目前主要在折腾 AI 工作流编排、DAG 状态机与确定性系统架构。  
 > 开源项目与主页：[https://github.com/GuoBug](https://github.com/GuoBug) · [https://guobug.github.io](https://guobug.github.io)  
 > 欢迎就工作流引擎架构、拓扑调度和低门槛开发体验交流指教。
+

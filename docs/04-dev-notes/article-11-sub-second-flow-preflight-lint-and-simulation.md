@@ -1,4 +1,4 @@
----
+﻿---
 title: "边写边学 AI 工作流引擎（十一）：大模型也能秒级自检！Flow Preflight 语法静态分析与画布连线自查"
 series: "边写边学 AI 工作流引擎"
 version: "1.0.0"
@@ -29,7 +29,7 @@ tags: ["AI 工作流编排", "确定性工作流", "DAG 状态机", "Flow Prefli
 
 ---
 
-![大模型也能秒级自检！Flow Preflight 语法静态分析与画布连线自查](../assets/flow-preflight-static-lint-cover.jpg)
+![大模型也能秒级自检！Flow Preflight 语法静态分析与画布连线自查](https://guobug.github.io/assets/images/flow-preflight-static-lint-cover.jpg)
 
 ## 一、 可视化编排的沉没成本：为什么非要在运行时才报错？
 
@@ -91,7 +91,7 @@ $$E_{\text{expected}} \setminus E_{\text{connected}} \neq \emptyset$$
 
 这是整个静态检查中最关键的一道防线。在节点输入配置中，用户通过 `extractVariableReferences(str)` 提取出所有形态如 `{{nodeId.output.path}}` 的模板引用。
 
-![幽灵变量依赖推导与传递闭包检查](../assets/flow-preflight-ghost-dependency.jpg)
+![幽灵变量依赖推导与传递闭包检查](https://guobug.github.io/assets/images/flow-preflight-ghost-dependency.jpg)
 
 问题的隐蔽性在于：很多开发者以为只要节点在画布上，变量就可以全局读取。但事实并非全局共享内存，而是依赖显式的拓扑时序。
 
@@ -241,3 +241,4 @@ Mock 引擎返回的标准物流意图可以让下游代码节点成功分发，
 > **郭强 (GuoBug)**，Product Engineer，做平台工程也做业务增长。目前主要在折腾 AI 工作流编排、DAG 状态机与确定性系统架构。  
 > 开源项目与主页：[https://github.com/GuoBug](https://github.com/GuoBug) · [https://guobug.github.io](https://guobug.github.io)  
 > 欢迎就工作流引擎架构、拓扑调度和低门槛开发体验交流指教。
+

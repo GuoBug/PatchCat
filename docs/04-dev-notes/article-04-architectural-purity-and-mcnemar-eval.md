@@ -1,4 +1,4 @@
-# 边写边学 AI 工作流引擎（四）：架构纯度清洗与 42 样本统计检验复盘
+﻿# 边写边学 AI 工作流引擎（四）：架构纯度清洗与 42 样本统计检验复盘
 
 > 导读：在前面的三篇迭代中，我们依次搭建了 L1 物理受限解码、L2 业务契约校验、L3 三元组自愈状态机，以及 L4 Never-Throw 终极兜底防线。测试全部通过，可视化画布运行顺畅。但进入阶段复盘时，两个关键设计决策浮出水面：一是引擎核心代码是否被特定工单业务污染，二是自愈状态机声称的 23.9% 合规率提升是否存在幸存者偏差。本篇作为 Module 0 的总结，记录我们如何完成架构解耦与双口径 McNemar 统计检验，给系统交出一份经得起推敲的工程答卷。
 
@@ -13,7 +13,7 @@
 
 ---
 
-![架构纯度清洗与 42 样本统计检验复盘](../assets/architectural-purity-mcnemar-cover.jpg)
+![架构纯度清洗与 42 样本统计检验复盘](https://guobug.github.io/assets/images/architectural-purity-mcnemar-cover.jpg)
 
 ---
 
@@ -165,3 +165,4 @@ export function getSchema(name: string): z.ZodTypeAny | undefined {
 > **郭强 (GuoBug)**，Product Engineer，做平台工程也做业务增长。目前主要在折腾 AI 工作流编排、DAG 状态机与确定性系统架构。  
 > 开源项目与主页：[https://github.com/GuoBug](https://github.com/GuoBug) · [https://guobug.github.io](https://guobug.github.io)  
 > 欢迎就工作流引擎架构、拓扑调度和低门槛开发体验交流指教。
+

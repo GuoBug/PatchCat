@@ -1,4 +1,4 @@
----
+﻿---
 title: "边写边学 AI 工作流引擎（八）：失败了别全盘重来！逆向 BFS 拓扑回溯与 DAG 检查点断点续跑"
 series: "边写边学 AI 工作流引擎"
 version: "1.0.0"
@@ -27,7 +27,7 @@ tags: ["AI 工作流编排", "确定性工作流", "DAG 状态机", "断点续�
 
 ---
 
-![失败了别全盘重来！逆向 BFS 拓扑回溯与 DAG 检查点断点续跑](../assets/checkpoint-resumption-reverse-bfs-cover.jpg)
+![失败了别全盘重来！逆向 BFS 拓扑回溯与 DAG 检查点断点续跑](https://guobug.github.io/assets/images/checkpoint-resumption-reverse-bfs-cover.jpg)
 
 
 
@@ -74,7 +74,7 @@ tags: ["AI 工作流编排", "确定性工作流", "DAG 状态机", "断点续�
 | 故障重跑范围 | 仅支持浅层重试 | 调度复杂度高 | 局部子图精准剪枝重排 |
 | 系统认知负荷 | 极低但无法生产可用 | 运维与网络依赖沉重 | 极简自包含 JSON，无重放黑盒 |
 
-![以 Linux 工具哲学构建自包含的不可变快照金库](../assets/checkpoint-immutable-snapshot-vault.jpg)
+![以 Linux 工具哲学构建自包含的不可变快照金库](https://guobug.github.io/assets/images/checkpoint-immutable-snapshot-vault.jpg)
 
 ---
 
@@ -157,7 +157,7 @@ const prunedNodeIds = new Set<string>([...targetNodesToRun, ...targetDescendants
 
 这一微小却关键的判据修正，彻底消灭了极速运行场景下的快照错序偶发偶现问题。
 
-![5-Record FIFO 环形淘汰与毫秒级时间戳仲裁机制](../assets/fifo-ring-buffer-tie-breaker.jpg)
+![5-Record FIFO 环形淘汰与毫秒级时间戳仲裁机制](https://guobug.github.io/assets/images/fifo-ring-buffer-tie-breaker.jpg)
 
 ---
 
@@ -193,3 +193,4 @@ const prunedNodeIds = new Set<string>([...targetNodesToRun, ...targetDescendants
 > **郭强 (GuoBug)**，Product Engineer，做平台工程也做业务增长。目前主要在折腾 AI 工作流编排、DAG 状态机与确定性系统架构。  
 > 开源项目与主页：[https://github.com/GuoBug](https://github.com/GuoBug) · [https://guobug.github.io](https://guobug.github.io)  
 > 欢迎就工作流引擎架构、拓扑调度和低门槛开发体验交流指教。
+

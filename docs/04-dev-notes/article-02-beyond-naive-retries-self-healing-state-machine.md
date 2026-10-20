@@ -1,11 +1,11 @@
-# 边写边学 AI 工作流引擎（二）：告别盲目重试 —— L3 自愈状态机与三元组纠错机制
+﻿# 边写边学 AI 工作流引擎（二）：告别盲目重试 —— L3 自愈状态机与三元组纠错机制
 
 > **导读**：上一篇我们通过 L1（受限解码与物理修补）和 L2（Zod 运行时校验）为工作流筑起了语法与契约防线。然而，当校验引擎当场拦截到非法输出时，下游系统该如何自愈？很多开发者第一反应是写一个 `for (let i = 0; i < 3; i++)` 重新请求——但在实测中，未改变上下文的同构重试大多只是在原地空转、白耗 Token。  
 > 本篇记录我们在 PatchCat 开源项目推进中，如何从自回归概率采样的底层机理出发，设计出兼顾低延迟与高精度的 **L3 自愈状态机** 与 **三元组精准纠错（Triad Feedback）** 机制。
 
 ---
 
-![告别盲目重试：L3 自愈状态机与三元组纠错机制](../assets/self-healing-state-machine-cover.jpg)
+![告别盲目重试：L3 自愈状态机与三元组纠错机制](https://guobug.github.io/assets/images/self-healing-state-machine-cover.jpg)
 
 ---
 
@@ -114,7 +114,7 @@ CRITICAL REPAIR INSTRUCTIONS:
 
 所有架构设计都必须经受极限场景的实测检验。在 PatchCat 的自动化测试与可视化画布中，我们设计了针对性的注入用例，以下为运行时的真实 Trace 记录：
 
-![运行时极限检验与 Trace 监控](../assets/runtime-trace-telemetry.jpg)
+![运行时极限检验与 Trace 监控](https://guobug.github.io/assets/images/runtime-trace-telemetry.jpg)
 
 ### 1. 实战案例一：必填字段缺失秒级补齐
 初次响应中，模拟模型遗漏了 `ticketId` 字段。L2 引擎拦截到 `ticketId: Required`。三元组将缺失提示与合法示例打包推回，大模型在第 2 轮精准补上合法 ID，流程顺利放行。
@@ -141,7 +141,7 @@ CRITICAL REPAIR INSTRUCTIONS:
 
 ### 留白与引线：自愈是否能无脑万能？
 
-![Case #7 字段冻结陷阱与分岔路口](../assets/case7-frozen-trap.jpg)
+![Case #7 字段冻结陷阱与分岔路口](https://guobug.github.io/assets/images/case7-frozen-trap.jpg)
 
 三元组自愈看起来行之有效，但在更复杂的实际业务流中，我们很快遭遇了更隐蔽的问题：
 > 在测试更为复杂的 Case #7 时，模型为了修好字段 A，竟然顺手把上一轮推导正确的字段 B 改崩了！我们自作聪明地做了一套“字段级强制冻结”，却反倒让系统陷入了更深的死锁……
@@ -156,3 +156,4 @@ CRITICAL REPAIR INSTRUCTIONS:
 > **郭强 (GuoBug)**，Product Engineer，做平台工程也做业务增长。目前主要在折腾 AI 工作流编排、DAG 状态机与确定性系统架构。  
 > 开源项目与主页：[https://github.com/GuoBug](https://github.com/GuoBug) · [https://guobug.github.io](https://guobug.github.io)  
 > 欢迎就工作流引擎架构、拓扑调度和低门槛开发体验交流指教。
+
