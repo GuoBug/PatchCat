@@ -15,7 +15,7 @@ alembic>=1.13.0
 # Data Validation & Settings
 pydantic>=2.7.0
 pydantic-settings>=2.3.0
-python-dotenv>=1.0.1
+python-dotenv>=1.2.3
 
 # Utilities
 nanoid>=2.0.0
