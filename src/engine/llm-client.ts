@@ -79,8 +79,11 @@ export interface LLMExecutionOutput {
  */
 export function getChatCompletionsUrl(baseUrl: string): string {
   const clean = baseUrl.trim().replace(/\/+$/, '');
-  if (clean.endsWith('/chat/completions')) {
+  if (clean.endsWith('/chat/completions') || clean.endsWith('/messages')) {
     return clean;
+  }
+  if (clean.includes('anthropic.com')) {
+    return clean.endsWith('/v1') ? `${clean}/messages` : `${clean}/v1/messages`;
   }
   if (clean.endsWith('/v1') || clean.endsWith('/v1beta/openai')) {
     return `${clean}/chat/completions`;
@@ -119,28 +122,69 @@ export async function streamChatCompletion(
     if (request.baseUrl.includes('googleapis.com')) {
       headers['x-goog-api-key'] = apiKey;
     }
-  }
-
-  const payload = {
-    model: request.model,
-    messages: request.messages,
-    temperature: request.temperature ?? 0.7,
-    max_tokens: request.maxTokens ?? 2048,
-    stream: true,
-    stream_options: {
-      include_usage: true,
-    },
-  };
-
-  if (request.tools && request.tools.length > 0) {
-    (payload as Record<string, unknown>).tools = request.tools;
-    if (request.tool_choice) {
-      (payload as Record<string, unknown>).tool_choice = request.tool_choice;
+    // Anthropic Claude Official Direct Headers
+    if (url.endsWith('/messages') || request.baseUrl.includes('anthropic.com')) {
+      headers['x-api-key'] = apiKey;
+      headers['anthropic-version'] = '2023-06-01';
+      headers['anthropic-dangerous-direct-browser-access'] = 'true';
     }
   }
 
-  if (request.response_format) {
-    (payload as Record<string, unknown>).response_format = request.response_format;
+  const isAnthropic = url.endsWith('/messages') || request.baseUrl.includes('anthropic.com');
+  let requestPayload: Record<string, unknown>;
+
+  if (isAnthropic) {
+    // Anthropic Messages API requires top-level system parameter and clean role array
+    const systemMessages = request.messages
+      .filter((m) => m.role === 'system')
+      .map((m) => m.content || '')
+      .filter(Boolean);
+    const systemPrompt = systemMessages.join('\n\n');
+
+    const anthropicMessages = request.messages
+      .filter((m) => m.role !== 'system')
+      .map((m) => ({
+        role: m.role === 'assistant' ? ('assistant' as const) : ('user' as const),
+        content: m.content || '',
+      }));
+
+    if (anthropicMessages.length === 0) {
+      anthropicMessages.push({ role: 'user', content: 'Hello' });
+    }
+
+    requestPayload = {
+      model: request.model,
+      messages: anthropicMessages,
+      max_tokens: request.maxTokens ?? 2048,
+      temperature: request.temperature ?? 0.7,
+      stream: true,
+    };
+
+    if (systemPrompt) {
+      requestPayload.system = systemPrompt;
+    }
+  } else {
+    requestPayload = {
+      model: request.model,
+      messages: request.messages,
+      temperature: request.temperature ?? 0.7,
+      max_tokens: request.maxTokens ?? 2048,
+      stream: true,
+      stream_options: {
+        include_usage: true,
+      },
+    };
+
+    if (request.tools && request.tools.length > 0) {
+      requestPayload.tools = request.tools;
+      if (request.tool_choice) {
+        requestPayload.tool_choice = request.tool_choice;
+      }
+    }
+
+    if (request.response_format) {
+      requestPayload.response_format = request.response_format;
+    }
   }
 
   logger.detailed(
@@ -179,7 +223,7 @@ export async function streamChatCompletion(
       response = await fetch(url, {
         method: 'POST',
         headers,
-        body: JSON.stringify(payload),
+        body: JSON.stringify(requestPayload),
         signal: request.signal,
       });
 
@@ -379,10 +423,58 @@ export async function streamChatCompletion(
                   fullReasoning: fullReasoning || undefined,
                 });
               }
+            } else if (parsed.type) {
+              // ── Anthropic Claude SSE Protocol ────────────────────────────
+              if (parsed.type === 'content_block_delta') {
+                const delta = parsed.delta;
+                if (delta?.type === 'text_delta' && typeof delta.text === 'string') {
+                  const contentDelta = delta.text;
+                  fullContent += contentDelta;
+                  if (callbacks?.onChunk) {
+                    callbacks.onChunk({
+                      delta: contentDelta,
+                      fullContent,
+                      reasoningDelta: fullReasoning || undefined,
+                      fullReasoning: fullReasoning || undefined,
+                    });
+                  }
+                } else if (delta?.type === 'thinking_delta' && typeof delta.thinking === 'string') {
+                  const reasoningDelta = delta.thinking;
+                  fullReasoning += reasoningDelta;
+                  if (callbacks?.onChunk) {
+                    callbacks.onChunk({
+                      delta: '',
+                      fullContent,
+                      reasoningDelta,
+                      fullReasoning,
+                    });
+                  }
+                }
+              } else if (parsed.type === 'message_start' && parsed.message?.usage) {
+                const inTok = parsed.message.usage.input_tokens ?? 0;
+                reportedUsage = {
+                  prompt: inTok,
+                  completion: 0,
+                  total: inTok,
+                };
+              } else if (parsed.type === 'message_delta') {
+                if (parsed.delta?.stop_reason) {
+                  finishReason = parsed.delta.stop_reason;
+                }
+                if (parsed.usage?.output_tokens !== undefined) {
+                  const outTok = parsed.usage.output_tokens ?? 0;
+                  const inTok = reportedUsage?.prompt ?? 0;
+                  reportedUsage = {
+                    prompt: inTok,
+                    completion: outTok,
+                    total: inTok + outTok,
+                  };
+                }
+              }
             }
 
-            // Usage reporting if present in chunk
-            if (parsed.usage) {
+            // Usage reporting if present in chunk (OpenAI standard schema)
+            if (parsed.usage && (parsed.usage.prompt_tokens !== undefined || parsed.usage.completion_tokens !== undefined)) {
               reportedUsage = {
                 prompt: parsed.usage.prompt_tokens ?? 0,
                 completion: parsed.usage.completion_tokens ?? 0,

@@ -38,6 +38,16 @@ export const MODEL_PRICING_TABLE: Record<string, ModelPricingRule> = {
   'deepseek-reasoner': { promptPer1M: 0.55, completionPer1M: 2.19 },
   'deepseek-r1': { promptPer1M: 0.55, completionPer1M: 2.19 },
 
+  // ── Anthropic Claude ───────────────────────────────────────────────────────
+  'claude-3-7-sonnet-latest': { promptPer1M: 3.00, completionPer1M: 15.00 },
+  'claude-3-7-sonnet': { promptPer1M: 3.00, completionPer1M: 15.00 },
+  'claude-3-5-sonnet-latest': { promptPer1M: 3.00, completionPer1M: 15.00 },
+  'claude-3-5-sonnet': { promptPer1M: 3.00, completionPer1M: 15.00 },
+  'claude-3-5-haiku-latest': { promptPer1M: 0.80, completionPer1M: 4.00 },
+  'claude-3-5-haiku': { promptPer1M: 0.80, completionPer1M: 4.00 },
+  'claude-3-opus-latest': { promptPer1M: 15.00, completionPer1M: 75.00 },
+  'claude-3-opus': { promptPer1M: 15.00, completionPer1M: 75.00 },
+
   // ── OpenAI ───────────────────────────────────────────────────────────────
   'gpt-4o': { promptPer1M: 2.50, completionPer1M: 10.00 },
   'gpt-4o-mini': { promptPer1M: 0.15, completionPer1M: 0.60 },

@@ -32,6 +32,9 @@ describe('LLM Client & Endpoint Normalization', () => {
 
     const deepseekUrl = getChatCompletionsUrl('https://api.deepseek.com');
     assert.equal(deepseekUrl, 'https://api.deepseek.com/v1/chat/completions');
+
+    const anthropicUrl = getChatCompletionsUrl('https://api.anthropic.com/v1');
+    assert.equal(anthropicUrl, 'https://api.anthropic.com/v1/messages');
   });
 
   it('should leave already complete chat/completions URLs intact', () => {
@@ -129,6 +132,83 @@ describe('LLM SSE Stream Parsing', () => {
 
       assert.equal(result.reasoning, 'Let me think. The answer is 42.');
       assert.equal(result.response, 'The final answer is 42.');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('should parse Anthropic Claude streaming SSE events with thinking and usage', async () => {
+    const anthropicSse = [
+      'event: message_start\n',
+      'data: {"type":"message_start","message":{"id":"msg_123","type":"message","role":"assistant","content":[],"model":"claude-3-7-sonnet-latest","usage":{"input_tokens":25,"output_tokens":1}}}\n\n',
+      'event: content_block_delta\n',
+      'data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"Let me analyze this."}}\n\n',
+      'event: content_block_delta\n',
+      'data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Hello Claude!"}}\n\n',
+      'event: message_delta\n',
+      'data: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":18}}\n\n',
+      'event: message_stop\n',
+      'data: {"type":"message_stop"}\n\n',
+    ].join('');
+
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(encoder.encode(anthropicSse));
+        controller.close();
+      },
+    });
+
+    const originalFetch = globalThis.fetch;
+    let capturedHeaders: HeadersInit | undefined;
+    let capturedBody: string | undefined;
+
+    globalThis.fetch = async (url: string | URL | Request, init?: RequestInit) => {
+      capturedHeaders = init?.headers;
+      capturedBody = init?.body as string;
+      return new Response(stream, {
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream' },
+      });
+    };
+
+    try {
+      const chunks: LLMStreamChunk[] = [];
+      const result = await streamChatCompletion(
+        {
+          baseUrl: 'https://api.anthropic.com/v1',
+          apiKey: 'sk-ant-api03-test-token',
+          model: 'claude-3-7-sonnet-latest',
+          messages: [
+            { role: 'system', content: 'You are Claude.' },
+            { role: 'user', content: 'Hi' },
+          ],
+        },
+        {
+          onChunk: (c) => chunks.push({ ...c }),
+        }
+      );
+
+      assert.equal(result.response, 'Hello Claude!');
+      assert.equal(result.reasoning, 'Let me analyze this.');
+      assert.equal(result.finishReason, 'end_turn');
+      assert.equal(result.usage.prompt, 25);
+      assert.equal(result.usage.completion, 18);
+      assert.equal(result.usage.total, 43);
+
+      // Verify Anthropic-specific direct headers and payload format
+      assert.ok(capturedHeaders);
+      const headersRecord = capturedHeaders as Record<string, string>;
+      assert.equal(headersRecord['x-api-key'], 'sk-ant-api03-test-token');
+      assert.equal(headersRecord['anthropic-version'], '2023-06-01');
+      assert.equal(headersRecord['anthropic-dangerous-direct-browser-access'], 'true');
+
+      assert.ok(capturedBody);
+      const bodyObj = JSON.parse(capturedBody);
+      assert.equal(bodyObj.system, 'You are Claude.');
+      assert.equal(bodyObj.messages.length, 1);
+      assert.equal(bodyObj.messages[0].role, 'user');
+      assert.equal(bodyObj.messages[0].content, 'Hi');
     } finally {
       globalThis.fetch = originalFetch;
     }

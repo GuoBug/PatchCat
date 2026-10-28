@@ -195,6 +195,13 @@ export function resolveTargetModel(
     }
   }
 
+  // 4. Anthropic requires claude-* models
+  if (providerId === 'anthropic') {
+    if (!clean.toLowerCase().includes('claude')) {
+      return defaultModel;
+    }
+  }
+
   return clean;
 }
 

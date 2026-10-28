@@ -24,6 +24,7 @@ describe('Settings Store & Provider Configuration', () => {
         deepseek: { status: 'idle' },
         siliconflow: { status: 'idle' },
         google: { status: 'idle' },
+        anthropic: { status: 'idle' },
         ollama: { status: 'idle' },
         custom: { status: 'idle' },
       },
@@ -37,9 +38,11 @@ describe('Settings Store & Provider Configuration', () => {
     assert.ok(state.providers.deepseek);
     assert.ok(state.providers.siliconflow);
     assert.ok(state.providers.google);
+    assert.ok(state.providers.anthropic);
     assert.ok(state.providers.ollama);
     assert.ok(state.providers.custom);
     assert.equal(state.providers.google.defaultModel, 'gemini-2.5-flash');
+    assert.equal(state.providers.anthropic.defaultModel, 'claude-3-7-sonnet-latest');
   });
 
   it('should switch active provider correctly', () => {

@@ -63,6 +63,7 @@ const PROVIDER_DOCS: Record<ProviderId, { label: string; url: string }> = {
   deepseek: { label: 'DeepSeek API Keys', url: 'https://platform.deepseek.com/api_keys' },
   siliconflow: { label: 'SiliconFlow API Keys', url: 'https://cloud.siliconflow.cn/account/ak' },
   google: { label: 'Google AI Studio Keys', url: 'https://aistudio.google.com/app/apikey' },
+  anthropic: { label: 'Anthropic Console Keys', url: 'https://console.anthropic.com/settings/keys' },
   ollama: { label: 'Ollama Documentation', url: 'https://ollama.com/' },
   custom: { label: 'OpenAI-Compatible Guide', url: PROJECT_LINKS.guide },
 };

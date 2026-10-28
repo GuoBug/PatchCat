@@ -141,8 +141,8 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   </div>
                   <p className="text-slate-500 dark:text-slate-400">
                     {isEn
-                      ? 'Click the API Key / Settings button in the header to configure OpenAI, DeepSeek, Google Gemini, SiliconFlow, or local Ollama.'
-                      : '点击右上角 API Key 按钮，填入 Google Gemini、DeepSeek、OpenAI 或 SiliconFlow 的 Key，亦可直连本地 Ollama。'}
+                      ? 'Click the API Key / Settings button in the header to configure OpenAI, Anthropic (Claude), DeepSeek, Google Gemini, SiliconFlow, or local Ollama.'
+                      : '点击右上角 API Key 按钮，填入 Anthropic (Claude)、Google Gemini、DeepSeek、OpenAI 或 SiliconFlow 的 Key，亦可直连本地 Ollama。'}
                   </p>
                 </div>
 

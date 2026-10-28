@@ -36,7 +36,7 @@ export {
 } from '../services/crypto/crypto-vault.ts';
 
 
-export type ProviderId = 'openai' | 'deepseek' | 'siliconflow' | 'google' | 'ollama' | 'custom';
+export type ProviderId = 'openai' | 'deepseek' | 'siliconflow' | 'google' | 'anthropic' | 'ollama' | 'custom';
 export type AppView = 'canvas' | 'settings';
 export type SettingsTab = 'general' | 'execution' | 'memory' | 'providers' | 'logs';
 export type VaultStatus = 'unconfigured' | 'locked' | 'unlocked';
@@ -109,6 +109,20 @@ export const DEFAULT_PROVIDERS: Record<ProviderId, ProviderConfig> = {
       'gemini-1.5-pro',
     ],
     description: 'Google AI Studio Gemini Models (Multimodal, 1M+ Context & Fast)',
+  },
+  anthropic: {
+    id: 'anthropic',
+    name: 'Anthropic (Claude)',
+    baseUrl: 'https://api.anthropic.com/v1',
+    apiKey: '',
+    defaultModel: 'claude-3-7-sonnet-latest',
+    availableModels: [
+      'claude-3-7-sonnet-latest',
+      'claude-3-5-sonnet-latest',
+      'claude-3-5-haiku-latest',
+      'claude-3-opus-latest',
+    ],
+    description: 'Official Anthropic Claude API (Claude 3.7 Sonnet, 3.5 Sonnet, 3.5 Haiku)',
   },
   ollama: {
     id: 'ollama',
@@ -562,6 +576,7 @@ export const useSettingsStore = create<SettingsStoreState>()(
         deepseek: { status: 'idle' },
         siliconflow: { status: 'idle' },
         google: { status: 'idle' },
+        anthropic: { status: 'idle' },
         ollama: { status: 'idle' },
         custom: { status: 'idle' },
       },
@@ -989,6 +1004,11 @@ export const useSettingsStore = create<SettingsStoreState>()(
           if (cleanBaseUrl.includes('googleapis.com')) {
             headers['x-goog-api-key'] = apiKey;
           }
+          if (id === 'anthropic' || cleanBaseUrl.includes('anthropic.com')) {
+            headers['x-api-key'] = apiKey;
+            headers['anthropic-version'] = '2023-06-01';
+            headers['anthropic-dangerous-direct-browser-access'] = 'true';
+          }
         }
 
         try {
@@ -1053,6 +1073,11 @@ export const useSettingsStore = create<SettingsStoreState>()(
             headers['Authorization'] = `Bearer ${apiKey}`;
             if (cleanBaseUrl.includes('googleapis.com')) {
               headers['x-goog-api-key'] = apiKey;
+            }
+            if (id === 'anthropic' || cleanBaseUrl.includes('anthropic.com')) {
+              headers['x-api-key'] = apiKey;
+              headers['anthropic-version'] = '2023-06-01';
+              headers['anthropic-dangerous-direct-browser-access'] = 'true';
             }
           }
 
