@@ -63,6 +63,7 @@ const sessionStorageMock = (() => {
 
 import {
   useSettingsStore,
+  loadInitialState,
   DEFAULT_PROVIDERS,
   VAULT_CANARY_KEY,
   VAULT_SECRETS_KEY,
@@ -114,6 +115,20 @@ describe('Phase 4.16: Settings Store & Web Crypto Vault Integration (PRD-017 DoD
       assert.ok(parsed.providers);
       assert.equal(parsed.providers.deepseek.apiKey, undefined);
       assert.equal(parsed.providers.deepseek.defaultModel, 'deepseek-reasoner');
+
+      // 5. Verify reloading state from localStorage (where apiKey was stripped)
+      // initializes every provider's apiKey as a valid string (never undefined!)
+      sessionStorageMock.clear();
+      const reloaded = loadInitialState();
+      for (const [pid, p] of Object.entries(reloaded.providers)) {
+        assert.equal(
+          typeof p.apiKey,
+          'string',
+          `Provider ${pid} apiKey must be string after reload, got ${typeof p.apiKey}`,
+        );
+        assert.equal(p.apiKey, pid === 'ollama' ? 'ollama' : '');
+      }
+      assert.equal(reloaded.providers.deepseek.defaultModel, 'deepseek-reasoner');
     });
   });
 

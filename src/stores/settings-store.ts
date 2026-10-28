@@ -248,7 +248,7 @@ export interface SettingsStoreState {
 }
 
 // Helper to load settings from LocalStorage
-function loadInitialState(): {
+export function loadInitialState(): {
   language: Language;
   activeProvider: ProviderId;
   providers: Record<ProviderId, ProviderConfig>;
@@ -263,7 +263,7 @@ function loadInitialState(): {
 } {
   let language: Language = 'en';
   let activeProvider: ProviderId = 'deepseek';
-  let providers: Record<ProviderId, ProviderConfig> = DEFAULT_PROVIDERS;
+  let providers: Record<ProviderId, ProviderConfig> = JSON.parse(JSON.stringify(DEFAULT_PROVIDERS));
   let storageMode: 'local' | 'server' = 'local';
   let serverBaseUrl = 'http://localhost:8000';
   let memoryDefaults: MemoryDefaults = DEFAULT_MEMORY_SETTINGS;
@@ -359,10 +359,30 @@ function loadInitialState(): {
             }
           }
         }
-        providers = {
-          ...DEFAULT_PROVIDERS,
-          ...(parsed.providers || {}),
-        };
+        const mergedProviders = {} as Record<ProviderId, ProviderConfig>;
+        for (const pid of Object.keys(DEFAULT_PROVIDERS) as ProviderId[]) {
+          const def = DEFAULT_PROVIDERS[pid];
+          const saved =
+            parsed.providers && typeof parsed.providers === 'object'
+              ? (parsed.providers as Record<string, Partial<ProviderConfig>>)[pid]
+              : undefined;
+          mergedProviders[pid] = {
+            ...def,
+            ...(saved && typeof saved === 'object' ? saved : {}),
+            id: pid,
+            name: typeof saved?.name === 'string' ? saved.name : def.name,
+            baseUrl: typeof saved?.baseUrl === 'string' ? saved.baseUrl : def.baseUrl,
+            defaultModel:
+              typeof saved?.defaultModel === 'string' ? saved.defaultModel : def.defaultModel,
+            availableModels: Array.isArray(saved?.availableModels)
+              ? saved.availableModels
+              : [...def.availableModels],
+            description:
+              typeof saved?.description === 'string' ? saved.description : def.description,
+            apiKey: pid === 'ollama' ? 'ollama' : '',
+          };
+        }
+        providers = mergedProviders;
         // Hydrate legacy keys into in-memory providers so session isn't broken
         for (const [pid, key] of Object.entries(legacyKeys)) {
           if (providers[pid as ProviderId] && key) {
@@ -934,12 +954,12 @@ export const useSettingsStore = create<SettingsStoreState>()(
         const targetId = providerId || state.activeProvider;
         const config = state.providers[targetId] || DEFAULT_PROVIDERS[targetId];
         const isOllama = targetId === 'ollama';
-        const apiKey = config.apiKey.trim();
+        const apiKey = (config.apiKey ?? '').trim();
         const hasKey = isOllama ? true : apiKey.length > 0;
 
         return {
           provider: targetId,
-          baseUrl: config.baseUrl.trim().replace(/\/+$/, ''),
+          baseUrl: (config.baseUrl ?? '').trim().replace(/\/+$/, ''),
           apiKey: apiKey || (isOllama ? 'ollama' : ''),
           model: config.defaultModel,
           hasKey,
@@ -949,8 +969,8 @@ export const useSettingsStore = create<SettingsStoreState>()(
       fetchAvailableModels: async (id) => {
         const config = get().providers[id];
         const isOllama = id === 'ollama';
-        const cleanBaseUrl = config.baseUrl.trim().replace(/\/+$/, '');
-        const apiKey = config.apiKey.trim();
+        const cleanBaseUrl = (config.baseUrl ?? '').trim().replace(/\/+$/, '');
+        const apiKey = (config.apiKey ?? '').trim();
 
         if (!isOllama && !apiKey) {
           return config.availableModels;
@@ -997,8 +1017,8 @@ export const useSettingsStore = create<SettingsStoreState>()(
       testConnection: async (id) => {
         const config = get().providers[id];
         const isOllama = id === 'ollama';
-        const cleanBaseUrl = config.baseUrl.trim().replace(/\/+$/, '');
-        const apiKey = config.apiKey.trim();
+        const cleanBaseUrl = (config.baseUrl ?? '').trim().replace(/\/+$/, '');
+        const apiKey = (config.apiKey ?? '').trim();
 
         if (!isOllama && !apiKey) {
           const result: ConnectionTestResult = {

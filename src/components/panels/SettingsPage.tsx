@@ -1505,7 +1505,7 @@ export const SettingsPage: React.FC = () => {
                     const p = providers[pid] || DEFAULT_PROVIDERS[pid];
                     const isSelected = selectedProviderTab === pid;
                     const isPActive = activeProvider === pid;
-                    const hasKey = p.id === 'ollama' ? false : p.apiKey.trim().length > 0;
+                    const hasKey = p.id === 'ollama' ? false : (p.apiKey ?? '').trim().length > 0;
 
                     return (
                       <button
@@ -1604,7 +1604,7 @@ export const SettingsPage: React.FC = () => {
                     </div>
                     <input
                       type="text"
-                      value={currentProviderConfig.baseUrl}
+                      value={currentProviderConfig.baseUrl ?? ''}
                       onChange={(e) =>
                         updateProviderConfig(selectedProviderTab, { baseUrl: e.target.value })
                       }
@@ -1639,7 +1639,7 @@ export const SettingsPage: React.FC = () => {
                       <input
                         type={showApiKey || isOllama ? 'text' : 'password'}
                         disabled={isOllama}
-                        value={currentProviderConfig.apiKey}
+                        value={currentProviderConfig.apiKey ?? ''}
                         onChange={(e) =>
                           updateProviderConfig(selectedProviderTab, { apiKey: e.target.value })
                         }
@@ -1735,7 +1735,8 @@ export const SettingsPage: React.FC = () => {
                           setIsRefreshingModels(false);
                         }}
                         disabled={
-                          isRefreshingModels || (!isOllama && !currentProviderConfig.apiKey.trim())
+                          isRefreshingModels ||
+                          (!isOllama && !(currentProviderConfig.apiKey ?? '').trim())
                         }
                         className="text-[11px] text-blue-600 dark:text-sky-400 hover:text-blue-700 dark:hover:text-sky-300 disabled:opacity-40 flex items-center gap-1 transition-colors"
                         title={t.settings.fetchModels}
