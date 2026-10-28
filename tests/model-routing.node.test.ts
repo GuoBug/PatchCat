@@ -16,7 +16,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import {
   calculateCostSavingsRatio,
   executeWithModelRouting,

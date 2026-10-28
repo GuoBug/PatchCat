@@ -24,7 +24,7 @@
  *        description-action priority inversions (e.g. #27, #30) before silent failure.
  */
 
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import type {
   ModelTier,
   ModelRoutingConfig,

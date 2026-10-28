@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import type { ZodSchemaConfig } from '../engine/types.ts';
 import { registerSchema } from '../engine/structured-output.ts';
 

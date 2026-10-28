@@ -15,7 +15,7 @@
  *      and guaranteed zero-throw graceful degradation ({ _validationFailed: true, errors, raw }).
  */
 
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import type {
   ResponseFormatMode,
