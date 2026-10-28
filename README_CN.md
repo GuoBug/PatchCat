@@ -6,11 +6,11 @@
   # PatchCat (中文文档)
 
   <p>
-    <strong>确定性 AI 工作流引擎 · 交互式实验工坊</strong>
+    <strong>确定性 AI 工作流引擎 · LLM 评测验证工坊 · 交互式实验环境</strong>
   </p>
 
   <p>
-    <em>专为 AI 开发者与工程探索者打造的开源可视化 DAG 状态机调度系统与白盒实验工坊。左手生产级确定性架构，右手白盒交互式实验环境。</em>
+    <em>专为 AI 开发者、Product Engineer 与智能体架构师打造的开源可视化 DAG 状态机调度系统、LLM 评测基建（Evaluation Harness）与白盒实验工坊。左手生产级确定性架构，右手白盒交互式实验环境。</em>
   </p>
 
   <p>
@@ -44,9 +44,9 @@
 
 ## 🌟 什么是 PatchCat？
 
-**PatchCat** 是由 **[GuoBug](https://github.com/GuoBug)** 发起并维护的开源**确定性 AI 工作流编排引擎与交互式白盒实验工坊 (Interactive AI Playground)**。专为 AI 工程师、Product Engineer、智能体开发者与自学探索者打造，让您可以像搭积木一样可视化串联 Prompt 模板、大语言模型（LLM）、自主 ReAct Agent、JavaScript 数据转换与分支条件路由，构建高并发、确定性执行的现代化 AI 工作流。
+**PatchCat** 是由 **[GuoBug](https://github.com/GuoBug)** 发起并维护的开源**确定性 AI 工作流编排引擎、DAG 状态机与大模型评测验证基建（Deterministic LLM Evaluation & Verification Harness）**。专为 AI 工程师、Product Engineer、智能体开发者与自学探索者打造，让您可以像搭积木一样可视化串联 Prompt 模板、大语言模型（LLM）、自主 ReAct Agent、JavaScript 数据转换与分支条件路由，构建高并发、确定性执行的现代化 AI 工作流。
 
-系统不仅是一套生产级的编排底座，更是一个**高透明度的 AI 工程教学与实验平台**：无需配置 API Key 即可通过内置的丰富仿真场景单步剖析工作流调度、状态机流转与容错机制。同时原生支持**零后端依赖模式（Client-Only BYOK）**，所有数据与 API Key 均仅保存在浏览器本地，直连 **Google Gemini、DeepSeek、OpenAI、SiliconFlow（硅基流动）以及本地 Ollama**，在浏览器端即可获得开箱即用的低延迟实时流式体验与零数据泄漏的安全保障。
+系统不仅是一套生产级的编排底座，更是一个**高透明度的大模型评测与工程实验平台（Deterministic LLM Evaluation & Verification Pipeline）**：深度结合**受限解码（Constrained Decoding）**、**可编程业务判据（Evaluation Criteria）**、**哨兵巡检（Sentinel Watch-List）**与**失败回滚/自愈状态机（Self-Healing Triad）**，构建坚固的 **LLM-as-a-Judge Guardrails** 防护体系。无需配置 API Key 即可通过内置的丰富仿真场景单步剖析工作流调度、状态机流转与容错机制。同时原生支持**零后端依赖模式（Client-Only BYOK）**，所有数据与 API Key 均仅保存在浏览器本地，直连 **Google Gemini、DeepSeek、OpenAI、SiliconFlow（硅基流动）以及本地 Ollama**，在浏览器端即可获得开箱即用的低延迟实时流式体验与零数据泄漏的安全保障。
 
 > [!NOTE]
 > **核心设计哲学：为什么坚持确定性编排？**  
@@ -115,7 +115,18 @@ https://github.com/user-attachments/assets/e8d3cc61-68f4-43fd-9463-2051a7a35c3d
 - **多路条件分支路由与动态跳过**：支持 IF/ELSE 规则求值、未命中下游分支动态跳过（`NODE_SKIPPED`）与聚合器汇聚收拢。
 - **交互式 Chat 调试抽屉与一键 API 发布**：全局快捷键 `Ctrl+Shift+D` 呼出实时对话调试抽屉；支持一键生成 FastAPI REST API 端点与 Key 鉴权。
 
-### 3. ⚡ 多大模型服务商集成与动态模型发现
+### 3. 🛡️ 确定性 LLM 评测验证流水线与防护基建 (LLM-as-a-Judge Guardrails)
+- **受限解码与 Schema 强契约校验 (Constrained Decoding)**：深度集成 Zod 与 JSON Schema 校验流水线，在输出端强制执行结构契约约束，杜绝模型幻觉导致的参数漂移。
+- **业务判据与可编程评测器 (Evaluation Criteria & LLM-as-a-Judge)**：支持在工作流中内嵌多维度评分准则与真值断言判定，自动化拦截低质或不合规输出。
+- **哨兵巡检清单与运行时防护 (Sentinel Watch-List & Runtime Guard)**：实时扫描高危幻觉词汇、死循环模式与回退异常，保障大模型任务在安全边界内推进。
+- **自愈状态机与熔断回滚 (Self-Healing Triad)**：多层级看门狗熔断机制与结构化错误反馈闭环，将校验失败信息（病历）回传上游引导模型精准纠偏。
+
+### 4. 🔌 AI 原生研发工具生态协同 (Claude Code / Cursor / Antigravity)
+- **主流智能体开发环境协同**：与 **Claude Code**、**Cursor**、**Antigravity** 等新一代 AI 编程智能体深度配合。
+- **生成与审校闭环 (Actor-Critic Verification Loop)**：将编程智能体生成的非确定性代码与内容，接入 PatchCat 确定性评估流水线进行自动评测、断言与验证打分。
+- **跨宿主总线与 MCP 协议支持**：支持与跨宿主总线（如 **FerryCat** MCP Bus）协同调度，实现分布式多智能体工具分派与确定性工作流落地。
+
+### 5. ⚡ 多大模型服务商集成与动态模型发现
 - **主流云端与本地大模型直连**：
   - 🔵 **Google Gemini**：完整支持 `gemini-2.5-flash`、`gemini-2.5-pro`、`gemini-2.0-flash` 等官方模型，支持一键动态拉取可用模型列表。
   - 🐳 **DeepSeek**：原生支持 DeepSeek-R1（带实时思维链推理过程渲染）与 DeepSeek-V3。
@@ -126,17 +137,17 @@ https://github.com/user-attachments/assets/e8d3cc61-68f4-43fd-9463-2051a7a35c3d
 - **跨服务商模型智能自适应映射 (`resolveTargetModel`)**：切换服务商时，预设模板中的非本厂商模型名称将自动无缝映射为当前服务商的默认模型，杜绝 400/404 报错。
 - **瞬态 503 自动重试与中文错误诊断**：内置针对 Google 免费层高并发负载波动的自动避让重试机制，提供操作指引详尽的中文诊断提示。
 
-### 4. 🧠 实时 SSE 流式输出与 DeepSeek 思考链展示
+### 6. 🧠 实时 SSE 流式输出与 DeepSeek 思考链展示
 - **字级流式吐字渲染**：实时 Token 级流式推送到画布节点，具备顺滑的动效呈现。
 - **双流思维链抽屉**：专为 DeepSeek-R1 / Gemini Thinking 打造的独立思考过程展示区。
 - **精准度量与耗时统计**：精确记录每个节点的毫秒级延迟与 Prompt/Completion Token 消耗。
 
-### 5. 💻 动态 JavaScript 代码节点与沙箱
+### 7. 💻 动态 JavaScript 代码节点与沙箱
 - **浏览器端安全沙箱**：直接在浏览器沙箱内运行自定义 JavaScript 脚本，注入上游 `inputs` 并完整捕获 `console.log` 输出。
 - **Markdown JSON 代码块自动脱壳**：轻松解析大模型返回的 ` ```json ... ``` ` 内容并转换为结构化对象。
 - **智能条件路由**：根据意图、情绪评级、风险等级等动态决定工单队列、SLA 承诺与服务分派。
 
-### 6. 🛡️ 三级企业级日志系统与严格隐私脱敏
+### 8. 🛡️ 三级企业级日志系统与严格隐私脱敏
 - **三级可配置日志登记**：
   - **`概要 (Summary)`**：记录系统启停（`START` / `COMPLETE` / `ERROR`）、请求方法/状态码/耗时/Token数、异常崩溃栈。
   - **`详细 (Detailed)`**：在概要基础上，补充节点 ID、模型参数（`model`, `temperature`, `max_tokens`）、拓扑波次时序。
@@ -145,19 +156,19 @@ https://github.com/user-attachments/assets/e8d3cc61-68f4-43fd-9463-2051a7a35c3d
   - 在所有日志级别中自动递归对 `sk-***`、`AIzaSy***`、`Bearer` 令牌及各类密码字段进行全量掩码，绝对杜绝密钥泄漏！
 - **可视化可折叠控制台抽屉**：类似现代 IDE 的底部控制台，支持上下拖拽调节高度、分类过滤、实时搜索、JSON 查看及一键导出 JSON/TXT。
 
-### 7. 🔗 动态插槽变量解析引擎
+### 9. 🔗 动态插槽变量解析引擎
 - **Mustache 风格插槽语法**：`{{nodeId.propertyPath}}` 动态注入上游节点数据。
 - **深层对象与数组访问**：支持访问如 `{{classifier.result.tags[0].name}}` 等复杂嵌套属性。
 - **容错默认值语法**：支持 `{{nodeId.output | "默认值"}}`，防止上游字段为空导致的执行失败。
 
-### 8. 💾 多轮会话记忆与两级存储架构
+### 10. 💾 多轮会话记忆与两级存储架构
 - **端侧 IndexedDB 异步持久化**：告别仅 5MB 且关标签易失的 `sessionStorage`，利用非阻塞 IndexedDB 保障画布 60 FPS 丝滑拖拽；
 - **工作流独立会话隔离**：按 `${workflowId}::${sessionId}` 严格作用域物理隔离，杜绝跨画布调试会话串话；
 - **一级全局偏好与二级继承机制**：在设置中心（`SettingsPage.tsx`）统一配置全局会话记忆总开关、滑动窗口轮数（1~20 轮）、Token 预算上限（500~16,000）与三大裁剪策略（`hybrid` / `window` / `token_budget`）；
 - **动态多轮上下文自动拼装**：调试发送时根据策略修剪历史对话，自动将问答对注入 `{{chat_history}}`、`{{conversation_history}}`、`{{history}}` 变量插槽；
 - **存储架构说明与 Q&A 知识库**：设置中心内置折叠卡片，深度解析端侧 IndexedDB、自部署单文件 SQLite（`patchcat.db`）选型优势与现代浏览器 File System Access API 刷新高频授权的沙箱边界。
 
-### 8. 🕒 运行可观测性、单步快照与 OpenTelemetry 标准对齐 (v0.4.8)
+### 11. 🕒 运行可观测性、单步快照与 OpenTelemetry 标准对齐 (v0.4.8)
 - **最近 10 次画布执行历史抽屉**：快捷键 `Ctrl+Shift+H` 或顶栏/底栏随时呼出，查看最近 10 次执行状态、触发方式、耗时与 Token 开销；
 - **聚合 KPI 概览看板**：总延迟、Prompt/Completion Token 消耗分段统计，实时根据主流模型阶梯动态估算美元（USD）成本；
 - **执行时序瀑布流甘特图**：以直观水平进度条展示各波次及单节点的真实耗时比例与相对起始偏移，性能瓶颈一目了然；
@@ -208,13 +219,13 @@ npm run dev
 
 ## 🛠️ CLI 命令与质量工程
 
-PatchCat 具备严密的单元测试保障，拥有 530+ 项自动化单元测试覆盖核心拓扑调度、变量解析、沙箱隔离防护、LLM 客户端与日志系统：
+PatchCat 具备严密的工程质量保障体系，拥有 **590+ 项自动化单元测试**（采用原生高速测试套件，架构理念全面对齐现代 Jest/Vitest 测试范式），结合严格的 **TypeScript 静态分析 (Static Analysis)** 与 **Kahn 拓扑排序静态环路死锁排查**，在执行前从数学拓扑层面杜绝环路死锁与竞态风险：
 
 ```bash
-# 运行全量单元测试 (拓扑排序, 执行引擎, LLM Client, 日志脱敏, 代码路由)
+# 运行全量单元测试 (拓扑排序, 执行引擎, LLM Client, 日志脱敏, 代码路由, 评测基准)
 npm test
 
-# 运行 TypeScript 类型检查
+# 运行 TypeScript 静态分析与类型检查
 npm run typecheck
 
 # 生产环境打包构建
@@ -233,7 +244,7 @@ PatchCat 内置了开箱即用的工业级场景模板：
 | 模板名称 | 场景说明 | 涉及节点流 |
 | :--- | :--- | :--- |
 | **智能客服工单路由 (Customer Support Routing)** | 多分类意图识别、情绪等级评定与 VIP 极速队列自动派单。 | `用户入参` ➔ `提示词模板` ➔ `意图识别大模型` ➔ `路由决策脚本` ➔ `工单分派结果` |
-| **自反思研报生成与 Critic 专家审阅** | 初稿生成结合专业 Critic 反思批评回路，实现多轮高质量润色输出。 | `研究主题` ➔ `初稿 Prompt` ➔ `生成大模型` ➔ `审阅 Prompt` ➔ `Critic 大模型` ➔ `最终研报` |
+| **自反思研报生成与 Critic 专家审阅** | 初稿生成结合专业 Critic 反思批评回路，实现多轮高质量润色输出 (Actor-Critic Verification Loop)。 | `研究主题` ➔ `初稿 Prompt` ➔ `生成大模型` ➔ `审阅 Prompt` ➔ `Critic 大模型` ➔ `最终研报` |
 | **多智能体电商退款争议仲裁流水线** | 政策合规核查与客户情绪分析并行处理，代码自动裁决并生成仲裁函。 | `工单输入` ➔ `Prompt 组装` ➔ `政策 LLM` + `情绪 LLM` (并行) ➔ `仲裁代码` ➔ `裁决报告` |
 
 ---
@@ -247,9 +258,9 @@ PatchCat 内置了开箱即用的工业级场景模板：
 | **画布引擎** | [@xyflow/react (React Flow v12)](https://reactflow.dev/) |
 | **状态管理** | [Zustand](https://github.com/pmndrs/zustand) + [Immer](https://immerjs.github.io/immer/) |
 | **样式与组件** | [Tailwind CSS v4](https://tailwindcss.com/) + [Lucide Icons](https://lucide.dev/) |
-| **工作流调度内核** | 确定性端侧 Kahn DAG 状态机引擎 + SSE 实时流式解析器 |
+| **工作流调度内核与防护基建** | 确定性端侧 Kahn DAG 状态机引擎 + LLM 评测验证基建 (Evaluation Harness) + SSE 实时流式解析器 |
 | **后端与存储** | [FastAPI](https://fastapi.tiangolo.com/) + [SQLAlchemy 2.0](https://www.sqlalchemy.org/) (SQLite / PostgreSQL + pgvector) |
-| **自动化测试** | Node.js 原生测试套件 (`node --test`) + Pytest |
+| **自动化测试与静态分析** | Node.js 原生测试套件 (`node --test`, Jest/Vitest 范式) + TypeScript 严格静态检查 + Pytest |
 
 ---
 
@@ -282,11 +293,14 @@ PatchCat 内置了开箱即用的工业级场景模板：
 
 ## 👨‍💻 作者与维护者 (Author & Maintainer)
 
-**PatchCat** 由 **[GuoBug (Guo Qiang)](https://github.com/GuoBug)** 独立发起，并全程借助 AI 结对编程驱动演进与落地。
+---
 
-作为一名兼具平台工程底蕴与产品增长视角的 **Product Engineer**，作者致力于探索“确定性架构（DAG 状态机/调度器契约）”与“低门槛平权体验（纯端侧免部署/开箱即用）”的有机结合。
+> **关于作者**  
+> **郭强 (GuoBug)**，Product Engineer，做平台工程也做业务增长。目前主要在折腾 AI 工作流编排、DAG 状态机与确定性系统架构。  
+> 开源项目与主页：[https://github.com/GuoBug](https://github.com/GuoBug) · [https://guobug.github.io](https://guobug.github.io)  
+> 欢迎就工作流引擎架构、拓扑调度和低门槛开发体验交流指教。
 
-本项目秉持开源、求真、透明的原则，欢迎社区同行与资深架构师提出 Issue、探讨架构选型或提交 PR 共同演进！
+PatchCat 由 GuoBug 发起，并全程借助 AI 结对编程（AI Pair Programming）与“干中学（Learning by Doing）”持续演进。作为一名兼具平台工程底蕴与产品增长视角的 Product Engineer，作者致力于探索“确定性架构（DAG 状态机/调度器契约）”与“低门槛平权体验（纯端侧免部署/开箱即用）”的有机结合。本项目秉持开源、求真、透明的原则，欢迎社区同行与资深架构师提出 Issue、探讨架构选型或提交 PR 共同演进！
 
 ---
 

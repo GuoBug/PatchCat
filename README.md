@@ -6,11 +6,11 @@
   # PatchCat
 
   <p>
-    <strong>Deterministic AI Workflow Engine · Interactive Playground</strong>
+    <strong>Deterministic AI Workflow Engine · LLM Evaluation Harness · Interactive Playground</strong>
   </p>
 
   <p>
-    <em>The open-source deterministic DAG orchestration engine & white-box interactive playground built for AI engineers, learners, and builders.</em>
+    <em>The open-source deterministic DAG orchestration engine, evaluation harness & white-box interactive playground built for AI engineers, product engineers, and agent builders.</em>
   </p>
 
   <p>
@@ -44,9 +44,9 @@
 
 ## 🌟 What is PatchCat?
 
-**PatchCat** is an open-source, deterministic **AI workflow orchestration engine and white-box interactive playground** created by **[GuoBug](https://github.com/GuoBug)**. Designed for AI engineers, product engineers, agent developers, and self-learners, PatchCat transforms complex multi-agent interactions, LLMs, code transforms, and conditional branches into visual, parallelized, and deterministic workflows.
+**PatchCat** is an open-source, deterministic **AI workflow orchestration engine, DAG state machine, and LLM evaluation harness** created by **[GuoBug](https://github.com/GuoBug)**. Designed for AI engineers, product engineers, agent developers, and self-learners, PatchCat transforms complex multi-agent interactions, LLM evaluation pipelines, code transforms, and conditional branches into visual, parallelized, and deterministic workflows.
 
-More than a production-grade orchestration engine, PatchCat is an **interactive AI engineering playground**: test and inspect topological DAG scheduling, self-healing state machines, and fault tolerance mechanisms offline with zero API keys needed. With **zero mandatory backend setup** (Client-Only BYOK Mode) and direct connectivity to **Google Gemini, DeepSeek, OpenAI, SiliconFlow, and local Ollama**, PatchCat delivers high-performance AI workflow orchestration and prompt engineering directly inside your browser with enterprise-grade telemetry and zero data leakage.
+More than a production-grade orchestration engine, PatchCat serves as an **Evaluation & Verification Harness** and interactive engineering playground: deploy **Deterministic LLM Evaluation & Verification Pipelines** pairing **Constrained Decoding** (strict schema enforcement) with **LLM-as-a-Judge Guardrails**, programmable assertion criteria, and sentinel watch-lists. Test and inspect topological DAG scheduling, self-healing state machines, and fault tolerance mechanisms offline with zero API keys needed. With **zero mandatory backend setup** (Client-Only BYOK Mode) and direct connectivity to **Google Gemini, DeepSeek, OpenAI, SiliconFlow, and local Ollama**, PatchCat delivers high-performance AI workflow orchestration, automated evaluation, and prompt engineering directly inside your browser with enterprise-grade telemetry and zero data leakage.
 
 > [!NOTE]
 > **Core Design Philosophy: Why Deterministic Workflows?**  
@@ -115,7 +115,18 @@ Why choose **PatchCat** over heavyweight orchestration tools?
 - **Dynamic Conditional Routing & Skipping**: IF/ELSE multi-branch evaluation with dynamic downstream skipping (`NODE_SKIPPED`) and variable aggregation.
 - **Interactive Chat Debug & API Publishing**: Slide-over Chat drawer (`Ctrl+Shift+D`) and instant FastAPI REST endpoint generation with API Key auth.
 
-### 3. ⚡ Multi-Vendor Model Hub & Dynamic Discovery
+### 3. 🛡️ Deterministic LLM Evaluation Harness & Guardrails (LLM-as-a-Judge)
+- **Constrained Decoding & Schema Validation**: Deep Zod and JSON Schema validation pipeline guaranteeing deterministic output payloads and preventing schema drifts.
+- **LLM-as-a-Judge & Programmable Evaluation Criteria**: Native support for programmable evaluation criteria and assertion scoring to benchmark and gatekeep LLM outputs before downstream ingestion.
+- **Sentinel Watch-Lists & Runtime Guard**: Active inspection against forbidden hallucination tokens, circular outputs, and payload regressions.
+- **Self-Healing Triad & Fault Recovery**: Multi-tier circuit-breaking and structured diagnostic feedback loops that pass validation error traces back for self-healing retries.
+
+### 4. 🔌 AI-Native Engineering Ecosystem & Verification Loops
+- **Modern AI IDE & Agent Synergy**: Built to complement next-generation AI coding tools such as **Claude Code**, **Cursor**, and **Antigravity**.
+- **Actor-Critic Verification Loop**: Turn non-deterministic generative drafts into verifiable, evaluated artifacts by pairing autonomous agent generation with deterministic evaluation checkpoints.
+- **Extensible Mesh/MCP Integration**: Interoperable with cross-host tool buses (such as **FerryCat** MCP Bus) for reliable distributed agent workflows.
+
+### 5. ⚡ Multi-Vendor Model Hub & Dynamic Discovery
 - **Direct Cloud & Local LLM Connectivity**:
   - 🔵 **Google Gemini**: Full support for `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.0-flash`, with dynamic model discovery.
   - 🐳 **DeepSeek**: Seamless integration with DeepSeek-R1 (with live reasoning/thought streaming) and DeepSeek-V3.
@@ -126,17 +137,17 @@ Why choose **PatchCat** over heavyweight orchestration tools?
 - **Cross-Vendor Model Auto-Remapping**: Intelligently adapts preset templates to your currently selected provider without broken requests.
 - **Transient 503 Auto-Retry & Diagnostics**: Built-in exponential backoff for high-concurrency spikes and actionable Chinese/English error diagnostics.
 
-### 4. 🧠 Real-Time SSE Stream & DeepSeek Reasoning Display
+### 6. 🧠 Real-Time SSE Stream & DeepSeek Reasoning Display
 - **Live Token Streaming**: Token-by-token real-time canvas rendering with fluid animations.
 - **Dual-Stream Reasoning Inspection**: Dedicated visualization panel for DeepSeek R1 and Gemini thinking chains.
 - **Precise Token & Latency Telemetry**: Accurate per-node execution duration and token usage calculation.
 
-### 5. 💻 Dynamic JavaScript Code Node & Sandbox
+### 7. 💻 Dynamic JavaScript Code Node & Sandbox
 - **In-Browser Safe Execution**: Execute custom JavaScript scripts directly in browser sandbox with `inputs` and `console.log` capture.
 - **Automatic JSON Markdown Stripping**: Effortlessly parse structured outputs from LLMs wrapped in ` ```json ` blocks.
 - **Smart Decision Routing**: Conditionally dispatch workflows based on intent, urgency, and confidence scores.
 
-### 6. 🛡️ 3-Tier Enterprise Logging & Strict Privacy Sanitization
+### 8. 🛡️ 3-Tier Enterprise Logging & Strict Privacy Sanitization
 - **Configurable 3-Level Logging**:
   - **`Summary (概要)`**: System lifecycle (`START`, `COMPLETE`, `ERROR`), HTTP status codes, latency, and failure traces.
   - **`Detailed (详细)`**: Node IDs, runtime parameters (`model`, `temperature`, `max_tokens`), and DAG layer wave timing.
@@ -145,19 +156,19 @@ Why choose **PatchCat** over heavyweight orchestration tools?
   - Automatic recursive masking of all API Keys (`sk-***`, `AIzaSy***`), Bearer tokens, and password fields across all log levels.
 - **Collapsible Visual Console Drawer**: Built-in IDE-style terminal drawer with search, type filters, JSON payload inspector, and one-click JSON/TXT export.
 
-### 7. 🔗 Dynamic Variable Slot Resolver
+### 9. 🔗 Dynamic Variable Slot Resolver
 - **Mustache-Style Syntax**: Interpolate data with `{{nodeId.propertyPath}}`.
 - **Deep Object & Array Navigation**: Access nested fields such as `{{classifier.result.tags[0].name}}`.
 - **Fallback Defaults**: Built-in fallback syntax `{{nodeId.output | "default_value"}}` to safeguard against missing values.
 
-### 8. 💾 Multi-Turn Conversation Memory & Dual-Tier Storage Architecture
+### 10. 💾 Multi-Turn Conversation Memory & Dual-Tier Storage Architecture
 - **IndexedDB Asynchronous Persistence**: High-capacity, non-blocking browser client storage overcoming 5MB `sessionStorage` limits and tab-closure data loss.
 - **Workflow-Scoped Isolation**: Messages are strictly partitioned by `${workflowId}::${sessionId}` to prevent cross-canvas contamination during testing.
 - **Tier-1 Global Policy & 2-Tier Configuration**: Configure global defaults in Settings (`SettingsPage.tsx`) for sliding window rounds (1–20), token budget limit (500–16,000), and pruning strategies (`hybrid`, `window`, `token_budget`).
 - **Dynamic Context Injection**: Automatically prunes historical dialogue and injects formatted multi-turn context into `{{chat_history}}`, `{{conversation_history}}`, and `{{history}}` variable slots.
 - **Storage Architecture FAQ & Q&A**: Embedded interactive card disclosing client-side IndexedDB benefits, self-hosted SQLite (`patchcat.db`) zero-config persistence, and browser sandbox File System Access API authorization constraints.
 
-### 8. 🕒 Run Observability, Step Data Snapshots & OpenTelemetry Tracing (v0.4.8)
+### 11. 🕒 Run Observability, Step Data Snapshots & OpenTelemetry Tracing (v0.4.8)
 - **Recent 10 Execution Runs Timeline**: Dedicated slide-over drawer (`Ctrl+Shift+H` or top header) displaying the latest 10 canvas execution records with duration and token consumption.
 - **Aggregate KPI Overview**: Instant glance at total latency, Prompt/Completion token breakdown, and dynamic USD cost estimates across top model providers.
 - **Execution Waterfall Timeline**: Visual horizontal Gantt/bar chart displaying relative start offsets and proportional execution durations per node.
@@ -200,13 +211,13 @@ Open your browser and navigate to `http://localhost:5173`.
 
 ## 🛠️ CLI Commands & Quality Assurance
 
-PatchCat maintains rigorous code quality with 530+ automated unit tests covering core scheduling, variable resolution, sandbox isolation, and logging engines:
+PatchCat maintains rigorous code quality with **590+ automated unit tests** built on native test runner infrastructure (aligned with modern Jest/Vitest testing paradigms), strict **TypeScript static analysis**, and **Kahn's topological sort static cycle/deadlock detection** to mathematically guarantee workflow integrity before runtime execution:
 
 ```bash
-# Run all unit tests (Topological Sort, Engine, LLM Client, Logger, Routing)
+# Run all unit tests (Topological Sort, Engine, LLM Client, Logger, Routing, Evals)
 npm test
 
-# Run TypeScript type check
+# Run TypeScript static analysis & type check
 npm run typecheck
 
 # Build for production
@@ -225,7 +236,7 @@ PatchCat comes with ready-to-use industrial presets:
 | Preset Name | Description | Nodes Involved |
 | :--- | :--- | :--- |
 | **Customer Support Routing** | Multi-class intent classification, urgency grading, and automated VIP queue dispatch. | `Input` ➔ `Prompt` ➔ `LLM Classifier` ➔ `Code Router` ➔ `Output Dispatch` |
-| **Self-Reflective Report Generator** | Drafter generation combined with an expert Critic review loop for polished outputs. | `Input Topic` ➔ `Drafter Prompt` ➔ `LLM Generator` ➔ `Critic Prompt` ➔ `LLM Critic` ➔ `Final Report` |
+| **Self-Reflective Report Generator** | Drafter generation combined with an expert Critic review loop for polished outputs (Actor-Critic Verification Loop). | `Input Topic` ➔ `Drafter Prompt` ➔ `LLM Generator` ➔ `Critic Prompt` ➔ `LLM Critic` ➔ `Final Report` |
 | **Multi-Agent Arbitration Pipeline** | Parallel execution of policy check and sentiment analysis for dispute resolution. | `Input Order` ➔ `Prompt Builder` ➔ `LLM Policy` + `LLM Sentiment` (Parallel) ➔ `Code Arbitrator` ➔ `Report` |
 
 ---
@@ -239,9 +250,9 @@ PatchCat comes with ready-to-use industrial presets:
 | **Canvas & Nodes** | [@xyflow/react (React Flow v12)](https://reactflow.dev/) |
 | **State Management** | [Zustand](https://github.com/pmndrs/zustand) + [Immer](https://immerjs.github.io/immer/) |
 | **Styling & UI** | [Tailwind CSS v4](https://tailwindcss.com/) + [Lucide Icons](https://lucide.dev/) |
-| **Workflow Engine** | Deterministic In-Browser Kahn's DAG State Machine + SSE Stream Client |
+| **Workflow Engine & Guardrails** | Deterministic In-Browser Kahn's DAG State Machine + LLM Evaluation Harness + SSE Stream Client |
 | **Backend & Storage** | [FastAPI](https://fastapi.tiangolo.com/) + [SQLAlchemy 2.0](https://www.sqlalchemy.org/) (SQLite / PostgreSQL + pgvector) |
-| **Testing** | Node.js Native Test Runner (`node --test`) + Pytest |
+| **Testing & Static Analysis** | Node.js Native Test Runner (`node --test`, Jest/Vitest paradigms) + TypeScript Static Analysis + Pytest |
 
 ---
 
@@ -274,9 +285,14 @@ PatchCat comes with ready-to-use industrial presets:
 
 ## 👨‍💻 Author & Maintainer
 
-**PatchCat** is created and actively maintained by **[GuoBug (Guo Qiang)](https://github.com/GuoBug)** — a Product Engineer combining platform engineering rigor (DAG state machines, deterministic orchestration, developer tooling) with product-led growth and user experience empathy.
+---
 
-Engineered through an AI pair programming workflow with rigorous verification and open-source milestones. Inquiries, architectural discussions, and contributions are warmly welcome!
+> **About the Author**  
+> **Guo Qiang (GuoBug)**, Product Engineer bridging platform engineering and business growth. Currently focusing on **AI Workflow Orchestration**, **DAG Engine**, and deterministic state machine architectures.  
+> Open-Source Projects & Homepage: [https://github.com/GuoBug](https://github.com/GuoBug) · [https://guobug.github.io](https://guobug.github.io)  
+> Always welcome to exchange ideas on workflow engine architecture, topological scheduling, and low-barrier developer experience.
+
+PatchCat was initiated by GuoBug and evolved collaboratively through an AI pair programming workflow with rigorous verification and open-source milestones. Inquiries, architectural discussions, and contributions are warmly welcome!
 
 ---
 
